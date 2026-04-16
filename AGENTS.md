@@ -54,7 +54,6 @@ This project has domain-specific skills available. You MUST activate the relevan
 
 - Stick to existing directory structure; don't create new base folders without approval.
 - Do not change the application's dependencies without approval.
-- Do not build bulk import features (CSV/Excel upload, legacy migration UI/commands) unless explicitly requested.
 
 ## Frontend Bundling
 
