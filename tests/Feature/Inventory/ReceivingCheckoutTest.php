@@ -18,12 +18,15 @@ beforeEach(function () {
 test('receiving consumables increments stock and creates lot + movement', function () {
     $clerk = User::factory()->create();
     $clerk->assignRole('Admin');
+    $csrfToken = 'receiving-store-token';
 
     $product = Product::factory()->consumable()->create(['sku' => 'SKU-REC-001']);
     ProductStock::factory()->create(['product_id' => $product->id, 'on_hand_qty' => 0]);
 
     $this->actingAs($clerk)
+        ->withSession(['_token' => $csrfToken])
         ->post(route('inventory.receiving.store', absolute: false), [
+            '_token' => $csrfToken,
             'sku' => 'SKU-REC-001',
             'qty' => 5,
         ])

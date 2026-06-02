@@ -26,9 +26,11 @@ class StockMovementFactory extends Factory
             'product_id' => Product::factory()->consumable(),
             'stock_lot_id' => null,
             'asset_id' => null,
-            'sale_id' => null,
+            'requisition_id' => null,
             'qty_delta' => fake()->numberBetween(-50, 50),
             'performed_by' => User::factory(),
+            'accountable_position_id' => null,
+            'ip_address' => fake()->ipv4(),
             'performed_at' => $performedAt,
             'notes' => fake()->optional()->sentence(),
         ];

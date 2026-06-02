@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\RequisitionApproveRequest;
 use App\Http\Requests\Inventory\RequisitionIssueRequest;
+use App\Http\Requests\Inventory\RequisitionRejectRequest;
 use App\Http\Requests\Inventory\RequisitionStoreRequest;
 use App\Models\Product;
 use App\Models\Requisition;
@@ -103,6 +104,9 @@ class RequisitionController extends Controller
                 'approve' => $requisition->exists && $currentUser instanceof User
                     ? $currentUser->can('approve', $requisition)
                     : false,
+                'reject' => $requisition->exists && $currentUser instanceof User
+                    ? $currentUser->can('reject', $requisition)
+                    : false,
                 'issue' => $requisition->exists && $currentUser instanceof User
                     ? $currentUser->can('issue', $requisition)
                     : false,
@@ -162,6 +166,25 @@ class RequisitionController extends Controller
         ]);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition approved.')]);
+
+        return back();
+    }
+
+    public function reject(RequisitionRejectRequest $request, Requisition $requisition): RedirectResponse
+    {
+        $this->authorize('reject', $requisition);
+
+        $reason = trim($request->validated()['notes']);
+        $existingNotes = trim((string) $requisition->notes);
+
+        $requisition->update([
+            'status' => 'Rejected',
+            'notes' => $existingNotes === ''
+                ? "Rejection reason: {$reason}"
+                : "{$existingNotes}\n\nRejection reason: {$reason}",
+        ]);
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition rejected.')]);
 
         return back();
     }

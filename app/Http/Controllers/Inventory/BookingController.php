@@ -10,38 +10,74 @@ use App\Models\Booking;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class BookingController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $currentUser = Auth::user();
+        $assetSearch = $request->string('asset_search')->trim()->toString();
 
         $assets = Asset::query()
+            ->where('status', 'Available')
             ->whereHas('product', fn ($q) => $q->where('type', 'asset')->where('is_active', true))
             ->with(['product:id,name', 'position:id,department_id,title', 'position.department:id,name'])
+            ->when($assetSearch !== '', function ($query) use ($assetSearch) {
+                $query->where(function ($query) use ($assetSearch) {
+                    $query->where('tag_code', 'like', "%{$assetSearch}%")
+                        ->orWhereHas('product', function ($query) use ($assetSearch) {
+                            $query->where('name', 'like', "%{$assetSearch}%");
+                        });
+                });
+            })
             ->orderBy('tag_code')
+            ->limit(25)
             ->get(['id', 'product_id', 'position_id', 'tag_code', 'status']);
+
+        $bookingPayload = [
+            'asset:id,product_id,position_id,tag_code',
+            'asset.product:id,name',
+            'requester:id,name,email,position_id',
+            'requesterPosition:id,department_id,title',
+            'approver:id,name,email,position_id',
+            'approverPosition:id,department_id,title',
+            'requesterPosition.department:id,name',
+            'approverPosition.department:id,name',
+        ];
+
+        $calendarWindowStart = CarbonImmutable::now()->subDays(30);
+        $calendarWindowEnd = CarbonImmutable::now()->addMonths(6);
+
+        $calendarEvents = Booking::query()
+            ->with($bookingPayload)
+            ->where('end_at', '>=', $calendarWindowStart)
+            ->where('start_at', '<=', $calendarWindowEnd)
+            ->orderBy('start_at')
+            ->get();
+
+        $approvalQueue = Booking::query()
+            ->with($bookingPayload)
+            ->where('status', 'Requested')
+            ->orderBy('start_at')
+            ->limit(15)
+            ->get();
 
         $bookings = Booking::query()
             ->with([
-                'asset:id,product_id,position_id,tag_code',
-                'asset.product:id,name',
-                'requester:id,name,email,position_id',
-                'requesterPosition:id,department_id,title',
-                'approver:id,name,email,position_id',
-                'approverPosition:id,department_id,title',
-                'requesterPosition.department:id,name',
-                'approverPosition.department:id,name',
+                ...$bookingPayload,
             ])
             ->orderByDesc('created_at')
-            ->limit(200)
-            ->get();
+            ->paginate(15)
+            ->withQueryString();
 
         return Inertia::render('inventory/bookings/Index', [
+            'filters' => [
+                'asset_search' => $assetSearch,
+            ],
             'assets' => $assets->map(fn (Asset $a) => [
                 'id' => $a->id,
                 'tag_code' => $a->tag_code,
@@ -52,7 +88,35 @@ class BookingController extends Controller
                     'department' => $a->position->department?->name,
                 ] : null,
             ]),
-            'bookings' => $bookings->map(fn (Booking $b) => [
+            'calendar_events' => $calendarEvents->map(fn (Booking $b) => [
+                'id' => $b->id,
+                'asset_id' => $b->asset_id,
+                'title' => ($b->asset?->product?->name ?? 'Asset').' - '.$b->status,
+                'start' => $b->start_at?->toIso8601String(),
+                'end' => $b->end_at?->toIso8601String(),
+                'status' => $b->status,
+            ]),
+            'approval_queue' => $approvalQueue->map(fn (Booking $b) => [
+                'id' => $b->id,
+                'asset_id' => $b->asset_id,
+                'title' => ($b->asset?->product?->name ?? 'Asset').' - '.$b->status,
+                'start' => $b->start_at?->toIso8601String(),
+                'end' => $b->end_at?->toIso8601String(),
+                'status' => $b->status,
+                'requester' => $b->requester ? [
+                    'name' => $b->requester->name,
+                    'email' => $b->requester->email,
+                ] : null,
+                'requester_position' => $b->requesterPosition ? [
+                    'title' => $b->requesterPosition->title,
+                    'department' => $b->requesterPosition->department?->name,
+                ] : null,
+                'approver' => $b->approver ? [
+                    'name' => $b->approver->name,
+                    'email' => $b->approver->email,
+                ] : null,
+            ]),
+            'bookings' => $bookings->through(fn (Booking $b) => [
                 'id' => $b->id,
                 'asset_id' => $b->asset_id,
                 'asset_label' => $b->asset?->tag_code,

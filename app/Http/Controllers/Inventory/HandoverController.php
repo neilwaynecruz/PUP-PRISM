@@ -19,13 +19,24 @@ use Inertia\Response;
 
 class HandoverController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $recipientSearch = $request->string('recipient_search')->trim()->toString();
+
         return Inertia::render('inventory/handover/Initiate', [
+            'filters' => [
+                'recipient_search' => $recipientSearch,
+            ],
             'users' => User::query()
                 ->with(['position:id,department_id,title,code', 'position.department:id,name'])
+                ->when($recipientSearch !== '', function ($query) use ($recipientSearch) {
+                    $query->where(function ($query) use ($recipientSearch) {
+                        $query->where('name', 'like', "%{$recipientSearch}%")
+                            ->orWhere('email', 'like', "%{$recipientSearch}%");
+                    });
+                })
                 ->orderBy('name')
-                ->limit(200)
+                ->limit(25)
                 ->get(['id', 'name', 'email', 'position_id'])
                 ->map(fn (User $user) => [
                     'id' => $user->id,
@@ -137,7 +148,7 @@ class HandoverController extends Controller
         }
 
         $request->validate([
-            'signature_png' => ['required', 'string'],
+            'signature_png' => ['required', 'string', 'max:300000'],
         ]);
 
         $token = $request->string('token')->toString();

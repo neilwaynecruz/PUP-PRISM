@@ -26,8 +26,10 @@ defineProps<{
 
 const signaturePad = ref<InstanceType<typeof VueSignaturePad> | null>(null);
 const signaturePng = ref<string>('');
+const signatureSizeError = ref<string>('');
+const maxSignatureBytes = 300000;
 
-function captureSignature(): void {
+function captureSignature(event?: Event): void {
     const pad = signaturePad.value as any;
 
     if (!pad) {
@@ -36,12 +38,20 @@ function captureSignature(): void {
 
     const { isEmpty, data } = pad.saveSignature();
     signaturePng.value = isEmpty ? '' : data;
+    signatureSizeError.value = '';
+
+    if (signaturePng.value.length > maxSignatureBytes) {
+        event?.preventDefault();
+        signaturePng.value = '';
+        signatureSizeError.value = 'Signature is too large. Please clear it and sign again with fewer strokes.';
+    }
 }
 
 function clearSignature(): void {
     const pad = signaturePad.value as any;
     pad?.clearSignature();
     signaturePng.value = '';
+    signatureSizeError.value = '';
 }
 </script>
 
@@ -93,6 +103,7 @@ function clearSignature(): void {
                 <input type="hidden" name="token" :value="handover.token" />
                 <input type="hidden" name="signature_png" :value="signaturePng" />
                 <InputError :message="errors.token" />
+                <InputError :message="signatureSizeError" />
                 <InputError :message="errors.signature_png" />
                 <Button type="submit" :disabled="processing">Verify</Button>
             </Form>

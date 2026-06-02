@@ -64,6 +64,19 @@ class RequisitionPolicy
         return $requisition->status === 'Submitted';
     }
 
+    public function reject(User $user, Requisition $requisition): bool
+    {
+        if (! $user->hasAnyRole(['Admin', 'Supply Head'])) {
+            return false;
+        }
+
+        if ($user->id === $requisition->requester_id) {
+            return false;
+        }
+
+        return $requisition->status === 'Submitted';
+    }
+
     public function issue(User $user, Requisition $requisition): bool
     {
         if (! $user->hasAnyRole(['Admin', 'Supply Head'])) {

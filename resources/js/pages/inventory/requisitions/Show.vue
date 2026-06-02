@@ -37,7 +37,7 @@ defineProps<{
         issued_position: PositionSummary | null;
         lines: Line[];
     };
-    can: { approve: boolean; issue: boolean };
+    can: { approve: boolean; reject: boolean; issue: boolean };
 }>();
 
 defineOptions({
@@ -161,6 +161,20 @@ defineOptions({
                     <InputError :message="errors.notes" />
                 </div>
                 <Button type="submit" :disabled="processing">Approve</Button>
+            </Form>
+
+            <Form
+                v-if="can.reject"
+                v-bind="RequisitionController.reject.form(requisition.id)"
+                v-slot="{ errors, processing }"
+                class="flex flex-1 items-end gap-2"
+            >
+                <div class="grid flex-1 gap-1">
+                    <label class="text-sm font-medium">Rejection reason</label>
+                    <Input name="notes" placeholder="Explain why this request is being rejected" required />
+                    <InputError :message="errors.notes" />
+                </div>
+                <Button type="submit" :disabled="processing" variant="secondary">Reject</Button>
             </Form>
 
             <Form

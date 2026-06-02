@@ -12,6 +12,8 @@ use App\Models\ProductStock;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -72,8 +74,8 @@ class ProductController extends Controller
                 'on_hand_qty' => $product->stock?->on_hand_qty,
                 'assets_count' => $product->assets_count,
             ]),
-            'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
-            'origins' => Origin::query()->orderBy('name')->get(['id', 'name']),
+            'categories' => $this->categoryOptions(),
+            'origins' => $this->originOptions(),
             'can' => [
                 'create' => $request->user()?->can('create', Product::class) ?? false,
             ],
@@ -83,8 +85,8 @@ class ProductController extends Controller
     public function create(): Response
     {
         return Inertia::render('inventory/products/Create', [
-            'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
-            'origins' => Origin::query()->orderBy('name')->get(['id', 'name']),
+            'categories' => $this->categoryOptions(),
+            'origins' => $this->originOptions(),
         ]);
     }
 
@@ -155,8 +157,8 @@ class ProductController extends Controller
                 'reorder_threshold',
                 'is_active',
             ]),
-            'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
-            'origins' => Origin::query()->orderBy('name')->get(['id', 'name']),
+            'categories' => $this->categoryOptions(),
+            'origins' => $this->originOptions(),
         ]);
     }
 
@@ -187,5 +189,84 @@ class ProductController extends Controller
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Product deleted.')]);
 
         return to_route('inventory.products.index');
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function categoryOptions(): array
+    {
+        return $this->rememberOptionList(
+            Category::OPTIONS_CACHE_KEY,
+            fn () => Category::query()
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (Category $category) => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                ])
+                ->values()
+                ->all(),
+        );
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function originOptions(): array
+    {
+        return $this->rememberOptionList(
+            Origin::OPTIONS_CACHE_KEY,
+            fn () => Origin::query()
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (Origin $origin) => [
+                    'id' => $origin->id,
+                    'name' => $origin->name,
+                ])
+                ->values()
+                ->all(),
+        );
+    }
+
+    /**
+     * @param  callable(): array<int, array{id: int, name: string}>  $resolver
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function rememberOptionList(string $cacheKey, callable $resolver): array
+    {
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached)) {
+            return $this->normalizeOptionList($cached);
+        }
+
+        if ($cached instanceof Collection) {
+            return $this->normalizeOptionList($cached->all());
+        }
+
+        if ($cached !== null) {
+            Cache::forget($cacheKey);
+        }
+
+        /** @var array<int, array{id: int, name: string}> $fresh */
+        $fresh = Cache::remember($cacheKey, now()->addDay(), $resolver);
+
+        return $this->normalizeOptionList($fresh);
+    }
+
+    /**
+     * @param  array<int, mixed>  $options
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function normalizeOptionList(array $options): array
+    {
+        return array_values(array_map(
+            fn (mixed $option) => [
+                'id' => (int) data_get($option, 'id'),
+                'name' => (string) data_get($option, 'name'),
+            ],
+            $options,
+        ));
     }
 }

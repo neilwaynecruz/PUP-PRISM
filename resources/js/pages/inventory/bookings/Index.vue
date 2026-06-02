@@ -2,8 +2,8 @@
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/vue3';
-import { Form, Head } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { Form, Head, Link, router } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
 import BookingController from '@/actions/App/Http/Controllers/Inventory/BookingController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -28,6 +28,7 @@ type AssetOption = {
 type BookingEvent = {
     id: number;
     asset_id: number;
+    asset_label?: string | null;
     title: string;
     start: string;
     end: string;
@@ -47,9 +48,22 @@ type BookingEvent = {
     } | null;
 };
 
+type PaginationLink = { url: string | null; label: string; active: boolean };
+type Paginated<T> = {
+    data: T[];
+    links: PaginationLink[];
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+};
+
 const props = defineProps<{
+    filters: { asset_search: string };
     assets: AssetOption[];
-    bookings: BookingEvent[];
+    calendar_events: Array<Pick<BookingEvent, 'id' | 'asset_id' | 'title' | 'start' | 'end' | 'status'>>;
+    approval_queue: Omit<BookingEvent, 'requester_id'>[];
+    bookings: Paginated<BookingEvent>;
     can: { approve: boolean };
 }>();
 
@@ -66,14 +80,11 @@ const selectedAssetId = ref<string>('');
 const startAt = ref<string>('');
 const endAt = ref<string>('');
 const purpose = ref<string>('');
+const assetSearch = ref<string>(props.filters.asset_search ?? '');
 const assetScanFeedback = ref<string>('');
 
-const approvalQueue = computed(() => props.bookings.filter((booking) => booking.status === 'Requested'));
-
-const recentBookings = computed(() => props.bookings.slice(0, 8));
-
 const events = computed(() =>
-    props.bookings.map((b) => ({
+    props.calendar_events.map((b) => ({
         id: String(b.id),
         title: b.title,
         start: b.start,
@@ -81,6 +92,43 @@ const events = computed(() =>
         backgroundColor: b.status === 'Approved' ? '#16a34a' : b.status === 'Requested' ? '#f59e0b' : '#ef4444',
         borderColor: 'transparent',
     })),
+);
+
+let assetSearchTimer: number | undefined;
+watch(assetSearch, () => {
+    window.clearTimeout(assetSearchTimer);
+    assetSearchTimer = window.setTimeout(() => {
+        router.get(
+            bookingsIndex().url,
+            {
+                asset_search: assetSearch.value || undefined,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    }, 250);
+});
+
+watch(
+    () => props.assets,
+    (assets) => {
+        if (assetSearch.value === '') {
+            return;
+        }
+
+        const exactMatch = assets.find((asset) => asset.tag_code === assetSearch.value.trim());
+
+        if (!exactMatch) {
+            return;
+        }
+
+        selectedAssetId.value = String(exactMatch.id);
+        assetScanFeedback.value = `Matched ${exactMatch.tag_code} to ${exactMatch.name ?? 'Asset'}.`;
+    },
+    { deep: true },
 );
 
 function badgeVariant(status: BookingEvent['status']): 'default' | 'secondary' | 'destructive' | 'outline' {
@@ -103,11 +151,13 @@ function applyScannedAsset(tagCode: string): void {
     const match = props.assets.find((asset) => asset.tag_code === tagCode.trim());
 
     if (!match) {
-        assetScanFeedback.value = `No asset matches ${tagCode}. You can still choose an asset manually.`;
+        assetSearch.value = tagCode.trim();
+        assetScanFeedback.value = `Searching for ${tagCode} in the asset list.`;
 
         return;
     }
 
+    assetSearch.value = tagCode.trim();
     selectedAssetId.value = String(match.id);
     assetScanFeedback.value = `Matched ${match.tag_code} to ${match.name ?? 'Asset'}.`;
 }
@@ -153,6 +203,14 @@ function applyScannedAsset(tagCode: string): void {
                         title="New booking request"
                         description="Select an accountable asset, then choose the requested schedule."
                     />
+
+                    <div class="grid gap-2">
+                        <Label for="asset_search">Find asset</Label>
+                        <Input id="asset_search" v-model="assetSearch" placeholder="Search by tag or product name" />
+                        <div class="text-sm text-muted-foreground">
+                            The selector loads up to 25 matching available assets at a time.
+                        </div>
+                    </div>
 
                     <div class="grid gap-2">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -216,12 +274,12 @@ function applyScannedAsset(tagCode: string): void {
                         <div class="font-medium">Approval queue</div>
                         <div class="text-sm text-muted-foreground">Property custodians can approve or reject pending requests directly from this screen.</div>
                     </div>
-                    <Badge variant="outline">{{ approvalQueue.length }} pending</Badge>
+                    <Badge variant="outline">{{ approval_queue.length }} pending</Badge>
                 </div>
 
-                <div v-if="approvalQueue.length" class="grid gap-3">
+                <div v-if="approval_queue.length" class="grid gap-3">
                     <div
-                        v-for="booking in approvalQueue"
+                        v-for="booking in approval_queue"
                         :key="booking.id"
                         class="rounded-lg border border-sidebar-border/70 p-4 dark:border-sidebar-border"
                     >
@@ -259,13 +317,13 @@ function applyScannedAsset(tagCode: string): void {
 
             <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
                 <div class="mb-4">
-                    <div class="font-medium">Recent requests</div>
-                    <div class="text-sm text-muted-foreground">Use this quick list during walkthroughs when the calendar is not the easiest view on a phone.</div>
+                    <div class="font-medium">Booking records</div>
+                    <div class="text-sm text-muted-foreground">Paginated records keep the page responsive while preserving access to the full booking history.</div>
                 </div>
 
                 <div class="grid gap-3">
                     <div
-                        v-for="booking in recentBookings"
+                        v-for="booking in bookings.data"
                         :key="booking.id"
                         class="rounded-lg border border-sidebar-border/70 p-4 text-sm dark:border-sidebar-border"
                     >
@@ -274,11 +332,28 @@ function applyScannedAsset(tagCode: string): void {
                             <Badge :variant="badgeVariant(booking.status)">{{ booking.status }}</Badge>
                         </div>
                         <div class="mt-2 space-y-1 text-muted-foreground">
+                            <div v-if="booking.asset_label">Tag: {{ booking.asset_label }}</div>
                             <div>{{ booking.start }} to {{ booking.end }}</div>
                             <div>{{ booking.requester?.name ?? booking.requester?.email ?? 'Unknown requester' }}</div>
                             <div v-if="booking.approver">Processed by {{ booking.approver.name }}</div>
                         </div>
                     </div>
+                </div>
+
+                <div v-if="bookings.links.length" class="mt-4 flex flex-wrap items-center justify-center gap-2">
+                    <Button
+                        v-for="(link, index) in bookings.links"
+                        :key="index"
+                        variant="ghost"
+                        size="sm"
+                        :disabled="!link.url"
+                        as-child
+                    >
+                        <Link v-if="link.url" :href="link.url" preserve-scroll preserve-state>
+                            <span v-html="link.label" />
+                        </Link>
+                        <span v-else v-html="link.label" />
+                    </Button>
                 </div>
             </div>
         </div>

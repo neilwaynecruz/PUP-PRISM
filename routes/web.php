@@ -63,36 +63,36 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('role:Admin|Supply Head')
             ->name('requisitions.approve');
 
+        Route::put('requisitions/{requisition}/reject', [RequisitionController::class, 'reject'])
+            ->middleware('role:Admin|Supply Head')
+            ->name('requisitions.reject');
+
         Route::put('requisitions/{requisition}/issue', [RequisitionController::class, 'issue'])
             ->middleware('role:Admin|Supply Head')
             ->name('requisitions.issue');
 
-        // Per-action authorization for ProductController is enforced by
-        // ProductPolicy via authorizeResource(). This coarse gate only keeps
-        // users with no inventory role out early; the policy is the single
-        // source of truth for which role may perform each action.
-        Route::middleware('role:Admin|Supply Head|Property Custodian')->group(function () {
-            Route::get('products', [ProductController::class, 'index'])
-                ->name('products.index');
+        // ProductController uses authorizeResource(Product::class, 'product'),
+        // so ProductPolicy is the single source of truth for per-action access.
+        Route::get('products', [ProductController::class, 'index'])
+            ->name('products.index');
 
-            Route::get('products/create', [ProductController::class, 'create'])
-                ->name('products.create');
+        Route::get('products/create', [ProductController::class, 'create'])
+            ->name('products.create');
 
-            Route::post('products', [ProductController::class, 'store'])
-                ->name('products.store');
+        Route::post('products', [ProductController::class, 'store'])
+            ->name('products.store');
 
-            Route::get('products/{product}', [ProductController::class, 'show'])
-                ->name('products.show');
+        Route::get('products/{product}', [ProductController::class, 'show'])
+            ->name('products.show');
 
-            Route::get('products/{product}/edit', [ProductController::class, 'edit'])
-                ->name('products.edit');
+        Route::get('products/{product}/edit', [ProductController::class, 'edit'])
+            ->name('products.edit');
 
-            Route::put('products/{product}', [ProductController::class, 'update'])
-                ->name('products.update');
+        Route::put('products/{product}', [ProductController::class, 'update'])
+            ->name('products.update');
 
-            Route::delete('products/{product}', [ProductController::class, 'destroy'])
-                ->name('products.destroy');
-        });
+        Route::delete('products/{product}', [ProductController::class, 'destroy'])
+            ->name('products.destroy');
 
         // Not part of ProductController/authorizeResource, so it keeps its own guard.
         Route::get('products/{product}/label', [ProductLabelController::class, 'show'])

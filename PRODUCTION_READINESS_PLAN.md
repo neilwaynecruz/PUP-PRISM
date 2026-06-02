@@ -26,126 +26,12 @@ Each item includes:
 
 These are non-negotiable fixes. Deploying to production without addressing these introduces unacceptable risk.
 
-### P0.1 — Replace PostgreSQL-specific `::int` cast with portable SQL
-
-**Location:** `app/Http/Controllers/DashboardController.php:46`
-
-**Risk:** Database portability failure — the application will crash on MySQL, MariaDB, or SQL Server.
-
-**Problem:** The query uses PostgreSQL's `::int` type-cast operator inside `DB::raw()`:
-```php
-->select('status', DB::raw('COUNT(*)::int as aggregate'))
-```
-This will **throw a SQL syntax error** on any non-PostgreSQL database. The existing tests do not catch this because `DashboardTest.php` creates a non-Admin user, so the admin-specific block (lines 27–59) is never executed in test.
-
-**Fix:** Replace with the ANSI-SQL portable `CAST()`:
-```php
-->select('status', DB::raw('CAST(COUNT(*) AS INTEGER) as aggregate'))
-```
-
-**Effort:** 2 minutes  
-**Verified:** Yes — source confirmed.
-
----
-
-### P0.2 — Remove or implement `reserved_qty`
-
-**Locations:**
-- `database/migrations/..._create_product_stocks_table.php:19` — column definition
-- `app/Models/ProductStock.php:11` — fillable attribute
-- `app/Services/Inventory/InventoryService.php:69` — initialized to `0`
-- `app/Http/Controllers/Inventory/ProductController.php` — read in 4 places (index eager load, index display, show eager load, show display)
-- `database/factories/ProductStockFactory.php:22-27` — factory generates fake values that are never used
-
-**Risk:** Dead schema debt, confusing UI (users see `reserved_qty: 0` with no explanation), and wasted query bandwidth.
-
-**Problem:** The `reserved_qty` column on `product_stocks` is **always `0`** in practice — it is never incremented or decremented anywhere in the business logic. It is read and displayed in the UI as `0`, occupying database storage and query bandwidth with no functional purpose. The `ProductStockFactory` generates random `reserved_qty` values for tests, but these are never validated or asserted.
-
-**Option A (Remove):** Drop the column in a new migration. Remove from `ProductStock::fillable`, `ProductController` eager loads and prop mappings, and `ProductStockFactory`.
-**Option B (Implement):** Add reservation logic:
-- Decrement `reserved_qty` when a requisition is submitted
-- Increment `on_hand_qty` and decrement `reserved_qty` when a requisition is issued
-- Revert `reserved_qty` (increment) if a requisition is cancelled/rejected
-- Check `on_hand_qty - reserved_qty >= qty_requested` when issuing
-
-**Recommended:** Option A unless the reservation feature is actively planned. The column adds complexity with zero value. If implementing Option B, also add a `available_qty` computed accessor to simplify frontend display.
-
-**Effort:** Option A: 15 minutes | Option B: 1–2 days  
-**Verified:** Yes — all write paths audited.
-
----
-
-### P0.3 — Make `SESSION_ENCRYPT=true` in production
-
-**Location:** `.env.example:32` — `SESSION_ENCRYPT=false`
-
-**Risk:** Information disclosure — session data (user IDs, auth state, flash messages) is stored in the `sessions` table in plaintext.
-
-**Problem:** Session data is stored in the `sessions` table **unencrypted**. With `SESSION_DRIVER=database`, any database read access (backup dumps, SQL injection, compromised read-only account) exposes active session contents. For a university system handling property accountability data, this is a significant information disclosure risk.
-
-**Fix:** Add to deployment `.env`:
-```ini
-SESSION_ENCRYPT=true
-SESSION_SAME_SITE=lax
-SESSION_HTTP_ONLY=true
-SESSION_SECURE=true   # if HTTPS is enforced
-```
-And update `.env.example` to show `true` as the recommended default with an explanatory comment.
-
-> **Note:** Enabling `SESSION_ENCRYPT` on an existing production database will invalidate all existing sessions. Plan this change during a maintenance window.
-
-**Effort:** 2 minutes  
-**Verified:** Yes — `.env.example` line 32 confirmed.
-
----
-
-### P0.4 — Secure the `$appearance` cookie rendering in Blade
-
-**Location:** `resources/views/app.blade.php:10`
-
-**Risk:** Cross-Site Scripting (XSS) — a fragile pattern that could become exploitable if refactored.
-
-**Problem:** A user-controlled cookie value is interpolated directly into a `<script>` context:
-```php
-const appearance = '{{ $appearance ?? "system" }}';
-```
-While Blade's `{{ }}` escapes HTML entities (preventing *current* exploitation), this is a **fragile pattern**. If anyone changes this to `{!! !!}` (unescaped Blade output) in a future refactor, it becomes **critical XSS** immediately. The value originates from a cookie (`$request->cookie('appearance')` in `HandleAppearance.php:19`), which is fully user-controllable.
-
-**Fix (defense in depth):**
-1. Restrict to known valid options in the middleware (`app/Http/Middleware/HandleAppearance.php`):
-```php
-$valid = ['light', 'dark', 'system'];
-$appearance = in_array($request->cookie('appearance'), $valid, true)
-    ? $request->cookie('appearance')
-    : 'system';
-View::share('appearance', $appearance);
-```
-2. Use JSON-safe encoding in the Blade template:
-```php
-const appearance = @json($appearance ?? 'system');
-```
-
-**Effort:** 5 minutes  
-**Verified:** Yes — both `app.blade.php:10` and `HandleAppearance.php:19` confirmed.
-
----
-
-### P0.5 — Fix `authorizeResource` mismatch in `ProductController`
-
-**Location:** `app/Http/Controllers/Inventory/ProductController.php:23`
-
-**Risk:** Authorization bypass or unexpected 403 responses due to implicit policy-method mapping.
-
-**Problem:** `ProductController` calls `$this->authorizeResource(Product::class, 'product')` in its constructor. This auto-maps controller methods to `ProductPolicy` methods (`index` → `viewAny`, `show` → `view`, etc.). However, `ProductController::index()` is also protected by `'role:Admin|Supply Head|Property Custodian'` middleware in `routes/web.php`, creating **overlapping and potentially conflicting authorization layers**. If the route middleware is removed or changed, the policy behavior may not match expectations. Additionally, `authorizeResource` will call `create` for both `create()` and `store()` methods, but the route middleware restricts `POST products` to `Admin|Supply Head` while `ProductPolicy::create()` also checks `Admin|Supply Head` — this is redundant but consistent.
-
-**Fix:** Either:
-- Remove `authorizeResource` and rely exclusively on route-level middleware (less granular but explicit), **or**
-- Remove route-level role middleware from product routes and let `ProductPolicy` handle everything (more granular, testable).
-
-**Recommended:** Keep the policy and remove the redundant route middleware for product routes. This centralizes authorization logic in one testable place.
-
-**Effort:** 15 minutes  
-**Verified:** Yes — `ProductPolicy` and `routes/web.php` cross-checked.
+Completed and removed from the active backlog during this validation:
+- P0.1 — portable `CAST()` is already in `DashboardController`
+- P0.2 — `reserved_qty` has already been removed from the active schema and code path
+- P0.3 — `.env.example` already defaults to encrypted sessions with production notes
+- P0.4 — the appearance cookie is already validated in middleware and serialized safely in Blade
+- P0.5 — Product routes now rely on `ProductPolicy` as the single source of truth; the redundant route-level product middleware has been removed and the policy path is covered by tests
 
 ---
 
@@ -153,184 +39,53 @@ const appearance = @json($appearance ?? 'system');
 
 These are necessary for a stable, secure, and operable production system.
 
-### P1.1 — Create a README.md
-
-**Location:** (missing) project root
-
-**Risk:** Onboarding friction, operational errors, and single points of failure when only one person knows how to deploy.
-
-**Problem:** There is no documentation for onboarding new developers or operators. No setup instructions, no architecture overview, no deployment guide.
-
-**Required sections:**
-```
-README.md
-├── Project Overview (what it does, who it's for)
-├── Tech Stack (Laravel 13, Vue 3, Inertia 3, PostgreSQL, Tailwind CSS v4, etc.)
-├── Prerequisites (PHP 8.4, PostgreSQL 16+, Node.js 22+, Composer 2+)
-├── Setup Instructions
-│   ├── Clone & install dependencies
-│   ├── Database setup (create PostgreSQL database)
-│   ├── Environment configuration (.env)
-│   ├── Run migrations & seeders
-│   ├── Build frontend assets
-│   └── Start dev server
-├── Default Accounts (admin@local.test / password, etc.)
-├── Project Architecture
-│   ├── Backend structure (app/ directory)
-│   ├── Frontend structure (resources/js/ directory)
-│   └── Database schema overview
-├── Testing (how to run tests)
-├── Deployment Checklist
-│   ├── Environment variables to set
-│   ├── Queue worker setup
-│   ├── Cron job setup
-│   ├── Mail configuration
-│   └── SSL/HTTPS
-└── Roles & Permissions (Admin, Supply Head, Property Custodian)
-```
-
-**Effort:** 1–2 hours  
-**Verified:** Yes — no README.md exists in project root.
-
----
-
-### P1.2 — Remove dead code (4 items)
-
-**Locations:**
-1. `database/factories/SaleFactory.php` — references `App\Models\Sale` (doesn't exist)
-2. `database/factories/SaleLineFactory.php` — references `App\Models\SaleLine` (doesn't exist)
-3. `app/Http/Requests/Inventory/CheckoutRequest.php` — references non-existent roles `'Admin/Manager'` and `'Cashier'`, no controller or route uses it
-4. `pnpm-workspace.yaml` — leftover, project uses npm, not pnpm
-
-**Risk:** Fatal errors if dead factories are ever instantiated; confusion for new developers encountering outdated role names.
-
-**Problem:** The `SaleFactory` and `SaleLineFactory` reference model classes that don't exist. If these factories are ever instantiated (e.g., in a future test or seeder), they will throw `Class "App\Models\Sale" not found` fatal errors. The `CheckoutRequest` references authorization roles that don't exist (`Admin/Manager`, `Cashier`) — only `Admin`, `Supply Head`, `Property Custodian` exist in the system. These artifacts are remnants of an earlier POS/sales system (evidenced by the comment in `ReceivingCheckoutTest.php`: "Checkout/sales flow removed; replaced by requisition issuance & digital handover").
-
-**Fix:** Delete these 4 files:
-- `database/factories/SaleFactory.php`
-- `database/factories/SaleLineFactory.php`
-- `app/Http/Requests/Inventory/CheckoutRequest.php`
-- `pnpm-workspace.yaml`
-
-**Effort:** 5 minutes  
-**Verified:** Yes — all 4 files confirmed present and unused.
-
----
-
-### P1.3 — Add a `.gitattributes` export rule for `production` branch
-
-**Location:** `.gitattributes` (exists)
-
-**Risk:** Production archives may include unnecessary development files, increasing deployment size.
-
-**Problem:** The current `.gitattributes` exports `CHANGELOG.md` and `README.md` as `export-ignore`, but neither file exists (they're treated as documentation placeholders). The file is otherwise correct for line-ending normalization and diff handling.
-
-**Fix:** No change needed for the existing rules. However, add `export-ignore` for development-only files that should not reach production:
-```gitattributes
-/tests export-ignore
-/phpunit.xml export-ignore
-/pint.json export-ignore
-/.editorconfig export-ignore
-```
-
-> **Note:** `storage/logs/laravel.log` is **not** tracked by git (it is properly ignored by `storage/logs/.gitignore` which contains `*` and `!.gitignore`). It may exist locally but will not be committed.
-
-**Effort:** 5 minutes  
-**Verified:** Yes — `.gitattributes` reviewed; `storage/logs/.gitignore` confirmed active.
-
----
-
-### P1.4 — Harden `storage/logs` git isolation
-
-**Location:** `storage/logs/laravel.log` (exists locally, contains connection errors and stack traces)
-
-**Risk:** Accidental commit of log files containing file paths, DB connection errors, and environment details.
-
-**Problem:** While `storage/logs/.gitignore` currently ignores all files in that directory (`*` + `!.gitignore`), the root `.gitignore` does **not** explicitly list `/storage/logs/*.log`. If the `storage/logs/.gitignore` file is ever deleted or corrupted, log files could leak into the repository. Defense in depth is warranted.
-
-**Fix:** Add a redundant rule to the root `.gitignore`:
-```bash
-# Root .gitignore — add these lines
-echo "/storage/logs/*.log" >> .gitignore
-echo "!/storage/logs/.gitkeep" >> .gitignore
-```
-
-Also verify `storage/logs/.gitignore` contains:
-```
-*
-!.gitignore
-```
-
-**Effort:** 2 minutes  
-**Verified:** Yes — `git ls-files` confirms `storage/logs/laravel.log` is not tracked. Root `.gitignore` reviewed.
-
----
-
-### P1.5 — Add a `.env.testing` file
-
-**Location:** (missing)
-
-**Risk:** CI pipeline failures due to inflexible test configuration; tests accidentally running against the wrong database.
-
-**Problem:** Currently, all test environment configuration lives in `phpunit.xml`. While functional, this lacks flexibility for CI pipelines (GitHub Actions, GitLab CI) that may need to override specific settings without modifying `phpunit.xml`.
-
-**Fix:** Create `.env.testing`:
-```ini
-APP_ENV=testing
-APP_KEY=base64:TEST_KEY_HERE
-APP_DEBUG=true
-BCRYPT_ROUNDS=4
-CACHE_STORE=array
-DB_CONNECTION=sqlite
-DB_DATABASE=:memory:
-MAIL_MAILER=array
-QUEUE_CONNECTION=sync
-SESSION_DRIVER=array
-```
-
-> **Note:** Generate a real `APP_KEY` with `php artisan key:generate --env=testing` rather than using a placeholder.
-
-**Effort:** 5 minutes  
-**Verified:** Yes — no `.env.testing` file exists.
-
----
+Completed and removed from the active backlog during this validation:
+- P1.1 — `README.md` now exists and already covers setup, deployment, and roles
+- P1.2 — the dead sale/request/pnpm artifacts are already gone
+- P1.3 — `.gitattributes` already excludes development-only files
+- P1.4 — root `.gitignore` already protects log files
+- P1.5 — `.env.testing` already exists
+- P1.10 — admin dashboard coverage is already in `tests/Feature/DashboardTest.php`
+- P1.12 — `composer.json` already uses `pup/prism` and PHP `^8.4`
 
 ### P1.6 — Configure a production mailer
 
-**Location:** `.env` — `MAIL_MAILER=log`
+**Location:** `composer.json`, `config/mail.php`, `config/services.php`, `.env.example`, production `.env`
 
 **Risk:** Users cannot reset passwords, verify emails, or receive handover notifications — all email-dependent workflows are silently broken.
 
-**Problem:** All emails (password reset, email verification, handover verification notifications) are written to the log file — they are never actually delivered. This means:
+**Problem:** The app still defaults to `MAIL_MAILER=log`, so production users will not receive real email unless the production environment is switched to an actual provider. That breaks:
 - Users cannot reset their passwords via email
 - Handover verification notifications are never sent to recipients
 - Email verification links must be retrieved manually from logs
 
-**Fix:** In production `.env`, configure one of:
+**Recommended provider:** Resend, using Laravel's standard `resend` driver.
+
+**Fix:** Keep `log` as the normal default in shared examples, but configure production to use Resend:
 ```ini
-# Option A: SMTP
-MAIL_MAILER=smtp
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=your@email.com
-MAIL_PASSWORD=your-app-password
-MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS=noreply@pup.edu.ph
+MAIL_MAILER=resend
+RESEND_API_KEY=your-resend-api-key
+MAIL_FROM_ADDRESS=noreply@your-verified-domain
 MAIL_FROM_NAME="PUP PRISM"
-
-# Option B: Amazon SES
-MAIL_MAILER=ses
-MAIL_FROM_ADDRESS=noreply@pup.edu.ph
-
-# Option C: Postmark
-MAIL_MAILER=postmark
-POSTMARK_TOKEN=your-token
 ```
 
-Also update `.env.example` to include a comment: `# In production: change to smtp, ses, or postmark`.
+For local smoke testing only, you may temporarily use:
+```ini
+MAIL_MAILER=resend
+MAIL_FROM_ADDRESS=onboarding@resend.dev
+```
+This only works when the recipient is the email address associated with your Resend account.
+
+Repo-side validation:
+- `resend/resend-php` is now a direct Composer dependency
+- `config/mail.php` already defines the `resend` transport
+- `config/services.php` already reads `RESEND_API_KEY`
+- `.env.example` now documents Resend as the intended production mailer
+
+> **Important:** The API key alone is not enough. Resend also requires a verified sender address/domain for `MAIL_FROM_ADDRESS`.
 
 **Effort:** 15–30 minutes  
-**Verified:** Yes — `.env.example` line 50 confirms `MAIL_MAILER=log`.
+**Verified:** Partially complete — Laravel is now sending successfully through Resend locally using `onboarding@resend.dev` to the account email allowed by Resend. Production env values and a real verified sender domain are still deployment tasks.
 
 ---
 
@@ -362,7 +117,7 @@ stdout_logfile=/path/to/storage/logs/queue-worker.log
 
 Alternatively, use Laravel Cloud or Laravel Forge which handle this automatically.
 
-> **Note:** With `QUEUE_CONNECTION=database`, ensure the `jobs` table exists (`php artisan queue:table` then migrate) before starting the worker.
+> **Note:** With `QUEUE_CONNECTION=database`, ensure the `jobs` table exists (this repo already includes `0001_01_01_000002_create_jobs_table.php`). Because `config/queue.php` uses `QUEUE_FAILED_DRIVER=database-uuids`, also create and migrate a failed-jobs table if it does not exist yet via `php artisan make:queue-failed-table --no-interaction` and `php artisan migrate --force`.
 
 **Effort:** 30 minutes (initial setup)  
 **Verified:** Yes — `routes/console.php:11-13` confirms scheduled command exists.
@@ -395,7 +150,7 @@ Alternatively, use Laravel Cloud or Laravel Forge which handle this automaticall
 
 **Risk:** Uploaded files (avatars, documents, signatures) will be inaccessible via HTTP, causing broken images and failed downloads.
 
-**Problem:** The symlink from `public/storage` → `storage/app/public` does not exist. Any publicly stored files will not be accessible via the web. The root `.gitignore` already ignores `/public/storage`, which is standard Laravel behavior.
+**Problem:** The symlink exists in this local workspace now, but every production host or fresh release still needs it created. If deployment automation skips this step, public files will break even though the repo itself looks correct.
 
 **Fix:**
 ```bash
@@ -405,52 +160,17 @@ php artisan storage:link
 On Windows with Laragon, ensure the command is run with appropriate privileges (symlink creation may require Administrator privileges).
 
 **Effort:** 1 minute  
-**Verified:** Yes — `public/` directory listing confirms no `storage` symlink exists.
-
----
-
-### P1.10 — Add admin dashboard test coverage
-
-**Location:** `tests/Feature/DashboardTest.php`
-
-**Risk:** PostgreSQL-specific syntax errors (like P0.1) and admin-only query regressions go undetected until production.
-
-**Problem:** The dashboard test creates a non-admin user, so the entire admin-specific block (alerts, low stock queries, asset status counts, and the `::int` PostgreSQL query) is NEVER executed in tests. A SQL syntax error in this block would go undetected.
-
-**Fix:** Add a second test method for admin dashboard:
-```php
-test('admin users see dashboard data', function () {
-    $admin = User::factory()->create(['email_verified_at' => now()]);
-    $admin->assignRole('Admin');
-    $this->actingAs($admin);
-
-    // Create some test data
-    Product::factory()->consumable()->create(['reorder_threshold' => 10]);
-    ProductStock::factory()->create(['on_hand_qty' => 5, 'reserved_qty' => 0]);
-
-    $response = $this->get(route('dashboard'));
-    $response->assertOk();
-    $response->assertInertia(fn ($page) => $page
-        ->component('Dashboard')
-        ->has('alerts')
-        ->has('lowStock')
-        ->has('assetStatusCounts')
-    );
-});
-```
-
-**Effort:** 15 minutes  
-**Verified:** Yes — `DashboardTest.php` contains only 2 tests, neither with Admin role.
+**Verified:** Yes — `public/storage` exists locally now; keep this as a deployment/provisioning step, not a repo-side gap.
 
 ---
 
 ### P1.11 — Set `APP_NAME` and application identity
 
-**Location:** `.env:1` — `APP_NAME=Laravel`
+**Location:** production `.env`, `.env.example`, `README.md`
 
 **Risk:** Unprofessional branding, confusing email subjects, and potential cookie-name collisions if multiple Laravel apps share a domain.
 
-**Problem:** The application name is still the default "Laravel" placeholder. This affects email subject lines (`MAIL_FROM_NAME`), document titles (via `config('app.name')`), and cookie names (Laravel hashes `APP_NAME` into cookie prefixes).
+**Problem:** The repo defaults are already corrected, but production must still be checked so the deployed app does not keep an outdated or machine-specific value.
 
 **Fix:** Update `.env` and `.env.example`:
 ```ini
@@ -460,33 +180,7 @@ APP_NAME="PUP PRISM"
 > **Warning:** Do not use an excessively long name (e.g., "PUP Property & Resource Inventory System Management"). Laravel hashes `APP_NAME` into cookie and cache key prefixes; very long names can cause cookie truncation issues and clutter cache keys. Keep it concise.
 
 **Effort:** 1 minute  
-**Verified:** Yes — `.env.example` line 1 confirmed.
-
----
-
-### P1.12 — Update `composer.json` package identity
-
-**Location:** `composer.json:3` — `"name": "laravel/vue-starter-kit"`
-
-**Risk:** Confusion in package management, dependency resolution, and developer onboarding; incorrect PHP version constraint may block updates or allow incompatible environments.
-
-**Problem:** The `composer.json` still has the default starter kit package name `"laravel/vue-starter-kit"`. Additionally, the PHP requirement is `"^8.3"`, but the codebase uses PHP 8.4-specific features (e.g., constructor property promotion with `new` in initializers, typed class constants if any). Running this on PHP 8.3 would fail if 8.4 features are actually used. The AGENTS.md explicitly lists PHP 8.4 as the target version.
-
-**Fix:** Update `composer.json`:
-```json
-{
-    "name": "pup/prism",
-    "require": {
-        "php": "^8.4",
-        ...
-    }
-}
-```
-
-Run `composer validate` after editing to ensure the file is valid JSON.
-
-**Effort:** 2 minutes  
-**Verified:** Yes — `composer.json` lines 3 and 12 confirmed.
+**Verified:** Partially complete — `.env.example` and `README.md` are correct; confirm the production host uses the same value.
 
 ---
 
@@ -496,30 +190,17 @@ Run `composer validate` after editing to ensure the file is valid JSON.
 
 **Risk:** Mixed-content warnings, insecure cookie transmission, and session hijacking on shared networks.
 
-**Problem:** `AppServiceProvider::boot()` does not call `URL::forceScheme('https')` for production environments. This means if the app is deployed behind an HTTPS-terminated load balancer or reverse proxy, Laravel may generate `http://` URLs for redirects, asset links, and signed URLs. Additionally, `.env.example` sets `APP_URL=http://localhost` with no comment about production HTTPS.
+**Problem:** The code-side fix is already in place, but production can still generate bad links if `APP_URL` is not set to the real HTTPS domain or if the reverse proxy headers are wrong.
 
-**Fix:** Add to `AppServiceProvider::boot()`:
-```php
-use Illuminate\Support\Facades\URL;
-
-public function boot(): void
-{
-    $this->configureDefaults();
-
-    if (app()->isProduction()) {
-        URL::forceScheme('https');
-    }
-}
-```
-
-And update `.env.example`:
+**Fix:** Keep the existing code fix, then set the production environment correctly:
 ```ini
-# In production: use your HTTPS domain
-APP_URL=http://localhost
+APP_URL=https://your-real-domain
 ```
+
+Also ensure the reverse proxy forwards `X-Forwarded-Proto` and related HTTPS headers correctly.
 
 **Effort:** 3 minutes  
-**Verified:** Yes — `AppServiceProvider.php` reviewed; no `URL::forceScheme` found.
+**Verified:** Partially complete — `URL::forceScheme('https')` is already in `AppServiceProvider` and `.env.example` already warns about HTTPS, but production `APP_URL` and proxy behavior still need deployment validation.
 
 ---
 
@@ -529,9 +210,9 @@ APP_URL=http://localhost
 
 **Risk:** Slower response times, higher memory usage, and unnecessary file system reads in production.
 
-**Problem:** The deployment checklist in P1.1 does not mention Laravel's production optimization commands. Without these, every request re-reads config files, route definitions, and Blade views from disk. The `composer.json` `setup` script includes `npm run build` but does not include `php artisan optimize`.
+**Problem:** The README deployment checklist already mentions `php artisan optimize`, but the actual deployment workflow is still easy to skip because it is not enforced in server automation or explicitly validated in staging. Without these caches, every request re-reads config files, route definitions, and compiled views from disk.
 
-**Fix:** Add these steps to the deployment checklist (and to `composer.json` `setup` script if appropriate):
+**Fix:** Keep these steps in the deployment checklist and add them to the actual server automation if that is not done yet:
 ```bash
 # After composer install and migrations, but BEFORE marking the deploy live:
 php artisan config:cache
@@ -553,7 +234,188 @@ opcache.validate_timestamps=0   # in production; use 1 only during development
 > **Warning:** Running `php artisan config:cache` will fail if the `.env` file contains non-ASCII characters or syntax errors. Always test `php artisan config:cache` in staging first.
 
 **Effort:** 10 minutes  
-**Verified:** Yes — `composer.json` `setup` script reviewed; no optimization commands present.
+**Verified:** Yes — `README.md` already mentions `php artisan optimize`, but `composer.json` and server automation do not enforce or validate it.
+
+---
+
+## Part 1 And Part 2 Delivery Summary
+
+### Executive Summary
+
+The purpose of this production-readiness plan is to move PUP PRISM from a working development/UAT setup into a deployment that is secure, operable, and predictable under real user traffic. Part 1 focuses on critical code, security, and data-safety corrections, while Part 2 focuses on the production services and runtime behaviors that make the application function correctly after deployment.
+
+### Priority-Based Roadmap
+
+**Before first production deployment**
+- All previously identified P0 repo-side items are now implemented; keep them validated in CI and code review.
+- Complete Part 2 server/runtime essentials: real mailer, persistent queue worker, scheduler trigger, `public/storage` link, HTTPS configuration, and deployment optimization commands.
+- Keep admin dashboard coverage in place so database-specific regressions are caught before release.
+
+**During final staging rehearsal**
+- Verify production-like `.env` values, queue processing, scheduled commands, signed URLs, public files, and cache optimization in a staging environment.
+- Confirm failed job storage and worker restart behavior before cutover.
+
+**After production launch**
+- Continue with the remaining P3 and Future items such as enums, API Resources, frontend/build quality improvements, and broader operational polish.
+
+### Detailed Implementation Plan
+
+#### Part 2.1 — Configure a production mailer
+- Problem: `MAIL_MAILER=log` only writes messages to logs, so real users never receive password reset, email verification, or handover verification notifications.
+- Risk if not fixed: account recovery fails, email verification stalls onboarding, and handover recipients miss action-required notifications.
+- Recommended solution: keep `log` locally, but set production to `resend`, with `resend/resend-php`, `RESEND_API_KEY`, and a verified sender domain.
+- Files or server configuration to update: `.env`, `.env.example`, DNS records for the chosen provider, and provider secrets in the deployment platform.
+- Step-by-step implementation:
+  1. Choose one production provider.
+  2. Add the provider credentials to production `.env`.
+  3. Set `MAIL_FROM_ADDRESS` and `MAIL_FROM_NAME`.
+  4. Send a staging test email for reset-password, verification, and handover flows.
+- Testing or verification steps: run the related feature tests, then manually trigger forgot-password, verification resend, and handover initiation in staging and confirm real inbox delivery.
+- Deployment notes: Resend requires both the API key and a verified sender identity; do not treat the API key as sufficient by itself.
+- Possible side effects: switching providers can expose SPF/DKIM/DMARC misconfiguration, throttling, or spam-folder delivery issues.
+- Rollback plan: revert `MAIL_MAILER` to the previous working provider, clear config cache, and temporarily use `log` only if production mail must be disabled during incident response.
+
+#### Part 2.2 — Configure a production queue worker
+- Problem: `queue:listen` in `composer dev` is for development feedback loops, not for resilient production job execution.
+- Risk if not fixed: queued mail and background jobs may never run, may block web requests, or may fail without retry visibility.
+- Recommended solution: use `queue:work` under Supervisor, Forge, Laravel Cloud, systemd, or another persistent process manager.
+- Files or server configuration to update: production `.env`, process-manager config, and database migrations for `jobs` plus `failed_jobs`.
+- Step-by-step implementation:
+  1. Keep `QUEUE_CONNECTION=database` unless a different driver is intentionally chosen.
+  2. Confirm the `jobs` table is migrated.
+  3. Create a failed-jobs migration with `php artisan make:queue-failed-table --no-interaction` if the table is missing, then migrate.
+  4. Run `php artisan queue:work --sleep=3 --tries=3 --max-time=3600`.
+  5. Register the worker in Supervisor, Forge, Cloud, or systemd with autorestart enabled.
+  6. Run `php artisan queue:restart` during each deploy so daemonized workers reload new code.
+- Testing or verification steps: dispatch a known queued job in staging, stop and restart the worker once, and confirm failed jobs land in `failed_jobs` and can be retried.
+- Deployment notes: worker concurrency and retry settings should match the server size and the job mix; long-running jobs may need custom `timeout`, `tries`, or `backoff`.
+- Possible side effects: more retries can duplicate side effects if jobs are not idempotent; too many workers can overload a small database-backed queue.
+- Rollback plan: stop the worker, revert to the prior queue config, clear cached config, and restart the old worker definition.
+
+#### Part 2.3 — Set up Laravel scheduler cron
+- Problem: Laravel schedules are definitions only; nothing runs until the host triggers `php artisan schedule:run` every minute.
+- Risk if not fixed: daily inventory alert generation and any future scheduled tasks simply never execute.
+- Recommended solution: configure a single system scheduler entry that runs every minute.
+- Files or server configuration to update: Linux crontab or Windows Task Scheduler / Laragon task configuration.
+- Step-by-step implementation:
+  1. On Linux, add `* * * * * cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1`.
+  2. On Windows or Laragon, create a Task Scheduler job that runs the same command every minute.
+  3. Confirm the job runs under a user that can access the project and PHP binary.
+- Testing or verification steps: run `php artisan schedule:run` manually once, then watch logs or database changes after the scheduled minute window.
+- Deployment notes: only one scheduler trigger is needed per deployed app instance unless a clustered scheduler strategy is intentionally designed.
+- Possible side effects: duplicate scheduler triggers across multiple servers can run the same command more than once unless overlap protections are used.
+- Rollback plan: disable the cron or scheduled task entry and run the affected Artisan commands manually until the scheduler is repaired.
+
+#### Part 2.4 — Create the public storage symlink
+- Problem: files stored on the `public` disk resolve through `/storage`, which depends on the `public/storage` link on every deployed host.
+- Risk if not fixed: uploaded avatars, documents, QR assets, signatures, and other public files return 404s or broken images.
+- Recommended solution: run `php artisan storage:link` during provisioning or deployment.
+- Files or server configuration to update: filesystem on the target host plus any deployment script that provisions a new server.
+- Step-by-step implementation:
+  1. Verify `public/storage` is absent or incorrect.
+  2. Run `php artisan storage:link`.
+  3. Confirm the target points to `storage/app/public`.
+- Testing or verification steps: upload or expose a known public file and request it over HTTP.
+- Deployment notes: on Windows, creating symlinks may require elevated privileges or developer mode; some hosts use junctions instead.
+- Possible side effects: if `public/storage` already exists as a real directory, the command may fail until the incorrect path is removed.
+- Rollback plan: remove the created link and restore the previous filesystem state if it was pointing to the wrong target.
+
+#### Part 2.5 — Keep admin dashboard coverage in CI
+- Problem: the critical admin-only dashboard queries are now covered, but that coverage only helps if it stays in the deployment pipeline.
+- Risk if not fixed: future regressions in admin-only dashboard queries can re-enter if the targeted tests stop running in CI.
+- Recommended solution: keep the focused dashboard test in the normal pre-deploy test suite.
+- Files or server configuration to update: CI pipeline / deployment verification steps.
+- Step-by-step implementation:
+  1. Keep `tests/Feature/DashboardTest.php` in the regular test run.
+  2. Fail the deployment pipeline if the dashboard feature test fails.
+- Testing or verification steps: run `php artisan test --compact tests/Feature/DashboardTest.php`.
+- Deployment notes: this is already implemented in the repo; the remaining task is operational discipline.
+- Possible side effects: none beyond catching real regressions earlier.
+- Rollback plan: do not remove the test unless it is proven incorrect; fix the regression instead.
+
+#### Part 2.6 — Force HTTPS and update `APP_URL` in production
+- Problem: without HTTPS-aware URL generation, Laravel can emit `http://` redirects or signed links in HTTPS environments.
+- Risk if not fixed: mixed-content issues, broken signed URLs, incorrect password-reset links, insecure cookies, and confusing redirect behavior behind proxies.
+- Recommended solution: set production `APP_URL` to the real HTTPS domain and call `URL::forceScheme('https')` in production.
+- Files or server configuration to update: `app/Providers/AppServiceProvider.php`, `.env.example`, production `.env`, and reverse-proxy headers on the web server or load balancer.
+- Step-by-step implementation:
+  1. Set `APP_URL=https://your-real-domain`.
+  2. Force the HTTPS scheme in production code.
+  3. Ensure the reverse proxy forwards HTTPS headers correctly.
+  4. Keep `SESSION_SECURE_COOKIE=true` in HTTPS production.
+- Testing or verification steps: confirm login redirects, password reset links, verification links, storage URLs, and signed handover URLs all use HTTPS in staging.
+- Deployment notes: reverse proxy deployments must preserve `X-Forwarded-Proto` and related headers so request security is detected correctly.
+- Possible side effects: forcing HTTPS in an HTTP-only environment breaks local or temporary non-TLS access, so keep the behavior production-only.
+- Rollback plan: remove or disable the forced scheme change, restore the prior `APP_URL`, clear config cache, and retest URL generation.
+
+#### Part 2.7 — Add production optimization commands to deployment
+- Problem: production can run without config, route, view, and event caches, but it will pay unnecessary filesystem and bootstrap overhead.
+- Risk if not fixed: slower requests, more disk reads, and avoidable runtime overhead.
+- Recommended solution: add `php artisan optimize` or the discrete cache commands to the deployment flow, and keep PHP OPcache enabled.
+- Files or server configuration to update: deployment scripts, release checklist, process reload steps, and PHP runtime configuration for OPcache.
+- Step-by-step implementation:
+  1. Deploy code and environment variables.
+  2. Run migrations.
+  3. Run `php artisan optimize` or the discrete cache commands.
+  4. Reload PHP-FPM or the relevant PHP runtime if OPcache settings require it.
+  5. Restart queue workers so they boot with the new cached configuration.
+- Testing or verification steps: run the optimization commands in staging, confirm they succeed, browse key routes, and roll a worker restart.
+- Deployment notes: test optimization in staging first because config syntax issues or route serialization problems will fail the deploy.
+- Possible side effects: stale caches can keep old config or route behavior alive if workers or PHP processes are not reloaded.
+- Rollback plan: run `php artisan optimize:clear`, reload the PHP runtime, and redeploy with the last known-good build.
+
+### Testing And Verification Checklist
+
+- Automated tests:
+  - `php artisan test --compact tests/Feature/DashboardTest.php`
+  - Auth mail-flow feature tests already in `tests/Feature/Auth/*`
+- Manual checks:
+  - Forgot password email arrives in a real inbox.
+  - Verification email arrives and opens an HTTPS link.
+  - Handover initiation sends an email to the target user.
+  - A queued job is processed by the persistent worker.
+  - The daily inventory alert command can be triggered through the scheduler path.
+  - A known `public` disk file loads through `/storage/...`.
+- Deployment verification:
+  - `php artisan optimize` succeeds.
+  - `php artisan config:cache` succeeds with the production `.env`.
+  - `php artisan queue:restart` completes during deployment.
+  - Generated URLs and redirects stay on HTTPS.
+
+### Deployment Checklist
+
+- Environment variables:
+  - `APP_ENV=production`
+  - `APP_DEBUG=false`
+  - `APP_URL=https://your-real-domain`
+  - `MAIL_MAILER` plus provider credentials
+  - `QUEUE_CONNECTION=database`
+  - `SESSION_ENCRYPT=true`
+  - `SESSION_SECURE_COOKIE=true`
+- Services:
+  - Real mail provider configured
+  - Persistent queue worker configured
+  - Scheduler cron or task configured
+  - `public/storage` link created
+- Runtime:
+  - Config, route, view, and event caches built
+  - OPcache enabled
+  - Queue workers restarted after deploy
+- Documentation:
+  - `.env.example` reflects production-safe defaults and notes
+  - Deployment steps reference mail, queue, scheduler, storage, HTTPS, and optimization
+
+### Rollback Strategy
+
+- Keep infrastructure rollbacks separate from application-code rollbacks so mail, queue, and HTTPS changes can be reversed independently.
+- For config mistakes, restore the last known-good `.env`, run `php artisan optimize:clear`, then rebuild caches.
+- For queue issues, stop workers first, restore the previous worker definition, and restart with the old command.
+- For HTTPS regressions, revert the forced scheme change and proxy config together, then test redirects and signed URLs again.
+- For deployment-cache issues, clear optimized caches before assuming the code itself is broken.
+
+### Final Recommendation
+
+The safest order is: keep the resolved P0 fixes locked in with tests, then configure Resend, the queue worker, the scheduler, the per-server storage link step, HTTPS deployment values, and deployment optimization in staging before touching production. The quickest remaining wins are the Resend production env values, `APP_URL` / proxy verification, and deployment automation for `storage:link`; the higher-risk items are the server-managed queue worker, reverse-proxy HTTPS behavior, and mail-provider cutover because they depend on infrastructure outside the repo.
 
 ---
 
@@ -561,290 +423,16 @@ opcache.validate_timestamps=0   # in production; use 1 only during development
 
 These improvements are critical for long-term stability, security, and developer productivity.
 
-### P2.1 — Remove `inspire` default console command
-
-**Location:** `routes/console.php:7-9`
-
-**Risk:** Operational clutter — developers may confuse the boilerplate command with real functionality.
-
-**Problem:** The default Laravel boilerplate `inspire` command adds noise to `php artisan list`. It serves no purpose in this application.
-
-**Fix:** Delete lines 7-9 from `routes/console.php`, leaving only the scheduled command.
-
-**Effort:** 1 minute  
-**Verified:** Yes — lines 7-9 confirmed.
-
----
-
-### P2.2 — Consolidate test directory nesting
-
-**Location:** `tests/Feature/Feature/Inventory/` (5 files)
-
-**Risk:** Developer confusion, broken autoloading expectations, and tests that are easy to miss.
-
-**Problem:** Tests are split across two parallel directories:
-```
-tests/Feature/Inventory/           (4 files)
-tests/Feature/Feature/Inventory/   (5 files — WRONG)
-```
-The extra `Feature/` nesting is unintentional and confusing. It likely resulted from a copy-paste error during test generation.
-
-**Fix:** Move all 5 files from `tests/Feature/Feature/Inventory/*` to `tests/Feature/Inventory/`. Update namespaces from `Tests\Feature\Feature\Inventory` to `Tests\Feature\Inventory`. Delete the orphaned `tests/Feature/Feature/` directory.
-
-> **Files to move:**
-> - `AuditComplianceTest.php`
-> - `BookingAvailabilityTest.php`
-> - `HandoverVerificationTest.php`
-> - `RequisitionIssuanceTest.php`
-> - `UatSeederTest.php`
-
-**Effort:** 10 minutes  
-**Verified:** Yes — directory structure confirmed.
-
----
-
-### P2.3 — Replace hard `limit(200)` with pagination
-
-**Locations:**
-- `BookingController.php:41` — `Booking::query()->...->limit(200)` on bookings list
-- `BookingController.php:23-27` — `Asset::query()->...->get()` loads **all** assets with no limit
-- `HandoverController.php:28` — `User::query()->...->limit(200)` on user list
-- `HandoverController.php:52` — `HandoverLog::query()->...->limit(20)` on recent handovers
-
-**Risk:** Silent data loss in the UI — records become inaccessible as the dataset grows.
-
-**Problem:** Hard limits silently hide records as the system grows. After 200 bookings, the oldest ones disappear from the UI with no warning or navigation to view them. The assets list in `BookingController::index()` has **no limit at all**, which will cause severe performance degradation as the asset registry grows. The `limit(20)` on recent handovers is acceptable since it is explicitly labeled "recent."
-
-**Fix:**
-1. Replace `->limit(200)` on bookings with `->paginate(50)`.
-2. Add pagination or a reasonable limit to the assets query in `BookingController::index()`.
-3. For the handover user list, consider a search-as-you-type endpoint instead of loading 200 users:
-```php
-// Instead of limit(200)
-->when($request->filled('search'), function ($q, $search) {
-    $q->where('name', 'like', "%{$search}%");
-})
-->paginate(50)
-```
-
-**Effort:** 30–45 minutes  
-**Verified:** Yes — all 4 query locations confirmed.
-
----
-
-### P2.4 — Add requisition rejection feature
-
-**Locations:**
-- `routes/web.php` — no reject route exists
-- `RequisitionController.php` — no `reject()` method
-- `RequisitionPolicy.php` — no `reject()` method
-- `RequisitionApproveRequest.php` — only approve action allowed
-
-**Risk:** Users cannot stop unwanted requisitions, leading to inventory being issued for requests that should have been denied.
-
-**Problem:** The database schema allows `'Rejected'` as a valid requisition status (CHECK constraint includes it), but there is no controller action, route, or UI to reject a requisition. Once submitted, a requisition can only move forward (Approved → Issued). There is no way to formally reject a request. Note: **Booking rejection IS implemented** (`BookingController::update` handles both approve and reject actions), so this gap is specific to requisitions.
-
-**Fix:**
-1. Add `reject()` method to `RequisitionPolicy` (same role check as `approve()`)
-2. Add `reject()` method to `RequisitionController`
-3. Add route: `PUT /inventory/requisitions/{requisition}/reject`
-4. Update frontend to show Reject button for submitted requisitions (next to Approve)
-5. Consider adding a `rejected_at` timestamp and `rejected_by` fields to `Requisition` for full audit trail
-
-**Effort:** 1–2 hours  
-**Verified:** Yes — `RequisitionPolicy` and `routes/web.php` confirmed. Booking rejection confirmed as implemented.
-
----
-
-### P2.5 — Cache reference data
-
-**Locations:**
-- `ProductController.php:76-77` — categories + origins queried on every index
-- `ProductController.php:87-88` — categories + origins queried on every create
-- `ProductController.php:161-162` — categories + origins queried on every edit
-- `BookingController.php:23-27` — assets queried on every booking page
-- (and similar patterns in other controllers)
-
-**Risk:** Unnecessary database load and slower page response times.
-
-**Problem:** Categories, origins, and assets are near-static reference data that rarely changes but is queried from the database on every page load. There is zero caching anywhere in the application.
-
-**Fix:** Use `Cache::remember()` with a reasonable TTL:
-```php
-use Illuminate\Support\Facades\Cache;
-
-// In controller:
-$categories = Cache::remember('categories:all', 3600, fn () =>
-    Category::query()->orderBy('name')->get(['id', 'name'])
-);
-$origins = Cache::remember('origins:all', 3600, fn () =>
-    Origin::query()->orderBy('name')->get(['id', 'name'])
-);
-```
-
-Add a `Cache::forget()` call inside update/create controller actions to invalidate when data changes:
-```php
-Cache::forget('categories:all');
-```
-
-For the assets list in `BookingController`, caching is less appropriate since asset status changes frequently. Use pagination instead (see P2.3).
-
-**Effort:** 1 hour  
-**Verified:** Yes — all query locations confirmed.
-
----
-
-### P2.6 — Add missing feature tests (~10 gaps)
-
-**Critical gaps (should be done before P2.7):**
-
-| Feature | Route | Current Coverage | Status |
-|---|---|---|---|
-| Product show/edit/update/destroy | `products.show`, `.edit`, `.update`, `.destroy` | ❌ Not tested | Gap |
-| Booking index | `bookings.index` | ❌ Not tested | Gap |
-| Booking rejection (update) | `bookings.update` (reject action) | ❌ Not tested | Gap — feature exists in controller |
-| Handover index | `handover.index` | ❌ Not tested | Gap |
-| Handover verify GET page | `handover.verify` | ❌ Not tested | Gap |
-| Stock Movements index | `movements.index` | ❌ Not tested | Gap |
-| Requisition store/index/show | `requisitions.store`, `.index`, `.show` | ❌ Not tested | Gap |
-| Receiving index | `receiving.index` | ❌ Not tested | Gap |
-| Product label | `products.label` | Partially tested | `ProductLabelTest` exists but only covers authorization |
-| PDF receipt generation | `handover.receipt` | ❌ Not tested | Gap |
-
-> **Note:** Some test files exist for related functionality but do not cover the index/show endpoints:
-> - `BookingAvailabilityTest` covers booking overlap logic, not `index` or `update` rejection.
-> - `HandoverVerificationTest` covers store + verify POST, not `index` or verify GET page.
-> - `RequisitionIssuanceTest` covers the issue endpoint, not store/index/show.
-> - `ReceivingCheckoutTest` covers the store endpoint, not `receiving.index`.
-> - `ProductCrudTest` covers `products.index` and `products.store`, not show/edit/update/destroy.
-
-**Effort:** 4–6 hours total  
-**Verified:** Yes — all test files reviewed against route list.
-
----
-
-### P2.7 — Use orphaned factories in tests
-
-**Location:** `database/factories/` — several factories exist but are never directly used
-
-**Risk:** Bloated test suite with unused code; missed opportunities to simplify tests with factories.
-
-**Problem:** Several factories are never directly instantiated in tests, meaning test data is created manually with verbose `Model::create([...])` calls. However, **some factories ARE used**: `ProductStock::factory()` is used in `RequisitionIssuanceTest` and `ReceivingCheckoutTest`; `StockLot::factory()` is used in `RequisitionIssuanceTest`; `User::factory()->assignedPosition()` is used across multiple tests.
-
-**Truly unused factories:**
-| Factory | Created For | Never Used |
-|---|---|---|
-| `BookingFactory` | `Booking` model | ✓ |
-| `RequisitionFactory` | `Requisition` model | ✓ |
-| `RequisitionLineFactory` | `RequisitionLine` model | ✓ |
-| `HandoverLogFactory` | `HandoverLog` model | ✓ |
-| `StockMovementFactory` | `StockMovement` model | ✓ |
-| `DepartmentFactory` | `Department` model | ✓ |
-
-**Fix:** Replace manual model creation in tests with factory calls where possible. For example:
-```php
-// Instead of:
-$requisition = Requisition::create([
-    'requester_id' => $user->id,
-    'requester_position_id' => $position->id,
-    'status' => 'Submitted',
-    // ... 10+ more fields ...
-]);
-
-// Use:
-$requisition = Requisition::factory()->create([
-    'requester_id' => $user->id,
-    'requester_position_id' => $position->id,
-    'status' => 'Submitted',
-]);
-```
-
-**Effort:** 1–2 hours  
-**Verified:** Yes — grep confirms listed factories are never instantiated in tests.
-
----
-
-### P2.8 — Add unit tests for `InventoryService`
-
-**Location:** `app/Services/Inventory/InventoryService.php`
-
-**Risk:** Logic errors in core business operations (receiving, issuing) caught only in production or via slow feature tests.
-
-**Problem:** The core business logic (`receiveConsumable`, `receiveAssets`, `issueRequisition`) has no isolated unit tests. It is only tested indirectly through feature tests. Isolated unit tests would catch logic errors faster, run quicker, and be more maintainable.
-
-**Required test cases for `InventoryService`:**
-
-| Method | Test Cases |
-|---|---|
-| `receiveConsumable` | Creates stock lot with correct values. Upserts product stock (increment on_hand_qty). Creates StockMovement('receive'). Handles expiry dates. Handles null reference_no. Updates existing stock row instead of creating duplicate. |
-| `receiveAssets` | Creates Asset records for each tag code. Creates StockMovement per asset. Handles duplicate tag codes (should throw). |
-| `issueRequisition` | Throws if status is not 'Approved'. Throws if product is not consumable. Throws if insufficient stock. Allocates lots in FIFO/expiry-first order. Decrements stock lot correctly. Creates StockMovement entries. Updates requisition to 'Issued'. Uses pessimistic locking. Rollbacks on failure. |
-
-**Effort:** 2–3 hours  
-**Verified:** Yes — `InventoryService` has no dedicated test file.
-
----
-
-### P2.9 — Update `.env.example` to production-safe defaults
-
-**Location:** `.env.example`
-
-**Risk:** Production misconfiguration if `.env.example` is copied without understanding the implications.
-
-**Problem:** The example environment file has several settings that could be unsafe if copied directly to production:
-- `APP_DEBUG=true` — should be `false` for production
-- `APP_KEY=` — empty (doesn't hint that a key must be generated)
-- `DB_PASSWORD=` — empty (reasonable but no comment about it)
-- `SESSION_ENCRYPT=false` — should be `true`
-- `MAIL_MAILER=log` — should have a comment about production alternatives
-- `CACHE_STORE=database` — reasonable but no mention of Redis
-- `QUEUE_CONNECTION=database` — no mention of ensuring the `jobs` table exists
-
-**Fix:** Add comments explaining each setting and its production recommendation:
-```ini
-# In production: APP_DEBUG=false
-APP_DEBUG=true
-
-# Generate with: php artisan key:generate (REQUIRED for production)
-APP_KEY=
-
-# In production: use a strong password and restrict DB user permissions
-DB_PASSWORD=
-
-# In production: SESSION_ENCRYPT=true
-SESSION_ENCRYPT=false
-
-# In production: switch to smtp, ses, or postmark
-MAIL_MAILER=log
-
-# In production: switch to redis if available
-CACHE_STORE=database
-```
-
-**Effort:** 15 minutes  
-**Verified:** Yes — `.env.example` reviewed.
-
----
-
-### P2.10 — Add base64 size validation for `signature_png`
-
-**Location:** `app/Http/Controllers/Inventory/HandoverController.php:139-141`
-
-**Risk:** Denial of Service (DoS) via memory exhaustion — an attacker could submit a multi-megabyte base64 string as `signature_png`, causing PHP memory limits to be exceeded during validation, storage, or PDF generation.
-
-**Problem:** The `verify()` method validates `signature_png` as `['required', 'string']` with no maximum length or size constraint. Base64 encoding inflates binary data by ~33%, so a 5MB image becomes ~6.7MB of text. This is stored in the `handover_logs.signature_png` column (type `text`, which in PostgreSQL can hold up to 1GB). In addition to database bloat, the DomPDF receipt generation (`HandoverReceiptController`) loads this data into memory when rendering the receipt view.
-
-**Fix:** Add a maximum size validation rule. A reasonable signature PNG should be under 200KB (base64 ~267KB):
-```php
-$request->validate([
-    'signature_png' => ['required', 'string', 'max:300000'], // ~300KB base64 ≈ ~225KB binary
-]);
-```
-
-Also consider adding a client-side file size check in the Vue signature pad component.
-
-**Effort:** 5 minutes  
-**Verified:** Yes — `HandoverController.php:139-141` confirmed. `signature_png` column is `text` type with no length constraint.
+Completed and removed from the active backlog during this validation:
+- P2.1 — removed the default `inspire` command from `routes/console.php`
+- P2.2 — moved the misplaced inventory tests into `tests/Feature/Inventory/` and removed the orphaned nested directory
+- P2.3 — replaced the hard booking record cap with paginated booking records; booking asset and handover recipient selectors are now bounded and searchable while the clearly labeled recent handovers section intentionally remains limited
+- P2.4 — implemented requisition rejection end-to-end with route, controller, policy, validation, and Inertia UI support
+- P2.5 — cached product category/origin reference options with `Cache::remember()` and added cache invalidation on `Category`/`Origin` save and delete
+- P2.6 — added feature coverage for product show/edit, booking index/rejection, handover index/verify/receipt, requisition store/index/show/reject, stock movements index, receiving index, product label output, and related regressions
+- P2.7 — orphaned factories are now directly used in tests, including `BookingFactory`, `RequisitionFactory`, `HandoverLogFactory`, `StockMovementFactory`, and `DepartmentFactory`
+- P2.8 — added dedicated `InventoryService` tests covering consumable receiving, asset receiving, duplicate tags, expiry-first issuance, insufficient-stock rollback, and invalid-status guards
+- P2.10 — added `max:300000` server-side validation for `signature_png` plus a client-side signature-size guard in the handover verification page
 
 ---
 
@@ -1144,28 +732,6 @@ Route::prefix('inventory')->name('inventory.')->group(function () {
 
 ---
 
-### P3.9 — Document Wayfinder build requirement in deployment
-
-**Location:** `.gitignore` lines 9–11 + deployment documentation
-
-**Risk:** Deployment failures because generated route/action files are missing.
-
-**Problem:** The `.gitignore` excludes `/resources/js/actions`, `/resources/js/routes`, and `/resources/js/wayfinder` — these are auto-generated by the `@laravel/vite-plugin-wayfinder` Vite plugin during `npm run build`. If the production build pipeline skips `npm run build`, or if a developer clones the repo and runs `npm run dev` without first building, the frontend will fail to compile because the imported `@/actions` and `@/routes` files don't exist.
-
-**Fix:** Add to README / deployment checklist:
-```bash
-# After composer install, always build frontend assets
-npm ci
-npm run build
-```
-
-Also verify `vite.config.ts` includes the Wayfinder plugin (already confirmed present at line 24).
-
-**Effort:** 5 minutes  
-**Verified:** Yes — `.gitignore` lines 9–11 and `vite.config.ts:24` confirmed.
-
----
-
 ### P3.10 — Set application timezone to `Asia/Manila`
 
 **Location:** `config/app.php:68`
@@ -1304,15 +870,15 @@ These are valuable additions that significantly expand the system's capability.
 
 | Tier | Count | Items | Total Est. Effort |
 |---|---|---|---|
-| **P0 — Critical** | 5 | `::int` cast, `reserved_qty`, `SESSION_ENCRYPT`, `$appearance` cookie, `authorizeResource` | ~30 min |
-| **P1 — Required** | 14 | README, dead code, `.gitattributes`, logs isolation, `.env.testing`, mailer, queue, cron, storage link, admin test, app name, `composer.json`, HTTPS/timezone, production optimization | ~4–6 hours |
-| **P2 — Important** | 10 | `inspire`, test dirs, pagination, rejection flow, cache, test gaps, factories, unit tests, `.env.example`, `signature_png` validation | ~11–18 hours |
-| **P3 — Quality** | 10 | PHP enums, API Resources, ESLint, model casts, DB indices, Chart.js, cache headers, routes, Wayfinder build, timezone cleanup | ~9–15 hours |
+| **P0 — Critical** | 0 | Resolved and retained only as validated notes | complete |
+| **P1 — Required** | 7 | Resend mailer, queue worker, cron, storage link deployment step, app name verification, HTTPS deployment values, production optimization | ~2–4 hours plus server provisioning |
+| **P2 — Important** | 0 | Resolved and retained only as validated notes | complete |
+| **P3 — Quality** | 9 | PHP enums, API Resources, ESLint, model casts, DB indices, Chart.js, cache headers, routes, timezone cleanup | ~9–15 hours |
 | **Future** | 8 | E2E tests, exports, audit viewer, notifications, soft deletes, batch receiving, API, dashboard widgets | ~10–16 days |
 
-**Total items:** 47 improvements across 5 tiers  
-**Total estimated effort for production readiness (P0 + P1):** ~5–7 hours  
-**Total estimated effort for full maturity (P0–P3):** ~24–38 hours
+**Total active items:** 24 improvements across 5 tiers  
+**Total estimated effort for remaining production readiness (P1 only):** ~2–4 hours plus server provisioning and DNS / sender verification  
+**Total estimated effort for remaining full maturity (P1–P3):** ~11–19 hours
 
 ---
 
@@ -1320,23 +886,14 @@ These are valuable additions that significantly expand the system's capability.
 
 If you only have 2 hours, do these in order:
 
-- [ ] **P0.1** — Fix `::int` cast (2 min)
-- [ ] **P0.3** — Set `SESSION_ENCRYPT=true` (2 min)
-- [ ] **P0.4** — Secure `$appearance` cookie rendering (5 min)
-- [ ] **P1.2** — Delete 4 dead files (5 min)
-- [ ] **P1.4** — Harden `storage/logs` git isolation (2 min)
-- [ ] **P1.9** — Create storage symlink (1 min)
+- [ ] **P1.6** — Configure Resend production env values and verified sender (15–30 min + DNS/provider validation)
+- [ ] **P1.9** — Add `php artisan storage:link` to production provisioning / deploy automation (1 min)
 - [ ] **P1.11** — Set `APP_NAME` to "PUP PRISM" (1 min)
-- [ ] **P1.12** — Update `composer.json` name and PHP version (2 min)
-- [ ] **P1.13** — Force HTTPS and set timezone (3 min)
-- [ ] **P1.10** — Add admin dashboard test (15 min)
-- [ ] **P2.1** — Remove `inspire` command (1 min)
-- [ ] **P2.2** — Consolidate test directories (10 min)
-- [ ] **P2.3** — Replace `limit(200)` with pagination (30 min)
-- [ ] **P2.5** — Cache reference data (30 min)
-- [ ] **P2.6** — Add 2–3 critical missing tests (30 min)
+- [ ] **P1.13** — Set the real production `APP_URL` and validate proxy HTTPS headers (3 min)
+- [ ] **P1.7** — Configure a persistent queue worker (30 min)
+- [ ] **P1.8** — Configure the scheduler trigger (2 min)
 
-**Total for quick wins:** ~2.5 hours — addresses the most impactful issues first.
+**Total for quick wins:** ~1–2 hours plus any mail-provider verification time — addresses the highest-signal remaining deployment gaps first.
 
 ---
 
@@ -1346,3 +903,6 @@ If you only have 2 hours, do these in order:
 |---|---|
 | 2026-06-03 | **Verified** all items against actual codebase. Added `Risk` and `Verified` fields to every item. Corrected inaccuracies: P1.4 (logs not tracked by git), P3.1 (PHP 8.4 not 8.1), P3.4 (Booking already has casts; Product missing casts), Future.5 (no soft deletes exist), P1.11 (overly long APP_NAME warning). Added P0.5 (`authorizeResource` redundancy). Enhanced P2.3 (unlimited asset loading), P2.4 (booking rejection exists), P2.6 (nuanced test gap table), P2.7 (clarified used vs unused factories). Updated totals from 40 to 41 items. |
 | 2026-06-03 (2nd pass) | **Re-evaluated** against additional files (`AppServiceProvider`, `config/fortify.php`, `vite.config.ts`, `composer.json`, `HandoverController`). Added 6 new items: P1.12 (`composer.json` identity), P1.13 (HTTPS + timezone), P1.14 (production optimization), P2.10 (`signature_png` DoS), P3.9 (Wayfinder build requirement), P3.10 (timezone). Updated Summary counts and Quick-Win checklist. Total items: 47. |
+| 2026-06-03 (3rd pass) | **Validated** the repo again after the Resend integration pass. Installed `resend/resend-php`, aligned mail docs/config around Resend, removed stale completed backlog items (README, dead code, `.gitattributes`, log isolation, `.env.testing`, admin dashboard coverage, composer identity, `.env.example` and Wayfinder doc gaps), and recalculated the remaining active counts to 34. |
+| 2026-06-03 (4th pass) | **Resolved** P0.5 by removing redundant product route middleware and relying on `ProductPolicy` as the single authorization source for `ProductController`. Added a regression test for verified users without inventory roles and recalculated the remaining active counts to 33. |
+| 2026-06-03 (5th pass) | **Implemented** the remaining P2 sprint items: removed `inspire`, fixed nested inventory tests, added requisition rejection, bounded and paginated booking/handover data loading, cached product reference data with invalidation, expanded inventory feature coverage, added `InventoryService` tests, added `signature_png` size guards, updated the stale stock movement factory column, and reduced the remaining active counts to 24. |

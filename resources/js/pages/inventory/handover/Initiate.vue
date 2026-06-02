@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Form, Head, router } from '@inertiajs/vue3';
+import { ref, watch } from 'vue';
 import HandoverController from '@/actions/App/Http/Controllers/Inventory/HandoverController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -32,12 +32,15 @@ type RecentRow = {
     verified_at: string | null;
 };
 
-defineProps<{
+const assetTagCode = ref('');
+
+const props = defineProps<{
+    filters: { recipient_search: string };
     users: UserOption[];
     recent: RecentRow[];
 }>();
 
-const assetTagCode = ref('');
+const recipientSearch = ref(props.filters.recipient_search ?? '');
 
 defineOptions({
     layout: {
@@ -46,6 +49,24 @@ defineOptions({
             { title: 'Handover', href: handoverIndex() },
         ],
     },
+});
+
+let recipientSearchTimer: number | undefined;
+watch(recipientSearch, () => {
+    window.clearTimeout(recipientSearchTimer);
+    recipientSearchTimer = window.setTimeout(() => {
+        router.get(
+            handoverIndex().url,
+            {
+                recipient_search: recipientSearch.value || undefined,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            },
+        );
+    }, 250);
 });
 </script>
 
@@ -80,6 +101,14 @@ defineOptions({
                             required
                         />
                         <InputError :message="errors.asset_tag_code" />
+                    </div>
+
+                    <div class="grid gap-2">
+                        <Label for="recipient_search">Find recipient</Label>
+                        <Input id="recipient_search" v-model="recipientSearch" placeholder="Search by name or email" />
+                        <div class="text-sm text-muted-foreground">
+                            The selector loads up to 25 matching recipients at a time.
+                        </div>
                     </div>
 
                     <div class="grid gap-2">

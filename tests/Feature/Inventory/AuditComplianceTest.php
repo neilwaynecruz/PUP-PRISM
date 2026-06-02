@@ -17,9 +17,11 @@ beforeEach(function () {
     Role::findOrCreate('Property Custodian');
 });
 
-test('booking requests and approvals retain IP and position audit data', function () {
+test('booking requests and approvals retain ip and position audit data', function () {
     $requesterPosition = Position::factory()->create();
     $approverPosition = Position::factory()->create();
+    $storeToken = 'audit-booking-store-token';
+    $approveToken = 'audit-booking-approve-token';
 
     $requester = User::factory()->assignedPosition($requesterPosition)->create();
     $approver = User::factory()->assignedPosition($approverPosition)->create();
@@ -32,7 +34,9 @@ test('booking requests and approvals retain IP and position audit data', functio
     ]);
 
     $this->actingAs($requester)
+        ->withSession(['_token' => $storeToken])
         ->post(route('inventory.bookings.store', absolute: false), [
+            '_token' => $storeToken,
             'asset_id' => $asset->id,
             'start_at' => CarbonImmutable::now()->addDay()->setTime(9, 0)->toIso8601String(),
             'end_at' => CarbonImmutable::now()->addDay()->setTime(11, 0)->toIso8601String(),
@@ -45,7 +49,9 @@ test('booking requests and approvals retain IP and position audit data', functio
     expect($booking->requested_ip_address)->not->toBeNull();
 
     $this->actingAs($approver)
+        ->withSession(['_token' => $approveToken])
         ->put(route('inventory.bookings.update', $booking, absolute: false), [
+            '_token' => $approveToken,
             'action' => 'approve',
         ])
         ->assertRedirect();
@@ -70,7 +76,7 @@ test('handover receipt view states internal accountability wording', function ()
         'status' => 'Checked_Out',
     ]);
 
-    $handover = HandoverLog::query()->create([
+    $handover = HandoverLog::factory()->create([
         'asset_id' => $asset->id,
         'from_user_id' => $fromUser->id,
         'to_user_id' => $toUser->id,
