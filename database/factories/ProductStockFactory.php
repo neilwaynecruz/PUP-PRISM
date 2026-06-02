@@ -18,13 +18,9 @@ class ProductStockFactory extends Factory
      */
     public function definition(): array
     {
-        $onHand = fake()->numberBetween(0, 500);
-        $reserved = fake()->numberBetween(0, min(50, $onHand));
-
         return [
             'product_id' => Product::factory()->consumable(),
-            'on_hand_qty' => $onHand,
-            'reserved_qty' => $reserved,
+            'on_hand_qty' => fake()->numberBetween(0, 500),
         ];
     }
 }

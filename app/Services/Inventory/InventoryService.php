@@ -66,7 +66,7 @@ class InventoryService
 
             $stock = ProductStock::query()->firstOrCreate(
                 ['product_id' => $product->id],
-                ['on_hand_qty' => 0, 'reserved_qty' => 0],
+                ['on_hand_qty' => 0],
             );
 
             $stock->increment('on_hand_qty', $qty);

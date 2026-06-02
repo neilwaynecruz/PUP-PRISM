@@ -35,7 +35,7 @@ class ProductController extends Controller
             ->with([
                 'category:id,name',
                 'origin:id,name',
-                'stock:id,product_id,on_hand_qty,reserved_qty',
+                'stock:id,product_id,on_hand_qty',
             ])
             ->withCount('assets')
             ->when($search !== '', function ($query) use ($search) {
@@ -70,7 +70,6 @@ class ProductController extends Controller
                 'category' => $product->category?->name,
                 'origin' => $product->origin?->name,
                 'on_hand_qty' => $product->stock?->on_hand_qty,
-                'reserved_qty' => $product->stock?->reserved_qty,
                 'assets_count' => $product->assets_count,
             ]),
             'categories' => Category::query()->orderBy('name')->get(['id', 'name']),
@@ -108,7 +107,6 @@ class ProductController extends Controller
                 ProductStock::create([
                     'product_id' => $product->id,
                     'on_hand_qty' => 0,
-                    'reserved_qty' => 0,
                 ]);
             }
         });
@@ -123,7 +121,7 @@ class ProductController extends Controller
         $product->load([
             'category:id,name',
             'origin:id,name',
-            'stock:id,product_id,on_hand_qty,reserved_qty',
+            'stock:id,product_id,on_hand_qty',
         ])->loadCount('assets');
 
         return Inertia::render('inventory/products/Show', [
@@ -139,7 +137,6 @@ class ProductController extends Controller
                 'origin_id' => $product->origin_id,
                 'origin' => $product->origin?->name,
                 'on_hand_qty' => $product->stock?->on_hand_qty,
-                'reserved_qty' => $product->stock?->reserved_qty,
                 'assets_count' => $product->assets_count,
             ],
         ]);

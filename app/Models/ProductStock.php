@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['product_id', 'on_hand_qty', 'reserved_qty'])]
+#[Fillable(['product_id', 'on_hand_qty'])]
 class ProductStock extends Model
 {
     /** @use HasFactory<ProductStockFactory> */

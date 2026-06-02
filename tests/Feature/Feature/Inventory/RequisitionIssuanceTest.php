@@ -46,7 +46,7 @@ test('supply head can issue an approved requisition and records issue movements 
     $issuer->assignRole('Supply Head');
 
     $product = Product::factory()->consumable()->create(['sku' => 'SKU-ISSUE-001']);
-    ProductStock::factory()->create(['product_id' => $product->id, 'on_hand_qty' => 10, 'reserved_qty' => 0]);
+    ProductStock::factory()->create(['product_id' => $product->id, 'on_hand_qty' => 10]);
 
     $lot = StockLot::factory()->create([
         'product_id' => $product->id,

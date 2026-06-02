@@ -18,7 +18,6 @@ type ProductRow = {
     category: string | null;
     origin: string | null;
     on_hand_qty: number | null;
-    reserved_qty: number | null;
     assets_count: number;
 };
 

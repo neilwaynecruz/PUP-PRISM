@@ -67,37 +67,37 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->middleware('role:Admin|Supply Head')
             ->name('requisitions.issue');
 
-        Route::get('products', [ProductController::class, 'index'])
-            ->middleware('role:Admin|Supply Head|Property Custodian')
-            ->name('products.index');
+        // Per-action authorization for ProductController is enforced by
+        // ProductPolicy via authorizeResource(). This coarse gate only keeps
+        // users with no inventory role out early; the policy is the single
+        // source of truth for which role may perform each action.
+        Route::middleware('role:Admin|Supply Head|Property Custodian')->group(function () {
+            Route::get('products', [ProductController::class, 'index'])
+                ->name('products.index');
 
-        Route::get('products/create', [ProductController::class, 'create'])
-            ->middleware('role:Admin|Supply Head')
-            ->name('products.create');
+            Route::get('products/create', [ProductController::class, 'create'])
+                ->name('products.create');
 
-        Route::post('products', [ProductController::class, 'store'])
-            ->middleware('role:Admin|Supply Head')
-            ->name('products.store');
+            Route::post('products', [ProductController::class, 'store'])
+                ->name('products.store');
 
-        Route::get('products/{product}', [ProductController::class, 'show'])
-            ->middleware('role:Admin|Supply Head|Property Custodian')
-            ->name('products.show');
+            Route::get('products/{product}', [ProductController::class, 'show'])
+                ->name('products.show');
 
+            Route::get('products/{product}/edit', [ProductController::class, 'edit'])
+                ->name('products.edit');
+
+            Route::put('products/{product}', [ProductController::class, 'update'])
+                ->name('products.update');
+
+            Route::delete('products/{product}', [ProductController::class, 'destroy'])
+                ->name('products.destroy');
+        });
+
+        // Not part of ProductController/authorizeResource, so it keeps its own guard.
         Route::get('products/{product}/label', [ProductLabelController::class, 'show'])
             ->middleware('role:Admin|Supply Head')
             ->name('products.label');
-
-        Route::get('products/{product}/edit', [ProductController::class, 'edit'])
-            ->middleware('role:Admin|Supply Head')
-            ->name('products.edit');
-
-        Route::put('products/{product}', [ProductController::class, 'update'])
-            ->middleware('role:Admin|Supply Head')
-            ->name('products.update');
-
-        Route::delete('products/{product}', [ProductController::class, 'destroy'])
-            ->middleware('role:Admin')
-            ->name('products.destroy');
 
         Route::get('receiving', [ReceivingController::class, 'index'])
             ->middleware('role:Admin|Supply Head')

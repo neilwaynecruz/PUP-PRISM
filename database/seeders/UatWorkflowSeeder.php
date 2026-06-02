@@ -146,11 +146,11 @@ class UatWorkflowSeeder extends Seeder
 
         ProductStock::query()
             ->where('product_id', $products['CON-BAT-AA']->id)
-            ->update(['on_hand_qty' => 39, 'reserved_qty' => 0]);
+            ->update(['on_hand_qty' => 39]);
 
         ProductStock::query()
             ->where('product_id', $products['CON-DISINF-01']->id)
-            ->update(['on_hand_qty' => 16, 'reserved_qty' => 0]);
+            ->update(['on_hand_qty' => 16]);
 
         StockLot::query()
             ->where('product_id', $products['CON-BAT-AA']->id)
