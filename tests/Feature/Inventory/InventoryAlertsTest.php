@@ -15,7 +15,6 @@ test('alerts command generates low stock and expiring alerts', function () {
     ProductStock::factory()->create([
         'product_id' => $product->id,
         'on_hand_qty' => 5,
-        'reserved_qty' => 0,
     ]);
 
     StockLot::factory()->create([

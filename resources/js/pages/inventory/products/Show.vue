@@ -16,7 +16,6 @@ type Product = {
     origin_id: number | null;
     origin: string | null;
     on_hand_qty: number | null;
-    reserved_qty: number | null;
     assets_count: number;
 };
 
@@ -90,10 +89,7 @@ defineOptions({
                 class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
             >
                 <div class="text-sm text-muted-foreground">Stock</div>
-                <div class="mt-1 font-medium">
-                    On hand: {{ product.on_hand_qty ?? 0 }} • Reserved:
-                    {{ product.reserved_qty ?? 0 }}
-                </div>
+                <div class="mt-1 font-medium">On hand: {{ product.on_hand_qty ?? 0 }}</div>
             </div>
 
             <div

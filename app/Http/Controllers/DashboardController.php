@@ -43,10 +43,10 @@ class DashboardController extends Controller
 
             $assetStatusCounts = Asset::query()
                 ->whereIn('status', ['Unserviceable', 'Condemned'])
-                ->select('status', DB::raw('COUNT(*)::int as aggregate'))
+                ->select('status', DB::raw('CAST(COUNT(*) AS INTEGER) as aggregate'))
                 ->groupBy('status')
                 ->pluck('aggregate', 'status')
-                ->merge(['Unserviceable' => 0, 'Condemned' => 0])
+                ->union(['Unserviceable' => 0, 'Condemned' => 0])
                 ->toArray();
 
             $unserviceableAssets = Asset::query()

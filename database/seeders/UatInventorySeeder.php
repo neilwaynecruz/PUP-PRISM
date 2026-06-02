@@ -189,7 +189,7 @@ class UatInventorySeeder extends Seeder
 
             ProductStock::query()->updateOrCreate(
                 ['product_id' => $product->id],
-                ['on_hand_qty' => $definition['on_hand_qty'], 'reserved_qty' => 0],
+                ['on_hand_qty' => $definition['on_hand_qty']],
             );
 
             foreach ($definition['lots'] as $index => $lotDefinition) {
