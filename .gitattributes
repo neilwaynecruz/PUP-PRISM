@@ -9,3 +9,13 @@
 CHANGELOG.md export-ignore
 README.md export-ignore
 .github/workflows/browser-tests.yml export-ignore
+
+# Production archives should not include development-only files
+/.editorconfig export-ignore
+/pint.json export-ignore
+/phpunit.xml export-ignore
+/tests export-ignore
+/.github export-ignore
+/.vscode export-ignore
+/.fleet export-ignore
+/.idea export-ignore
