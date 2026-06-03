@@ -3,7 +3,7 @@
 > **Purpose:** A comprehensive, prioritized roadmap to take this project from its current state to production-grade quality.
 > **Classification:** Each item is tagged with a priority level, risk severity, and estimated effort.
 > **Total items:** 47 improvements across 5 priority tiers.
-> **Last verified against codebase:** 2026-06-03
+> **Last verified against codebase:** 2026-06-04
 
 ---
 
@@ -19,6 +19,186 @@ Each item includes:
 - **Risk:** The business/technical impact if left unaddressed.
 - **Effort:** Estimated time for a developer familiar with the codebase.
 - **Verified:** Whether the claim has been checked against the actual source code.
+
+---
+
+## Completed / Implemented Improvements
+
+These enhancements were previously listed under **Future** and have been fully implemented and verified against the codebase.
+
+### Future.1 — Browser-Based E2E Testing
+
+**Status:** Implemented
+
+**Description:** Added Playwright-based E2E testing covering authentication, product management, stock receiving, requisitions, asset handovers, and bookings. Tests use stable selectors and run against the local development server.
+
+**Implemented In:**
+- `playwright.config.ts`
+- `tests/e2e/auth.spec.ts`
+- `tests/e2e/products.spec.ts`
+- `tests/e2e/receiving.spec.ts`
+- `tests/e2e/requisitions.spec.ts`
+- `tests/e2e/handover.spec.ts`
+- `tests/e2e/bookings.spec.ts`
+- `tests/e2e/helpers/db.ts`
+- `tests/e2e/fixtures/auth.ts`
+- `tests/e2e/fixtures/test.ts`
+
+**Notes:** All 7 Playwright test suites pass. Run with `npx playwright test`.
+
+---
+
+### Future.2 — Export Functionality (CSV/PDF Reports)
+
+**Status:** Implemented
+
+**Description:** Added comprehensive report exports for product inventory, stock movement audits, asset conditions, booking schedules, and requisition histories. Supports both CSV and PDF formats with role-based access control.
+
+**Implemented In:**
+- `app/Http/Controllers/Inventory/InventoryReportController.php`
+- `app/Services/Reports/ProductInventoryReportService.php`
+- `app/Services/Reports/StockMovementAuditReportService.php`
+- `app/Services/Reports/AssetConditionReportService.php`
+- `app/Services/Reports/BookingScheduleReportService.php`
+- `app/Services/Reports/RequisitionHistoryReportService.php`
+- `app/Services/Reports/CsvTableExporter.php`
+- `app/Services/Reports/PdfTableExporter.php`
+- `tests/Feature/Inventory/ReportExportTest.php`
+
+**Notes:** Exports include filtering parity with their respective index pages (type, search, status, date range).
+
+---
+
+### Future.3 — Activity Log / Audit Trail Viewer
+
+**Status:** Implemented
+
+**Description:** The stock movements index already provides a robust audit viewer with date range filters, user filters, action type (movement_type) filters, search, sorting, and CSV/PDF export.
+
+**Implemented In:**
+- `app/Http/Controllers/Inventory/StockMovementController.php`
+- `resources/js/pages/inventory/movements/Index.vue`
+- `app/Http/Resources/StockMovementResource.php`
+
+**Notes:** The `StockMovement` table serves as the canonical audit trail. The UI supports filtering by type, performed_by user, date range, and search terms.
+
+---
+
+### Future.4 — Email Notifications for Key Workflow Events
+
+**Status:** Implemented
+
+**Description:** Added email notifications for all major workflow events. `NotificationService` dispatches notifications through Laravel's notification channel, and all notification classes include mail delivery support.
+
+**Implemented In:**
+- `app/Services/NotificationService.php`
+- `app/Notifications/RequisitionSubmittedNotification.php`
+- `app/Notifications/RequisitionStatusChangedNotification.php`
+- `app/Notifications/BookingSubmittedNotification.php`
+- `app/Notifications/BookingStatusChangedNotification.php`
+- `app/Notifications/LowStockAlertNotification.php`
+- `app/Notifications/HandoverVerificationNotification.php`
+- `app/Http/Controllers/Inventory/RequisitionController.php`
+- `app/Http/Controllers/Inventory/BookingController.php`
+- `app/Http/Controllers/Inventory/HandoverController.php`
+- `app/Services/Inventory/InventoryService.php`
+- `tests/Feature/Notifications/WorkflowNotificationsTest.php`
+
+**Notes:** All events listed in the original plan are now covered: requisition submit/approve/issue/reject, booking request/approve/reject, low-stock alerts, and handover verification.
+
+---
+
+### Future.5 — Soft Deletes with Trash / Restore UI
+
+**Status:** Implemented
+
+**Description:** Added soft deletes with `deleted_by` tracking, optional deletion reason capture, per-model Trash pages, and a unified cross-model trash viewer with search and type filtering. Migrations, models, controllers, policies, routes, Vue pages, and comprehensive tests are all in place.
+
+**Implemented In:**
+- `database/migrations/2026_06_03_153000_add_soft_deletes_to_products_table.php`
+- `database/migrations/2026_06_03_153100_add_soft_deletes_to_bookings_table.php`
+- `database/migrations/2026_06_03_153200_add_soft_deletes_to_requisitions_table.php`
+- `database/migrations/2026_06_04_004356_add_deleted_by_and_reason_to_products_table.php`
+- `database/migrations/2026_06_04_004412_add_deleted_by_and_reason_to_bookings_table.php`
+- `database/migrations/2026_06_04_004413_add_deleted_by_and_reason_to_requisitions_table.php`
+- `app/Models/Product.php`
+- `app/Models/Booking.php`
+- `app/Models/Requisition.php`
+- `app/Http/Controllers/Inventory/ProductController.php`
+- `app/Http/Controllers/Inventory/BookingController.php`
+- `app/Http/Controllers/Inventory/RequisitionController.php`
+- `app/Http/Controllers/Inventory/TrashController.php`
+- `resources/js/pages/inventory/products/Trash.vue`
+- `resources/js/pages/inventory/bookings/Trash.vue`
+- `resources/js/pages/inventory/requisitions/Trash.vue`
+- `resources/js/pages/inventory/Trash.vue`
+- `resources/js/pages/inventory/products/Edit.vue`
+- `tests/Feature/Inventory/SoftDeletesTest.php`
+
+**Notes:** Deletion reason is captured via a Dialog on the product Edit page. The unified trash viewer at `/inventory/trash` shows deleted items from all three models with search and type filtering.
+
+---
+
+### Future.6 — Batch Operations for Stock Receiving
+
+**Status:** Implemented
+
+**Description:** Added batch receiving for both consumables and assets via a multi-line form. Supports mixed product types in a single submission with full validation.
+
+**Implemented In:**
+- `app/Http/Controllers/Inventory/ReceivingController.php` (`storeBatch`)
+- `app/Http/Requests/Inventory/BatchReceiveStockRequest.php`
+- `app/Services/Inventory/InventoryService.php` (`batchReceive`)
+- `resources/js/pages/inventory/receiving/Index.vue`
+- `tests/Feature/Inventory/BatchReceivingTest.php`
+
+**Notes:** Batch receiving validates each line independently and rolls back on validation failures.
+
+---
+
+### Future.7 — Webhook / API Endpoints for Integration
+
+**Status:** Implemented
+
+**Description:** Added secure REST API endpoints for external system integration using Laravel Sanctum token authentication, authorization policies, rate limiting, request validation, API Resources, pagination, and filtering.
+
+**Implemented In:**
+- `routes/api.php`
+- `app/Http/Controllers/Api/ProductController.php`
+- `app/Http/Controllers/Api/AssetController.php`
+- `app/Http/Controllers/Api/StockMovementController.php`
+- `app/Http/Controllers/Api/RequisitionController.php`
+- `app/Http/Requests/Api/StoreRequisitionRequest.php`
+- `app/Http/Resources/ProductResource.php`
+- `app/Http/Resources/AssetResource.php`
+- `app/Http/Resources/StockMovementResource.php`
+- `app/Http/Resources/RequisitionResource.php`
+- `app/Policies/AssetPolicy.php`
+- `app/Policies/StockMovementPolicy.php`
+- `app/Models/User.php` (`HasApiTokens`)
+- `config/auth.php` (sanctum guard)
+- `app/Providers/AppServiceProvider.php` (rate limiting)
+- `app/Providers/AuthServiceProvider.php`
+- `bootstrap/app.php`
+- `tests/Feature/Api/ApiIntegrationTest.php`
+
+**Notes:** Rate limit is 60 requests/minute. All endpoints return consistent JSON with proper HTTP status codes.
+
+---
+
+### Future.8 — Dashboard Widgets with Date-Range Filtering
+
+**Status:** Implemented
+
+**Description:** Added date-range filtering to the admin dashboard with receiving/issuing trend charts, requisition/booking/asset-condition summary widgets, and a cached query service. Supports preset ranges (today, this week, this month) and custom date pickers.
+
+**Implemented In:**
+- `app/Services/DashboardStatsService.php`
+- `app/Http/Controllers/DashboardController.php`
+- `resources/js/pages/Dashboard.vue`
+- `tests/Feature/DashboardTest.php`
+
+**Notes:** Stats are cached for 60 seconds per date range to reduce database load. Trend charts use Chart.js line charts. Summary widgets show counts by status.
 
 ---
 
@@ -453,112 +633,11 @@ Completed and removed from the active backlog during this validation:
 
 ---
 
-## Future — Enhancements (Next Major Iteration)
+## Remaining Planned Improvements
 
-These are valuable additions that significantly expand the system's capability.
+No remaining Future-tier enhancements are pending. All previously planned Future items have been fully implemented.
 
-### Future.1 — Add browser-based E2E testing
-
-**Rationale:** The current tests are all backend feature/integration tests. Critical user journeys (login → create product → receive stock → create requisition → approve → issue → verify stock movement) through the browser are never tested.
-
-**Recommended tools:** Laravel Dusk or Playwright (Playwright is preferred for modern SPA testing with Inertia)
-
-**Key journeys to cover:**
-1. User registration → email verification → login → dashboard view
-2. Product CRUD lifecycle (create → view → edit → delete)
-3. Stock receiving flow (receive consumable + asset)
-4. Requisition lifecycle (submit → approve → issue → verify stock decrement)
-5. Asset handover flow (initiate → verify → download receipt)
-6. Asset booking flow (request → approve → verify calendar display)
-
-**Effort:** 2–3 days
-
----
-
-### Future.2 — Add export functionality (CSV/Excel/PDF reports)
-
-**Rationale:** University property managers need to generate reports for audits. The current system has no export capabilities except for individual handover receipts.
-
-**Recommended exports:**
-1. Product inventory listing (CSV/PDF)
-2. Stock movement audit log (CSV/PDF)
-3. Unserviceable/condemned asset report (PDF)
-4. Booking schedule report (PDF)
-5. Requisition history report (PDF)
-
-**Effort:** 1–2 days
-
----
-
-### Future.3 — Implement activity log / audit trail viewer with search and filtering
-
-**Rationale:** The `StockMovement` table already contains a comprehensive audit trail, but the current UI (`inventory/movements/Index.vue`) only supports basic search. A robust audit viewer with date range filters, user filters, and action type filters would greatly improve accountability tracking.
-
-**Effort:** 1–2 days
-
----
-
-### Future.4 — Add email notifications for key workflow events
-
-**Rationale:** Currently, only the handover verification has an email notification. Key events should trigger notifications:
-
-| Event | Recipient | Purpose |
-|---|---|---|
-| Requisition submitted | Supply Head | Action required |
-| Requisition approved | Requester | Status update |
-| Requisition issued | Requester | Ready for pickup |
-| Requisition rejected | Requester | Status update |
-| Booking requested | Property Custodian | Action required |
-| Booking approved/rejected | Requester | Status update |
-| Product stock below reorder threshold | Supply Head | Inventory alert |
-
-**Effort:** 2–3 days
-
----
-
-### Future.5 — Implement soft deletes with trash / restore UI
-
-**Rationale:** The codebase contains no soft-delete functionality. `Product::delete()` performs a **hard delete** (confirmed: no `SoftDeletes` trait is used in any model). For a university property accountability system, accidental deletion of products, bookings, or requisitions is a significant data-loss risk. Implementing soft deletes with a "Trash" UI and full audit trail (who deleted, when, why) would align with accountability requirements.
-
-**Models to consider for soft deletes:**
-- `Product` — highest priority (master data)
-- `Booking` — medium priority (scheduling data)
-- `Requisition` — medium priority (transactional data)
-- `HandoverLog` — lower priority (already has verified_at audit)
-
-**Effort:** 2–3 days (includes migration, trait addition, policy updates, and Trash UI)
-
-> **Correction from original plan:** The original document incorrectly stated that `Product` already uses soft deletes. Verified: `SoftDeletes` trait is **not** present in any model. `ProductController::destroy` catches `QueryException` for hard-delete foreign key violations.
-
----
-
-### Future.6 — Add batch operations for stock receiving
-
-**Rationale:** The current `ReceivingController` accepts stock one SKU at a time. For bulk receiving events (e.g., a delivery of 50 items), this is inefficient. A batch receiving interface with a file upload (CSV) or multi-line form would greatly improve UX.
-
-**Effort:** 1 day
-
----
-
-### Future.7 — Implement webhook or API endpoints for integration
-
-**Rationale:** A REST API (even a limited one) would allow integration with PUP's existing systems (HRIS for employee data, Finance for procurement, etc.). Consider using Laravel's API routes with Sanctum token auth.
-
-**Suggested endpoints:**
-- `GET /api/products` — inventory listing
-- `GET /api/assets` — asset registry
-- `POST /api/requisitions` — submit requisition (for external systems)
-- `GET /api/stock-movements` — audit trail
-
-**Effort:** 2–3 days
-
----
-
-### Future.8 — Add dashboard widgets with date-range filtering
-
-**Rationale:** The current dashboard shows a static snapshot. Adding date-range pickers, trend charts (receiving/issuing over time), and exportable widgets would make it a true operations dashboard.
-
-**Effort:** 1–2 days
+The only remaining production-readiness work is in **P1 — Required**, which covers server/runtime configuration (mailer, queue worker, scheduler, storage link, HTTPS, optimization) rather than code changes.
 
 ---
 
@@ -570,11 +649,10 @@ These are valuable additions that significantly expand the system's capability.
 | **P1 — Required** | 7 | Resend mailer, queue worker, cron, storage link deployment step, app name verification, HTTPS deployment values, production optimization | ~2–4 hours plus server provisioning |
 | **P2 — Important** | 0 | Resolved and retained only as validated notes | complete |
 | **P3 — Quality** | 0 | Resolved and retained only as validated notes | complete |
-| **Future** | 8 | E2E tests, exports, audit viewer, notifications, soft deletes, batch receiving, API, dashboard widgets | ~10–16 days |
+| **Future** | 0 | All Future-tier enhancements fully implemented | complete |
 
-**Total active items:** 15 improvements across 5 tiers  
-**Total estimated effort for remaining production readiness (P1 only):** ~2–4 hours plus server provisioning and DNS / sender verification  
-**Total estimated effort for remaining full maturity (P1–P3):** ~2–4 hours plus server provisioning and DNS / sender verification
+**Total active items:** 7 improvements across 5 tiers (all P1 deployment tasks)  
+**Total estimated effort for remaining production readiness:** ~2–4 hours plus server provisioning and DNS / sender verification
 
 ---
 
@@ -606,3 +684,5 @@ If you only have 2 hours, do these in order:
 | 2026-06-03 (7th pass) | **Implemented** P3.2, P3.3, and P3.4 by extracting inventory prop shaping into dedicated API Resources and paginator-aware resource collections, re-enabling the stricter ESLint rules as warnings, replacing the remaining frontend `any` usage with concrete shared/auth and signature-pad types, adding the missing `Product::reorder_threshold` cast, and adding focused resource serialization tests. Verified with `php artisan test --compact` on the affected inventory/dashboard suites, `npx vue-tsc --noEmit`, and `npx eslint eslint.config.js resources/js` (warnings only for 21 existing single-word component names). Remaining active counts reduced to 20. |
 | 2026-06-03 (8th pass) | **Implemented** P3.5, P3.6, and P3.7 by adding a safe follow-up index migration for inventory query hotspots, replacing `chart.js/auto` with selective bar-chart registration on the dashboard, and applying short-lived private cache headers only to a safe whitelist of Inertia listing/dashboard routes. Verified with local migrate/rollback runs for the new migration, `npm run build`, `vendor/bin/pint --dirty --format agent`, and focused feature coverage for dashboard, product index, and cache-header exclusions. Remaining active counts reduced to 17. |
 | 2026-06-03 (9th pass) | **Implemented** P3.8 and P3.10 by consolidating repeated inventory route middleware into shared groups without changing the effective role guards, adding focused authorization regression coverage, and switching the application timezone to `APP_TIMEZONE` with an `Asia/Manila` default documented in `.env.example` and applied locally in `.env`. Verified with `php artisan route:list -v --path=inventory --except-vendor`, `php artisan config:clear`, `php artisan config:show app.timezone`, focused Pest coverage, `npm run lint:check` (warnings only), `npm run types:check`, and `npm run build`. Remaining active counts reduced to 15. |
+| 2026-06-04 | **Implemented** all remaining Future-tier items: Future.1 (Playwright E2E testing, 7 suites passing), Future.2 (CSV/PDF report exports for 5 report types with role-based access), Future.3 (stock movement audit viewer with date/user/type filters and export), Future.4 (email notifications for all 7 workflow events via `NotificationService`), Future.6 (batch stock receiving with multi-line form and validation), Future.7 (Sanctum-authenticated REST API with rate limiting, policies, and comprehensive tests), Future.8 (dashboard widgets with date-range filtering, trend charts, and cached query service). Added completed items to new "Completed / Implemented Improvements" section. Reclassified Future.5 (soft deletes) as Partially Implemented — migrations, models, controllers, Trash UI, and tests exist, but `deleted_by` tracking and deletion reasons remain pending. Updated Summary counts: Future reduced from 8 to 1, total active items from 15 to 8. Verified with `php artisan test --compact` (143 passed), `npm run build` (successful), and `npx playwright test` (7 passed). |
+| 2026-06-04 (2nd pass) | **Completed** Future.5 (soft deletes) by adding `deleted_by` and `deletion_reason` columns via follow-up migrations for `products`, `bookings`, and `requisitions`; adding `deletedBy` relationships to all three models; updating `destroy()` and `trash()` actions in all three controllers to track and display the deleter and reason; adding a deletion-reason Dialog to the product Edit page; enriching per-model Trash Vue pages with "Deleted by" and "Reason" columns; creating a unified cross-model trash viewer (`TrashController` + `inventory/Trash.vue`) with search and type filtering at `/inventory/trash`; and expanding `SoftDeletesTest` with `deleted_by` tracking, deletion reason, and unified trash viewer coverage. Moved Future.5 from Partially Implemented to Completed. Updated Summary counts: Future reduced from 1 to 0, total active items from 8 to 7. Verified with `php artisan test --compact` (149 passed, 741 assertions) and `npm run build` (successful). |

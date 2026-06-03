@@ -158,9 +158,12 @@ class ProductController extends Controller
         return to_route('inventory.products.edit', $product);
     }
 
-    public function destroy(Product $product): RedirectResponse
+    public function destroy(Request $request, Product $product): RedirectResponse
     {
         try {
+            $product->deleted_by = $request->user()?->id;
+            $product->deletion_reason = $request->string('deletion_reason')->trim()->toString() ?: null;
+            $product->save();
             $product->delete();
         } catch (QueryException $e) {
             report($e);
@@ -173,7 +176,41 @@ class ProductController extends Controller
             return back();
         }
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Product deleted.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Product moved to trash.')]);
+
+        return to_route('inventory.products.index');
+    }
+
+    public function trash(Request $request): Response
+    {
+        $this->authorize('trash', Product::class);
+
+        $products = Product::query()
+            ->onlyTrashed()
+            ->with([
+                'category:id,name',
+                'origin:id,name',
+                'stock:id,product_id,on_hand_qty',
+                'deletedBy:id,name,email',
+            ])
+            ->orderByDesc('deleted_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('inventory/products/Trash', [
+            'products' => (new ProductCollection($products))->toArray($request),
+        ]);
+    }
+
+    public function restore(int $product): RedirectResponse
+    {
+        $product = Product::query()->withTrashed()->findOrFail($product);
+
+        $this->authorize('restore', $product);
+
+        $product->restore();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Product restored.')]);
 
         return to_route('inventory.products.index');
     }

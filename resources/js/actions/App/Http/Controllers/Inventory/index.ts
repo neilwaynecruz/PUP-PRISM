@@ -4,6 +4,7 @@ import RequisitionController from './RequisitionController'
 import InventoryReportController from './InventoryReportController'
 import ProductLabelController from './ProductLabelController'
 import ReceivingController from './ReceivingController'
+import TrashController from './TrashController'
 import StockMovementController from './StockMovementController'
 import ProductController from './ProductController'
 import HandoverVerificationController from './HandoverVerificationController'
@@ -15,6 +16,7 @@ RequisitionController: Object.assign(RequisitionController, RequisitionControlle
 InventoryReportController: Object.assign(InventoryReportController, InventoryReportController),
 ProductLabelController: Object.assign(ProductLabelController, ProductLabelController),
 ReceivingController: Object.assign(ReceivingController, ReceivingController),
+TrashController: Object.assign(TrashController, TrashController),
 StockMovementController: Object.assign(StockMovementController, StockMovementController),
 ProductController: Object.assign(ProductController, ProductController),
 HandoverVerificationController: Object.assign(HandoverVerificationController, HandoverVerificationController),

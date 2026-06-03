@@ -86,4 +86,14 @@ class RequisitionPolicy
 
         return $requisition->status === RequisitionStatus::Approved;
     }
+
+    public function trash(User $user): bool
+    {
+        return $user->hasAnyRole(['Admin', 'Supply Head']);
+    }
+
+    public function restore(User $user, Requisition $requisition): bool
+    {
+        return $user->hasAnyRole(['Admin', 'Supply Head']);
+    }
 }

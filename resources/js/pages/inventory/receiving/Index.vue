@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import ReceivingController from '@/actions/App/Http/Controllers/Inventory/ReceivingController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -15,6 +15,8 @@ defineOptions({
     },
 });
 
+const mode = ref<'single' | 'batch'>('single');
+
 const form = useForm({
     sku: '',
     qty: '' as string | number,
@@ -26,6 +28,20 @@ const form = useForm({
     notes: '',
 });
 
+type BatchLine = {
+    sku: string;
+    qty: string | number;
+    reference_no: string;
+    received_at: string;
+    expires_at: string;
+    tag_codes_text: string;
+    notes: string;
+};
+
+const batchForm = useForm({
+    lines: [{ sku: '', qty: '', reference_no: '', received_at: '', expires_at: '', tag_codes_text: '', notes: '' }] as BatchLine[],
+});
+
 const tagCodes = computed(() =>
     form.tag_codes_text
         .split(/\r?\n/)
@@ -33,7 +49,7 @@ const tagCodes = computed(() =>
         .filter(Boolean),
 );
 
-function submit() {
+function submitSingle() {
     router.post(
         ReceivingController.store().url,
         {
@@ -48,6 +64,43 @@ function submit() {
         {
             onStart: () => form.clearErrors(),
             onError: (errors) => form.setError(errors),
+            preserveScroll: true,
+        },
+    );
+}
+
+function addBatchLine() {
+    batchForm.lines.push({ sku: '', qty: '', reference_no: '', received_at: '', expires_at: '', tag_codes_text: '', notes: '' });
+}
+
+function removeBatchLine(index: number) {
+    if (batchForm.lines.length <= 1) {
+        return;
+    }
+    batchForm.lines.splice(index, 1);
+}
+
+function lineTagCodes(text: string): string[] {
+    return text.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+}
+
+function submitBatch() {
+    const lines = batchForm.lines.map((line) => ({
+        sku: line.sku,
+        qty: line.qty === '' ? null : Number(line.qty),
+        reference_no: line.reference_no || null,
+        received_at: line.received_at || null,
+        expires_at: line.expires_at || null,
+        tag_codes: lineTagCodes(line.tag_codes_text).length ? lineTagCodes(line.tag_codes_text) : null,
+        notes: line.notes || null,
+    }));
+
+    router.post(
+        ReceivingController.storeBatch().url,
+        { lines },
+        {
+            onStart: () => batchForm.clearErrors(),
+            onError: (errors) => batchForm.setError(errors),
             preserveScroll: true,
         },
     );
@@ -70,13 +123,38 @@ function appendTagCode(value: string): void {
     <Head title="Receiving" />
 
     <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="receiving-page">
-        <Heading
-            variant="small"
-            title="Receiving"
-            description="Log inbound deliveries for consumables and tagged assets. Camera scanning is optional, and manual entry always stays available."
-        />
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <Heading
+                variant="small"
+                title="Receiving"
+                description="Log inbound deliveries for consumables and tagged assets."
+            />
 
-                <form class="grid max-w-3xl gap-5" @submit.prevent="submit">
+            <div class="flex gap-1 rounded-lg border border-border/60 bg-card p-1">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="h-7 rounded-md text-xs"
+                    :class="mode === 'single' ? 'bg-primary/10 text-primary font-medium' : ''"
+                    @click="mode = 'single'"
+                >
+                    Single item
+                </Button>
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    class="h-7 rounded-md text-xs"
+                    :class="mode === 'batch' ? 'bg-primary/10 text-primary font-medium' : ''"
+                    @click="mode = 'batch'"
+                >
+                    Batch
+                </Button>
+            </div>
+        </div>
+
+        <form v-if="mode === 'single'" class="grid max-w-3xl gap-5" @submit.prevent="submitSingle">
             <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight">
                     <span class="inline-block h-1.5 w-1.5 rounded-full bg-primary/60" />
@@ -188,6 +266,72 @@ function appendTagCode(value: string): void {
                 <Button type="submit" :disabled="form.processing" data-test="receive-stock-button" data-testid="receive-stock-button" class="rounded-lg shadow-sm">
                     <span class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary-foreground/60" />Receive stock
                 </Button>
+            </div>
+        </form>
+
+        <form v-else class="flex flex-col gap-5" @submit.prevent="submitBatch">
+            <div class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-muted/40 text-left">
+                        <tr class="[&>th]:px-4 [&>th]:py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                            <th>SKU</th>
+                            <th>Qty</th>
+                            <th>Ref no.</th>
+                            <th>Received</th>
+                            <th>Expires</th>
+                            <th>Tags</th>
+                            <th>Notes</th>
+                            <th />
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border/60">
+                        <tr
+                            v-for="(line, i) in batchForm.lines"
+                            :key="i"
+                            class="[&>td]:px-4 [&>td]:py-2"
+                        >
+                            <td><Input v-model="line.sku" placeholder="SKU" class="h-8 rounded-lg text-xs" /></td>
+                            <td><Input v-model="line.qty" type="number" min="1" placeholder="Qty" class="h-8 rounded-lg text-xs" /></td>
+                            <td><Input v-model="line.reference_no" placeholder="Ref" class="h-8 rounded-lg text-xs" /></td>
+                            <td><Input v-model="line.received_at" type="datetime-local" class="h-8 rounded-lg text-xs" /></td>
+                            <td><Input v-model="line.expires_at" type="date" class="h-8 rounded-lg text-xs" /></td>
+                            <td>
+                                <textarea
+                                    v-model="line.tag_codes_text"
+                                    class="min-h-16 w-32 rounded-lg border border-input bg-background px-2 py-1 text-xs transition-colors focus:border-ring focus:outline-none"
+                                    placeholder="One per line"
+                                />
+                            </td>
+                            <td>
+                                <Input v-model="line.notes" placeholder="Notes" class="h-8 rounded-lg text-xs" />
+                            </td>
+                            <td>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="h-7 rounded-lg text-xs text-muted-foreground hover:text-rose-600"
+                                    @click="removeBatchLine(i)"
+                                >
+                                    Remove
+                                </Button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <Button type="button" variant="outline" size="sm" class="rounded-lg" @click="addBatchLine">
+                    + Add line
+                </Button>
+                <Button type="submit" :disabled="batchForm.processing" class="rounded-lg shadow-sm">
+                    <span class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary-foreground/60" />Receive batch
+                </Button>
+            </div>
+
+            <div v-if="batchForm.errors.lines" class="text-sm text-destructive">
+                <InputError :message="batchForm.errors.lines" />
             </div>
         </form>
     </div>

@@ -8,6 +8,7 @@ use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\BookingApproveRequest;
 use App\Http\Requests\Inventory\BookingStoreRequest;
+use App\Services\NotificationService;
 use App\Http\Resources\AssetResource;
 use App\Http\Resources\BookingCollection;
 use App\Http\Resources\BookingResource;
@@ -23,6 +24,9 @@ use Inertia\Response;
 
 class BookingController extends Controller
 {
+    public function __construct(
+        private readonly NotificationService $notifications,
+    ) {}
     public function index(Request $request): Response
     {
         $currentUser = Auth::user();
@@ -125,7 +129,7 @@ class BookingController extends Controller
                 ->withInput();
         }
 
-        Booking::create([
+        $booking = Booking::create([
             'asset_id' => $validated['asset_id'],
             'requester_id' => $request->user()->id,
             'requester_position_id' => $request->user()->position_id,
@@ -138,6 +142,8 @@ class BookingController extends Controller
             'status' => BookingStatus::Requested,
             'purpose' => $validated['purpose'] ?? null,
         ]);
+
+        $this->notifications->bookingSubmitted($booking);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking request submitted.')]);
 
@@ -157,6 +163,8 @@ class BookingController extends Controller
                 'approver_position_id' => $request->user()->position_id,
                 'approved_ip_address' => $request->ip(),
             ]);
+
+            $this->notifications->bookingStatusChanged($booking, 'approved');
         } else {
             $booking->update([
                 'status' => BookingStatus::Rejected,
@@ -164,9 +172,61 @@ class BookingController extends Controller
                 'approver_position_id' => $request->user()->position_id,
                 'approved_ip_address' => $request->ip(),
             ]);
+
+            $this->notifications->bookingStatusChanged($booking, 'rejected');
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking updated.')]);
+
+        return back();
+    }
+
+    public function destroy(Request $request, Booking $booking): RedirectResponse
+    {
+        $this->authorize('delete', $booking);
+
+        $booking->deleted_by = $request->user()?->id;
+        $booking->deletion_reason = $request->string('deletion_reason')->trim()->toString() ?: null;
+        $booking->save();
+        $booking->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking moved to trash.')]);
+
+        return back();
+    }
+
+    public function trash(Request $request): Response
+    {
+        $this->authorize('trash', Booking::class);
+
+        $bookings = Booking::query()
+            ->onlyTrashed()
+            ->with([
+                'asset:id,product_id,position_id,tag_code',
+                'asset.product:id,name',
+                'requester:id,name,email,position_id',
+                'requesterPosition:id,department_id,title',
+                'requesterPosition.department:id,name',
+                'deletedBy:id,name,email',
+            ])
+            ->orderByDesc('deleted_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('inventory/bookings/Trash', [
+            'bookings' => (new BookingCollection($bookings))->toArray($request),
+        ]);
+    }
+
+    public function restore(int $booking): RedirectResponse
+    {
+        $booking = Booking::query()->withTrashed()->findOrFail($booking);
+
+        $this->authorize('restore', $booking);
+
+        $booking->restore();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking restored.')]);
 
         return back();
     }

@@ -31,6 +31,11 @@ class BookingResource extends InertiaJsonResource
                 : null,
             'requested_ip_address' => $this->requested_ip_address,
             'approved_ip_address' => $this->approved_ip_address,
+            'deleted_at' => $this->deleted_at?->toIso8601String(),
+            'deleted_by' => $this->relationLoaded('deletedBy') && $this->deletedBy
+                ? (new UserResource($this->deletedBy))->resolve($request)
+                : null,
+            'deletion_reason' => $this->deletion_reason,
         ];
     }
 

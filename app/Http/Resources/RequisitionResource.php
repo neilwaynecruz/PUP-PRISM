@@ -37,6 +37,11 @@ class RequisitionResource extends InertiaJsonResource
                 : null,
             'issued_position' => $this->positionSummary('issuedPosition'),
             'lines' => $this->lineItems(),
+            'deleted_at' => $this->deleted_at?->toIso8601String(),
+            'deleted_by' => $this->relationLoaded('deletedBy') && $this->deletedBy
+                ? (new UserResource($this->deletedBy))->resolve($request)
+                : null,
+            'deletion_reason' => $this->deletion_reason,
         ];
     }
 

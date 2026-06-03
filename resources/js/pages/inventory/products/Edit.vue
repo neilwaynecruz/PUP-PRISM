@@ -1,9 +1,20 @@
 <script setup lang="ts">
 import { Form, Head, Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import ProductController from '@/actions/App/Http/Controllers/Inventory/ProductController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { index as productsIndex, show as productsShow } from '@/routes/inventory/products';
@@ -40,12 +51,17 @@ defineOptions({
     },
 });
 
-function deleteProduct(productId: number): void {
-    if (! window.confirm('Delete this product? This action cannot be undone.')) {
-        return;
-    }
+const reason = ref('');
+const dialogOpen = ref(false);
 
-    router.delete(ProductController.destroy(productId).url);
+function confirmDelete(): void {
+    router.delete(ProductController.destroy(props.product.id).url, {
+        data: { deletion_reason: reason.value },
+        onSuccess: () => {
+            reason.value = '';
+            dialogOpen.value = false;
+        },
+    });
 }
 </script>
 
@@ -155,15 +171,46 @@ function deleteProduct(productId: number): void {
                 <Button variant="ghost" as-child>
                     <Link :href="productsIndex()">Back to list</Link>
                 </Button>
-                <Button
-                    v-if="can.delete"
-                    type="button"
-                    variant="destructive"
-                    data-testid="delete-product-button"
-                    @click="deleteProduct(product.id)"
-                >
-                    Delete
-                </Button>
+                <Dialog v-if="can.delete" v-model:open="dialogOpen">
+                    <DialogTrigger as-child>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            data-testid="delete-product-button"
+                        >
+                            Delete
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader class="space-y-3">
+                            <DialogTitle>Move product to trash?</DialogTitle>
+                            <DialogDescription>
+                                This product will be moved to trash and can be restored later. You may optionally provide a reason for deletion.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div class="grid gap-2">
+                            <Label for="deletion_reason">Reason (optional)</Label>
+                            <textarea
+                                id="deletion_reason"
+                                v-model="reason"
+                                placeholder="Enter a reason for deletion..."
+                                rows="3"
+                                class="min-h-[80px] rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                        </div>
+                        <DialogFooter class="gap-2">
+                            <DialogClose as-child>
+                                <Button variant="secondary" @click="reason = ''">Cancel</Button>
+                            </DialogClose>
+                            <Button
+                                variant="destructive"
+                                @click="confirmDelete"
+                            >
+                                Move to trash
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
                 <Button :disabled="processing" data-test="save-product-button" data-testid="save-product-button">Save</Button>
             </div>
         </Form>

@@ -13,6 +13,9 @@ class StockMovementAuditReportService extends AbstractTableReportService
     {
         $type = $request->string('type')->trim()->toString();
         $search = $request->string('search')->trim()->toString();
+        $dateFrom = $request->string('date_from')->trim()->toString();
+        $dateTo = $request->string('date_to')->trim()->toString();
+        $performedBy = $request->string('performed_by')->trim()->toString();
 
         $query = StockMovement::query()
             ->with([
@@ -24,14 +27,25 @@ class StockMovementAuditReportService extends AbstractTableReportService
                 'accountablePosition.department:id,name',
             ])
             ->when($type !== '', fn ($builder) => $builder->where('movement_type', $type))
+            ->when($dateFrom !== '', fn ($builder) => $builder->whereDate('performed_at', '>=', $dateFrom))
+            ->when($dateTo !== '', fn ($builder) => $builder->whereDate('performed_at', '<=', $dateTo))
+            ->when($performedBy !== '', fn ($builder) => $builder->where('performed_by', $performedBy))
             ->when($search !== '', function ($builder) use ($search) {
                 $builder->where(function ($builder) use ($search) {
                     $builder->whereHas('product', function ($builder) use ($search) {
                         $builder->where('sku', 'like', "%{$search}%")
                             ->orWhere('name', 'like', "%{$search}%");
-                    })->orWhereHas('asset', function ($builder) use ($search) {
-                        $builder->where('tag_code', 'like', "%{$search}%");
-                    });
+                    })
+                        ->orWhereHas('asset', function ($builder) use ($search) {
+                            $builder->where('tag_code', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('stockLot', function ($builder) use ($search) {
+                            $builder->where('reference_no', 'like', "%{$search}%");
+                        })
+                        ->orWhereHas('performedBy', function ($builder) use ($search) {
+                            $builder->where('name', 'like', "%{$search}%");
+                        })
+                        ->orWhere('notes', 'like', "%{$search}%");
                 });
             })
             ->orderByDesc('performed_at');
@@ -67,6 +81,9 @@ class StockMovementAuditReportService extends AbstractTableReportService
             filters: $this->normalizeFilters([
                 'Movement type' => $type,
                 'Search' => $search,
+                'Date from' => $dateFrom,
+                'Date to' => $dateTo,
+                'Performed by' => $performedBy,
             ]),
             columns: [
                 'performed_at' => 'Performed at',

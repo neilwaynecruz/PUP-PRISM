@@ -211,6 +211,84 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     
     store.form = storeForm
 /**
+* @see \App\Http\Controllers\Inventory\ProductController::trash
+ * @see app/Http/Controllers/Inventory/ProductController.php:184
+ * @route '/inventory/products/trash'
+ */
+export const trash = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: trash.url(options),
+    method: 'get',
+})
+
+trash.definition = {
+    methods: ["get","head"],
+    url: '/inventory/products/trash',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Inventory\ProductController::trash
+ * @see app/Http/Controllers/Inventory/ProductController.php:184
+ * @route '/inventory/products/trash'
+ */
+trash.url = (options?: RouteQueryOptions) => {
+    return trash.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Inventory\ProductController::trash
+ * @see app/Http/Controllers/Inventory/ProductController.php:184
+ * @route '/inventory/products/trash'
+ */
+trash.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: trash.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Inventory\ProductController::trash
+ * @see app/Http/Controllers/Inventory/ProductController.php:184
+ * @route '/inventory/products/trash'
+ */
+trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: trash.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Inventory\ProductController::trash
+ * @see app/Http/Controllers/Inventory/ProductController.php:184
+ * @route '/inventory/products/trash'
+ */
+    const trashForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: trash.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\ProductController::trash
+ * @see app/Http/Controllers/Inventory/ProductController.php:184
+ * @route '/inventory/products/trash'
+ */
+        trashForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: trash.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Inventory\ProductController::trash
+ * @see app/Http/Controllers/Inventory/ProductController.php:184
+ * @route '/inventory/products/trash'
+ */
+        trashForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: trash.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    trash.form = trashForm
+/**
 * @see \App\Http\Controllers\Inventory\ProductController::show
  * @see app/Http/Controllers/Inventory/ProductController.php:123
  * @route '/inventory/products/{product}'
@@ -592,6 +670,90 @@ destroy.delete = (args: { product: number | { id: number } } | [product: number 
         })
     
     destroy.form = destroyForm
-const ProductController = { index, create, store, show, edit, update, destroy }
+/**
+* @see \App\Http\Controllers\Inventory\ProductController::restore
+ * @see app/Http/Controllers/Inventory/ProductController.php:205
+ * @route '/inventory/products/{product}/restore'
+ */
+export const restore = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: restore.url(args, options),
+    method: 'put',
+})
+
+restore.definition = {
+    methods: ["put"],
+    url: '/inventory/products/{product}/restore',
+} satisfies RouteDefinition<["put"]>
+
+/**
+* @see \App\Http\Controllers\Inventory\ProductController::restore
+ * @see app/Http/Controllers/Inventory/ProductController.php:205
+ * @route '/inventory/products/{product}/restore'
+ */
+restore.url = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { product: args }
+    }
+
+    
+    if (Array.isArray(args)) {
+        args = {
+                    product: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        product: args.product,
+                }
+
+    return restore.definition.url
+            .replace('{product}', parsedArgs.product.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Inventory\ProductController::restore
+ * @see app/Http/Controllers/Inventory/ProductController.php:205
+ * @route '/inventory/products/{product}/restore'
+ */
+restore.put = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+    url: restore.url(args, options),
+    method: 'put',
+})
+
+    /**
+* @see \App\Http\Controllers\Inventory\ProductController::restore
+ * @see app/Http/Controllers/Inventory/ProductController.php:205
+ * @route '/inventory/products/{product}/restore'
+ */
+    const restoreForm = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: restore.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\ProductController::restore
+ * @see app/Http/Controllers/Inventory/ProductController.php:205
+ * @route '/inventory/products/{product}/restore'
+ */
+        restoreForm.put = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: restore.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    restore.form = restoreForm
+const ProductController = { index, create, store, trash, show, edit, update, destroy, restore }
 
 export default ProductController

@@ -15,6 +15,7 @@ use App\Models\Requisition;
 use App\Models\RequisitionLine;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
+use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,9 @@ use Inertia\Response;
 
 class RequisitionController extends Controller
 {
+    public function __construct(
+        private readonly NotificationService $notifications,
+    ) {}
     public function index(Request $request): Response
     {
         $requisitions = Requisition::query()
@@ -79,7 +83,7 @@ class RequisitionController extends Controller
     {
         $validated = $request->validated();
 
-        DB::transaction(function () use ($request, $validated): void {
+        $requisition = DB::transaction(function () use ($request, $validated): Requisition {
             $requisition = Requisition::create([
                 'requester_id' => $request->user()->id,
                 'requester_position_id' => $request->user()->position_id,
@@ -106,7 +110,11 @@ class RequisitionController extends Controller
                     'qty_issued' => 0,
                 ]);
             }
+
+            return $requisition;
         });
+
+        $this->notifications->requisitionSubmitted($requisition);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition submitted.')]);
 
@@ -125,6 +133,8 @@ class RequisitionController extends Controller
             'approved_at' => CarbonImmutable::now(),
             'notes' => $request->validated()['notes'] ?? $requisition->notes,
         ]);
+
+        $this->notifications->requisitionStatusChanged($requisition, 'approved');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition approved.')]);
 
@@ -145,6 +155,8 @@ class RequisitionController extends Controller
                 : "{$existingNotes}\n\nRejection reason: {$reason}",
         ]);
 
+        $this->notifications->requisitionStatusChanged($requisition, 'rejected');
+
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition rejected.')]);
 
         return back();
@@ -164,7 +176,58 @@ class RequisitionController extends Controller
             ipAddress: $request->ip(),
         );
 
+        $requisition->refresh();
+        $this->notifications->requisitionStatusChanged($requisition, 'issued');
+
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition issued.')]);
+
+        return back();
+    }
+
+    public function destroy(Request $request, Requisition $requisition): RedirectResponse
+    {
+        $this->authorize('delete', $requisition);
+
+        $requisition->deleted_by = $request->user()?->id;
+        $requisition->deletion_reason = $request->string('deletion_reason')->trim()->toString() ?: null;
+        $requisition->save();
+        $requisition->delete();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition moved to trash.')]);
+
+        return back();
+    }
+
+    public function trash(Request $request): Response
+    {
+        $this->authorize('trash', Requisition::class);
+
+        $requisitions = Requisition::query()
+            ->onlyTrashed()
+            ->with([
+                'requester:id,name,email',
+                'requesterPosition:id,department_id,title',
+                'requesterPosition.department:id,name',
+                'deletedBy:id,name,email',
+            ])
+            ->orderByDesc('deleted_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('inventory/requisitions/Trash', [
+            'requisitions' => (new RequisitionCollection($requisitions))->toArray($request),
+        ]);
+    }
+
+    public function restore(int $requisition): RedirectResponse
+    {
+        $requisition = Requisition::query()->withTrashed()->findOrFail($requisition);
+
+        $this->authorize('restore', $requisition);
+
+        $requisition->restore();
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition restored.')]);
 
         return back();
     }

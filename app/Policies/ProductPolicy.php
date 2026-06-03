@@ -46,4 +46,14 @@ class ProductPolicy
     {
         return $user->hasRole('Admin');
     }
+
+    public function trash(User $user): bool
+    {
+        return $user->hasRole('Admin');
+    }
+
+    public function restore(User $user, Product $product): bool
+    {
+        return $user->hasRole('Admin');
+    }
 }

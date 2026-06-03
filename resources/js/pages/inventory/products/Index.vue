@@ -105,6 +105,9 @@ watch([search, type, categoryId, originId, active], () => {
                         <span class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" />Export PDF
                     </a>
                 </Button>
+                <Button variant="outline" size="sm" as-child class="rounded-lg border-dashed">
+                    <Link href="/inventory/products/trash">Trash</Link>
+                </Button>
                 <Button v-if="can.create" as-child size="sm" data-test="new-product-button" data-testid="new-product-button" class="rounded-lg shadow-sm">
                     <Link :href="productsCreate()">New product</Link>
                 </Button>

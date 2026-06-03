@@ -11,6 +11,7 @@ use App\Http\Controllers\Inventory\ProductLabelController;
 use App\Http\Controllers\Inventory\ReceivingController;
 use App\Http\Controllers\Inventory\RequisitionController;
 use App\Http\Controllers\Inventory\StockMovementController;
+use App\Http\Controllers\Inventory\TrashController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -44,14 +45,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('bookings', [BookingController::class, 'store'])
                 ->name('bookings.store');
 
+            Route::delete('bookings/{booking}', [BookingController::class, 'destroy'])
+                ->name('bookings.destroy');
+
+            Route::get('bookings/trash', [BookingController::class, 'trash'])
+                ->name('bookings.trash');
+
+            Route::put('bookings/{booking}/restore', [BookingController::class, 'restore'])
+                ->name('bookings.restore');
+
             Route::get('requisitions', [RequisitionController::class, 'index'])
                 ->name('requisitions.index');
 
             Route::post('requisitions', [RequisitionController::class, 'store'])
                 ->name('requisitions.store');
 
+            Route::get('requisitions/trash', [RequisitionController::class, 'trash'])
+                ->name('requisitions.trash');
+
             Route::get('requisitions/{requisition}', [RequisitionController::class, 'show'])
                 ->name('requisitions.show');
+
+            Route::delete('requisitions/{requisition}', [RequisitionController::class, 'destroy'])
+                ->name('requisitions.destroy');
+
+            Route::put('requisitions/{requisition}/restore', [RequisitionController::class, 'restore'])
+                ->name('requisitions.restore');
 
             Route::get('reports/products/{format}', [InventoryReportController::class, 'products'])
                 ->whereIn('format', ['csv', 'pdf'])
@@ -85,9 +104,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::post('receiving', [ReceivingController::class, 'store'])
                 ->name('receiving.store');
+
+            Route::post('receiving/batch', [ReceivingController::class, 'storeBatch'])
+                ->name('receiving.batch');
         });
 
         Route::middleware('role:Admin')->group(function () {
+            Route::get('trash', TrashController::class)
+                ->name('trash');
+
             Route::get('movements', [StockMovementController::class, 'index'])
                 ->name('movements.index');
 
@@ -111,6 +136,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::post('products', [ProductController::class, 'store'])
             ->name('products.store');
 
+        Route::get('products/trash', [ProductController::class, 'trash'])
+            ->name('products.trash');
+
         Route::get('products/{product}', [ProductController::class, 'show'])
             ->name('products.show');
 
@@ -122,6 +150,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::delete('products/{product}', [ProductController::class, 'destroy'])
             ->name('products.destroy');
+
+        Route::put('products/{product}/restore', [ProductController::class, 'restore'])
+            ->name('products.restore');
     });
 });
 

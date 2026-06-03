@@ -60,6 +60,9 @@ const lines = computed(() => [
                 <Button variant="outline" as-child>
                     <a :href="exportUrls.pdf">Export PDF</a>
                 </Button>
+                <Button variant="outline" as-child>
+                    <Link href="/inventory/requisitions/trash">Trash</Link>
+                </Button>
             </div>
         </div>
 

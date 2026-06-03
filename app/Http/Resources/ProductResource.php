@@ -26,6 +26,11 @@ class ProductResource extends InertiaJsonResource
             'origin' => $this->relationLoaded('origin') ? $this->origin?->name : null,
             'on_hand_qty' => $this->relationLoaded('stock') ? $this->stock?->on_hand_qty : null,
             'assets_count' => isset($this->assets_count) ? (int) $this->assets_count : null,
+            'deleted_at' => $this->deleted_at?->toIso8601String(),
+            'deleted_by' => $this->relationLoaded('deletedBy') && $this->deletedBy
+                ? (new UserResource($this->deletedBy))->resolve($request)
+                : null,
+            'deletion_reason' => $this->deletion_reason,
         ];
     }
 }

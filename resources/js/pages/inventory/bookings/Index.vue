@@ -203,6 +203,9 @@ function applyScannedAsset(tagCode: string): void {
                 <Button variant="outline" size="sm" as-child class="rounded-lg border-dashed">
                     <a :href="props.exportUrls.pdf">Export PDF</a>
                 </Button>
+                <Button variant="outline" size="sm" as-child class="rounded-lg border-dashed">
+                    <Link href="/inventory/bookings/trash">Trash</Link>
+                </Button>
             </div>
         </div>
 

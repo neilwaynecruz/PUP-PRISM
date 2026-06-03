@@ -13,12 +13,16 @@ use App\Models\RequisitionLine;
 use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\User;
+use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class InventoryService
 {
+    public function __construct(
+        private readonly NotificationService $notifications,
+    ) {}
     public function receive(User $user, Product $product, array $payload, ?string $ipAddress = null): void
     {
         if ($product->type === ProductType::Consumable) {
@@ -123,6 +127,39 @@ class InventoryService
         });
     }
 
+    /**
+     * @param  array<int, array<string, mixed>>  $lines
+     */
+    public function batchReceive(User $user, array $lines, ?string $ipAddress = null): void
+    {
+        DB::transaction(function () use ($user, $lines, $ipAddress): void {
+            foreach ($lines as $line) {
+                $product = Product::query()->where('sku', $line['sku'])->firstOrFail();
+
+                if ($line['tag_codes'] !== null) {
+                    $this->receiveAssets(
+                        user: $user,
+                        product: $product,
+                        tagCodes: $line['tag_codes'],
+                        notes: $line['notes'] ?? null,
+                        ipAddress: $ipAddress,
+                    );
+                } else {
+                    $this->receiveConsumable(
+                        user: $user,
+                        product: $product,
+                        qty: $line['qty'],
+                        referenceNo: $line['reference_no'] ?? null,
+                        receivedAt: $line['received_at'] ?? null,
+                        expiresAt: $line['expires_at'] ?? null,
+                        notes: $line['notes'] ?? null,
+                        ipAddress: $ipAddress,
+                    );
+                }
+            }
+        });
+    }
+
     public function issueRequisition(User $user, Requisition $requisition, ?string $notes = null, ?string $ipAddress = null): void
     {
         DB::transaction(function () use ($user, $requisition, $notes, $ipAddress): void {
@@ -201,6 +238,15 @@ class InventoryService
                 $line->update([
                     'qty_issued' => $qty,
                 ]);
+
+                $freshStock = $stock->fresh();
+                if (
+                    $freshStock !== null
+                    && $product->reorder_threshold !== null
+                    && $freshStock->on_hand_qty <= $product->reorder_threshold
+                ) {
+                    $this->notifications->lowStockAlert($product, $freshStock->on_hand_qty);
+                }
             }
 
             $requisition->update([

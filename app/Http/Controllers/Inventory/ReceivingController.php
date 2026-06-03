@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inventory\BatchReceiveStockRequest;
 use App\Http\Requests\Inventory\ReceiveStockRequest;
 use App\Models\Product;
 use App\Services\Inventory\InventoryService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
@@ -40,6 +42,23 @@ class ReceivingController extends Controller
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Stock received.')]);
+
+        return back();
+    }
+
+    public function storeBatch(BatchReceiveStockRequest $request, InventoryService $inventory): RedirectResponse
+    {
+        try {
+            $lines = $request->validatedLines();
+
+            $inventory->batchReceive($request->user(), $lines, ipAddress: $request->ip());
+        } catch (RuntimeException $e) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
+
+            return back()->withInput();
+        }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Batch stock received.')]);
 
         return back();
     }
