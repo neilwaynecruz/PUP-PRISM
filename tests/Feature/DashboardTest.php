@@ -22,6 +22,22 @@ test('authenticated users can visit the dashboard', function () {
     $response->assertOk();
 });
 
+test('dashboard responses include short lived private cache headers', function () {
+    Role::findOrCreate('Admin');
+    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin->assignRole('Admin');
+
+    $response = $this->actingAs($admin)->get(route('dashboard'));
+
+    $response->assertOk();
+
+    $cacheControl = $response->headers->get('Cache-Control');
+
+    expect($cacheControl)
+        ->toContain('private')
+        ->toContain('max-age=30');
+});
+
 test('admin dashboard aggregates unserviceable and condemned asset counts', function () {
     Role::findOrCreate('Admin');
     $admin = User::factory()->create();

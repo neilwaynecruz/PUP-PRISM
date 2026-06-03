@@ -1,9 +1,26 @@
 <script setup lang="ts">
 import { Head, usePage } from '@inertiajs/vue3';
-import { Chart } from 'chart.js/auto';
+import {
+    BarController,
+    BarElement,
+    CategoryScale,
+    Chart,
+    Legend,
+    LinearScale,
+    Tooltip,
+} from 'chart.js';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { dashboard } from '@/routes';
+
+Chart.register(
+    BarController,
+    BarElement,
+    CategoryScale,
+    Legend,
+    LinearScale,
+    Tooltip,
+);
 
 type Alert = { id: number; type: string; message: string; detected_at: string };
 
@@ -30,7 +47,7 @@ const roles = computed<string[]>(() => page.props.auth.roles ?? []);
 const isAdmin = computed(() => roles.value.includes('Admin'));
 
 const assetStatusCanvas = ref<HTMLCanvasElement | null>(null);
-let assetStatusChart: Chart | null = null;
+let assetStatusChart: Chart<'bar', number[], string> | null = null;
 
 onMounted(() => {
     if (!isAdmin.value || !assetStatusCanvas.value) {

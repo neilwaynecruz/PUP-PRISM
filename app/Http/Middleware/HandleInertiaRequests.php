@@ -2,11 +2,25 @@
 
 namespace App\Http\Middleware;
 
+use Closure;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Symfony\Component\HttpFoundation\Response;
 
 class HandleInertiaRequests extends Middleware
 {
+    /**
+     * @var array<int, string>
+     */
+    private const CACHEABLE_ROUTE_NAMES = [
+        'dashboard',
+        'inventory.bookings.index',
+        'inventory.handover.index',
+        'inventory.movements.index',
+        'inventory.products.index',
+        'inventory.requisitions.index',
+    ];
+
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -15,6 +29,20 @@ class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    /**
+     * Handle the incoming request.
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        $response = parent::handle($request, $next);
+
+        if ($this->shouldCacheResponse($request, $response)) {
+            $response->headers->set('Cache-Control', 'private, max-age=30');
+        }
+
+        return $response;
+    }
 
     /**
      * Determines the current asset version.
@@ -44,5 +72,18 @@ class HandleInertiaRequests extends Middleware
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
+    }
+
+    private function shouldCacheResponse(Request $request, Response $response): bool
+    {
+        if (! $request->isMethod('GET')) {
+            return false;
+        }
+
+        if (! $response->isSuccessful()) {
+            return false;
+        }
+
+        return $request->routeIs(self::CACHEABLE_ROUTE_NAMES);
     }
 }

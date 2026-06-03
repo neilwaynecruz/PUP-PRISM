@@ -445,149 +445,11 @@ Completed and removed from the active backlog during this validation:
 - P3.2 — inventory prop transformations now live in dedicated resource classes and paginator-aware resource collections under `app/Http/Resources`; the inventory controllers are simpler, existing Inertia prop names and paginator keys were preserved, and focused serialization coverage now lives in `tests/Feature/Inventory/InventoryResourceTest.php`. The Settings controllers were reviewed and did not need resource extraction because they do not contain inline model collection mapping.
 - P3.3 — ESLint now warns on `vue/multi-word-component-names` and `@typescript-eslint/no-explicit-any`; the loose `usePage()` auth cast and signature-pad `any` usage were replaced with concrete types, `npx vue-tsc --noEmit` now passes, and the current ESLint output is down to the expected 21 single-word component warnings.
 - P3.4 — the remaining cast gap is resolved: `Product` now casts `reorder_threshold` to `integer`, while the existing enum, boolean, and datetime casts across the inventory models were re-verified against the current code paths and tests.
-
----
-
-### P3.5 — Add database indices for frequently queried columns
-
-**Locations:** Existing migrations
-
-**Risk:** Query performance degradation as data volume grows.
-
-**Problem:** While most foreign keys are indexed automatically by Laravel, some query patterns could benefit from additional indices:
-- `stock_movements.movement_type` — used in WHERE filters on audit log
-- `stock_movements.performed_by` — used in joins
-- `products.type` — used in WHERE filters (product listing)
-- `products.is_active` — used in WHERE filters
-- `products.name` — already indexed (confirmed in migration), but `sku` is not
-
-**Fix:** Create a new migration adding these indices:
-```php
-Schema::table('stock_movements', function (Blueprint $table) {
-    $table->index('movement_type');
-    $table->index('performed_by');
-});
-Schema::table('products', function (Blueprint $table) {
-    $table->index('type');
-    $table->index(['is_active', 'type']);
-    $table->index('sku');   // frequently searched in product lookups
-});
-```
-
-**Effort:** 15 minutes  
-**Verified:** Yes — `products` migration confirms `name` is indexed but `sku` is not. Foreign keys are indexed by Laravel convention.
-
----
-
-### P3.6 — Optimize Chart.js import
-
-**Location:** `resources/js/pages/Dashboard.vue:3`
-
-**Risk:** Unnecessary JavaScript bundle bloat (~60KB+ gzipped for unused chart types).
-
-**Problem:** The dashboard imports `chart.js/auto` which registers ALL chart types (bar, line, pie, doughnut, radar, polar area, bubble, scatter) at ~63KB gzipped. Only a single bar chart with 2 bars is used.
-
-**Fix:** Use selective import:
-```ts
-import { Chart, BarController, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
-
-Chart.register(BarController, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
-```
-
-Or, as an alternative, replace Chart.js with a lightweight CSS-based bar chart or an SVG chart since only 2 data bars are shown.
-
-**Effort:** 30 minutes  
-**Verified:** Yes — `Dashboard.vue` line 3 imports `chart.js/auto`.
-
----
-
-### P3.7 — Add proper HTTP caching headers to Inertia responses
-
-**Location:** Middleware or controllers
-
-**Risk:** Unnecessary server load from repeated full-page requests for static-ish data.
-
-**Problem:** All Inertia page responses are served without cache-control headers. Pages like product listings and settings could benefit from short-lived browser caching. Inertia's default behavior is to serve with `no-cache`, which is safe but suboptimal for listing pages.
-
-**Fix:** In `HandleInertiaRequests.php`, add cache headers for non-sensitive, non-auth pages:
-```php
-public function share(Request $request): array
-{
-    // For GET requests to listing pages
-    if ($request->isMethod('GET') && !$request->is('settings/*')) {
-        $request->headers->set('Cache-Control', 'private, max-age=30');
-    }
-    // ...existing shared data...
-}
-```
-
-> **Caution:** Do not cache pages that display sensitive inventory data or user-specific actions without ensuring `private` and very short TTL.
-
-**Effort:** 15 minutes  
-**Verified:** Yes — `HandleInertiaRequests.php` confirmed; no cache headers currently set.
-
----
-
-### P3.8 — Consolidate route middleware declarations
-
-**Location:** `routes/web.php`
-
-**Risk:** Copy-paste errors in authorization, accidental exposure of routes to wrong roles.
-
-**Problem:** The role middleware is repeated on every route individually. With ~25 inventory routes, this creates a lot of repetition and a risk of copy-paste errors. For example, changing the role requirements for product creation requires editing 4 separate route declarations.
-
-**Fix:** Use `Route::group()` with shared middleware:
-```php
-Route::prefix('inventory')->name('inventory.')->group(function () {
-    // Routes accessible by Admin|Supply Head|Property Custodian
-    Route::middleware('role:Admin|Supply Head|Property Custodian')->group(function () {
-        Route::get('bookings', ...);
-        Route::get('requisitions', ...);
-        Route::get('products', ...);
-    });
-
-    // Routes accessible by Admin|Supply Head only
-    Route::middleware('role:Admin|Supply Head')->group(function () {
-        Route::post('products', ...);
-        Route::put('products/{product}', ...);
-        Route::post('receiving', ...);
-    });
-
-    // Routes accessible by Admin only
-    Route::middleware('role:Admin')->group(function () {
-        Route::delete('products/{product}', ...);
-        Route::get('movements', ...);
-    });
-});
-```
-
-**Effort:** 30 minutes  
-**Verified:** Yes — `routes/web.php` lines 27–113 confirmed to repeat middleware per route.
-
----
-
-### P3.10 — Set application timezone to `Asia/Manila`
-
-**Location:** `config/app.php:68`
-
-**Risk:** All timestamps stored in UTC while users expect Philippine time; scheduling confusion for bookings and requisitions.
-
-**Problem:** `config/app.php` sets `'timezone' => 'UTC'`. For a Philippine university system, this means all `created_at`, `updated_at`, `start_at`, `end_at`, `initiated_at`, and `verified_at` timestamps are stored in UTC. While Laravel handles timezone conversion for display if configured, the default expectation for a local system is local time. This can cause confusion in booking schedules, handover timestamps, and audit trails.
-
-**Fix:** Update `config/app.php`:
-```php
-'timezone' => env('APP_TIMEZONE', 'Asia/Manila'),
-```
-
-And add to `.env` and `.env.example`:
-```ini
-APP_TIMEZONE=Asia/Manila
-```
-
-> **Note:** Laravel stores timestamps in the database using the configured timezone. If the application has been running with `UTC`, changing the timezone will **not** retroactively convert existing data. Plan this change before any production data is written, or implement a migration to offset existing timestamps.
-
-**Effort:** 2 minutes  
-**Verified:** Yes — `config/app.php:68` confirmed as `'UTC'`.
+- P3.5 — added a dedicated follow-up migration for inventory query indexes on `stock_movements.movement_type`, `stock_movements.performed_by`, `products.type`, and the composite `products(is_active, type)` path. The migration safely skips a redundant standalone `products.sku` index because the existing `products_sku_unique` index already covers SKU lookups, and migrate/rollback were both verified locally.
+- P3.6 — `Dashboard.vue` no longer imports `chart.js/auto`; it now registers only the bar-chart modules the page actually uses, preserving the existing chart behavior while trimming unnecessary Chart.js registration work from the bundle.
+- P3.7 — short-lived `Cache-Control: private, max-age=30` response headers are now applied only to a safe whitelist of non-sensitive Inertia GET pages via `HandleInertiaRequests`, while sensitive settings pages remain excluded. Focused feature coverage now checks both the cached and excluded paths without relying on header token order.
+- P3.8 — inventory routes in `routes/web.php` are now consolidated into shared middleware groups without changing route names, URIs, controller actions, or effective access levels. `php artisan route:list -v --path=inventory --except-vendor` confirmed the grouped routes still resolve to the same middleware combinations, and focused authorization coverage now lives in `tests/Feature/Authorization/InventoryRouteAccessTest.php`.
+- P3.10 — the application timezone now resolves from `APP_TIMEZONE` with an `Asia/Manila` default in `config/app.php`, `APP_TIMEZONE=Asia/Manila` is documented in `.env.example`, and the local `.env` was updated accordingly. `php artisan config:clear`, `php artisan config:show app.timezone`, and `tests/Feature/ApplicationConfigurationTest.php` verified the active config now resolves to `Asia/Manila`, while the production rollout note remains to evaluate any existing UTC data before deployment.
 
 ---
 
@@ -707,12 +569,12 @@ These are valuable additions that significantly expand the system's capability.
 | **P0 — Critical** | 0 | Resolved and retained only as validated notes | complete |
 | **P1 — Required** | 7 | Resend mailer, queue worker, cron, storage link deployment step, app name verification, HTTPS deployment values, production optimization | ~2–4 hours plus server provisioning |
 | **P2 — Important** | 0 | Resolved and retained only as validated notes | complete |
-| **P3 — Quality** | 5 | DB indices, Chart.js, cache headers, routes, timezone cleanup | ~4–7 hours |
+| **P3 — Quality** | 0 | Resolved and retained only as validated notes | complete |
 | **Future** | 8 | E2E tests, exports, audit viewer, notifications, soft deletes, batch receiving, API, dashboard widgets | ~10–16 days |
 
-**Total active items:** 20 improvements across 5 tiers  
+**Total active items:** 15 improvements across 5 tiers  
 **Total estimated effort for remaining production readiness (P1 only):** ~2–4 hours plus server provisioning and DNS / sender verification  
-**Total estimated effort for remaining full maturity (P1–P3):** ~6–11 hours
+**Total estimated effort for remaining full maturity (P1–P3):** ~2–4 hours plus server provisioning and DNS / sender verification
 
 ---
 
@@ -742,3 +604,5 @@ If you only have 2 hours, do these in order:
 | 2026-06-03 (5th pass) | **Implemented** the remaining P2 sprint items: removed `inspire`, fixed nested inventory tests, added requisition rejection, bounded and paginated booking/handover data loading, cached product reference data with invalidation, expanded inventory feature coverage, added `InventoryService` tests, added `signature_png` size guards, updated the stale stock movement factory column, and reduced the remaining active counts to 24. |
 | 2026-06-03 (6th pass) | **Implemented** P3.1 by completing the backed-enum migration for product types and inventory statuses across models, controllers, policies, services, factories, seeders, and tests. Preserved existing UI labels by serializing enum values back to strings for Inertia props, verified focused Pest coverage passes, confirmed the current local database has zero invalid enum-domain records, and reduced the remaining active counts to 23. |
 | 2026-06-03 (7th pass) | **Implemented** P3.2, P3.3, and P3.4 by extracting inventory prop shaping into dedicated API Resources and paginator-aware resource collections, re-enabling the stricter ESLint rules as warnings, replacing the remaining frontend `any` usage with concrete shared/auth and signature-pad types, adding the missing `Product::reorder_threshold` cast, and adding focused resource serialization tests. Verified with `php artisan test --compact` on the affected inventory/dashboard suites, `npx vue-tsc --noEmit`, and `npx eslint eslint.config.js resources/js` (warnings only for 21 existing single-word component names). Remaining active counts reduced to 20. |
+| 2026-06-03 (8th pass) | **Implemented** P3.5, P3.6, and P3.7 by adding a safe follow-up index migration for inventory query hotspots, replacing `chart.js/auto` with selective bar-chart registration on the dashboard, and applying short-lived private cache headers only to a safe whitelist of Inertia listing/dashboard routes. Verified with local migrate/rollback runs for the new migration, `npm run build`, `vendor/bin/pint --dirty --format agent`, and focused feature coverage for dashboard, product index, and cache-header exclusions. Remaining active counts reduced to 17. |
+| 2026-06-03 (9th pass) | **Implemented** P3.8 and P3.10 by consolidating repeated inventory route middleware into shared groups without changing the effective role guards, adding focused authorization regression coverage, and switching the application timezone to `APP_TIMEZONE` with an `Asia/Manila` default documented in `.env.example` and applied locally in `.env`. Verified with `php artisan route:list -v --path=inventory --except-vendor`, `php artisan config:clear`, `php artisan config:show app.timezone`, focused Pest coverage, `npm run lint:check` (warnings only), `npm run types:check`, and `npm run build`. Remaining active counts reduced to 15. |

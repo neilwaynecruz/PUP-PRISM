@@ -77,6 +77,8 @@ export default defineConfigWithVueTs(
     },
     {
         ignores: [
+            '.codex',
+            '.cursor',
             'vendor',
             'node_modules',
             'public',

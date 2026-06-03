@@ -25,51 +25,59 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('admin.health');
 
     Route::prefix('inventory')->name('inventory.')->group(function () {
-        Route::get('handover', [HandoverController::class, 'index'])
-            ->middleware('role:Admin|Property Custodian')
-            ->name('handover.index');
+        Route::middleware('role:Admin|Property Custodian')->group(function () {
+            Route::get('handover', [HandoverController::class, 'index'])
+                ->name('handover.index');
 
-        Route::post('handover', [HandoverController::class, 'store'])
-            ->middleware('role:Admin|Property Custodian')
-            ->name('handover.store');
+            Route::post('handover', [HandoverController::class, 'store'])
+                ->name('handover.store');
 
-        //
+            Route::put('bookings/{booking}', [BookingController::class, 'update'])
+                ->name('bookings.update');
+        });
 
-        Route::get('bookings', [BookingController::class, 'index'])
-            ->middleware('role:Admin|Supply Head|Property Custodian')
-            ->name('bookings.index');
+        Route::middleware('role:Admin|Supply Head|Property Custodian')->group(function () {
+            Route::get('bookings', [BookingController::class, 'index'])
+                ->name('bookings.index');
 
-        Route::post('bookings', [BookingController::class, 'store'])
-            ->middleware('role:Admin|Supply Head|Property Custodian')
-            ->name('bookings.store');
+            Route::post('bookings', [BookingController::class, 'store'])
+                ->name('bookings.store');
 
-        Route::put('bookings/{booking}', [BookingController::class, 'update'])
-            ->middleware('role:Admin|Property Custodian')
-            ->name('bookings.update');
+            Route::get('requisitions', [RequisitionController::class, 'index'])
+                ->name('requisitions.index');
 
-        Route::get('requisitions', [RequisitionController::class, 'index'])
-            ->middleware('role:Admin|Supply Head|Property Custodian')
-            ->name('requisitions.index');
+            Route::post('requisitions', [RequisitionController::class, 'store'])
+                ->name('requisitions.store');
 
-        Route::post('requisitions', [RequisitionController::class, 'store'])
-            ->middleware('role:Admin|Supply Head|Property Custodian')
-            ->name('requisitions.store');
+            Route::get('requisitions/{requisition}', [RequisitionController::class, 'show'])
+                ->name('requisitions.show');
+        });
 
-        Route::get('requisitions/{requisition}', [RequisitionController::class, 'show'])
-            ->middleware('role:Admin|Supply Head|Property Custodian')
-            ->name('requisitions.show');
+        Route::middleware('role:Admin|Supply Head')->group(function () {
+            Route::put('requisitions/{requisition}/approve', [RequisitionController::class, 'approve'])
+                ->name('requisitions.approve');
 
-        Route::put('requisitions/{requisition}/approve', [RequisitionController::class, 'approve'])
-            ->middleware('role:Admin|Supply Head')
-            ->name('requisitions.approve');
+            Route::put('requisitions/{requisition}/reject', [RequisitionController::class, 'reject'])
+                ->name('requisitions.reject');
 
-        Route::put('requisitions/{requisition}/reject', [RequisitionController::class, 'reject'])
-            ->middleware('role:Admin|Supply Head')
-            ->name('requisitions.reject');
+            Route::put('requisitions/{requisition}/issue', [RequisitionController::class, 'issue'])
+                ->name('requisitions.issue');
 
-        Route::put('requisitions/{requisition}/issue', [RequisitionController::class, 'issue'])
-            ->middleware('role:Admin|Supply Head')
-            ->name('requisitions.issue');
+            // Not part of ProductController/authorizeResource, so it keeps its own guard.
+            Route::get('products/{product}/label', [ProductLabelController::class, 'show'])
+                ->name('products.label');
+
+            Route::get('receiving', [ReceivingController::class, 'index'])
+                ->name('receiving.index');
+
+            Route::post('receiving', [ReceivingController::class, 'store'])
+                ->name('receiving.store');
+        });
+
+        Route::middleware('role:Admin')->group(function () {
+            Route::get('movements', [StockMovementController::class, 'index'])
+                ->name('movements.index');
+        });
 
         // ProductController uses authorizeResource(Product::class, 'product'),
         // so ProductPolicy is the single source of truth for per-action access.
@@ -93,23 +101,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::delete('products/{product}', [ProductController::class, 'destroy'])
             ->name('products.destroy');
-
-        // Not part of ProductController/authorizeResource, so it keeps its own guard.
-        Route::get('products/{product}/label', [ProductLabelController::class, 'show'])
-            ->middleware('role:Admin|Supply Head')
-            ->name('products.label');
-
-        Route::get('receiving', [ReceivingController::class, 'index'])
-            ->middleware('role:Admin|Supply Head')
-            ->name('receiving.index');
-
-        Route::post('receiving', [ReceivingController::class, 'store'])
-            ->middleware('role:Admin|Supply Head')
-            ->name('receiving.store');
-
-        Route::get('movements', [StockMovementController::class, 'index'])
-            ->middleware('role:Admin')
-            ->name('movements.index');
     });
 });
 
