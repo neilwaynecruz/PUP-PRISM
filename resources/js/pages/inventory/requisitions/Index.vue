@@ -22,6 +22,7 @@ type Paginated<T> = { data: T[]; links: PaginationLink[] };
 
 defineProps<{
     requisitions: Paginated<ReqRow>;
+    exportUrls: { csv: string; pdf: string };
 }>();
 
 defineOptions({
@@ -48,8 +49,19 @@ const lines = computed(() => [
 <template>
     <Head title="Requisitions" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
-        <Heading variant="small" title="Requisitions" description="Submit and track issuance requests." />
+    <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="requisitions-index-page">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <Heading variant="small" title="Requisitions" description="Submit and track issuance requests." />
+
+            <div class="flex flex-wrap gap-2">
+                <Button variant="outline" as-child>
+                    <a :href="exportUrls.csv">Export CSV</a>
+                </Button>
+                <Button variant="outline" as-child>
+                    <a :href="exportUrls.pdf">Export PDF</a>
+                </Button>
+            </div>
+        </div>
 
         <div class="grid gap-6 lg:grid-cols-3">
             <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border lg:col-span-2">
@@ -71,7 +83,7 @@ const lines = computed(() => [
                             <div>{{ r.created_at ?? '—' }}</div>
                         </div>
                         <div class="mt-3">
-                            <Button variant="ghost" as-child>
+                            <Button variant="ghost" as-child data-testid="open-requisition-button">
                                 <Link :href="requisitionsShow(r.id)">Open</Link>
                             </Button>
                         </div>
@@ -105,7 +117,7 @@ const lines = computed(() => [
                                 </td>
                                 <td class="py-2 pr-3 text-muted-foreground">{{ r.created_at ?? '—' }}</td>
                                 <td class="py-2 pr-3 text-right">
-                                    <Button variant="ghost" as-child>
+                                    <Button variant="ghost" as-child data-testid="open-requisition-button">
                                         <Link :href="requisitionsShow(r.id)">Open</Link>
                                     </Button>
                                 </td>
@@ -131,24 +143,24 @@ const lines = computed(() => [
                                 @scanned="sku = $event"
                             />
                         </div>
-                        <Input v-model="sku" name="lines[0][sku]" placeholder="e.g. 4801234567890" required />
+                        <Input v-model="sku" name="lines[0][sku]" data-testid="requisition-sku-input" placeholder="e.g. 4801234567890" required />
                         <InputError :message="errors['lines.0.sku']" />
                     </div>
 
                     <div class="grid gap-2">
                         <label class="text-sm font-medium">Qty</label>
-                        <Input v-model="qty" name="lines[0][qty_requested]" type="number" min="1" required />
+                        <Input v-model="qty" name="lines[0][qty_requested]" data-testid="requisition-qty-input" type="number" min="1" required />
                         <InputError :message="errors['lines.0.qty_requested']" />
                     </div>
 
                     <div class="grid gap-2">
                         <label class="text-sm font-medium">Notes (optional)</label>
-                        <Input v-model="notes" name="notes" placeholder="Reason / destination" />
+                        <Input v-model="notes" name="notes" data-testid="requisition-notes-input" placeholder="Reason / destination" />
                         <InputError :message="errors.notes" />
                     </div>
 
                     <div class="flex justify-end">
-                        <Button type="submit" :disabled="processing">Submit</Button>
+                        <Button type="submit" :disabled="processing" data-test="submit-requisition-button" data-testid="submit-requisition-button">Submit</Button>
                     </div>
                 </Form>
             </div>

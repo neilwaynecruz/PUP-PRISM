@@ -68,6 +68,16 @@ class ProductController extends Controller
             'products' => (new ProductCollection($products))->toArray($request),
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
+            'exportUrls' => [
+                'csv' => route('inventory.reports.products', [
+                    'format' => 'csv',
+                    ...$request->only(['search', 'type', 'category_id', 'origin_id', 'active']),
+                ], absolute: false),
+                'pdf' => route('inventory.reports.products', [
+                    'format' => 'pdf',
+                    ...$request->only(['search', 'type', 'category_id', 'origin_id', 'active']),
+                ], absolute: false),
+            ],
             'can' => [
                 'create' => $request->user()?->can('create', Product::class) ?? false,
             ],
@@ -120,6 +130,10 @@ class ProductController extends Controller
 
         return Inertia::render('inventory/products/Show', [
             'product' => (new ProductResource($product))->resolve(),
+            'can' => [
+                'edit' => request()->user()?->can('update', $product) ?? false,
+                'printLabel' => request()->user()?->hasAnyRole(['Admin', 'Supply Head']) ?? false,
+            ],
         ]);
     }
 
@@ -129,6 +143,9 @@ class ProductController extends Controller
             'product' => (new ProductResource($product))->resolve(),
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
+            'can' => [
+                'delete' => request()->user()?->can('delete', $product) ?? false,
+            ],
         ]);
     }
 

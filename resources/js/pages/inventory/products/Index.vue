@@ -43,6 +43,7 @@ const props = defineProps<{
     products: Paginated<ProductRow>;
     categories: Option[];
     origins: Option[];
+    exportUrls: { csv: string; pdf: string };
     can: { create: boolean };
 }>();
 
@@ -85,17 +86,17 @@ watch([search, type, categoryId, originId, active], () => {
 <template>
     <Head title="Products" />
 
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6 p-4" data-testid="products-index-page">
         <Heading
             variant="small"
             title="Products"
             description="Manage your catalog of assets and consumables."
         />
 
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-3" data-testid="products-index-page">
             <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div class="grid gap-3 md:grid-cols-5">
-                    <Input v-model="search" placeholder="Search by SKU or name…" />
+                    <Input v-model="search" data-testid="product-search-input" placeholder="Search by SKU or name…" />
 
                     <select
                         v-model="type"
@@ -136,8 +137,14 @@ watch([search, type, categoryId, originId, active], () => {
                     </select>
                 </div>
 
-                <div class="flex items-center justify-end gap-2">
-                    <Button v-if="can.create" as-child>
+                <div class="flex flex-wrap items-center justify-end gap-2">
+                    <Button variant="outline" as-child>
+                        <a :href="props.exportUrls.csv">Export CSV</a>
+                    </Button>
+                    <Button variant="outline" as-child>
+                        <a :href="props.exportUrls.pdf">Export PDF</a>
+                    </Button>
+                    <Button v-if="can.create" as-child data-test="new-product-button" data-testid="new-product-button">
                         <Link :href="productsCreate()">New product</Link>
                     </Button>
                 </div>
@@ -165,7 +172,12 @@ watch([search, type, categoryId, originId, active], () => {
                             </td>
                         </tr>
 
-                        <tr v-for="p in products.data" :key="p.id" class="[&>td]:px-4 [&>td]:py-3">
+                        <tr
+                            v-for="p in products.data"
+                            :key="p.id"
+                            :data-testid="`product-row-${p.sku}`"
+                            class="[&>td]:px-4 [&>td]:py-3"
+                        >
                             <td class="font-mono text-xs">{{ p.sku }}</td>
                             <td class="font-medium">{{ p.name }}</td>
                             <td class="capitalize">{{ p.type }}</td>
@@ -189,10 +201,10 @@ watch([search, type, categoryId, originId, active], () => {
                             </td>
                             <td class="text-right">
                                 <div class="flex items-center justify-end gap-2">
-                                    <Button variant="ghost" size="sm" as-child>
+                                    <Button variant="ghost" size="sm" as-child data-test="view-product-button" data-testid="view-product-button">
                                         <Link :href="productsShow(p.id)">View</Link>
                                     </Button>
-                                    <Button variant="ghost" size="sm" as-child>
+                                    <Button variant="ghost" size="sm" as-child data-test="edit-product-button" data-testid="edit-product-button">
                                         <Link :href="productsEdit(p.id)">Edit</Link>
                                     </Button>
                                 </div>
@@ -220,4 +232,3 @@ watch([search, type, categoryId, originId, active], () => {
         </div>
     </div>
 </template>
-

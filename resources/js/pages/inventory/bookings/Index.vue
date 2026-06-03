@@ -64,6 +64,7 @@ const props = defineProps<{
     calendar_events: Array<Pick<BookingEvent, 'id' | 'asset_id' | 'title' | 'start' | 'end' | 'status'>>;
     approval_queue: Omit<BookingEvent, 'requester_id'>[];
     bookings: Paginated<BookingEvent>;
+    exportUrls: { csv: string; pdf: string };
     can: { approve: boolean };
 }>();
 
@@ -161,17 +162,29 @@ function applyScannedAsset(tagCode: string): void {
     selectedAssetId.value = String(match.id);
     assetScanFeedback.value = `Matched ${match.tag_code} to ${match.name ?? 'Asset'}.`;
 }
+
 </script>
 
 <template>
     <Head title="Bookings" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
-        <Heading
-            variant="small"
-            title="Asset booking calendar"
-            description="Requests only block availability after approval, and each request stays attributable to the requesting position."
-        />
+    <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="bookings-page">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <Heading
+                variant="small"
+                title="Asset booking calendar"
+                description="Requests only block availability after approval, and each request stays attributable to the requesting position."
+            />
+
+            <div class="flex flex-wrap gap-2">
+                <Button variant="outline" as-child>
+                    <a :href="props.exportUrls.csv">Export CSV</a>
+                </Button>
+                <Button variant="outline" as-child>
+                    <a :href="props.exportUrls.pdf">Export PDF</a>
+                </Button>
+            </div>
+        </div>
 
         <div class="grid gap-6 xl:grid-cols-[minmax(0,1.7fr)_minmax(18rem,22rem)]">
             <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
@@ -188,12 +201,20 @@ function applyScannedAsset(tagCode: string): void {
                     </div>
                 </div>
 
-                <FullCalendar
-                    :plugins="[dayGridPlugin, interactionPlugin]"
-                    initialView="dayGridMonth"
-                    :events="events"
-                    height="auto"
-                />
+                <div data-testid="booking-calendar">
+                    <FullCalendar
+                        :plugins="[dayGridPlugin, interactionPlugin]"
+                        initialView="dayGridMonth"
+                        :events="events"
+                        height="auto"
+                    >
+                        <template #eventContent="{ event }">
+                            <div data-testid="booking-calendar-event" :data-event-id="event.id">
+                                {{ event.title }}
+                            </div>
+                        </template>
+                    </FullCalendar>
+                </div>
             </div>
 
             <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
@@ -206,7 +227,7 @@ function applyScannedAsset(tagCode: string): void {
 
                     <div class="grid gap-2">
                         <Label for="asset_search">Find asset</Label>
-                        <Input id="asset_search" v-model="assetSearch" placeholder="Search by tag or product name" />
+                        <Input id="asset_search" v-model="assetSearch" data-testid="booking-asset-search-input" placeholder="Search by tag or product name" />
                         <div class="text-sm text-muted-foreground">
                             The selector loads up to 25 matching available assets at a time.
                         </div>
@@ -226,6 +247,7 @@ function applyScannedAsset(tagCode: string): void {
                             id="asset_id"
                             name="asset_id"
                             v-model="selectedAssetId"
+                            data-testid="booking-asset-select"
                             class="h-10 rounded-md border border-input bg-background px-3 text-sm"
                             required
                         >
@@ -244,24 +266,24 @@ function applyScannedAsset(tagCode: string): void {
 
                     <div class="grid gap-2">
                         <Label for="start_at">Start</Label>
-                        <Input id="start_at" name="start_at" v-model="startAt" type="datetime-local" required />
+                        <Input id="start_at" name="start_at" v-model="startAt" data-testid="booking-start-input" type="datetime-local" required />
                         <InputError :message="errors.start_at" />
                     </div>
 
                     <div class="grid gap-2">
                         <Label for="end_at">End</Label>
-                        <Input id="end_at" name="end_at" v-model="endAt" type="datetime-local" required />
+                        <Input id="end_at" name="end_at" v-model="endAt" data-testid="booking-end-input" type="datetime-local" required />
                         <InputError :message="errors.end_at" />
                     </div>
 
                     <div class="grid gap-2">
                         <Label for="purpose">Purpose (optional)</Label>
-                        <Input id="purpose" name="purpose" v-model="purpose" placeholder="e.g. Classroom demo" />
+                        <Input id="purpose" name="purpose" v-model="purpose" data-testid="booking-purpose-input" placeholder="e.g. Classroom demo" />
                         <InputError :message="errors.purpose" />
                     </div>
 
                     <div class="flex items-center justify-end gap-2">
-                        <Button type="submit" :disabled="processing">Request booking</Button>
+                        <Button type="submit" :disabled="processing" data-test="request-booking-button" data-testid="request-booking-button">Request booking</Button>
                     </div>
                 </Form>
             </div>
@@ -301,7 +323,7 @@ function applyScannedAsset(tagCode: string): void {
 
                         <div v-if="can.approve" class="mt-4 flex flex-wrap gap-2">
                             <Form v-bind="BookingController.update.form(booking.id)">
-                                <Button type="submit" name="action" value="approve">Approve</Button>
+                                <Button type="submit" name="action" value="approve" data-test="approve-booking-button" data-testid="approve-booking-button">Approve</Button>
                             </Form>
                             <Form v-bind="BookingController.update.form(booking.id)">
                                 <Button type="submit" name="action" value="reject" variant="secondary">Reject</Button>

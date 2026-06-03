@@ -46,6 +46,16 @@ class StockMovementController extends Controller
                 'search' => $search,
             ],
             'movements' => (new StockMovementCollection($movements))->toArray($request),
+            'exportUrls' => [
+                'csv' => route('inventory.reports.movements', [
+                    'format' => 'csv',
+                    ...$request->only(['type', 'search']),
+                ], absolute: false),
+                'pdf' => route('inventory.reports.movements', [
+                    'format' => 'pdf',
+                    ...$request->only(['type', 'search']),
+                ], absolute: false),
+            ],
         ]);
     }
 }

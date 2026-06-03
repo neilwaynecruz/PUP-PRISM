@@ -54,13 +54,16 @@ defineOptions({
 <template>
     <Head :title="`Requisition #${requisition.id}`" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
+    <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="requisition-show-page">
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <Heading
                 variant="small"
                 :title="`Requisition #${requisition.id}`"
                 :description="`Status: ${requisition.status}`"
             />
+            <div class="text-sm font-medium text-muted-foreground" data-testid="requisition-status-value">
+                {{ requisition.status }}
+            </div>
 
             <div class="flex items-center gap-2">
                 <Button variant="ghost" as-child>
@@ -141,7 +144,7 @@ defineOptions({
                             <td class="py-2 pr-3">{{ l.name ?? '—' }}</td>
                             <td class="py-2 pr-3 text-muted-foreground">{{ l.type ?? '—' }}</td>
                             <td class="py-2 pr-3">{{ l.qty_requested }}</td>
-                            <td class="py-2 pr-3">{{ l.qty_issued }}</td>
+                            <td :data-testid="`requisition-line-issued-${l.sku ?? l.id}`" class="py-2 pr-3">{{ l.qty_issued }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -160,7 +163,7 @@ defineOptions({
                     <Input name="notes" placeholder="Optional notes" />
                     <InputError :message="errors.notes" />
                 </div>
-                <Button type="submit" :disabled="processing">Approve</Button>
+                <Button type="submit" :disabled="processing" data-test="approve-requisition-button" data-testid="approve-requisition-button">Approve</Button>
             </Form>
 
             <Form
@@ -188,7 +191,7 @@ defineOptions({
                     <Input name="notes" placeholder="Optional notes" />
                     <InputError :message="errors.notes" />
                 </div>
-                <Button type="submit" :disabled="processing">Issue</Button>
+                <Button type="submit" :disabled="processing" data-test="issue-requisition-button" data-testid="issue-requisition-button">Issue</Button>
             </Form>
         </div>
     </div>

@@ -26,6 +26,7 @@ defineOptions({
         :reset-on-success="['password', 'password_confirmation']"
         v-slot="{ errors, processing }"
         class="flex flex-col gap-6"
+        data-testid="register-page"
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
@@ -38,6 +39,7 @@ defineOptions({
                     :tabindex="1"
                     autocomplete="name"
                     name="name"
+                    data-testid="register-name-input"
                     placeholder="Full name"
                 />
                 <InputError :message="errors.name" />
@@ -52,6 +54,7 @@ defineOptions({
                     :tabindex="2"
                     autocomplete="email"
                     name="email"
+                    data-testid="register-email-input"
                     placeholder="email@example.com"
                 />
                 <InputError :message="errors.email" />
@@ -65,6 +68,7 @@ defineOptions({
                     :tabindex="3"
                     autocomplete="new-password"
                     name="password"
+                    data-testid="register-password-input"
                     placeholder="Password"
                 />
                 <InputError :message="errors.password" />
@@ -78,6 +82,7 @@ defineOptions({
                     :tabindex="4"
                     autocomplete="new-password"
                     name="password_confirmation"
+                    data-testid="register-password-confirmation-input"
                     placeholder="Confirm password"
                 />
                 <InputError :message="errors.password_confirmation" />
@@ -89,6 +94,7 @@ defineOptions({
                 tabindex="5"
                 :disabled="processing"
                 data-test="register-user-button"
+                data-testid="register-user-button"
             >
                 <Spinner v-if="processing" />
                 Create account

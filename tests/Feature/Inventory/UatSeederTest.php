@@ -19,3 +19,18 @@ test('database seeder creates uat organization and walkthrough data', function (
     expect(Booking::query()->count())->toBeGreaterThanOrEqual(3);
     expect(Requisition::query()->count())->toBeGreaterThanOrEqual(3);
 });
+
+test('database seeder can be rerun without duplicating seeded positions', function () {
+    $this->seed(DatabaseSeeder::class);
+
+    $spmo = Department::query()->where('code', 'SPMO')->firstOrFail();
+    $positionCount = Position::query()->count();
+    $userCount = User::query()->count();
+
+    $this->seed(DatabaseSeeder::class);
+
+    expect(Position::query()->where('department_id', $spmo->id)->where('title', 'Supply Head')->count())->toBe(1);
+    expect(Position::query()->where('code', 'POS-SUP-HEAD')->count())->toBe(1);
+    expect(Position::query()->count())->toBe($positionCount);
+    expect(User::query()->count())->toBe($userCount);
+});

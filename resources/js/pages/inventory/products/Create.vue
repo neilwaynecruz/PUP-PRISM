@@ -29,7 +29,7 @@ defineOptions({
 <template>
     <Head title="New product" />
 
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6 p-4" data-testid="product-create-page">
         <Heading
             variant="small"
             title="New product"
@@ -43,13 +43,13 @@ defineOptions({
         >
             <div class="grid gap-2">
                 <Label for="sku">SKU / Barcode</Label>
-                <Input id="sku" name="sku" required placeholder="e.g. 4801234567890" />
+                <Input id="sku" name="sku" data-testid="product-sku-input" required placeholder="e.g. 4801234567890" />
                 <InputError :message="errors.sku" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="name">Product name</Label>
-                <Input id="name" name="name" required placeholder="e.g. 1L Fresh Milk" />
+                <Input id="name" name="name" data-testid="product-name-input" required placeholder="e.g. 1L Fresh Milk" />
                 <InputError :message="errors.name" />
             </div>
 
@@ -59,6 +59,7 @@ defineOptions({
                     <select
                         id="type"
                         name="type"
+                        data-testid="product-type-input"
                         class="h-10 rounded-md border border-input bg-background px-3 text-sm"
                         required
                     >
@@ -73,6 +74,7 @@ defineOptions({
                     <Input
                         id="reorder_threshold"
                         name="reorder_threshold"
+                        data-testid="product-reorder-threshold-input"
                         type="number"
                         min="0"
                         placeholder="0"
@@ -87,6 +89,7 @@ defineOptions({
                     <select
                         id="category_id"
                         name="category_id"
+                        data-testid="product-category-input"
                         class="h-10 rounded-md border border-input bg-background px-3 text-sm"
                     >
                         <option value="">None</option>
@@ -102,6 +105,7 @@ defineOptions({
                     <select
                         id="origin_id"
                         name="origin_id"
+                        data-testid="product-origin-input"
                         class="h-10 rounded-md border border-input bg-background px-3 text-sm"
                     >
                         <option value="">None</option>
@@ -118,6 +122,7 @@ defineOptions({
                 <select
                     id="is_active"
                     name="is_active"
+                    data-testid="product-status-input"
                     class="h-10 rounded-md border border-input bg-background px-3 text-sm"
                     required
                 >
@@ -131,7 +136,7 @@ defineOptions({
                 <Button variant="ghost" as-child>
                     <Link :href="productsIndex()">Cancel</Link>
                 </Button>
-                <Button :disabled="processing">Create</Button>
+                <Button :disabled="processing" data-test="create-product-submit" data-testid="create-product-submit">Create</Button>
             </div>
         </Form>
     </div>

@@ -28,3 +28,6 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+/database/e2e.sqlite
+/tests/e2e/report
+/test-results

@@ -55,13 +55,10 @@ class UatOrganizationSeeder extends Seeder
             ['code' => 'POS-DIR-PC', 'department' => 'DIR', 'title' => 'Property Custodian - Director Office'],
             ['code' => 'POS-SPMO-ANL', 'department' => 'SPMO', 'title' => 'Inventory Analyst'],
         ] as $position) {
-            $positions[$position['code']] = Position::query()->updateOrCreate(
-                ['code' => $position['code']],
-                [
-                    'department_id' => $departments[$position['department']]->id,
-                    'title' => $position['title'],
-                    'is_active' => true,
-                ],
+            $positions[$position['code']] = $this->seedPosition(
+                code: $position['code'],
+                department: $departments[$position['department']],
+                title: $position['title'],
             );
         }
 
@@ -97,5 +94,44 @@ class UatOrganizationSeeder extends Seeder
         );
 
         $user->syncRoles($roles);
+    }
+
+    protected function seedPosition(string $code, Department $department, string $title): Position
+    {
+        $existingByDepartmentAndTitle = Position::query()
+            ->where('department_id', $department->id)
+            ->where('title', $title)
+            ->first();
+
+        $existingByCode = Position::query()
+            ->where('code', $code)
+            ->first();
+
+        if (
+            $existingByDepartmentAndTitle instanceof Position
+            && $existingByCode instanceof Position
+            && ! $existingByDepartmentAndTitle->is($existingByCode)
+        ) {
+            throw new \RuntimeException(sprintf(
+                'Unable to seed position [%s]. Existing code [%s] and department/title [%s / %s] point to different rows.',
+                $title,
+                $code,
+                $department->code ?? $department->id,
+                $title,
+            ));
+        }
+
+        $position = $existingByDepartmentAndTitle ?? $existingByCode ?? new Position;
+
+        $position->fill([
+            'code' => $code,
+            'department_id' => $department->id,
+            'title' => $title,
+            'is_active' => true,
+        ]);
+
+        $position->save();
+
+        return $position;
     }
 }

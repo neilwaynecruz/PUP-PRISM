@@ -19,7 +19,13 @@ type Product = {
     assets_count: number;
 };
 
-defineProps<{ product: Product }>();
+defineProps<{
+    product: Product;
+    can: {
+        edit: boolean;
+        printLabel: boolean;
+    };
+}>();
 
 defineOptions({
     layout: {
@@ -35,7 +41,7 @@ defineOptions({
 <template>
     <Head :title="product.name" />
 
-    <div class="flex flex-col gap-6 p-4">
+    <div class="flex flex-col gap-6 p-4" data-testid="product-show-page">
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <Heading
                 variant="small"
@@ -47,10 +53,10 @@ defineOptions({
                 <Button variant="ghost" as-child>
                     <Link :href="productsIndex()">Back</Link>
                 </Button>
-                <Button variant="ghost" as-child>
+                <Button v-if="can.printLabel" variant="ghost" as-child>
                     <Link :href="productLabel(product.id)">Print label</Link>
                 </Button>
-                <Button as-child>
+                <Button v-if="can.edit" as-child data-test="show-edit-product-button" data-testid="show-edit-product-button">
                     <Link :href="productsEdit(product.id)">Edit</Link>
                 </Button>
             </div>
@@ -81,7 +87,7 @@ defineOptions({
 
             <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
                 <div class="text-sm text-muted-foreground">Reorder threshold</div>
-                <div class="mt-1 font-medium">{{ product.reorder_threshold ?? 0 }}</div>
+                <div class="mt-1 font-medium" data-testid="product-reorder-threshold-value">{{ product.reorder_threshold ?? 0 }}</div>
             </div>
 
             <div
@@ -89,7 +95,7 @@ defineOptions({
                 class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
             >
                 <div class="text-sm text-muted-foreground">Stock</div>
-                <div class="mt-1 font-medium">On hand: {{ product.on_hand_qty ?? 0 }}</div>
+                <div class="mt-1 font-medium" data-testid="product-on-hand-value">On hand: {{ product.on_hand_qty ?? 0 }}</div>
             </div>
 
             <div
@@ -97,9 +103,8 @@ defineOptions({
                 class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
             >
                 <div class="text-sm text-muted-foreground">Assets</div>
-                <div class="mt-1 font-medium">{{ product.assets_count }}</div>
+                <div class="mt-1 font-medium" data-testid="product-assets-count-value">{{ product.assets_count }}</div>
             </div>
         </div>
     </div>
 </template>
-

@@ -11,6 +11,7 @@ import {
 } from 'chart.js';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
+import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 
 Chart.register(
@@ -29,6 +30,7 @@ const props = defineProps<{
     lowStock: { id: number; sku: string; name: string; category: string | null; on_hand_qty: number | null; reorder_threshold: number }[];
     unserviceableAssets: { id: number; tag_code: string; status: string; name: string | null }[];
     assetStatusCounts: { labels: string[]; data: number[] };
+    exportUrls: { assetConditionsCsv: string; assetConditionsPdf: string } | null;
 }>();
 
 defineOptions({
@@ -82,13 +84,25 @@ onBeforeUnmount(() => {
     <Head title="Dashboard" />
 
     <div
+        data-testid="dashboard-page"
         class="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4"
     >
-        <Heading
-            variant="small"
-            title="Dashboard"
-            description="Overview and decision support."
-        />
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <Heading
+                variant="small"
+                title="Dashboard"
+                description="Overview and decision support."
+            />
+
+            <div v-if="props.exportUrls" class="flex flex-wrap gap-2">
+                <Button variant="outline" as-child>
+                    <a :href="props.exportUrls.assetConditionsCsv">Asset report CSV</a>
+                </Button>
+                <Button variant="outline" as-child>
+                    <a :href="props.exportUrls.assetConditionsPdf">Asset report PDF</a>
+                </Button>
+            </div>
+        </div>
 
         <div v-if="isAdmin" class="grid gap-4 lg:grid-cols-2">
             <div

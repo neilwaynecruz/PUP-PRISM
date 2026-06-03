@@ -88,6 +88,10 @@ class BookingController extends Controller
             'calendar_events' => BookingResource::collectionForInertia($calendarEvents, $request),
             'approval_queue' => BookingResource::collectionForInertia($approvalQueue, $request),
             'bookings' => (new BookingCollection($bookings))->toArray($request),
+            'exportUrls' => [
+                'csv' => route('inventory.reports.bookings', ['format' => 'csv'], absolute: false),
+                'pdf' => route('inventory.reports.bookings', ['format' => 'pdf'], absolute: false),
+            ],
             'can' => [
                 'approve' => $currentUser instanceof User
                     ? $currentUser->hasAnyRole(['Admin', 'Property Custodian'])

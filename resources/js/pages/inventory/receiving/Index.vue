@@ -69,7 +69,7 @@ function appendTagCode(value: string): void {
 <template>
     <Head title="Receiving" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
+    <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="receiving-page">
         <Heading
             variant="small"
             title="Receiving"
@@ -87,7 +87,7 @@ function appendTagCode(value: string): void {
                         @scanned="form.sku = $event"
                     />
                 </div>
-                <Input id="sku" v-model="form.sku" required placeholder="Scan or type SKU" />
+                <Input id="sku" v-model="form.sku" data-testid="receiving-sku-input" required placeholder="Scan or type SKU" />
                 <InputError :message="form.errors.sku" />
             </div>
 
@@ -97,6 +97,7 @@ function appendTagCode(value: string): void {
                     <Input
                         id="qty"
                         v-model="form.qty"
+                        data-testid="receiving-qty-input"
                         type="number"
                         min="1"
                         placeholder="e.g. 12"
@@ -106,7 +107,7 @@ function appendTagCode(value: string): void {
 
                 <div class="grid gap-2">
                     <Label for="reference_no">Reference no.</Label>
-                    <Input id="reference_no" v-model="form.reference_no" placeholder="e.g. DR-000123" />
+                    <Input id="reference_no" v-model="form.reference_no" data-testid="receiving-reference-input" placeholder="e.g. DR-000123" />
                     <InputError :message="form.errors.reference_no" />
                 </div>
             </div>
@@ -137,6 +138,7 @@ function appendTagCode(value: string): void {
                 <textarea
                     id="tag_codes_text"
                     v-model="form.tag_codes_text"
+                    data-testid="receiving-tag-codes-input"
                     class="min-h-28 rounded-md border border-input bg-background px-3 py-2 text-sm"
                     placeholder="AST-00000001&#10;AST-00000002"
                 />
@@ -158,7 +160,7 @@ function appendTagCode(value: string): void {
             </div>
 
             <div class="flex items-center justify-end gap-2">
-                <Button type="submit" :disabled="form.processing">Receive</Button>
+                <Button type="submit" :disabled="form.processing" data-test="receive-stock-button" data-testid="receive-stock-button">Receive</Button>
             </div>
         </form>
     </div>

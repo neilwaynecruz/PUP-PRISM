@@ -73,7 +73,7 @@ watch(recipientSearch, () => {
 <template>
     <Head title="Asset handover" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
+    <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="handover-initiate-page">
         <Heading
             variant="small"
             title="Digital asset handover"
@@ -97,6 +97,7 @@ watch(recipientSearch, () => {
                             id="asset_tag_code"
                             v-model="assetTagCode"
                             name="asset_tag_code"
+                            data-testid="handover-asset-tag-input"
                             placeholder="Scan / type tag code"
                             required
                         />
@@ -105,7 +106,7 @@ watch(recipientSearch, () => {
 
                     <div class="grid gap-2">
                         <Label for="recipient_search">Find recipient</Label>
-                        <Input id="recipient_search" v-model="recipientSearch" placeholder="Search by name or email" />
+                        <Input id="recipient_search" v-model="recipientSearch" data-testid="handover-recipient-search-input" placeholder="Search by name or email" />
                         <div class="text-sm text-muted-foreground">
                             The selector loads up to 25 matching recipients at a time.
                         </div>
@@ -116,6 +117,7 @@ watch(recipientSearch, () => {
                         <select
                             id="to_user_id"
                             name="to_user_id"
+                            data-testid="handover-recipient-select"
                             class="h-10 rounded-md border border-input bg-background px-3 text-sm"
                             required
                         >
@@ -137,7 +139,7 @@ watch(recipientSearch, () => {
                     </div>
 
                     <div class="flex justify-end">
-                        <Button type="submit" :disabled="processing">Send verification</Button>
+                        <Button type="submit" :disabled="processing" data-test="send-verification-button" data-testid="send-verification-button">Send verification</Button>
                     </div>
                 </Form>
             </div>

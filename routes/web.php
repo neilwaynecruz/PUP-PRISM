@@ -5,6 +5,7 @@ use App\Http\Controllers\Inventory\BookingController;
 use App\Http\Controllers\Inventory\HandoverController;
 use App\Http\Controllers\Inventory\HandoverReceiptController;
 use App\Http\Controllers\Inventory\HandoverVerificationController;
+use App\Http\Controllers\Inventory\InventoryReportController;
 use App\Http\Controllers\Inventory\ProductController;
 use App\Http\Controllers\Inventory\ProductLabelController;
 use App\Http\Controllers\Inventory\ReceivingController;
@@ -51,6 +52,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::get('requisitions/{requisition}', [RequisitionController::class, 'show'])
                 ->name('requisitions.show');
+
+            Route::get('reports/products/{format}', [InventoryReportController::class, 'products'])
+                ->whereIn('format', ['csv', 'pdf'])
+                ->name('reports.products');
+
+            Route::get('reports/bookings/{format}', [InventoryReportController::class, 'bookings'])
+                ->whereIn('format', ['csv', 'pdf'])
+                ->name('reports.bookings');
+
+            Route::get('reports/requisitions/{format}', [InventoryReportController::class, 'requisitions'])
+                ->whereIn('format', ['csv', 'pdf'])
+                ->name('reports.requisitions');
         });
 
         Route::middleware('role:Admin|Supply Head')->group(function () {
@@ -77,6 +90,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('role:Admin')->group(function () {
             Route::get('movements', [StockMovementController::class, 'index'])
                 ->name('movements.index');
+
+            Route::get('reports/movements/{format}', [InventoryReportController::class, 'stockMovements'])
+                ->whereIn('format', ['csv', 'pdf'])
+                ->name('reports.movements');
+
+            Route::get('reports/assets/condition/{format}', [InventoryReportController::class, 'assetConditions'])
+                ->whereIn('format', ['csv', 'pdf'])
+                ->name('reports.asset-conditions');
         });
 
         // ProductController uses authorizeResource(Product::class, 'product'),

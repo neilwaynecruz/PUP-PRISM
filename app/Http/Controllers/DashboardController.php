@@ -80,6 +80,10 @@ class DashboardController extends Controller
                 'labels' => [AssetStatus::Unserviceable->value, AssetStatus::Condemned->value],
                 'data' => [(int) ($assetStatusCounts[AssetStatus::Unserviceable->value] ?? 0), (int) ($assetStatusCounts[AssetStatus::Condemned->value] ?? 0)],
             ],
+            'exportUrls' => $user->hasRole('Admin') ? [
+                'assetConditionsCsv' => route('inventory.reports.asset-conditions', ['format' => 'csv'], absolute: false),
+                'assetConditionsPdf' => route('inventory.reports.asset-conditions', ['format' => 'pdf'], absolute: false),
+            ] : null,
         ]);
     }
 }

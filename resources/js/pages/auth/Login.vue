@@ -41,6 +41,7 @@ defineProps<{
         :reset-on-success="['password']"
         v-slot="{ errors, processing }"
         class="flex flex-col gap-6"
+        data-testid="login-page"
     >
         <div class="grid gap-6">
             <div class="grid gap-2">
@@ -49,6 +50,7 @@ defineProps<{
                     id="email"
                     type="email"
                     name="email"
+                    data-testid="login-email-input"
                     required
                     autofocus
                     :tabindex="1"
@@ -73,6 +75,7 @@ defineProps<{
                 <PasswordInput
                     id="password"
                     name="password"
+                    data-testid="login-password-input"
                     required
                     :tabindex="2"
                     autocomplete="current-password"
@@ -94,6 +97,7 @@ defineProps<{
                 :tabindex="4"
                 :disabled="processing"
                 data-test="login-button"
+                data-testid="login-button"
             >
                 <Spinner v-if="processing" />
                 Log in

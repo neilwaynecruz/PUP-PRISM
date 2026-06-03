@@ -35,6 +35,10 @@ class RequisitionController extends Controller
 
         return Inertia::render('inventory/requisitions/Index', [
             'requisitions' => (new RequisitionCollection($requisitions))->toArray($request),
+            'exportUrls' => [
+                'csv' => route('inventory.reports.requisitions', ['format' => 'csv'], absolute: false),
+                'pdf' => route('inventory.reports.requisitions', ['format' => 'pdf'], absolute: false),
+            ],
         ]);
     }
 

@@ -27,6 +27,7 @@ type Paginated<T> = { data: T[]; links: PaginationLink[] };
 const props = defineProps<{
     filters: { type: string; search: string };
     movements: Paginated<Movement>;
+    exportUrls: { csv: string; pdf: string };
 }>();
 
 defineOptions({
@@ -66,7 +67,7 @@ watch([type, search], () => {
             description="Every inbound and outbound transaction records the actor, accountable position, timestamp, and IP address."
         />
 
-        <div class="grid gap-3 md:grid-cols-3">
+        <div class="grid gap-3 md:grid-cols-[minmax(0,1fr)_12rem_auto]">
             <Input v-model="search" placeholder="Search SKU or name…" />
 
             <select
@@ -80,6 +81,15 @@ watch([type, search], () => {
                 <option value="condemn">Condemn</option>
                 <option value="return">Return</option>
             </select>
+
+            <div class="flex flex-wrap gap-2">
+                <Button variant="outline" as-child>
+                    <a :href="props.exportUrls.csv">Export CSV</a>
+                </Button>
+                <Button variant="outline" as-child>
+                    <a :href="props.exportUrls.pdf">Export PDF</a>
+                </Button>
+            </div>
         </div>
 
         <div class="grid gap-3 md:hidden">

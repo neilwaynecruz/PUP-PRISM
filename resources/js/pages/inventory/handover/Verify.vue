@@ -59,7 +59,7 @@ function clearSignature(): void {
 <template>
     <Head title="Verify handover" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
+    <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="handover-verify-page">
         <Heading
             variant="small"
             title="Verify handover"
@@ -106,12 +106,14 @@ function clearSignature(): void {
                 <InputError :message="errors.token" />
                 <InputError :message="signatureSizeError" />
                 <InputError :message="errors.signature_png" />
-                <Button type="submit" :disabled="processing">Verify</Button>
+                <Button type="submit" :disabled="processing" data-test="verify-handover-button" data-testid="verify-handover-button">Verify</Button>
             </Form>
 
             <Button
                 v-if="email_verified && handover.verified_at"
                 as-child
+                data-test="download-receipt-button"
+                data-testid="download-receipt-button"
             >
                 <a :href="handoverReceipt(handover.id).url">Download receipt (PDF)</a>
             </Button>
@@ -122,7 +124,7 @@ function clearSignature(): void {
             <div class="mb-3 text-sm text-muted-foreground">
                 Your signature is captured only as an internal proof of accountability for this handover.
             </div>
-            <div class="rounded-md border border-input bg-background">
+            <div class="rounded-md border border-input bg-background" data-testid="handover-signature-pad">
                 <VueSignaturePad
                     ref="signaturePad"
                     width="100%"

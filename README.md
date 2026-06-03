@@ -61,6 +61,19 @@ Policies and route middleware enforce access for inventory operations, requisiti
 - Fast checks (lint, prettier, TS): `npm run lint:check && npm run format:check && npm run types:check`
 - Testing env: `.env.testing` uses in-memory SQLite, array cache/mailer, sync queue
 
+### Browser E2E Testing
+- Playwright specs live in `tests/e2e` and use the dedicated `.env.e2e` SQLite database at `database/e2e.sqlite`.
+- Install browsers once if needed: `npx playwright install`
+- Reset and seed the E2E database manually: `npm run e2e:setup`
+- Build frontend assets before running browser tests: `npm run build`
+- Run the suite:
+  - `npx playwright test`
+  - or `npm run e2e:test`
+- Interactive runner and report:
+  - `npm run e2e:ui`
+  - `npm run e2e:report`
+- The Playwright config starts `php artisan serve --env=e2e` automatically. Browser tests use seeded E2E users plus targeted Artisan helpers for email verification and deterministic handover verification tokens.
+
 ## Deployment Checklist (Production)
 1. Environment
    - `APP_ENV=production`, `APP_DEBUG=false`, `APP_URL=https://your-domain`
