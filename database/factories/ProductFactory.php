@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\ProductType;
 use App\Models\Category;
 use App\Models\Origin;
 use App\Models\Product;
@@ -24,7 +25,7 @@ class ProductFactory extends Factory
             'name' => fake()->words(nb: 3, asText: true),
             'category_id' => Category::factory(),
             'origin_id' => Origin::factory(),
-            'type' => 'consumable',
+            'type' => ProductType::Consumable,
             'reorder_threshold' => fake()->numberBetween(0, 50),
             'is_active' => true,
         ];
@@ -32,11 +33,11 @@ class ProductFactory extends Factory
 
     public function consumable(): static
     {
-        return $this->state(fn () => ['type' => 'consumable']);
+        return $this->state(fn () => ['type' => ProductType::Consumable]);
     }
 
     public function asset(): static
     {
-        return $this->state(fn () => ['type' => 'asset']);
+        return $this->state(fn () => ['type' => ProductType::Asset]);
     }
 }

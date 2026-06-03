@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Enums\RequisitionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\RequisitionApproveRequest;
 use App\Http\Requests\Inventory\RequisitionIssueRequest;
 use App\Http\Requests\Inventory\RequisitionRejectRequest;
 use App\Http\Requests\Inventory\RequisitionStoreRequest;
+use App\Http\Resources\RequisitionCollection;
+use App\Http\Resources\RequisitionResource;
 use App\Models\Product;
 use App\Models\Requisition;
 use App\Models\RequisitionLine;
@@ -14,6 +17,7 @@ use App\Models\User;
 use App\Services\Inventory\InventoryService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -21,7 +25,7 @@ use Inertia\Response;
 
 class RequisitionController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
         $requisitions = Requisition::query()
             ->with(['requester:id,name,email', 'requesterPosition:id,department_id,title', 'requesterPosition.department:id,name'])
@@ -30,23 +34,11 @@ class RequisitionController extends Controller
             ->withQueryString();
 
         return Inertia::render('inventory/requisitions/Index', [
-            'requisitions' => $requisitions->through(fn (Requisition $r) => [
-                'id' => $r->id,
-                'status' => $r->status,
-                'created_at' => $r->created_at?->toIso8601String(),
-                'requester' => [
-                    'id' => $r->requester_id,
-                    'name' => $r->requester?->name,
-                ],
-                'requester_position' => $r->requesterPosition ? [
-                    'title' => $r->requesterPosition->title,
-                    'department' => $r->requesterPosition->department?->name,
-                ] : null,
-            ]),
+            'requisitions' => (new RequisitionCollection($requisitions))->toArray($request),
         ]);
     }
 
-    public function show(Requisition $requisition): Response
+    public function show(Request $request, Requisition $requisition): Response
     {
         $currentUser = Auth::user();
 
@@ -64,42 +56,7 @@ class RequisitionController extends Controller
         ]);
 
         return Inertia::render('inventory/requisitions/Show', [
-            'requisition' => [
-                'id' => $requisition->id,
-                'status' => $requisition->status,
-                'notes' => $requisition->notes,
-                'approved_at' => $requisition->approved_at?->toIso8601String(),
-                'issued_at' => $requisition->issued_at?->toIso8601String(),
-                'requested_ip_address' => $requisition->requested_ip_address,
-                'approved_ip_address' => $requisition->approved_ip_address,
-                'issued_ip_address' => $requisition->issued_ip_address,
-                'requester' => $requisition->requester?->only(['id', 'name']),
-                'requester_position' => $requisition->requesterPosition ? [
-                    'title' => $requisition->requesterPosition->title,
-                    'code' => $requisition->requesterPosition->code,
-                    'department' => $requisition->requesterPosition->department?->name,
-                ] : null,
-                'approver' => $requisition->approver?->only(['id', 'name']),
-                'approver_position' => $requisition->approverPosition ? [
-                    'title' => $requisition->approverPosition->title,
-                    'code' => $requisition->approverPosition->code,
-                    'department' => $requisition->approverPosition->department?->name,
-                ] : null,
-                'issuer' => $requisition->issuer?->only(['id', 'name']),
-                'issued_position' => $requisition->issuedPosition ? [
-                    'title' => $requisition->issuedPosition->title,
-                    'code' => $requisition->issuedPosition->code,
-                    'department' => $requisition->issuedPosition->department?->name,
-                ] : null,
-                'lines' => $requisition->lines->map(fn (RequisitionLine $l) => [
-                    'id' => $l->id,
-                    'sku' => $l->product?->sku,
-                    'name' => $l->product?->name,
-                    'type' => $l->product?->type,
-                    'qty_requested' => $l->qty_requested,
-                    'qty_issued' => $l->qty_issued,
-                ]),
-            ],
+            'requisition' => (new RequisitionResource($requisition))->resolve($request),
             'can' => [
                 'approve' => $requisition->exists && $currentUser instanceof User
                     ? $currentUser->can('approve', $requisition)
@@ -131,7 +88,7 @@ class RequisitionController extends Controller
                 'issued_position_id' => null,
                 'issued_ip_address' => null,
                 'issued_at' => null,
-                'status' => 'Submitted',
+                'status' => RequisitionStatus::Submitted,
                 'notes' => $validated['notes'] ?? null,
             ]);
 
@@ -157,7 +114,7 @@ class RequisitionController extends Controller
         $this->authorize('approve', $requisition);
 
         $requisition->update([
-            'status' => 'Approved',
+            'status' => RequisitionStatus::Approved,
             'approver_id' => $request->user()->id,
             'approver_position_id' => $request->user()->position_id,
             'approved_ip_address' => $request->ip(),
@@ -178,7 +135,7 @@ class RequisitionController extends Controller
         $existingNotes = trim((string) $requisition->notes);
 
         $requisition->update([
-            'status' => 'Rejected',
+            'status' => RequisitionStatus::Rejected,
             'notes' => $existingNotes === ''
                 ? "Rejection reason: {$reason}"
                 : "{$existingNotes}\n\nRejection reason: {$reason}",

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\StockMovementCollection;
 use App\Models\StockMovement;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -44,40 +45,7 @@ class StockMovementController extends Controller
                 'type' => $type,
                 'search' => $search,
             ],
-            'movements' => $movements->through(fn (StockMovement $movement) => [
-                'id' => $movement->id,
-                'movement_type' => $movement->movement_type,
-                'qty_delta' => $movement->qty_delta,
-                'performed_at' => $movement->performed_at,
-                'ip_address' => $movement->ip_address,
-                'notes' => $movement->notes,
-                'product' => $movement->product ? [
-                    'id' => $movement->product->id,
-                    'sku' => $movement->product->sku,
-                    'name' => $movement->product->name,
-                ] : null,
-                'stock_lot' => $movement->stockLot ? [
-                    'id' => $movement->stockLot->id,
-                    'reference_no' => $movement->stockLot->reference_no,
-                    'received_at' => $movement->stockLot->received_at,
-                    'expires_at' => $movement->stockLot->expires_at,
-                ] : null,
-                'asset' => $movement->asset ? [
-                    'id' => $movement->asset->id,
-                    'tag_code' => $movement->asset->tag_code,
-                    'status' => $movement->asset->status,
-                ] : null,
-                'performed_by' => [
-                    'id' => $movement->performedBy->id,
-                    'name' => $movement->performedBy->name,
-                    'email' => $movement->performedBy->email,
-                ],
-                'accountable_position' => $movement->accountablePosition ? [
-                    'title' => $movement->accountablePosition->title,
-                    'code' => $movement->accountablePosition->code,
-                    'department' => $movement->accountablePosition->department?->name,
-                ] : null,
-            ]),
+            'movements' => (new StockMovementCollection($movements))->toArray($request),
         ]);
     }
 }

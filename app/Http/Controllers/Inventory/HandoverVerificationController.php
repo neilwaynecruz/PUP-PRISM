@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\HandoverLogResource;
 use App\Models\HandoverLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -28,23 +29,8 @@ class HandoverVerificationController extends Controller
 
         return Inertia::render('inventory/handover/Verify', [
             'handover' => [
-                'id' => $handoverLog->id,
+                ...(new HandoverLogResource($handoverLog))->resolve($request),
                 'token' => $request->string('token')->toString(),
-                'tag_code' => $handoverLog->asset?->tag_code,
-                'asset_name' => $handoverLog->asset?->product?->name,
-                'from_user' => $handoverLog->fromUser?->only(['id', 'name', 'email']),
-                'to_user' => $handoverLog->toUser?->only(['id', 'name', 'email']),
-                'from_position' => $handoverLog->fromPosition ? [
-                    'title' => $handoverLog->fromPosition->title,
-                    'code' => $handoverLog->fromPosition->code,
-                    'department' => $handoverLog->fromPosition->department?->name,
-                ] : null,
-                'to_position' => $handoverLog->toPosition ? [
-                    'title' => $handoverLog->toPosition->title,
-                    'code' => $handoverLog->toPosition->code,
-                    'department' => $handoverLog->toPosition->department?->name,
-                ] : null,
-                'verified_at' => $handoverLog->verified_at?->toIso8601String(),
             ],
             'email_verified' => $request->user()?->hasVerifiedEmail() ?? false,
         ]);

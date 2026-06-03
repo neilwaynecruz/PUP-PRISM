@@ -31,9 +31,3 @@ declare module 'vue' {
         $headManager: ReturnType<typeof createHeadManager>;
     }
 }
-
-declare module 'vue-signature-pad' {
-    export const VueSignaturePad: any;
-    const install: any;
-    export default install;
-}

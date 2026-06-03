@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\AssetStatus;
+use App\Enums\BookingStatus;
 use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\Position;
@@ -27,7 +29,7 @@ test('approved bookings block overlapping requests', function () {
     $product = Product::factory()->asset()->create();
     $asset = Asset::factory()->assignedToPosition($position)->create([
         'product_id' => $product->id,
-        'status' => 'Available',
+        'status' => AssetStatus::Available,
     ]);
 
     $startAt = CarbonImmutable::now()->addDay()->startOfHour();
@@ -41,7 +43,7 @@ test('approved bookings block overlapping requests', function () {
         'approver_position_id' => $position->id,
         'start_at' => $startAt,
         'end_at' => $endAt,
-        'status' => 'Approved',
+        'status' => BookingStatus::Approved,
         'purpose' => null,
     ]);
 
@@ -64,12 +66,12 @@ test('booking index paginates records and bounds the asset selector payload', fu
     $product = Product::factory()->asset()->create();
     $asset = Asset::factory()->assignedToPosition($position)->create([
         'product_id' => $product->id,
-        'status' => 'Available',
+        'status' => AssetStatus::Available,
     ]);
 
     Asset::factory()->count(30)->assignedToPosition($position)->create([
         'product_id' => $product->id,
-        'status' => 'Available',
+        'status' => AssetStatus::Available,
     ]);
 
     Booking::factory()->count(18)->create([
@@ -101,7 +103,7 @@ test('property custodian can reject a pending booking request', function () {
     $booking = Booking::factory()->create([
         'requester_id' => $requester->id,
         'requester_position_id' => $requesterPosition->id,
-        'status' => 'Requested',
+        'status' => BookingStatus::Requested,
         'approver_id' => null,
         'approver_position_id' => null,
         'approved_ip_address' => null,
@@ -117,7 +119,7 @@ test('property custodian can reject a pending booking request', function () {
 
     $booking->refresh();
 
-    expect($booking->status)->toBe('Rejected');
+    expect($booking->status)->toBe(BookingStatus::Rejected);
     expect($booking->approver_id)->toBe($approver->id);
     expect($booking->approver_position_id)->toBe($approverPosition->id);
     expect($booking->approved_ip_address)->not->toBeNull();

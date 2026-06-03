@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Inventory;
 
+use App\Enums\ProductType;
 use App\Models\Product;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -29,7 +30,7 @@ class ProductStoreRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'origin_id' => ['nullable', 'integer', 'exists:origins,id'],
-            'type' => ['required', 'string', Rule::in(['asset', 'consumable'])],
+            'type' => ['required', Rule::enum(ProductType::class)],
             'reorder_threshold' => ['nullable', 'integer', 'min:0'],
             'is_active' => ['required', 'boolean'],
         ];

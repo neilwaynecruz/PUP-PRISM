@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
@@ -18,7 +19,7 @@ class ProductLabelController extends Controller
         $qrSvg = $this->makeQrSvg($product->sku);
 
         return Inertia::render('inventory/labels/ProductLabel', [
-            'product' => $product->only(['id', 'sku', 'name', 'type']),
+            'product' => (new ProductResource($product))->resolve(),
             'qr_svg' => $qrSvg,
         ]);
     }

@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\RequisitionStatus;
 use App\Models\Requisition;
 use App\Models\User;
 
@@ -40,7 +41,7 @@ class RequisitionPolicy
             return true;
         }
 
-        return $user->id === $requisition->requester_id && $requisition->status === 'Draft';
+        return $user->id === $requisition->requester_id && $requisition->status === RequisitionStatus::Draft;
     }
 
     /**
@@ -48,7 +49,7 @@ class RequisitionPolicy
      */
     public function delete(User $user, Requisition $requisition): bool
     {
-        return $user->id === $requisition->requester_id && $requisition->status === 'Draft';
+        return $user->id === $requisition->requester_id && $requisition->status === RequisitionStatus::Draft;
     }
 
     public function approve(User $user, Requisition $requisition): bool
@@ -61,7 +62,7 @@ class RequisitionPolicy
             return false;
         }
 
-        return $requisition->status === 'Submitted';
+        return $requisition->status === RequisitionStatus::Submitted;
     }
 
     public function reject(User $user, Requisition $requisition): bool
@@ -74,7 +75,7 @@ class RequisitionPolicy
             return false;
         }
 
-        return $requisition->status === 'Submitted';
+        return $requisition->status === RequisitionStatus::Submitted;
     }
 
     public function issue(User $user, Requisition $requisition): bool
@@ -83,6 +84,6 @@ class RequisitionPolicy
             return false;
         }
 
-        return $requisition->status === 'Approved';
+        return $requisition->status === RequisitionStatus::Approved;
     }
 }

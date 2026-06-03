@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\ProductType;
 use App\Models\Category;
 use App\Models\Origin;
 use App\Models\Product;
@@ -81,7 +82,7 @@ test('supply head can create a product', function () {
         '_token' => $csrfToken,
         'sku' => 'SKU-TEST-0001',
         'name' => 'Test Product',
-        'type' => 'consumable',
+        'type' => ProductType::Consumable->value,
         'category_id' => $category->id,
         'origin_id' => $origin->id,
         'reorder_threshold' => 10,
@@ -134,7 +135,7 @@ test('supply head can update but cannot destroy products', function () {
             '_token' => $csrfToken,
             'sku' => 'SKU-UPDATED-0001',
             'name' => 'Updated Product',
-            'type' => 'consumable',
+            'type' => ProductType::Consumable->value,
             'category_id' => $category->id,
             'origin_id' => $origin->id,
             'reorder_threshold' => 5,

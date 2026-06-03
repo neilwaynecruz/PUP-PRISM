@@ -65,12 +65,12 @@ export function useCurrentUrl(): UseCurrentUrlReturn {
         return isCurrentUrl(urlToCheck, currentUrl, true);
     }
 
-    function whenCurrentUrl(
+    function whenCurrentUrl<T, F = null>(
         urlToCheck: NonNullable<InertiaLinkProps['href']>,
-        ifTrue: any,
-        ifFalse: any = null,
-    ) {
-        return isCurrentUrl(urlToCheck) ? ifTrue : ifFalse;
+        ifTrue: T,
+        ifFalse?: F,
+    ): T | F {
+        return isCurrentUrl(urlToCheck) ? ifTrue : ((ifFalse ?? null) as F);
     }
 
     return {

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\RequisitionStatus;
 use Database\Factories\RequisitionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -93,6 +94,7 @@ class Requisition extends Model
         return [
             'approved_at' => 'datetime',
             'issued_at' => 'datetime',
+            'status' => RequisitionStatus::class,
         ];
     }
 }

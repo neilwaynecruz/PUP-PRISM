@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\AssetStatus;
 use App\Models\Asset;
 use App\Models\Position;
 use App\Models\Product;
@@ -23,13 +24,13 @@ class AssetFactory extends Factory
             'product_id' => Product::factory()->asset(),
             'position_id' => null,
             'tag_code' => fake()->unique()->bothify('AST-########'),
-            'status' => 'Available',
+            'status' => AssetStatus::Available,
         ];
     }
 
     public function checkedOut(): static
     {
-        return $this->state(fn () => ['status' => 'Checked_Out']);
+        return $this->state(fn () => ['status' => AssetStatus::CheckedOut]);
     }
 
     public function assignedToPosition(?Position $position = null): static

@@ -2,6 +2,9 @@
 
 namespace App\Services\Inventory;
 
+use App\Enums\AssetStatus;
+use App\Enums\ProductType;
+use App\Enums\RequisitionStatus;
 use App\Models\Asset;
 use App\Models\Product;
 use App\Models\ProductStock;
@@ -18,7 +21,7 @@ class InventoryService
 {
     public function receive(User $user, Product $product, array $payload, ?string $ipAddress = null): void
     {
-        if ($product->type === 'consumable') {
+        if ($product->type === ProductType::Consumable) {
             $this->receiveConsumable(
                 user: $user,
                 product: $product,
@@ -100,7 +103,7 @@ class InventoryService
                     'product_id' => $product->id,
                     'position_id' => null,
                     'tag_code' => $tagCode,
-                    'status' => 'Available',
+                    'status' => AssetStatus::Available,
                 ]);
 
                 StockMovement::create([
@@ -125,7 +128,7 @@ class InventoryService
         DB::transaction(function () use ($user, $requisition, $notes, $ipAddress): void {
             $requisition = Requisition::query()->whereKey($requisition->id)->lockForUpdate()->firstOrFail();
 
-            if ($requisition->status !== 'Approved') {
+            if ($requisition->status !== RequisitionStatus::Approved) {
                 throw new \RuntimeException('Only approved requisitions can be issued.');
             }
 
@@ -139,7 +142,7 @@ class InventoryService
             foreach ($lines as $line) {
                 $product = Product::query()->whereKey($line->product_id)->lockForUpdate()->firstOrFail();
 
-                if ($product->type !== 'consumable') {
+                if ($product->type !== ProductType::Consumable) {
                     throw new \RuntimeException('Only consumable requisition lines can be issued here.');
                 }
 
@@ -201,7 +204,7 @@ class InventoryService
             }
 
             $requisition->update([
-                'status' => 'Issued',
+                'status' => RequisitionStatus::Issued,
                 'issued_by' => $user->id,
                 'issued_position_id' => $user->position_id,
                 'issued_ip_address' => $ipAddress,

@@ -1,6 +1,11 @@
 <?php
 
+use App\Enums\AssetStatus;
+use App\Enums\BookingStatus;
+use App\Enums\ProductType;
+use App\Enums\RequisitionStatus;
 use App\Models\Asset;
+use App\Models\Booking;
 use App\Models\Position;
 use App\Models\Product;
 use App\Models\ProductStock;
@@ -43,7 +48,7 @@ test('receive consumable creates stock, lot, and movement records', function () 
     expect($lot->qty_received)->toBe(12);
     expect($lot->qty_remaining)->toBe(12);
     expect($lot->received_at?->toIso8601String())->toBe($receivedAt->toIso8601String());
-    expect($lot->expires_at?->toDateString())->toBe($expiresAt->toDateString());
+    expect($lot->expires_at ? CarbonImmutable::parse($lot->expires_at)->toDateString() : null)->toBe($expiresAt->toDateString());
     expect($movement->qty_delta)->toBe(12);
     expect($movement->ip_address)->toBe('10.0.0.10');
 });
@@ -90,7 +95,17 @@ test('receive assets creates assets and movement rows for each tag', function ()
         ipAddress: '10.0.0.20',
     );
 
+    $assets = Asset::query()->where('product_id', $product->id)->orderBy('id')->get();
+
     expect(Asset::query()->where('product_id', $product->id)->count())->toBe(2);
+    expect($assets->pluck('status')->all())->toEqual([
+        AssetStatus::Available,
+        AssetStatus::Available,
+    ]);
+    expect($assets->map(fn (Asset $asset) => $asset->getRawOriginal('status'))->all())->toEqual([
+        AssetStatus::Available->value,
+        AssetStatus::Available->value,
+    ]);
     expect(StockMovement::query()->where('product_id', $product->id)->where('movement_type', 'receive')->count())->toBe(2);
 });
 
@@ -148,7 +163,7 @@ test('issue requisition allocates by earliest expiry and updates status', functi
     $requisition = Requisition::factory()->create([
         'requester_id' => $requester->id,
         'requester_position_id' => $requesterPosition->id,
-        'status' => 'Approved',
+        'status' => RequisitionStatus::Approved,
     ]);
 
     $requisition->lines()->create([
@@ -172,7 +187,7 @@ test('issue requisition allocates by earliest expiry and updates status', functi
 
     expect($earlierExpiryLot->qty_remaining)->toBe(0);
     expect($laterLot->qty_remaining)->toBe(4);
-    expect($requisition->status)->toBe('Issued');
+    expect($requisition->status)->toBe(RequisitionStatus::Issued);
     expect($requisition->issued_by)->toBe($issuer->id);
     expect($requisition->issued_position_id)->toBe($issuerPosition->id);
 
@@ -194,7 +209,7 @@ test('issue requisition rejects non consumable lines and rolls back without move
     $requisition = Requisition::factory()->create([
         'requester_id' => User::factory()->assignedPosition($requesterPosition)->create()->id,
         'requester_position_id' => $requesterPosition->id,
-        'status' => 'Approved',
+        'status' => RequisitionStatus::Approved,
     ]);
 
     $line = $requisition->lines()->create([
@@ -215,7 +230,7 @@ test('issue requisition rejects non consumable lines and rolls back without move
     $requisition->refresh();
     $line->refresh();
 
-    expect($requisition->status)->toBe('Approved');
+    expect($requisition->status)->toBe(RequisitionStatus::Approved);
     expect($line->qty_issued)->toBe(0);
     expect(StockMovement::query()->where('requisition_id', $requisition->id)->count())->toBe(0);
 });
@@ -242,7 +257,7 @@ test('issue requisition fails on insufficient stock and rolls back changes', fun
     $requisition = Requisition::factory()->create([
         'requester_id' => $requester->id,
         'requester_position_id' => $requesterPosition->id,
-        'status' => 'Approved',
+        'status' => RequisitionStatus::Approved,
     ]);
 
     $line = $requisition->lines()->create([
@@ -264,7 +279,7 @@ test('issue requisition fails on insufficient stock and rolls back changes', fun
     $line->refresh();
     $lot->refresh();
 
-    expect($requisition->status)->toBe('Approved');
+    expect($requisition->status)->toBe(RequisitionStatus::Approved);
     expect($line->qty_issued)->toBe(0);
     expect($lot->qty_remaining)->toBe(1);
     expect(StockMovement::query()->where('requisition_id', $requisition->id)->count())->toBe(0);
@@ -277,7 +292,7 @@ test('issue requisition rejects non approved records before allocating stock', f
     $requisition = Requisition::factory()->create([
         'requester_id' => User::factory()->assignedPosition($requesterPosition)->create()->id,
         'requester_position_id' => $requesterPosition->id,
-        'status' => 'Submitted',
+        'status' => RequisitionStatus::Submitted,
     ]);
 
     $service = app(InventoryService::class);
@@ -288,4 +303,21 @@ test('issue requisition rejects non approved records before allocating stock', f
         notes: null,
         ipAddress: '10.0.0.32',
     ))->toThrow(RuntimeException::class, 'Only approved requisitions can be issued.');
+});
+
+test('inventory domain models expose backed enum casts without changing stored values', function () {
+    $product = Product::factory()->asset()->create();
+    $asset = Asset::factory()->checkedOut()->create();
+    $booking = Booking::factory()->create();
+    $requisition = Requisition::factory()->create();
+
+    expect($product->type)->toBe(ProductType::Asset);
+    expect($asset->status)->toBe(AssetStatus::CheckedOut);
+    expect($booking->status)->toBe(BookingStatus::Requested);
+    expect($requisition->status)->toBe(RequisitionStatus::Submitted);
+
+    expect($product->getRawOriginal('type'))->toBe(ProductType::Asset->value);
+    expect($asset->getRawOriginal('status'))->toBe(AssetStatus::CheckedOut->value);
+    expect($booking->getRawOriginal('status'))->toBe(BookingStatus::Requested->value);
+    expect($requisition->getRawOriginal('status'))->toBe(RequisitionStatus::Submitted->value);
 });

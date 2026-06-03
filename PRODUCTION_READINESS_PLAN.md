@@ -440,177 +440,11 @@ Completed and removed from the active backlog during this validation:
 
 These improvements make the codebase cleaner, safer, and easier to maintain.
 
-### P3.1 — Implement PHP 8.4 backed enums for domain status/type fields
-
-**Locations:**
-- `app/Models/Product.php` — `type` field ('consumable', 'asset')
-- `app/Models/Asset.php` — `status` field ('Available', 'Checked_Out', 'Unserviceable', 'Condemned')
-- `app/Models/Booking.php` — `status` field ('Requested', 'Approved', 'Rejected', 'Cancelled')
-- `app/Models/Requisition.php` — `status` field ('Draft', 'Submitted', 'Approved', 'Issued', 'Closed', 'Rejected')
-
-**Risk:** Typos in status strings silently fail at runtime (database constraint level) instead of being caught by the IDE or compiler.
-
-**Problem:** These values are currently plain strings scattered across controllers, policies, services, and tests with no centralized type safety. Typing a value as `'Aproved'` (misspelled) would silently pass the type system and only fail at the database constraint level or, worse, cause logic errors in policies.
-
-**Fix:** Create `app/Enums/` directory with backed enums:
-```php
-<?php
-namespace App\Enums;
-
-enum ProductType: string
-{
-    case Consumable = 'consumable';
-    case Asset = 'asset';
-}
-
-enum AssetStatus: string
-{
-    case Available = 'Available';
-    case CheckedOut = 'Checked_Out';
-    case Unserviceable = 'Unserviceable';
-    case Condemned = 'Condemned';
-}
-
-enum RequisitionStatus: string
-{
-    case Draft = 'Draft';
-    case Submitted = 'Submitted';
-    case Approved = 'Approved';
-    case Issued = 'Issued';
-    case Closed = 'Closed';
-    case Rejected = 'Rejected';
-}
-```
-Then add casts to models:
-```php
-protected function casts(): array
-{
-    return [
-        'type' => ProductType::class,
-        'status' => AssetStatus::class,
-    ];
-}
-```
-
-> **Note:** This project uses PHP 8.4, which fully supports backed enums with `enum` cases as strings.
-
-**Effort:** 2–3 hours  
-**Verified:** Yes — all four models confirmed to use string-based status fields with no enum abstraction.
-
----
-
-### P3.2 — Refactor controller prop transformations to Eloquent API Resources
-
-**Locations:** All controllers in `app/Http/Controllers/Inventory/` and `app/Http/Controllers/Settings/`
-
-**Risk:** Bloated controllers, DRY violations, and untransformable data logic.
-
-**Problem:** Every controller method manually maps Eloquent models to arrays using inline `->map(fn (...) => [...])` closures inside `Inertia::render()` calls. This makes controllers bloated (e.g., `BookingController::index()` has ~40 lines of inline mapping), violates DRY, and makes the transformations impossible to unit test independently.
-
-**Fix:** Create Eloquent API Resource classes:
-```
-app/Http/Resources/
-├── ProductResource.php
-├── ProductCollection.php
-├── BookingResource.php
-├── RequisitionResource.php
-├── HandoverLogResource.php
-├── UserResource.php
-└── AssetResource.php
-```
-
-Example:
-```php
-class ProductResource extends JsonResource
-{
-    public function toArray(Request $request): array
-    {
-        return [
-            'id' => $this->id,
-            'sku' => $this->sku,
-            'name' => $this->name,
-            'type' => $this->type,
-            'category' => $this->category?->name,
-            'origin' => $this->origin?->name,
-            'on_hand_qty' => $this->stock?->on_hand_qty,
-            'reserved_qty' => $this->stock?->reserved_qty,
-            'is_active' => $this->is_active,
-        ];
-    }
-}
-```
-
-Then in controllers:
-```php
-return Inertia::render('inventory/products/Index', [
-    'products' => ProductResource::collection($products),
-]);
-```
-
-**Effort:** 4–6 hours  
-**Verified:** Yes — all inventory controllers confirmed to use inline `->map()` closures.
-
----
-
-### P3.3 — Re-enable stricter TypeScript/ESLint rules
-
-**Locations:**
-- `eslint.config.js:41` — `'vue/multi-word-component-names': 'off'`
-- `eslint.config.js:42` — `'@typescript-eslint/no-explicit-any': 'off'`
-
-**Risk:** Reduced type safety, accumulation of technical debt, and harder refactors.
-
-**Problem:** Disabling these rules weakens code quality enforcement. `no-explicit-any` in particular bypasses TypeScript's primary value proposition. The `vue/multi-word-component-names` rule prevents HTML element name collisions (e.g., a `<Heading>` component collides with the HTML `<heading>` element in some contexts).
-
-**Fix:**
-```js
-// Instead of off, use warn for migration period
-'vue/multi-word-component-names': 'warn',
-'@typescript-eslint/no-explicit-any': 'warn',
-```
-Then gradually fix violations:
-- Rename single-word components (`Heading` → `PageHeading`, `InputError` → `FieldError`)
-- Replace `any` types with proper interfaces (e.g., `usePage()` auth props)
-
-> **Note:** `Dashboard.vue` currently uses `(page.props.auth as any)?.roles ?? []` which would trigger this rule once re-enabled.
-
-**Effort:** 1–2 hours for fixes  
-**Verified:** Yes — `eslint.config.js` lines 41–42 confirmed.
-
----
-
-### P3.4 — Add missing model casts
-
-**Locations:** Multiple models
-
-**Risk:** Type coercion bugs, unexpected boolean/string comparisons, and inconsistent API responses.
-
-**Problem:** Several models are missing explicit casts for fields that would benefit from them:
-
-| Model | Field | Current Behavior | Recommended Cast |
-|---|---|---|---|
-| `Product` | `reorder_threshold` | Stored as integer but not cast | `integer` |
-| `Product` | `is_active` | Stored as tinyint but not cast | `boolean` |
-| `Product` | `type` | Plain string | `ProductType::class` (see P3.1) |
-| `Asset` | `status` | Plain string | `AssetStatus::class` (see P3.1) |
-
-> **Correction from original plan:** `Booking` already has correct `start_at` and `end_at` casts (line 74–77). `Asset` timestamps are automatically handled by Laravel's base `Model` class and do not need explicit casts. `StockLot` already has `received_at` and `expires_at` casts.
-
-**Fix:** Audit each model and add casts where needed:
-```php
-// Product.php
-protected function casts(): array
-{
-    return [
-        'reorder_threshold' => 'integer',
-        'is_active' => 'boolean',
-        'type' => ProductType::class,      // when P3.1 is implemented
-    ];
-}
-```
-
-**Effort:** 15 minutes  
-**Verified:** Yes — `Booking.php` already has correct datetime casts. `Product.php` has no casts at all.
+Completed and removed from the active backlog during this validation:
+- P3.1 — domain `type`/`status` fields now use backed enums in `app/Enums/`, model casts are active on `Product`, `Asset`, `Booking`, and `Requisition`, string-based policy/service/controller logic has been normalized to enum references, Inertia props still emit the existing user-facing string labels, and the current local database contains `0` invalid `products.type`, `assets.status`, `bookings.status`, or `requisitions.status` values.
+- P3.2 — inventory prop transformations now live in dedicated resource classes and paginator-aware resource collections under `app/Http/Resources`; the inventory controllers are simpler, existing Inertia prop names and paginator keys were preserved, and focused serialization coverage now lives in `tests/Feature/Inventory/InventoryResourceTest.php`. The Settings controllers were reviewed and did not need resource extraction because they do not contain inline model collection mapping.
+- P3.3 — ESLint now warns on `vue/multi-word-component-names` and `@typescript-eslint/no-explicit-any`; the loose `usePage()` auth cast and signature-pad `any` usage were replaced with concrete types, `npx vue-tsc --noEmit` now passes, and the current ESLint output is down to the expected 21 single-word component warnings.
+- P3.4 — the remaining cast gap is resolved: `Product` now casts `reorder_threshold` to `integer`, while the existing enum, boolean, and datetime casts across the inventory models were re-verified against the current code paths and tests.
 
 ---
 
@@ -873,12 +707,12 @@ These are valuable additions that significantly expand the system's capability.
 | **P0 — Critical** | 0 | Resolved and retained only as validated notes | complete |
 | **P1 — Required** | 7 | Resend mailer, queue worker, cron, storage link deployment step, app name verification, HTTPS deployment values, production optimization | ~2–4 hours plus server provisioning |
 | **P2 — Important** | 0 | Resolved and retained only as validated notes | complete |
-| **P3 — Quality** | 9 | PHP enums, API Resources, ESLint, model casts, DB indices, Chart.js, cache headers, routes, timezone cleanup | ~9–15 hours |
+| **P3 — Quality** | 5 | DB indices, Chart.js, cache headers, routes, timezone cleanup | ~4–7 hours |
 | **Future** | 8 | E2E tests, exports, audit viewer, notifications, soft deletes, batch receiving, API, dashboard widgets | ~10–16 days |
 
-**Total active items:** 24 improvements across 5 tiers  
+**Total active items:** 20 improvements across 5 tiers  
 **Total estimated effort for remaining production readiness (P1 only):** ~2–4 hours plus server provisioning and DNS / sender verification  
-**Total estimated effort for remaining full maturity (P1–P3):** ~11–19 hours
+**Total estimated effort for remaining full maturity (P1–P3):** ~6–11 hours
 
 ---
 
@@ -906,3 +740,5 @@ If you only have 2 hours, do these in order:
 | 2026-06-03 (3rd pass) | **Validated** the repo again after the Resend integration pass. Installed `resend/resend-php`, aligned mail docs/config around Resend, removed stale completed backlog items (README, dead code, `.gitattributes`, log isolation, `.env.testing`, admin dashboard coverage, composer identity, `.env.example` and Wayfinder doc gaps), and recalculated the remaining active counts to 34. |
 | 2026-06-03 (4th pass) | **Resolved** P0.5 by removing redundant product route middleware and relying on `ProductPolicy` as the single authorization source for `ProductController`. Added a regression test for verified users without inventory roles and recalculated the remaining active counts to 33. |
 | 2026-06-03 (5th pass) | **Implemented** the remaining P2 sprint items: removed `inspire`, fixed nested inventory tests, added requisition rejection, bounded and paginated booking/handover data loading, cached product reference data with invalidation, expanded inventory feature coverage, added `InventoryService` tests, added `signature_png` size guards, updated the stale stock movement factory column, and reduced the remaining active counts to 24. |
+| 2026-06-03 (6th pass) | **Implemented** P3.1 by completing the backed-enum migration for product types and inventory statuses across models, controllers, policies, services, factories, seeders, and tests. Preserved existing UI labels by serializing enum values back to strings for Inertia props, verified focused Pest coverage passes, confirmed the current local database has zero invalid enum-domain records, and reduced the remaining active counts to 23. |
+| 2026-06-03 (7th pass) | **Implemented** P3.2, P3.3, and P3.4 by extracting inventory prop shaping into dedicated API Resources and paginator-aware resource collections, re-enabling the stricter ESLint rules as warnings, replacing the remaining frontend `any` usage with concrete shared/auth and signature-pad types, adding the missing `Product::reorder_threshold` cast, and adding focused resource serialization tests. Verified with `php artisan test --compact` on the affected inventory/dashboard suites, `npx vue-tsc --noEmit`, and `npx eslint eslint.config.js resources/js` (warnings only for 21 existing single-word component names). Remaining active counts reduced to 20. |

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import type { SignaturePadInstance } from 'vue-signature-pad';
 import { VueSignaturePad } from 'vue-signature-pad';
 import HandoverController from '@/actions/App/Http/Controllers/Inventory/HandoverController';
 import Heading from '@/components/Heading.vue';
@@ -24,13 +25,13 @@ defineProps<{
     email_verified: boolean;
 }>();
 
-const signaturePad = ref<InstanceType<typeof VueSignaturePad> | null>(null);
+const signaturePad = ref<SignaturePadInstance | null>(null);
 const signaturePng = ref<string>('');
 const signatureSizeError = ref<string>('');
 const maxSignatureBytes = 300000;
 
 function captureSignature(event?: Event): void {
-    const pad = signaturePad.value as any;
+    const pad = signaturePad.value;
 
     if (!pad) {
         return;
@@ -48,7 +49,7 @@ function captureSignature(event?: Event): void {
 }
 
 function clearSignature(): void {
-    const pad = signaturePad.value as any;
+    const pad = signaturePad.value;
     pad?.clearSignature();
     signaturePng.value = '';
     signatureSizeError.value = '';

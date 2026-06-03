@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Enums\AssetStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\HandoverInitiateRequest;
+use App\Http\Resources\HandoverLogResource;
+use App\Http\Resources\UserResource;
 use App\Models\Asset;
 use App\Models\HandoverLog;
 use App\Models\StockMovement;
@@ -27,7 +30,7 @@ class HandoverController extends Controller
             'filters' => [
                 'recipient_search' => $recipientSearch,
             ],
-            'users' => User::query()
+            'users' => UserResource::collectionForInertia(User::query()
                 ->with(['position:id,department_id,title,code', 'position.department:id,name'])
                 ->when($recipientSearch !== '', function ($query) use ($recipientSearch) {
                     $query->where(function ($query) use ($recipientSearch) {
@@ -37,19 +40,8 @@ class HandoverController extends Controller
                 })
                 ->orderBy('name')
                 ->limit(25)
-                ->get(['id', 'name', 'email', 'position_id'])
-                ->map(fn (User $user) => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'position' => $user->position ? [
-                        'id' => $user->position->id,
-                        'title' => $user->position->title,
-                        'code' => $user->position->code,
-                        'department' => $user->position->department?->name,
-                    ] : null,
-                ]),
-            'recent' => HandoverLog::query()
+                ->get(['id', 'name', 'email', 'position_id']), $request),
+            'recent' => HandoverLogResource::collectionForInertia(HandoverLog::query()
                 ->with([
                     'asset:id,product_id,position_id,tag_code',
                     'asset.product:id,name',
@@ -61,23 +53,7 @@ class HandoverController extends Controller
                 ])
                 ->orderByDesc('initiated_at')
                 ->limit(20)
-                ->get()
-                ->map(fn (HandoverLog $h) => [
-                    'id' => $h->id,
-                    'tag_code' => $h->asset?->tag_code,
-                    'asset_name' => $h->asset?->product?->name,
-                    'to' => $h->toUser?->only(['id', 'name', 'email']),
-                    'from_position' => $h->fromPosition ? [
-                        'title' => $h->fromPosition->title,
-                        'department' => $h->fromPosition->department?->name,
-                    ] : null,
-                    'to_position' => $h->toPosition ? [
-                        'title' => $h->toPosition->title,
-                        'department' => $h->toPosition->department?->name,
-                    ] : null,
-                    'initiated_at' => $h->initiated_at?->toIso8601String(),
-                    'verified_at' => $h->verified_at?->toIso8601String(),
-                ]),
+                ->get(), $request),
         ]);
     }
 
@@ -176,7 +152,7 @@ class HandoverController extends Controller
 
             $asset->update([
                 'position_id' => $handoverLog->to_position_id,
-                'status' => 'Checked_Out',
+                'status' => AssetStatus::CheckedOut,
             ]);
 
             StockMovement::create([

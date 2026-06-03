@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\RequisitionStatus;
 use App\Models\Position;
 use App\Models\Product;
 use App\Models\ProductStock;
@@ -44,7 +45,7 @@ test('requester can submit a requisition and view it in the index and show pages
 
     $requisition = Requisition::query()->latest('id')->firstOrFail();
 
-    expect($requisition->status)->toBe('Submitted');
+    expect($requisition->status)->toBe(RequisitionStatus::Submitted);
     expect($requisition->lines)->toHaveCount(1);
 
     $this->actingAs($requester)
@@ -74,7 +75,7 @@ test('requester cannot approve own requisition (separation of duty)', function (
     $requisition = Requisition::factory()->create([
         'requester_id' => $user->id,
         'requester_position_id' => $position->id,
-        'status' => 'Submitted',
+        'status' => RequisitionStatus::Submitted,
     ]);
 
     $this->actingAs($user)
@@ -97,7 +98,7 @@ test('supply head can reject a submitted requisition with a reason', function ()
     $requisition = Requisition::factory()->create([
         'requester_id' => $requester->id,
         'requester_position_id' => $requesterPosition->id,
-        'status' => 'Submitted',
+        'status' => RequisitionStatus::Submitted,
         'notes' => 'Original request note',
     ]);
 
@@ -117,7 +118,7 @@ test('supply head can reject a submitted requisition with a reason', function ()
 
     $requisition->refresh();
 
-    expect($requisition->status)->toBe('Rejected');
+    expect($requisition->status)->toBe(RequisitionStatus::Rejected);
     expect($requisition->notes)->toContain('Original request note');
     expect($requisition->notes)->toContain('Rejection reason: Budget is not available this month.');
 });
@@ -145,7 +146,7 @@ test('supply head can issue an approved requisition and records issue movements 
     $requisition = Requisition::factory()->create([
         'requester_id' => $requester->id,
         'requester_position_id' => $requesterPosition->id,
-        'status' => 'Approved',
+        'status' => RequisitionStatus::Approved,
         'approved_at' => CarbonImmutable::now(),
         'approver_id' => User::factory()->assignedPosition($approverPosition)->create()->id,
         'approver_position_id' => $approverPosition->id,
@@ -175,7 +176,7 @@ test('supply head can issue an approved requisition and records issue movements 
     expect($lot->qty_remaining)->toBe(7);
 
     $requisition->refresh();
-    expect($requisition->status)->toBe('Issued');
+    expect($requisition->status)->toBe(RequisitionStatus::Issued);
     expect($requisition->issued_by)->toBe($issuer->id);
     expect($requisition->issued_position_id)->toBe($issuerPosition->id);
     expect($requisition->issued_ip_address)->not->toBeNull();

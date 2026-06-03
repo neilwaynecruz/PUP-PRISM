@@ -38,8 +38,8 @@ export default defineConfigWithVueTs(
             },
         },
         rules: {
-            'vue/multi-word-component-names': 'off',
-            '@typescript-eslint/no-explicit-any': 'off',
+            'vue/multi-word-component-names': 'warn',
+            '@typescript-eslint/no-explicit-any': 'warn',
             '@typescript-eslint/consistent-type-imports': [
                 'error',
                 {

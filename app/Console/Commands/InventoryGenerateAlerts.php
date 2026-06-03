@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\ProductType;
 use App\Models\InventoryAlert;
 use App\Models\Product;
 use App\Models\StockLot;
@@ -24,7 +25,7 @@ class InventoryGenerateAlerts extends Command
         InventoryAlert::query()->delete();
 
         $lowStockProducts = Product::query()
-            ->where('type', 'consumable')
+            ->where('type', ProductType::Consumable)
             ->where('is_active', true)
             ->whereHas('stock', function ($query) {
                 $query->whereColumn('on_hand_qty', '<=', 'products.reorder_threshold');

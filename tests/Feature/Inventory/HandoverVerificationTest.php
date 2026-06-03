@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\AssetStatus;
 use App\Models\Asset;
 use App\Models\Department;
 use App\Models\HandoverLog;
@@ -37,7 +38,7 @@ test('property custodian can initiate handover and recipient can verify (creates
     $product = Product::factory()->asset()->create();
     $asset = Asset::factory()->assignedToPosition($custodianPosition)->create([
         'product_id' => $product->id,
-        'status' => 'Available',
+        'status' => AssetStatus::Available,
         'tag_code' => 'TAG-0001',
     ]);
 
@@ -70,7 +71,7 @@ test('property custodian can initiate handover and recipient can verify (creates
         ->assertRedirect(route('inventory.handover.index', absolute: false));
 
     $asset->refresh();
-    expect($asset->status)->toBe('Checked_Out');
+    expect($asset->status)->toBe(AssetStatus::CheckedOut);
     expect($asset->position_id)->toBe($recipientPosition->id);
 
     $handover = HandoverLog::query()->findOrFail($handoverLogId);

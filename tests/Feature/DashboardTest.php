@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\AssetStatus;
 use App\Models\Asset;
 use App\Models\InventoryAlert;
 use App\Models\Product;
@@ -28,9 +29,9 @@ test('admin dashboard aggregates unserviceable and condemned asset counts', func
 
     $product = Product::factory()->asset()->create();
 
-    Asset::factory()->count(2)->recycle($product)->create(['status' => 'Unserviceable']);
-    Asset::factory()->recycle($product)->create(['status' => 'Condemned']);
-    Asset::factory()->recycle($product)->create(['status' => 'Available']);
+    Asset::factory()->count(2)->recycle($product)->create(['status' => AssetStatus::Unserviceable]);
+    Asset::factory()->recycle($product)->create(['status' => AssetStatus::Condemned]);
+    Asset::factory()->recycle($product)->create(['status' => AssetStatus::Available]);
 
     $this->actingAs($admin)
         ->get(route('dashboard'))
@@ -69,7 +70,7 @@ test('admin users see dashboard alerts, low stock, and asset details', function 
     Asset::factory()
         ->for($assetProduct, 'product')
         ->create([
-            'status' => 'Unserviceable',
+            'status' => AssetStatus::Unserviceable,
             'tag_code' => 'AST-00000001',
         ]);
 

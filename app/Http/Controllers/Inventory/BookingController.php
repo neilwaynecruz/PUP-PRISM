@@ -2,9 +2,15 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Enums\AssetStatus;
+use App\Enums\BookingStatus;
+use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\BookingApproveRequest;
 use App\Http\Requests\Inventory\BookingStoreRequest;
+use App\Http\Resources\AssetResource;
+use App\Http\Resources\BookingCollection;
+use App\Http\Resources\BookingResource;
 use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\User;
@@ -23,8 +29,8 @@ class BookingController extends Controller
         $assetSearch = $request->string('asset_search')->trim()->toString();
 
         $assets = Asset::query()
-            ->where('status', 'Available')
-            ->whereHas('product', fn ($q) => $q->where('type', 'asset')->where('is_active', true))
+            ->where('status', AssetStatus::Available)
+            ->whereHas('product', fn ($q) => $q->where('type', ProductType::Asset)->where('is_active', true))
             ->with(['product:id,name', 'position:id,department_id,title', 'position.department:id,name'])
             ->when($assetSearch !== '', function ($query) use ($assetSearch) {
                 $query->where(function ($query) use ($assetSearch) {
@@ -61,7 +67,7 @@ class BookingController extends Controller
 
         $approvalQueue = Booking::query()
             ->with($bookingPayload)
-            ->where('status', 'Requested')
+            ->where('status', BookingStatus::Requested)
             ->orderBy('start_at')
             ->limit(15)
             ->get();
@@ -78,68 +84,10 @@ class BookingController extends Controller
             'filters' => [
                 'asset_search' => $assetSearch,
             ],
-            'assets' => $assets->map(fn (Asset $a) => [
-                'id' => $a->id,
-                'tag_code' => $a->tag_code,
-                'status' => $a->status,
-                'name' => $a->product?->name,
-                'position' => $a->position ? [
-                    'title' => $a->position->title,
-                    'department' => $a->position->department?->name,
-                ] : null,
-            ]),
-            'calendar_events' => $calendarEvents->map(fn (Booking $b) => [
-                'id' => $b->id,
-                'asset_id' => $b->asset_id,
-                'title' => ($b->asset?->product?->name ?? 'Asset').' - '.$b->status,
-                'start' => $b->start_at?->toIso8601String(),
-                'end' => $b->end_at?->toIso8601String(),
-                'status' => $b->status,
-            ]),
-            'approval_queue' => $approvalQueue->map(fn (Booking $b) => [
-                'id' => $b->id,
-                'asset_id' => $b->asset_id,
-                'title' => ($b->asset?->product?->name ?? 'Asset').' - '.$b->status,
-                'start' => $b->start_at?->toIso8601String(),
-                'end' => $b->end_at?->toIso8601String(),
-                'status' => $b->status,
-                'requester' => $b->requester ? [
-                    'name' => $b->requester->name,
-                    'email' => $b->requester->email,
-                ] : null,
-                'requester_position' => $b->requesterPosition ? [
-                    'title' => $b->requesterPosition->title,
-                    'department' => $b->requesterPosition->department?->name,
-                ] : null,
-                'approver' => $b->approver ? [
-                    'name' => $b->approver->name,
-                    'email' => $b->approver->email,
-                ] : null,
-            ]),
-            'bookings' => $bookings->through(fn (Booking $b) => [
-                'id' => $b->id,
-                'asset_id' => $b->asset_id,
-                'asset_label' => $b->asset?->tag_code,
-                'title' => ($b->asset?->product?->name ?? 'Asset').' - '.$b->status,
-                'start' => $b->start_at?->toIso8601String(),
-                'end' => $b->end_at?->toIso8601String(),
-                'status' => $b->status,
-                'requester_id' => $b->requester_id,
-                'requester' => $b->requester ? [
-                    'name' => $b->requester->name,
-                    'email' => $b->requester->email,
-                ] : null,
-                'requester_position' => $b->requesterPosition ? [
-                    'title' => $b->requesterPosition->title,
-                    'department' => $b->requesterPosition->department?->name,
-                ] : null,
-                'approver' => $b->approver ? [
-                    'name' => $b->approver->name,
-                    'email' => $b->approver->email,
-                ] : null,
-                'requested_ip_address' => $b->requested_ip_address,
-                'approved_ip_address' => $b->approved_ip_address,
-            ]),
+            'assets' => AssetResource::collectionForInertia($assets, $request),
+            'calendar_events' => BookingResource::collectionForInertia($calendarEvents, $request),
+            'approval_queue' => BookingResource::collectionForInertia($approvalQueue, $request),
+            'bookings' => (new BookingCollection($bookings))->toArray($request),
             'can' => [
                 'approve' => $currentUser instanceof User
                     ? $currentUser->hasAnyRole(['Admin', 'Property Custodian'])
@@ -157,7 +105,7 @@ class BookingController extends Controller
 
         $overlapsApproved = Booking::query()
             ->where('asset_id', $validated['asset_id'])
-            ->where('status', 'Approved')
+            ->where('status', BookingStatus::Approved)
             ->where(function ($q) use ($startAt, $endAt) {
                 $q->whereBetween('start_at', [$startAt, $endAt])
                     ->orWhereBetween('end_at', [$startAt, $endAt])
@@ -183,7 +131,7 @@ class BookingController extends Controller
             'approved_ip_address' => null,
             'start_at' => $startAt,
             'end_at' => $endAt,
-            'status' => 'Requested',
+            'status' => BookingStatus::Requested,
             'purpose' => $validated['purpose'] ?? null,
         ]);
 
@@ -200,14 +148,14 @@ class BookingController extends Controller
 
         if ($action === 'approve') {
             $booking->update([
-                'status' => 'Approved',
+                'status' => BookingStatus::Approved,
                 'approver_id' => $request->user()->id,
                 'approver_position_id' => $request->user()->position_id,
                 'approved_ip_address' => $request->ip(),
             ]);
         } else {
             $booking->update([
-                'status' => 'Rejected',
+                'status' => BookingStatus::Rejected,
                 'approver_id' => $request->user()->id,
                 'approver_position_id' => $request->user()->position_id,
                 'approved_ip_address' => $request->ip(),

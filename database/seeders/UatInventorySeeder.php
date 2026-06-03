@@ -2,6 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AssetStatus;
+use App\Enums\ProductType;
 use App\Models\Asset;
 use App\Models\Category;
 use App\Models\Origin;
@@ -49,8 +51,8 @@ class UatInventorySeeder extends Seeder
                 'category' => 'IT Equipment',
                 'origin' => 'Main Campus',
                 'assets' => [
-                    ['tag_code' => 'AST-COE-0001', 'position' => 'POS-COE-PC', 'status' => 'Available'],
-                    ['tag_code' => 'AST-COED-0001', 'position' => 'POS-COED-PC', 'status' => 'Checked_Out'],
+                    ['tag_code' => 'AST-COE-0001', 'position' => 'POS-COE-PC', 'status' => AssetStatus::Available],
+                    ['tag_code' => 'AST-COED-0001', 'position' => 'POS-COED-PC', 'status' => AssetStatus::CheckedOut],
                 ],
             ],
             [
@@ -59,8 +61,8 @@ class UatInventorySeeder extends Seeder
                 'category' => 'IT Equipment',
                 'origin' => 'Donation',
                 'assets' => [
-                    ['tag_code' => 'AST-DIR-0001', 'position' => 'POS-DIR-PC', 'status' => 'Available'],
-                    ['tag_code' => 'AST-STU-0001', 'position' => 'POS-STUDENT-PC', 'status' => 'Available'],
+                    ['tag_code' => 'AST-DIR-0001', 'position' => 'POS-DIR-PC', 'status' => AssetStatus::Available],
+                    ['tag_code' => 'AST-STU-0001', 'position' => 'POS-STUDENT-PC', 'status' => AssetStatus::Available],
                 ],
             ],
             [
@@ -69,8 +71,8 @@ class UatInventorySeeder extends Seeder
                 'category' => 'Office Equipment',
                 'origin' => 'LGU',
                 'assets' => [
-                    ['tag_code' => 'AST-REG-0001', 'position' => 'POS-REG-PC', 'status' => 'Checked_Out'],
-                    ['tag_code' => 'AST-LIB-0001', 'position' => 'POS-LIB-PC', 'status' => 'Available'],
+                    ['tag_code' => 'AST-REG-0001', 'position' => 'POS-REG-PC', 'status' => AssetStatus::CheckedOut],
+                    ['tag_code' => 'AST-LIB-0001', 'position' => 'POS-LIB-PC', 'status' => AssetStatus::Available],
                 ],
             ],
             [
@@ -79,8 +81,8 @@ class UatInventorySeeder extends Seeder
                 'category' => 'IT Equipment',
                 'origin' => 'CHED',
                 'assets' => [
-                    ['tag_code' => 'AST-SPMO-0001', 'position' => 'POS-PC-CHIEF', 'status' => 'Available'],
-                    ['tag_code' => 'AST-ADMIN-0001', 'position' => 'POS-ADMIN-PC', 'status' => 'Unserviceable'],
+                    ['tag_code' => 'AST-SPMO-0001', 'position' => 'POS-PC-CHIEF', 'status' => AssetStatus::Available],
+                    ['tag_code' => 'AST-ADMIN-0001', 'position' => 'POS-ADMIN-PC', 'status' => AssetStatus::Unserviceable],
                 ],
             ],
         ];
@@ -92,7 +94,7 @@ class UatInventorySeeder extends Seeder
                     'name' => $definition['name'],
                     'category_id' => $categories[$definition['category']]->id,
                     'origin_id' => $origins[$definition['origin']]->id,
-                    'type' => 'asset',
+                    'type' => ProductType::Asset,
                     'reorder_threshold' => 0,
                     'is_active' => true,
                 ],
@@ -181,7 +183,7 @@ class UatInventorySeeder extends Seeder
                     'name' => $definition['name'],
                     'category_id' => $categories[$definition['category']]->id,
                     'origin_id' => $origins[$definition['origin']]->id,
-                    'type' => 'consumable',
+                    'type' => ProductType::Consumable,
                     'reorder_threshold' => $definition['reorder_threshold'],
                     'is_active' => true,
                 ],

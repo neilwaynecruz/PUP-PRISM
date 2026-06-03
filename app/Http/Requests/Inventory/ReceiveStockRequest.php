@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Inventory;
 
+use App\Enums\ProductType;
 use App\Models\Product;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -47,7 +48,7 @@ class ReceiveStockRequest extends FormRequest
                     return;
                 }
 
-                if ($product->type === 'consumable') {
+                if ($product->type === ProductType::Consumable) {
                     if (! $this->filled('qty')) {
                         $validator->errors()->add('qty', __('Quantity is required for consumables.'));
                     }

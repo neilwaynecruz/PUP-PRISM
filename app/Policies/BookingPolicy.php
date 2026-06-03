@@ -2,6 +2,7 @@
 
 namespace App\Policies;
 
+use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\User;
 
@@ -40,7 +41,7 @@ class BookingPolicy
             return true;
         }
 
-        return $user->id === $booking->requester_id && $booking->status === 'Requested';
+        return $user->id === $booking->requester_id && $booking->status === BookingStatus::Requested;
     }
 
     /**
@@ -48,11 +49,11 @@ class BookingPolicy
      */
     public function delete(User $user, Booking $booking): bool
     {
-        return $user->id === $booking->requester_id && $booking->status === 'Requested';
+        return $user->id === $booking->requester_id && $booking->status === BookingStatus::Requested;
     }
 
     public function approve(User $user, Booking $booking): bool
     {
-        return $user->hasAnyRole(['Admin', 'Property Custodian']) && $booking->status === 'Requested';
+        return $user->hasAnyRole(['Admin', 'Property Custodian']) && $booking->status === BookingStatus::Requested;
     }
 }

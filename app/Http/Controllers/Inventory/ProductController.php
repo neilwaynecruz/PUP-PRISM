@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\ProductStoreRequest;
 use App\Http\Requests\Inventory\ProductUpdateRequest;
+use App\Http\Resources\ProductCollection;
+use App\Http\Resources\ProductResource;
 use App\Models\Category;
 use App\Models\Origin;
 use App\Models\Product;
@@ -62,18 +65,7 @@ class ProductController extends Controller
                 'origin_id' => $originId,
                 'active' => $active,
             ],
-            'products' => $products->through(fn (Product $product) => [
-                'id' => $product->id,
-                'sku' => $product->sku,
-                'name' => $product->name,
-                'type' => $product->type,
-                'is_active' => $product->is_active,
-                'reorder_threshold' => $product->reorder_threshold,
-                'category' => $product->category?->name,
-                'origin' => $product->origin?->name,
-                'on_hand_qty' => $product->stock?->on_hand_qty,
-                'assets_count' => $product->assets_count,
-            ]),
+            'products' => (new ProductCollection($products))->toArray($request),
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
             'can' => [
@@ -105,7 +97,7 @@ class ProductController extends Controller
                 'is_active' => $validated['is_active'],
             ]);
 
-            if ($product->type === 'consumable') {
+            if ($product->type === ProductType::Consumable) {
                 ProductStock::create([
                     'product_id' => $product->id,
                     'on_hand_qty' => 0,
@@ -127,36 +119,14 @@ class ProductController extends Controller
         ])->loadCount('assets');
 
         return Inertia::render('inventory/products/Show', [
-            'product' => [
-                'id' => $product->id,
-                'sku' => $product->sku,
-                'name' => $product->name,
-                'type' => $product->type,
-                'is_active' => $product->is_active,
-                'reorder_threshold' => $product->reorder_threshold,
-                'category_id' => $product->category_id,
-                'category' => $product->category?->name,
-                'origin_id' => $product->origin_id,
-                'origin' => $product->origin?->name,
-                'on_hand_qty' => $product->stock?->on_hand_qty,
-                'assets_count' => $product->assets_count,
-            ],
+            'product' => (new ProductResource($product))->resolve(),
         ]);
     }
 
     public function edit(Product $product): Response
     {
         return Inertia::render('inventory/products/Edit', [
-            'product' => $product->only([
-                'id',
-                'sku',
-                'name',
-                'category_id',
-                'origin_id',
-                'type',
-                'reorder_threshold',
-                'is_active',
-            ]),
+            'product' => (new ProductResource($product))->resolve(),
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
         ]);

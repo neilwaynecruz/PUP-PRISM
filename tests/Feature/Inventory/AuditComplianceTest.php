@@ -1,5 +1,7 @@
 <?php
 
+use App\Enums\AssetStatus;
+use App\Enums\BookingStatus;
 use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\HandoverLog;
@@ -30,7 +32,7 @@ test('booking requests and approvals retain ip and position audit data', functio
 
     $asset = Asset::factory()->assignedToPosition($approverPosition)->create([
         'product_id' => Product::factory()->asset()->create()->id,
-        'status' => 'Available',
+        'status' => AssetStatus::Available,
     ]);
 
     $this->actingAs($requester)
@@ -57,7 +59,7 @@ test('booking requests and approvals retain ip and position audit data', functio
         ->assertRedirect();
 
     $booking->refresh();
-    expect($booking->status)->toBe('Approved');
+    expect($booking->status)->toBe(BookingStatus::Approved);
     expect($booking->approver_position_id)->toBe($approverPosition->id);
     expect($booking->approved_ip_address)->not->toBeNull();
 });
@@ -73,7 +75,7 @@ test('handover receipt view states internal accountability wording', function ()
     $asset = Asset::factory()->assignedToPosition($toPosition)->create([
         'product_id' => Product::factory()->asset()->create(['name' => 'Accountability Laptop'])->id,
         'tag_code' => 'UAT-REC-0001',
-        'status' => 'Checked_Out',
+        'status' => AssetStatus::CheckedOut,
     ]);
 
     $handover = HandoverLog::factory()->create([

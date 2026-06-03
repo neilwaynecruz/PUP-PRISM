@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AssetStatus;
+use App\Enums\ProductType;
 use App\Models\Asset;
 use App\Models\InventoryAlert;
 use App\Models\Product;
@@ -22,7 +24,7 @@ class DashboardController extends Controller
         $alerts = [];
         $lowStock = collect();
         $unserviceableAssets = collect();
-        $assetStatusCounts = ['Unserviceable' => 0, 'Condemned' => 0];
+        $assetStatusCounts = [AssetStatus::Unserviceable->value => 0, AssetStatus::Condemned->value => 0];
 
         if ($user->hasRole('Admin')) {
             $alerts = InventoryAlert::query()
@@ -32,7 +34,7 @@ class DashboardController extends Controller
                 ->get(['id', 'type', 'message', 'detected_at']);
 
             $lowStock = Product::query()
-                ->where('type', 'consumable')
+                ->where('type', ProductType::Consumable)
                 ->where('is_active', true)
                 ->whereHas('stock')
                 ->with(['stock:id,product_id,on_hand_qty', 'category:id,name'])
@@ -42,15 +44,15 @@ class DashboardController extends Controller
                 ->get(['id', 'sku', 'name', 'reorder_threshold']);
 
             $assetStatusCounts = Asset::query()
-                ->whereIn('status', ['Unserviceable', 'Condemned'])
+                ->whereIn('status', [AssetStatus::Unserviceable, AssetStatus::Condemned])
                 ->select('status', DB::raw('CAST(COUNT(*) AS INTEGER) as aggregate'))
                 ->groupBy('status')
                 ->pluck('aggregate', 'status')
-                ->union(['Unserviceable' => 0, 'Condemned' => 0])
+                ->union([AssetStatus::Unserviceable->value => 0, AssetStatus::Condemned->value => 0])
                 ->toArray();
 
             $unserviceableAssets = Asset::query()
-                ->whereIn('status', ['Unserviceable', 'Condemned'])
+                ->whereIn('status', [AssetStatus::Unserviceable, AssetStatus::Condemned])
                 ->with('product:id,name')
                 ->orderBy('status')
                 ->orderBy('tag_code')
@@ -71,12 +73,12 @@ class DashboardController extends Controller
             'unserviceableAssets' => $unserviceableAssets->map(fn (Asset $a) => [
                 'id' => $a->id,
                 'tag_code' => $a->tag_code,
-                'status' => $a->status,
+                'status' => $a->status->value,
                 'name' => $a->product?->name,
             ]),
             'assetStatusCounts' => [
-                'labels' => ['Unserviceable', 'Condemned'],
-                'data' => [(int) ($assetStatusCounts['Unserviceable'] ?? 0), (int) ($assetStatusCounts['Condemned'] ?? 0)],
+                'labels' => [AssetStatus::Unserviceable->value, AssetStatus::Condemned->value],
+                'data' => [(int) ($assetStatusCounts[AssetStatus::Unserviceable->value] ?? 0), (int) ($assetStatusCounts[AssetStatus::Condemned->value] ?? 0)],
             ],
         ]);
     }

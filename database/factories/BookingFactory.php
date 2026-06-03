@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\BookingStatus;
 use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\Position;
@@ -32,7 +33,7 @@ class BookingFactory extends Factory
             'approved_ip_address' => null,
             'start_at' => fake()->dateTimeBetween('+1 day', '+5 days'),
             'end_at' => fake()->dateTimeBetween('+5 days', '+10 days'),
-            'status' => 'Requested',
+            'status' => BookingStatus::Requested,
             'purpose' => fake()->sentence(),
         ];
     }

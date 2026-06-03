@@ -26,7 +26,7 @@ defineOptions({
 });
 
 const page = usePage();
-const roles = computed<string[]>(() => (page.props.auth as any)?.roles ?? []);
+const roles = computed<string[]>(() => page.props.auth.roles ?? []);
 const isAdmin = computed(() => roles.value.includes('Admin'));
 
 const assetStatusCanvas = ref<HTMLCanvasElement | null>(null);

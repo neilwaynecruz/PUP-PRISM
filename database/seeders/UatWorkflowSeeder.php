@@ -2,6 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Enums\AssetStatus;
+use App\Enums\BookingStatus;
+use App\Enums\RequisitionStatus;
 use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\HandoverLog;
@@ -41,7 +44,7 @@ class UatWorkflowSeeder extends Seeder
                 'approver_position_id' => $users['custodian@local.test']->position_id,
                 'requested_ip_address' => '10.250.8.10',
                 'approved_ip_address' => '10.250.8.11',
-                'status' => 'Approved',
+                'status' => BookingStatus::Approved,
                 'purpose' => '[UAT] Director briefing and equipment walkthrough',
             ],
         );
@@ -59,7 +62,7 @@ class UatWorkflowSeeder extends Seeder
                 'approver_position_id' => null,
                 'requested_ip_address' => '10.250.8.12',
                 'approved_ip_address' => null,
-                'status' => 'Requested',
+                'status' => BookingStatus::Requested,
                 'purpose' => '[UAT] Library digital orientation',
             ],
         );
@@ -77,7 +80,7 @@ class UatWorkflowSeeder extends Seeder
                 'approver_position_id' => $users['custodian@local.test']->position_id,
                 'requested_ip_address' => '10.250.8.13',
                 'approved_ip_address' => '10.250.8.11',
-                'status' => 'Rejected',
+                'status' => BookingStatus::Rejected,
                 'purpose' => '[UAT] Conflicting booking example',
             ],
         );
@@ -96,7 +99,7 @@ class UatWorkflowSeeder extends Seeder
                 'issued_position_id' => null,
                 'issued_ip_address' => null,
                 'issued_at' => null,
-                'status' => 'Approved',
+                'status' => RequisitionStatus::Approved,
             ],
         );
 
@@ -117,7 +120,7 @@ class UatWorkflowSeeder extends Seeder
                 'issued_position_id' => null,
                 'issued_ip_address' => null,
                 'issued_at' => null,
-                'status' => 'Submitted',
+                'status' => RequisitionStatus::Submitted,
             ],
         );
 
@@ -137,7 +140,7 @@ class UatWorkflowSeeder extends Seeder
                 'issued_position_id' => $users['supply@local.test']->position_id,
                 'issued_ip_address' => '10.250.8.21',
                 'issued_at' => CarbonImmutable::now()->subDays(1),
-                'status' => 'Issued',
+                'status' => RequisitionStatus::Issued,
             ],
         );
 
@@ -222,7 +225,7 @@ class UatWorkflowSeeder extends Seeder
 
         $assets['AST-COE-0001']->update([
             'position_id' => $users['eng.custodian@local.test']->position_id,
-            'status' => 'Checked_Out',
+            'status' => AssetStatus::CheckedOut,
         ]);
 
         StockMovement::query()->updateOrCreate(

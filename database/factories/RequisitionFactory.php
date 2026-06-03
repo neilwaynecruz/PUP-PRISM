@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\RequisitionStatus;
 use App\Models\Position;
 use App\Models\Requisition;
 use App\Models\User;
@@ -33,7 +34,7 @@ class RequisitionFactory extends Factory
             'issued_position_id' => null,
             'issued_ip_address' => null,
             'issued_at' => null,
-            'status' => 'Submitted',
+            'status' => RequisitionStatus::Submitted,
             'notes' => fake()->optional()->sentence(),
         ];
     }
