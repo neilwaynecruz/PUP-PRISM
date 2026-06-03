@@ -63,36 +63,36 @@ defineOptions({
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Type</div>
                 <div class="mt-1 font-medium capitalize">{{ product.type }}</div>
             </div>
 
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Status</div>
                 <div class="mt-1 font-medium">
                     {{ product.is_active ? 'Active' : 'Inactive' }}
                 </div>
             </div>
 
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Category</div>
                 <div class="mt-1 font-medium">{{ product.category ?? '—' }}</div>
             </div>
 
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Origin</div>
                 <div class="mt-1 font-medium">{{ product.origin ?? '—' }}</div>
             </div>
 
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Reorder threshold</div>
                 <div class="mt-1 font-medium" data-testid="product-reorder-threshold-value">{{ product.reorder_threshold ?? 0 }}</div>
             </div>
 
             <div
                 v-if="product.type === 'consumable'"
-                class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
             >
                 <div class="text-sm text-muted-foreground">Stock</div>
                 <div class="mt-1 font-medium" data-testid="product-on-hand-value">On hand: {{ product.on_hand_qty ?? 0 }}</div>
@@ -100,7 +100,7 @@ defineOptions({
 
             <div
                 v-else
-                class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border"
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
             >
                 <div class="text-sm text-muted-foreground">Assets</div>
                 <div class="mt-1 font-medium" data-testid="product-assets-count-value">{{ product.assets_count }}</div>

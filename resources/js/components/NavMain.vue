@@ -18,18 +18,21 @@ const { isCurrentUrl } = useCurrentUrl();
 </script>
 
 <template>
-    <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel>Platform</SidebarGroupLabel>
-        <SidebarMenu>
+    <SidebarGroup class="py-0">
+        <SidebarGroupLabel class="px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+            Platform
+        </SidebarGroupLabel>
+        <SidebarMenu class="gap-0.5">
             <SidebarMenuItem v-for="item in items" :key="item.title">
                 <SidebarMenuButton
                     as-child
                     :is-active="isCurrentUrl(item.href)"
                     :tooltip="item.title"
+                    class="group relative transition-all duration-200 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:shadow-sm dark:data-[active=true]:bg-primary/15"
                 >
-                    <Link :href="item.href">
-                        <component :is="item.icon" />
-                        <span>{{ item.title }}</span>
+                    <Link :href="item.href" class="flex items-center gap-3">
+                        <component :is="item.icon" class="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                        <span class="font-medium">{{ item.title }}</span>
                     </Link>
                 </SidebarMenuButton>
             </SidebarMenuItem>

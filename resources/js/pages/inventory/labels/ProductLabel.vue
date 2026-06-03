@@ -43,7 +43,7 @@ function printLabel() {
         </div>
 
         <div
-            class="mx-auto w-full max-w-sm rounded-xl border border-sidebar-border/70 bg-background p-6 text-center dark:border-sidebar-border print:max-w-none print:border-0 print:p-0"
+            class="mx-auto w-full max-w-sm rounded-xl border border-border/60 bg-background p-6 text-center dark:border-sidebar-border print:max-w-none print:border-0 print:p-0"
         >
             <div class="text-lg font-semibold">{{ product.name }}</div>
             <div class="mt-1 font-mono text-xs text-muted-foreground">

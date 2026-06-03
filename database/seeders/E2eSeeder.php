@@ -102,6 +102,15 @@ class E2eSeeder extends Seeder
             ['on_hand_qty' => 100],
         );
 
+        \App\Models\StockLot::query()->updateOrCreate(
+            ['product_id' => $consumableProduct->id, 'reference_no' => 'E2E-SEED-001'],
+            [
+                'received_at' => $now,
+                'qty_received' => 100,
+                'qty_remaining' => 100,
+            ],
+        );
+
         $assetProduct = Product::query()->updateOrCreate(
             ['sku' => 'AST-E2E-001'],
             [

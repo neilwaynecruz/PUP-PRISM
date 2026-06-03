@@ -73,18 +73,18 @@ defineOptions({
         </div>
 
         <div class="grid gap-4 lg:grid-cols-3">
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Requester</div>
                 <div class="mt-1 font-medium">{{ requisition.requester?.name ?? '—' }}</div>
                 <div v-if="requisition.requester_position" class="text-sm text-muted-foreground">
                     {{ requisition.requester_position.title }}{{ requisition.requester_position.department ? `, ${requisition.requester_position.department}` : '' }}
                 </div>
             </div>
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Notes</div>
                 <div class="mt-1 font-medium">{{ requisition.notes ?? '—' }}</div>
             </div>
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Audit trail</div>
                 <div class="mt-1 space-y-1 text-sm">
                     <div>Requested IP: {{ requisition.requested_ip_address ?? '—' }}</div>
@@ -95,21 +95,21 @@ defineOptions({
         </div>
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Approver</div>
                 <div class="mt-1 font-medium">{{ requisition.approver?.name ?? 'Pending approval' }}</div>
                 <div v-if="requisition.approver_position" class="text-sm text-muted-foreground">
                     {{ requisition.approver_position.title }}{{ requisition.approver_position.department ? `, ${requisition.approver_position.department}` : '' }}
                 </div>
             </div>
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Issuer</div>
                 <div class="mt-1 font-medium">{{ requisition.issuer?.name ?? 'Not yet issued' }}</div>
                 <div v-if="requisition.issued_position" class="text-sm text-muted-foreground">
                     {{ requisition.issued_position.title }}{{ requisition.issued_position.department ? `, ${requisition.issued_position.department}` : '' }}
                 </div>
             </div>
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <div class="text-sm text-muted-foreground">Timing</div>
                 <div class="mt-1 space-y-1 text-sm">
                     <div>Approved at: {{ requisition.approved_at ?? '—' }}</div>
@@ -118,15 +118,15 @@ defineOptions({
             </div>
         </div>
 
-        <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+        <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
             <div class="mb-3 flex items-center justify-between">
                 <div class="font-medium">Lines</div>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-sm">
-                    <thead class="text-left text-muted-foreground">
-                        <tr class="border-b border-sidebar-border/70 dark:border-sidebar-border">
+                    <thead class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                        <tr class="border-b border-border/60">
                             <th class="py-2 pr-3">SKU</th>
                             <th class="py-2 pr-3">Name</th>
                             <th class="py-2 pr-3">Type</th>
@@ -138,7 +138,7 @@ defineOptions({
                         <tr
                             v-for="l in requisition.lines"
                             :key="l.id"
-                            class="border-b border-sidebar-border/50 dark:border-sidebar-border"
+                            class="border-b border-border/40"
                         >
                             <td class="py-2 pr-3 font-medium">{{ l.sku ?? '—' }}</td>
                             <td class="py-2 pr-3">{{ l.name ?? '—' }}</td>

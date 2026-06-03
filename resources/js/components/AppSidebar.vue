@@ -7,6 +7,10 @@ import {
     Package,
     Truck,
     ClipboardList,
+    BarChart3,
+    ArrowLeftRight,
+    FileText,
+    Settings,
 } from 'lucide-vue-next';
 import AppLogo from '@/components/AppLogo.vue';
 import NavFooter from '@/components/NavFooter.vue';
@@ -44,7 +48,7 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Handover',
         href: handoverIndex(),
-        icon: ClipboardList,
+        icon: ArrowLeftRight,
     },
     {
         title: 'Bookings',
@@ -54,7 +58,7 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Requisitions',
         href: requisitionsIndex(),
-        icon: Package,
+        icon: FileText,
     },
     {
         title: 'Receiving',
@@ -64,43 +68,41 @@ const mainNavItems: NavItem[] = [
     {
         title: 'Audit logs',
         href: movementsIndex(),
-        icon: ClipboardList,
+        icon: BarChart3,
     },
 ];
 
 const footerNavItems: NavItem[] = [
     {
-        title: 'Repository',
-        href: 'https://github.com/laravel/vue-starter-kit',
-        icon: FolderGit2,
-    },
-    {
-        title: 'Documentation',
-        href: 'https://laravel.com/docs/starter-kits#vue',
-        icon: BookOpen,
+        title: 'Settings',
+        href: '/settings/profile',
+        icon: Settings,
     },
 ];
 </script>
 
 <template>
-    <Sidebar collapsible="icon" variant="inset">
-        <SidebarHeader>
+    <Sidebar collapsible="icon" variant="inset" class="border-r border-sidebar-border/50">
+        <SidebarHeader class="px-3 py-5">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child>
-                        <Link :href="dashboard()">
-                            <AppLogo />
+                    <SidebarMenuButton size="lg" as-child class="hover:bg-sidebar-accent/60 transition-colors duration-200">
+                        <Link :href="dashboard()" class="flex items-center gap-3">
+                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                                <AppLogo class="h-5 w-5" />
+                            </div>
+                            <span class="font-display text-lg font-semibold tracking-tight">PRISM</span>
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent>
+        <SidebarContent class="px-2">
             <NavMain :items="mainNavItems" />
         </SidebarContent>
 
-        <SidebarFooter>
+        <SidebarFooter class="px-2 pb-4">
             <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>

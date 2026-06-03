@@ -64,12 +64,12 @@ const lines = computed(() => [
         </div>
 
         <div class="grid gap-6 lg:grid-cols-3">
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border lg:col-span-2">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm lg:col-span-2">
                 <div class="grid gap-3 md:hidden">
                     <div
                         v-for="r in requisitions.data"
                         :key="r.id"
-                        class="rounded-lg border border-sidebar-border/70 p-4 text-sm dark:border-sidebar-border"
+                        class="rounded-xl border border-border/40 p-4 text-sm"
                     >
                         <div class="flex items-center justify-between gap-3">
                             <div class="font-medium">#{{ r.id }}</div>
@@ -92,8 +92,8 @@ const lines = computed(() => [
 
                 <div class="hidden overflow-x-auto md:block">
                     <table class="w-full text-sm">
-                        <thead class="text-left text-muted-foreground">
-                            <tr class="border-b border-sidebar-border/70 dark:border-sidebar-border">
+                        <thead class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                            <tr class="border-b border-border/60">
                                 <th class="py-2 pr-3">ID</th>
                                 <th class="py-2 pr-3">Status</th>
                                 <th class="py-2 pr-3">Requester</th>
@@ -105,7 +105,7 @@ const lines = computed(() => [
                             <tr
                                 v-for="r in requisitions.data"
                                 :key="r.id"
-                                class="border-b border-sidebar-border/50 dark:border-sidebar-border"
+                                class="border-b border-border/40"
                             >
                                 <td class="py-2 pr-3 font-medium">#{{ r.id }}</td>
                                 <td class="py-2 pr-3">{{ r.status }}</td>
@@ -127,9 +127,8 @@ const lines = computed(() => [
                 </div>
             </div>
 
-            <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
                 <Form v-bind="RequisitionController.store.form()" v-slot="{ errors, processing }" class="grid gap-4">
-                    <input type="hidden" name="lines" :value="JSON.stringify(lines)" />
 
                     <Heading variant="small" title="New requisition" description="One-line quick request (SKU + qty)." />
 

@@ -72,7 +72,7 @@ watch([type, search], () => {
 
             <select
                 v-model="type"
-                class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
             >
                 <option value="">All types</option>
                 <option value="receive">Receive</option>
@@ -96,7 +96,7 @@ watch([type, search], () => {
             <div
                 v-for="m in movements.data"
                 :key="m.id"
-                class="rounded-xl border border-sidebar-border/70 p-4 text-sm dark:border-sidebar-border"
+                class="rounded-xl border border-border/60 p-4 text-sm dark:border-sidebar-border"
             >
                 <div class="flex items-start justify-between gap-3">
                     <div>
@@ -121,9 +121,9 @@ watch([type, search], () => {
             </div>
         </div>
 
-        <div class="hidden overflow-x-auto rounded-xl border border-sidebar-border/70 dark:border-sidebar-border md:block">
+        <div class="hidden overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm md:block">
             <table class="min-w-full text-sm">
-                <thead class="bg-muted/30 text-left">
+                <thead class="bg-muted/40 text-left">
                     <tr class="[&>th]:px-4 [&>th]:py-3">
                         <th>When</th>
                         <th>Type</th>
@@ -136,7 +136,7 @@ watch([type, search], () => {
                         <th>Notes</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-border">
+                <tbody class="divide-y divide-border/60">
                     <tr v-if="movements.data.length === 0">
                         <td class="px-4 py-6 text-muted-foreground" colspan="9">
                             No movements found.

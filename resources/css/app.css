@@ -9,13 +9,19 @@
 
 @theme inline {
     --font-sans:
-        Instrument Sans, ui-sans-serif, system-ui, sans-serif,
+        'Outfit', ui-sans-serif, system-ui, sans-serif,
         'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
         'Noto Color Emoji';
+    --font-mono:
+        'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --font-display:
+        'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
 
     --radius-lg: var(--radius);
     --radius-md: calc(var(--radius) - 2px);
     --radius-sm: calc(var(--radius) - 4px);
+    --radius-xl: calc(var(--radius) + 4px);
+    --radius-2xl: calc(var(--radius) + 8px);
 
     --color-background: var(--background);
     --color-foreground: var(--foreground);
@@ -83,83 +89,87 @@
     body,
     html {
         --font-sans:
-            'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+            'Outfit', ui-sans-serif, system-ui, sans-serif,
             'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
             'Noto Color Emoji';
+        --font-mono:
+            'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        --font-display:
+            'Playfair Display', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
     }
 }
 
 :root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(0 0% 3.9%);
-    --card: hsl(0 0% 100%);
-    --card-foreground: hsl(0 0% 3.9%);
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(0 0% 3.9%);
-    --primary: hsl(0 0% 9%);
-    --primary-foreground: hsl(0 0% 98%);
-    --secondary: hsl(0 0% 92.1%);
-    --secondary-foreground: hsl(0 0% 9%);
-    --muted: hsl(0 0% 96.1%);
-    --muted-foreground: hsl(0 0% 45.1%);
-    --accent: hsl(0 0% 96.1%);
-    --accent-foreground: hsl(0 0% 9%);
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 92.8%);
-    --input: hsl(0 0% 89.8%);
-    --ring: hsl(0 0% 3.9%);
-    --chart-1: hsl(12 76% 61%);
-    --chart-2: hsl(173 58% 39%);
-    --chart-3: hsl(197 37% 24%);
-    --chart-4: hsl(43 74% 66%);
-    --chart-5: hsl(27 87% 67%);
-    --radius: 0.5rem;
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(0 0% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(0 0% 94%);
-    --sidebar-accent-foreground: hsl(0 0% 30%);
-    --sidebar-border: hsl(0 0% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(0 0% 98%);
+    --background: hsl(220 18% 97%);
+    --foreground: hsl(222 25% 12%);
+    --card: hsl(220 18% 99%);
+    --card-foreground: hsl(222 25% 12%);
+    --popover: hsl(220 18% 99%);
+    --popover-foreground: hsl(222 25% 12%);
+    --primary: hsl(222 65% 52%);
+    --primary-foreground: hsl(0 0% 100%);
+    --secondary: hsl(220 15% 93%);
+    --secondary-foreground: hsl(222 25% 12%);
+    --muted: hsl(220 12% 93%);
+    --muted-foreground: hsl(220 8% 42%);
+    --accent: hsl(220 15% 93%);
+    --accent-foreground: hsl(222 25% 12%);
+    --destructive: hsl(345 80% 58%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(220 12% 88%);
+    --input: hsl(220 12% 88%);
+    --ring: hsl(222 65% 52%);
+    --chart-1: hsl(222 65% 52%);
+    --chart-2: hsl(152 65% 45%);
+    --chart-3: hsl(38 95% 55%);
+    --chart-4: hsl(345 80% 58%);
+    --chart-5: hsl(205 90% 55%);
+    --radius: 0.625rem;
+    --sidebar-background: hsl(220 15% 96%);
+    --sidebar-foreground: hsl(222 15% 28%);
+    --sidebar-primary: hsl(222 65% 52%);
+    --sidebar-primary-foreground: hsl(0 0% 100%);
+    --sidebar-accent: hsl(220 15% 92%);
+    --sidebar-accent-foreground: hsl(222 25% 12%);
+    --sidebar-border: hsl(220 12% 88%);
+    --sidebar-ring: hsl(222 65% 52%);
+    --sidebar: hsl(220 15% 96%);
 }
 
 .dark {
-    --background: hsl(0 0% 3.9%);
-    --foreground: hsl(0 0% 98%);
-    --card: hsl(0 0% 3.9%);
-    --card-foreground: hsl(0 0% 98%);
-    --popover: hsl(0 0% 3.9%);
-    --popover-foreground: hsl(0 0% 98%);
-    --primary: hsl(0 0% 98%);
-    --primary-foreground: hsl(0 0% 9%);
-    --secondary: hsl(0 0% 14.9%);
-    --secondary-foreground: hsl(0 0% 98%);
-    --muted: hsl(0 0% 16.08%);
-    --muted-foreground: hsl(0 0% 63.9%);
-    --accent: hsl(0 0% 14.9%);
-    --accent-foreground: hsl(0 0% 98%);
-    --destructive: hsl(0 84% 60%);
-    --destructive-foreground: hsl(0 0% 98%);
-    --border: hsl(0 0% 14.9%);
-    --input: hsl(0 0% 14.9%);
-    --ring: hsl(0 0% 83.1%);
-    --chart-1: hsl(220 70% 50%);
-    --chart-2: hsl(160 60% 45%);
-    --chart-3: hsl(30 80% 55%);
-    --chart-4: hsl(280 65% 60%);
-    --chart-5: hsl(340 75% 55%);
-    --sidebar-background: hsl(0 0% 7%);
-    --sidebar-foreground: hsl(0 0% 95.9%);
-    --sidebar-primary: hsl(360, 100%, 100%);
-    --sidebar-primary-foreground: hsl(0 0% 100%);
-    --sidebar-accent: hsl(0 0% 15.9%);
-    --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-    --sidebar-border: hsl(0 0% 15.9%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
-    --sidebar: hsl(240 5.9% 10%);
+    --background: hsl(222 18% 6%);
+    --foreground: hsl(220 15% 95%);
+    --card: hsl(222 18% 8%);
+    --card-foreground: hsl(220 15% 95%);
+    --popover: hsl(222 18% 8%);
+    --popover-foreground: hsl(220 15% 95%);
+    --primary: hsl(217 90% 62%);
+    --primary-foreground: hsl(222 25% 8%);
+    --secondary: hsl(222 12% 16%);
+    --secondary-foreground: hsl(220 15% 95%);
+    --muted: hsl(222 12% 16%);
+    --muted-foreground: hsl(220 8% 58%);
+    --accent: hsl(222 12% 16%);
+    --accent-foreground: hsl(220 15% 95%);
+    --destructive: hsl(345 75% 62%);
+    --destructive-foreground: hsl(0 0% 100%);
+    --border: hsl(222 12% 20%);
+    --input: hsl(222 12% 20%);
+    --ring: hsl(217 90% 62%);
+    --chart-1: hsl(217 90% 62%);
+    --chart-2: hsl(152 65% 52%);
+    --chart-3: hsl(38 95% 58%);
+    --chart-4: hsl(345 75% 62%);
+    --chart-5: hsl(205 90% 60%);
+    --sidebar-background: hsl(222 18% 8%);
+    --sidebar-foreground: hsl(220 10% 88%);
+    --sidebar-primary: hsl(217 90% 62%);
+    --sidebar-primary-foreground: hsl(222 25% 8%);
+    --sidebar-accent: hsl(222 12% 16%);
+    --sidebar-accent-foreground: hsl(220 15% 95%);
+    --sidebar-border: hsl(222 12% 20%);
+    --sidebar-ring: hsl(217 90% 62%);
+    --sidebar: hsl(222 18% 8%);
 }
 
 @layer base {
@@ -173,16 +183,24 @@
 
 @layer components {
     .fc {
-        --fc-border-color: color-mix(in srgb, var(--color-border) 90%, transparent);
+        --fc-border-color: color-mix(in srgb, var(--color-border) 80%, transparent);
         --fc-button-bg-color: var(--color-primary);
         --fc-button-border-color: var(--color-primary);
-        --fc-button-hover-bg-color: color-mix(in srgb, var(--color-primary) 92%, white);
-        --fc-button-hover-border-color: color-mix(in srgb, var(--color-primary) 92%, white);
-        --fc-button-active-bg-color: color-mix(in srgb, var(--color-primary) 88%, black);
-        --fc-button-active-border-color: color-mix(in srgb, var(--color-primary) 88%, black);
+        --fc-button-hover-bg-color: color-mix(in srgb, var(--color-primary) 90%, white);
+        --fc-button-hover-border-color: color-mix(in srgb, var(--color-primary) 90%, white);
+        --fc-button-active-bg-color: color-mix(in srgb, var(--color-primary) 85%, black);
+        --fc-button-active-border-color: color-mix(in srgb, var(--color-primary) 85%, black);
         --fc-page-bg-color: transparent;
-        --fc-neutral-bg-color: color-mix(in srgb, var(--color-muted) 60%, transparent);
-        --fc-list-event-hover-bg-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
+        --fc-neutral-bg-color: color-mix(in srgb, var(--color-muted) 50%, transparent);
+        --fc-list-event-hover-bg-color: color-mix(in srgb, var(--color-accent) 60%, transparent);
+        --fc-event-bg-color: var(--color-primary);
+        --fc-event-border-color: var(--color-primary);
+        --fc-event-text-color: var(--color-primary-foreground);
+        --fc-today-bg-color: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    }
+
+    .dark .fc {
+        --fc-today-bg-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
     }
 
     .fc .fc-toolbar {
@@ -194,19 +212,69 @@
     }
 
     .fc .fc-button {
-        @apply rounded-md border-none px-3 py-2 text-sm shadow-none;
+        @apply rounded-lg border-none px-3.5 py-2 text-sm font-medium shadow-none transition-colors;
+    }
+
+    .fc .fc-button-primary:not(:disabled).fc-button-active,
+    .fc .fc-button-primary:not(:disabled):active {
+        @apply shadow-inner;
     }
 
     .fc .fc-daygrid-day-frame {
-        @apply min-h-24;
+        @apply min-h-28;
     }
 
     .fc .fc-daygrid-event {
-        @apply rounded-md px-1 py-0.5 text-xs font-medium;
+        @apply rounded-md px-1.5 py-0.5 text-[11px] font-semibold leading-tight tracking-wide;
     }
 
     .fc .fc-col-header-cell-cushion,
     .fc .fc-daygrid-day-number {
-        @apply px-1 py-2 text-xs sm:text-sm;
+        @apply px-2 py-2 text-xs font-medium sm:text-sm;
+    }
+
+    .fc .fc-day-today {
+        @apply bg-primary/5;
+    }
+
+    .fc .fc-daygrid-day-top {
+        @apply pb-1;
+    }
+
+    .fc .fc-scrollgrid-section-header th {
+        @apply bg-muted/50;
+    }
+
+    .fc .fc-day-other .fc-daygrid-day-top {
+        @apply opacity-40;
+    }
+
+    .fc .fc-daygrid-day-number {
+        @apply text-foreground;
+    }
+
+    .fc .fc-col-header-cell-cushion {
+        @apply text-muted-foreground;
+    }
+
+    .fc .fc-scrollgrid {
+        @apply border-border/60;
+    }
+
+    .fc .fc-scrollgrid-section-body td,
+    .fc .fc-scrollgrid-section-header th {
+        @apply border-border/40;
+    }
+
+    .fc .fc-daygrid-day {
+        @apply transition-colors;
+    }
+
+    .fc .fc-daygrid-day:hover {
+        @apply bg-muted/40;
+    }
+
+    .fc .fc-day-today .fc-daygrid-day-number {
+        @apply text-primary font-semibold;
     }
 }

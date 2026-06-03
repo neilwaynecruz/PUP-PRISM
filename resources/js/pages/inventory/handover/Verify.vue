@@ -28,6 +28,7 @@ defineProps<{
 const signaturePad = ref<SignaturePadInstance | null>(null);
 const signaturePng = ref<string>('');
 const signatureSizeError = ref<string>('');
+const signaturePngInput = ref<HTMLInputElement | null>(null);
 const maxSignatureBytes = 300000;
 
 function captureSignature(event?: Event): void {
@@ -41,9 +42,17 @@ function captureSignature(event?: Event): void {
     signaturePng.value = isEmpty ? '' : data;
     signatureSizeError.value = '';
 
+    // Sync to DOM immediately to avoid Vue reactivity flush race with Inertia Form serialization
+    if (signaturePngInput.value) {
+        signaturePngInput.value.value = signaturePng.value;
+    }
+
     if (signaturePng.value.length > maxSignatureBytes) {
         event?.preventDefault();
         signaturePng.value = '';
+        if (signaturePngInput.value) {
+            signaturePngInput.value.value = '';
+        }
         signatureSizeError.value = 'Signature is too large. Please clear it and sign again with fewer strokes.';
     }
 }
@@ -53,6 +62,9 @@ function clearSignature(): void {
     pad?.clearSignature();
     signaturePng.value = '';
     signatureSizeError.value = '';
+    if (signaturePngInput.value) {
+        signaturePngInput.value.value = '';
+    }
 }
 </script>
 
@@ -66,7 +78,7 @@ function clearSignature(): void {
             description="Confirm this transfer for internal accountability. This acknowledgement does not replace external legal contracting requirements."
         />
 
-        <div class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+        <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
             <div class="grid gap-2 text-sm">
                 <div><span class="text-muted-foreground">Asset:</span> {{ handover.asset_name ?? '—' }}</div>
                 <div><span class="text-muted-foreground">Tag:</span> {{ handover.tag_code ?? '—' }}</div>
@@ -102,7 +114,7 @@ function clearSignature(): void {
                 @submit="captureSignature()"
             >
                 <input type="hidden" name="token" :value="handover.token" />
-                <input type="hidden" name="signature_png" :value="signaturePng" />
+                <input ref="signaturePngInput" type="hidden" name="signature_png" :value="signaturePng" />
                 <InputError :message="errors.token" />
                 <InputError :message="signatureSizeError" />
                 <InputError :message="errors.signature_png" />
@@ -119,12 +131,12 @@ function clearSignature(): void {
             </Button>
         </div>
 
-        <div v-if="email_verified && !handover.verified_at" class="rounded-xl border border-sidebar-border/70 p-4 dark:border-sidebar-border">
+        <div v-if="email_verified && !handover.verified_at" class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
             <div class="mb-2 font-medium">Recipient signature</div>
             <div class="mb-3 text-sm text-muted-foreground">
                 Your signature is captured only as an internal proof of accountability for this handover.
             </div>
-            <div class="rounded-md border border-input bg-background" data-testid="handover-signature-pad">
+            <div class="rounded-lg border border-input bg-background" data-testid="handover-signature-pad" @mouseup="captureSignature()">
                 <VueSignaturePad
                     ref="signaturePad"
                     width="100%"

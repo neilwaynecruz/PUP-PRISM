@@ -60,7 +60,7 @@ defineOptions({
                         id="type"
                         name="type"
                         data-testid="product-type-input"
-                        class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
                         required
                     >
                         <option value="consumable" selected>Consumable</option>
@@ -90,7 +90,7 @@ defineOptions({
                         id="category_id"
                         name="category_id"
                         data-testid="product-category-input"
-                        class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
                     >
                         <option value="">None</option>
                         <option v-for="c in categories" :key="c.id" :value="c.id">
@@ -106,7 +106,7 @@ defineOptions({
                         id="origin_id"
                         name="origin_id"
                         data-testid="product-origin-input"
-                        class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
                     >
                         <option value="">None</option>
                         <option v-for="s in origins" :key="s.id" :value="s.id">
@@ -123,7 +123,7 @@ defineOptions({
                     id="is_active"
                     name="is_active"
                     data-testid="product-status-input"
-                    class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
                     required
                 >
                     <option value="1" selected>Active</option>

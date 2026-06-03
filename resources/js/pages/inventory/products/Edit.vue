@@ -103,7 +103,7 @@ function deleteProduct(productId: number): void {
                         id="category_id"
                         name="category_id"
                         data-testid="product-category-input"
-                        class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
                         :defaultValue="product.category_id ?? ''"
                     >
                         <option value="">None</option>
@@ -120,7 +120,7 @@ function deleteProduct(productId: number): void {
                         id="origin_id"
                         name="origin_id"
                         data-testid="product-origin-input"
-                        class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
                         :defaultValue="product.origin_id ?? ''"
                     >
                         <option value="">None</option>
@@ -138,7 +138,7 @@ function deleteProduct(productId: number): void {
                     id="is_active"
                     name="is_active"
                     data-testid="product-status-input"
-                    class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                    class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
                     :defaultValue="product.is_active ? '1' : '0'"
                     required
                 >
