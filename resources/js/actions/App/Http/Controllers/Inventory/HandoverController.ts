@@ -137,7 +137,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
  * @see app/Http/Controllers/Inventory/HandoverController.php:100
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-export const verify = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const verify = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: verify.url(args, options),
     method: 'post',
 })
@@ -152,7 +152,7 @@ verify.definition = {
  * @see app/Http/Controllers/Inventory/HandoverController.php:100
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-verify.url = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+verify.url = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { handoverLog: args }
     }
@@ -185,7 +185,7 @@ verify.url = (args: { handoverLog: number | { id: number } } | [handoverLog: num
  * @see app/Http/Controllers/Inventory/HandoverController.php:100
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-verify.post = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+verify.post = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: verify.url(args, options),
     method: 'post',
 })
@@ -195,7 +195,7 @@ verify.post = (args: { handoverLog: number | { id: number } } | [handoverLog: nu
  * @see app/Http/Controllers/Inventory/HandoverController.php:100
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-    const verifyForm = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const verifyForm = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: verify.url(args, options),
         method: 'post',
     })
@@ -205,7 +205,7 @@ verify.post = (args: { handoverLog: number | { id: number } } | [handoverLog: nu
  * @see app/Http/Controllers/Inventory/HandoverController.php:100
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-        verifyForm.post = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        verifyForm.post = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: verify.url(args, options),
             method: 'post',
         })

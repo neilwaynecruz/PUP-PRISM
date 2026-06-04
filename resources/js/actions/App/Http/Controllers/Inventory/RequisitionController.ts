@@ -312,7 +312,7 @@ show.head = (args: { requisition: string | number } | [requisition: string | num
  * @see app/Http/Controllers/Inventory/RequisitionController.php:326
  * @route '/inventory/requisitions/{requisition}'
  */
-export const destroy = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+export const destroy = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
@@ -327,7 +327,7 @@ destroy.definition = {
  * @see app/Http/Controllers/Inventory/RequisitionController.php:326
  * @route '/inventory/requisitions/{requisition}'
  */
-destroy.url = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+destroy.url = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { requisition: args }
     }
@@ -360,7 +360,7 @@ destroy.url = (args: { requisition: number | { id: number } } | [requisition: nu
  * @see app/Http/Controllers/Inventory/RequisitionController.php:326
  * @route '/inventory/requisitions/{requisition}'
  */
-destroy.delete = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+destroy.delete = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
@@ -370,7 +370,7 @@ destroy.delete = (args: { requisition: number | { id: number } } | [requisition:
  * @see app/Http/Controllers/Inventory/RequisitionController.php:326
  * @route '/inventory/requisitions/{requisition}'
  */
-    const destroyForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const destroyForm = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: destroy.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'DELETE',
@@ -385,7 +385,7 @@ destroy.delete = (args: { requisition: number | { id: number } } | [requisition:
  * @see app/Http/Controllers/Inventory/RequisitionController.php:326
  * @route '/inventory/requisitions/{requisition}'
  */
-        destroyForm.delete = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        destroyForm.delete = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: destroy.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'DELETE',
@@ -789,7 +789,7 @@ bulkIssue.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
  * @see app/Http/Controllers/Inventory/RequisitionController.php:151
  * @route '/inventory/requisitions/{requisition}/approve'
  */
-export const approve = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+export const approve = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: approve.url(args, options),
     method: 'put',
 })
@@ -804,7 +804,7 @@ approve.definition = {
  * @see app/Http/Controllers/Inventory/RequisitionController.php:151
  * @route '/inventory/requisitions/{requisition}/approve'
  */
-approve.url = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+approve.url = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { requisition: args }
     }
@@ -837,7 +837,7 @@ approve.url = (args: { requisition: number | { id: number } } | [requisition: nu
  * @see app/Http/Controllers/Inventory/RequisitionController.php:151
  * @route '/inventory/requisitions/{requisition}/approve'
  */
-approve.put = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+approve.put = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: approve.url(args, options),
     method: 'put',
 })
@@ -847,7 +847,7 @@ approve.put = (args: { requisition: number | { id: number } } | [requisition: nu
  * @see app/Http/Controllers/Inventory/RequisitionController.php:151
  * @route '/inventory/requisitions/{requisition}/approve'
  */
-    const approveForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const approveForm = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: approve.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -862,7 +862,7 @@ approve.put = (args: { requisition: number | { id: number } } | [requisition: nu
  * @see app/Http/Controllers/Inventory/RequisitionController.php:151
  * @route '/inventory/requisitions/{requisition}/approve'
  */
-        approveForm.put = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        approveForm.put = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: approve.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',
@@ -878,7 +878,7 @@ approve.put = (args: { requisition: number | { id: number } } | [requisition: nu
  * @see app/Http/Controllers/Inventory/RequisitionController.php:173
  * @route '/inventory/requisitions/{requisition}/reject'
  */
-export const reject = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+export const reject = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: reject.url(args, options),
     method: 'put',
 })
@@ -893,7 +893,7 @@ reject.definition = {
  * @see app/Http/Controllers/Inventory/RequisitionController.php:173
  * @route '/inventory/requisitions/{requisition}/reject'
  */
-reject.url = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+reject.url = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { requisition: args }
     }
@@ -926,7 +926,7 @@ reject.url = (args: { requisition: number | { id: number } } | [requisition: num
  * @see app/Http/Controllers/Inventory/RequisitionController.php:173
  * @route '/inventory/requisitions/{requisition}/reject'
  */
-reject.put = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+reject.put = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: reject.url(args, options),
     method: 'put',
 })
@@ -936,7 +936,7 @@ reject.put = (args: { requisition: number | { id: number } } | [requisition: num
  * @see app/Http/Controllers/Inventory/RequisitionController.php:173
  * @route '/inventory/requisitions/{requisition}/reject'
  */
-    const rejectForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const rejectForm = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: reject.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -951,7 +951,7 @@ reject.put = (args: { requisition: number | { id: number } } | [requisition: num
  * @see app/Http/Controllers/Inventory/RequisitionController.php:173
  * @route '/inventory/requisitions/{requisition}/reject'
  */
-        rejectForm.put = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        rejectForm.put = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: reject.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',
@@ -967,7 +967,7 @@ reject.put = (args: { requisition: number | { id: number } } | [requisition: num
  * @see app/Http/Controllers/Inventory/RequisitionController.php:196
  * @route '/inventory/requisitions/{requisition}/issue'
  */
-export const issue = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+export const issue = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: issue.url(args, options),
     method: 'put',
 })
@@ -982,7 +982,7 @@ issue.definition = {
  * @see app/Http/Controllers/Inventory/RequisitionController.php:196
  * @route '/inventory/requisitions/{requisition}/issue'
  */
-issue.url = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+issue.url = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { requisition: args }
     }
@@ -1015,7 +1015,7 @@ issue.url = (args: { requisition: number | { id: number } } | [requisition: numb
  * @see app/Http/Controllers/Inventory/RequisitionController.php:196
  * @route '/inventory/requisitions/{requisition}/issue'
  */
-issue.put = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+issue.put = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: issue.url(args, options),
     method: 'put',
 })
@@ -1025,7 +1025,7 @@ issue.put = (args: { requisition: number | { id: number } } | [requisition: numb
  * @see app/Http/Controllers/Inventory/RequisitionController.php:196
  * @route '/inventory/requisitions/{requisition}/issue'
  */
-    const issueForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const issueForm = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: issue.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -1040,7 +1040,7 @@ issue.put = (args: { requisition: number | { id: number } } | [requisition: numb
  * @see app/Http/Controllers/Inventory/RequisitionController.php:196
  * @route '/inventory/requisitions/{requisition}/issue'
  */
-        issueForm.put = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        issueForm.put = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: issue.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',

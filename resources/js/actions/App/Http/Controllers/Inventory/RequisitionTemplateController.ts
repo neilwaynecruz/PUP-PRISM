@@ -59,7 +59,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:37
  * @route '/inventory/requisition-templates/{requisitionTemplate}'
  */
-export const update = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+export const update = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
     method: 'put',
 })
@@ -74,7 +74,7 @@ update.definition = {
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:37
  * @route '/inventory/requisition-templates/{requisitionTemplate}'
  */
-update.url = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+update.url = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { requisitionTemplate: args }
     }
@@ -107,7 +107,7 @@ update.url = (args: { requisitionTemplate: number | { id: number } } | [requisit
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:37
  * @route '/inventory/requisition-templates/{requisitionTemplate}'
  */
-update.put = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+update.put = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
     method: 'put',
 })
@@ -117,7 +117,7 @@ update.put = (args: { requisitionTemplate: number | { id: number } } | [requisit
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:37
  * @route '/inventory/requisition-templates/{requisitionTemplate}'
  */
-    const updateForm = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const updateForm = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: update.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -132,7 +132,7 @@ update.put = (args: { requisitionTemplate: number | { id: number } } | [requisit
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:37
  * @route '/inventory/requisition-templates/{requisitionTemplate}'
  */
-        updateForm.put = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        updateForm.put = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: update.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',
@@ -148,7 +148,7 @@ update.put = (args: { requisitionTemplate: number | { id: number } } | [requisit
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:60
  * @route '/inventory/requisition-templates/{requisitionTemplate}/duplicate'
  */
-export const duplicate = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const duplicate = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: duplicate.url(args, options),
     method: 'post',
 })
@@ -163,7 +163,7 @@ duplicate.definition = {
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:60
  * @route '/inventory/requisition-templates/{requisitionTemplate}/duplicate'
  */
-duplicate.url = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+duplicate.url = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { requisitionTemplate: args }
     }
@@ -196,7 +196,7 @@ duplicate.url = (args: { requisitionTemplate: number | { id: number } } | [requi
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:60
  * @route '/inventory/requisition-templates/{requisitionTemplate}/duplicate'
  */
-duplicate.post = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+duplicate.post = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: duplicate.url(args, options),
     method: 'post',
 })
@@ -206,7 +206,7 @@ duplicate.post = (args: { requisitionTemplate: number | { id: number } } | [requ
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:60
  * @route '/inventory/requisition-templates/{requisitionTemplate}/duplicate'
  */
-    const duplicateForm = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const duplicateForm = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: duplicate.url(args, options),
         method: 'post',
     })
@@ -216,7 +216,7 @@ duplicate.post = (args: { requisitionTemplate: number | { id: number } } | [requ
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:60
  * @route '/inventory/requisition-templates/{requisitionTemplate}/duplicate'
  */
-        duplicateForm.post = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        duplicateForm.post = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: duplicate.url(args, options),
             method: 'post',
         })
@@ -227,7 +227,7 @@ duplicate.post = (args: { requisitionTemplate: number | { id: number } } | [requ
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:78
  * @route '/inventory/requisition-templates/{requisitionTemplate}'
  */
-export const destroy = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+export const destroy = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
@@ -242,7 +242,7 @@ destroy.definition = {
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:78
  * @route '/inventory/requisition-templates/{requisitionTemplate}'
  */
-destroy.url = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+destroy.url = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { requisitionTemplate: args }
     }
@@ -275,7 +275,7 @@ destroy.url = (args: { requisitionTemplate: number | { id: number } } | [requisi
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:78
  * @route '/inventory/requisition-templates/{requisitionTemplate}'
  */
-destroy.delete = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+destroy.delete = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
@@ -285,7 +285,7 @@ destroy.delete = (args: { requisitionTemplate: number | { id: number } } | [requ
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:78
  * @route '/inventory/requisition-templates/{requisitionTemplate}'
  */
-    const destroyForm = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const destroyForm = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: destroy.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'DELETE',
@@ -300,7 +300,7 @@ destroy.delete = (args: { requisitionTemplate: number | { id: number } } | [requ
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:78
  * @route '/inventory/requisition-templates/{requisitionTemplate}'
  */
-        destroyForm.delete = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        destroyForm.delete = (args: { requisitionTemplate: string | number | { id: string | number } } | [requisitionTemplate: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: destroy.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'DELETE',

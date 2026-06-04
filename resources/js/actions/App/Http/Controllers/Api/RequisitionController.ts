@@ -137,7 +137,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
  * @see app/Http/Controllers/Api/RequisitionController.php:42
  * @route '/api/requisitions/{requisition}'
  */
-export const show = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+export const show = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
@@ -152,7 +152,7 @@ show.definition = {
  * @see app/Http/Controllers/Api/RequisitionController.php:42
  * @route '/api/requisitions/{requisition}'
  */
-show.url = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+show.url = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { requisition: args }
     }
@@ -185,7 +185,7 @@ show.url = (args: { requisition: number | { id: number } } | [requisition: numbe
  * @see app/Http/Controllers/Api/RequisitionController.php:42
  * @route '/api/requisitions/{requisition}'
  */
-show.get = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+show.get = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
@@ -194,7 +194,7 @@ show.get = (args: { requisition: number | { id: number } } | [requisition: numbe
  * @see app/Http/Controllers/Api/RequisitionController.php:42
  * @route '/api/requisitions/{requisition}'
  */
-show.head = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+show.head = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(args, options),
     method: 'head',
 })
@@ -204,7 +204,7 @@ show.head = (args: { requisition: number | { id: number } } | [requisition: numb
  * @see app/Http/Controllers/Api/RequisitionController.php:42
  * @route '/api/requisitions/{requisition}'
  */
-    const showForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    const showForm = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: show.url(args, options),
         method: 'get',
     })
@@ -214,7 +214,7 @@ show.head = (args: { requisition: number | { id: number } } | [requisition: numb
  * @see app/Http/Controllers/Api/RequisitionController.php:42
  * @route '/api/requisitions/{requisition}'
  */
-        showForm.get = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.get = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, options),
             method: 'get',
         })
@@ -223,7 +223,7 @@ show.head = (args: { requisition: number | { id: number } } | [requisition: numb
  * @see app/Http/Controllers/Api/RequisitionController.php:42
  * @route '/api/requisitions/{requisition}'
  */
-        showForm.head = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.head = (args: { requisition: string | number | { id: string | number } } | [requisition: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
