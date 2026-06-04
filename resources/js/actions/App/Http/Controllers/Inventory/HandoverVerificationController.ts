@@ -4,7 +4,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
  * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:17
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-const HandoverVerificationController = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+const HandoverVerificationController = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: HandoverVerificationController.url(args, options),
     method: 'get',
 })
@@ -19,7 +19,7 @@ HandoverVerificationController.definition = {
  * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:17
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-HandoverVerificationController.url = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+HandoverVerificationController.url = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { handoverLog: args }
     }
@@ -52,7 +52,7 @@ HandoverVerificationController.url = (args: { handoverLog: string | number | { i
  * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:17
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-HandoverVerificationController.get = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+HandoverVerificationController.get = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: HandoverVerificationController.url(args, options),
     method: 'get',
 })
@@ -61,7 +61,7 @@ HandoverVerificationController.get = (args: { handoverLog: string | number | { i
  * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:17
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-HandoverVerificationController.head = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+HandoverVerificationController.head = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: HandoverVerificationController.url(args, options),
     method: 'head',
 })
@@ -71,7 +71,7 @@ HandoverVerificationController.head = (args: { handoverLog: string | number | { 
  * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:17
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-    const HandoverVerificationControllerForm = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    const HandoverVerificationControllerForm = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: HandoverVerificationController.url(args, options),
         method: 'get',
     })
@@ -81,7 +81,7 @@ HandoverVerificationController.head = (args: { handoverLog: string | number | { 
  * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:17
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-        HandoverVerificationControllerForm.get = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        HandoverVerificationControllerForm.get = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: HandoverVerificationController.url(args, options),
             method: 'get',
         })
@@ -90,7 +90,7 @@ HandoverVerificationController.head = (args: { handoverLog: string | number | { 
  * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:17
  * @route '/inventory/handover/verify/{handoverLog}'
  */
-        HandoverVerificationControllerForm.head = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        HandoverVerificationControllerForm.head = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: HandoverVerificationController.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',

@@ -113,7 +113,7 @@ class AuditLogController extends Controller
             ->select('user_id')
             ->selectRaw('COUNT(*) as aggregate_count')
             ->groupBy('user_id')
-            ->having('aggregate_count', '>=', 5)
+            ->havingRaw('COUNT(*) >= ?', [5])
             ->first();
 
         if ($massDeletions) {

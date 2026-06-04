@@ -4,7 +4,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
  * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
  * @route '/inventory/products/{product}/label'
  */
-export const show = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+export const show = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
@@ -19,7 +19,7 @@ show.definition = {
  * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
  * @route '/inventory/products/{product}/label'
  */
-show.url = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+show.url = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { product: args }
     }
@@ -52,7 +52,7 @@ show.url = (args: { product: string | number | { id: string | number } } | [prod
  * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
  * @route '/inventory/products/{product}/label'
  */
-show.get = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+show.get = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
@@ -61,7 +61,7 @@ show.get = (args: { product: string | number | { id: string | number } } | [prod
  * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
  * @route '/inventory/products/{product}/label'
  */
-show.head = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+show.head = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(args, options),
     method: 'head',
 })
@@ -71,7 +71,7 @@ show.head = (args: { product: string | number | { id: string | number } } | [pro
  * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
  * @route '/inventory/products/{product}/label'
  */
-    const showForm = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    const showForm = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: show.url(args, options),
         method: 'get',
     })
@@ -81,7 +81,7 @@ show.head = (args: { product: string | number | { id: string | number } } | [pro
  * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
  * @route '/inventory/products/{product}/label'
  */
-        showForm.get = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.get = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, options),
             method: 'get',
         })
@@ -90,7 +90,7 @@ show.head = (args: { product: string | number | { id: string | number } } | [pro
  * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
  * @route '/inventory/products/{product}/label'
  */
-        showForm.head = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.head = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',

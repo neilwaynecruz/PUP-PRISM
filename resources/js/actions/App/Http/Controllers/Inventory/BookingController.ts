@@ -4,7 +4,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
  * @see app/Http/Controllers/Inventory/BookingController.php:171
  * @route '/inventory/bookings/{booking}'
  */
-export const update = (args: { booking: string | number | { id: string | number } } | [booking: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+export const update = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
     method: 'put',
 })
@@ -19,7 +19,7 @@ update.definition = {
  * @see app/Http/Controllers/Inventory/BookingController.php:171
  * @route '/inventory/bookings/{booking}'
  */
-update.url = (args: { booking: string | number | { id: string | number } } | [booking: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+update.url = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { booking: args }
     }
@@ -52,7 +52,7 @@ update.url = (args: { booking: string | number | { id: string | number } } | [bo
  * @see app/Http/Controllers/Inventory/BookingController.php:171
  * @route '/inventory/bookings/{booking}'
  */
-update.put = (args: { booking: string | number | { id: string | number } } | [booking: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+update.put = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(args, options),
     method: 'put',
 })
@@ -62,7 +62,7 @@ update.put = (args: { booking: string | number | { id: string | number } } | [bo
  * @see app/Http/Controllers/Inventory/BookingController.php:171
  * @route '/inventory/bookings/{booking}'
  */
-    const updateForm = (args: { booking: string | number | { id: string | number } } | [booking: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const updateForm = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: update.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -77,7 +77,7 @@ update.put = (args: { booking: string | number | { id: string | number } } | [bo
  * @see app/Http/Controllers/Inventory/BookingController.php:171
  * @route '/inventory/bookings/{booking}'
  */
-        updateForm.put = (args: { booking: string | number | { id: string | number } } | [booking: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        updateForm.put = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: update.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',
@@ -323,7 +323,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
  * @see app/Http/Controllers/Inventory/BookingController.php:309
  * @route '/inventory/bookings/{booking}'
  */
-export const destroy = (args: { booking: string | number | { id: string | number } } | [booking: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+export const destroy = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
@@ -338,7 +338,7 @@ destroy.definition = {
  * @see app/Http/Controllers/Inventory/BookingController.php:309
  * @route '/inventory/bookings/{booking}'
  */
-destroy.url = (args: { booking: string | number | { id: string | number } } | [booking: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+destroy.url = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { booking: args }
     }
@@ -371,7 +371,7 @@ destroy.url = (args: { booking: string | number | { id: string | number } } | [b
  * @see app/Http/Controllers/Inventory/BookingController.php:309
  * @route '/inventory/bookings/{booking}'
  */
-destroy.delete = (args: { booking: string | number | { id: string | number } } | [booking: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
+destroy.delete = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
     url: destroy.url(args, options),
     method: 'delete',
 })
@@ -381,7 +381,7 @@ destroy.delete = (args: { booking: string | number | { id: string | number } } |
  * @see app/Http/Controllers/Inventory/BookingController.php:309
  * @route '/inventory/bookings/{booking}'
  */
-    const destroyForm = (args: { booking: string | number | { id: string | number } } | [booking: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const destroyForm = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: destroy.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'DELETE',
@@ -396,7 +396,7 @@ destroy.delete = (args: { booking: string | number | { id: string | number } } |
  * @see app/Http/Controllers/Inventory/BookingController.php:309
  * @route '/inventory/bookings/{booking}'
  */
-        destroyForm.delete = (args: { booking: string | number | { id: string | number } } | [booking: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        destroyForm.delete = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: destroy.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'DELETE',

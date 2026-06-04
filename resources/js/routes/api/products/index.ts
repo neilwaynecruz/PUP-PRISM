@@ -82,7 +82,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
  * @see app/Http/Controllers/Api/ProductController.php:56
  * @route '/api/products/{product}'
  */
-export const show = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+export const show = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
@@ -97,7 +97,7 @@ show.definition = {
  * @see app/Http/Controllers/Api/ProductController.php:56
  * @route '/api/products/{product}'
  */
-show.url = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+show.url = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { product: args }
     }
@@ -130,7 +130,7 @@ show.url = (args: { product: string | number | { id: string | number } } | [prod
  * @see app/Http/Controllers/Api/ProductController.php:56
  * @route '/api/products/{product}'
  */
-show.get = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+show.get = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
@@ -139,7 +139,7 @@ show.get = (args: { product: string | number | { id: string | number } } | [prod
  * @see app/Http/Controllers/Api/ProductController.php:56
  * @route '/api/products/{product}'
  */
-show.head = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+show.head = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(args, options),
     method: 'head',
 })
@@ -149,7 +149,7 @@ show.head = (args: { product: string | number | { id: string | number } } | [pro
  * @see app/Http/Controllers/Api/ProductController.php:56
  * @route '/api/products/{product}'
  */
-    const showForm = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    const showForm = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: show.url(args, options),
         method: 'get',
     })
@@ -159,7 +159,7 @@ show.head = (args: { product: string | number | { id: string | number } } | [pro
  * @see app/Http/Controllers/Api/ProductController.php:56
  * @route '/api/products/{product}'
  */
-        showForm.get = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.get = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, options),
             method: 'get',
         })
@@ -168,7 +168,7 @@ show.head = (args: { product: string | number | { id: string | number } } | [pro
  * @see app/Http/Controllers/Api/ProductController.php:56
  * @route '/api/products/{product}'
  */
-        showForm.head = (args: { product: string | number | { id: string | number } } | [product: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.head = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',

@@ -28,6 +28,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useBulkSelection } from '@/composables/useBulkSelection';
 import {
     index as bookingsIndex,
     destroy as bookingsDestroy,
@@ -189,41 +190,18 @@ function confirmDelete(): void {
 }
 
 // ── Bulk actions on approval queue ──
-const selectedIds = ref<Set<number>>(new Set());
 const bulkActionDialogOpen = ref(false);
 const pendingBulkAction = ref<'approve' | 'reject' | null>(null);
 
-const allQueueSelected = computed(
-    () =>
-        props.approval_queue.length > 0 &&
-        selectedIds.value.size === props.approval_queue.length,
-);
-const someQueueSelected = computed(
-    () =>
-        selectedIds.value.size > 0 &&
-        selectedIds.value.size < props.approval_queue.length,
-);
-const hasQueueSelection = computed(() => selectedIds.value.size > 0);
-
-function toggleSelectAllQueue(): void {
-    if (allQueueSelected.value) {
-        selectedIds.value.clear();
-    } else {
-        selectedIds.value = new Set(props.approval_queue.map((b) => b.id));
-    }
-}
-
-function toggleSelectQueue(id: number): void {
-    const next = new Set(selectedIds.value);
-
-    if (next.has(id)) {
-        next.delete(id);
-    } else {
-        next.add(id);
-    }
-
-    selectedIds.value = next;
-}
+const {
+    selectedIds,
+    allSelected: allQueueSelected,
+    someSelected: someQueueSelected,
+    hasSelection: hasQueueSelection,
+    toggleSelectAll: toggleSelectAllQueue,
+    toggleSelect: toggleSelectQueue,
+    clearSelection,
+} = useBulkSelection(() => props.approval_queue);
 
 function runBulkApprove(): void {
     pendingBulkAction.value = 'approve';
@@ -252,7 +230,7 @@ function confirmBulkAction(): void {
         },
         {
             onSuccess: () => {
-                selectedIds.value.clear();
+                clearSelection();
                 bulkActionDialogOpen.value = false;
                 pendingBulkAction.value = null;
             },
@@ -374,57 +352,88 @@ function applyScannedAsset(tagCode: string): void {
             <Heading
                 variant="small"
                 title="Asset booking calendar"
-                description="Requests only block availability after approval, and each request stays attributable to the requesting position."
+                description="Reserve accountable assets with full traceability. Approved bookings block availability; pending requests await custodian review."
             />
 
-            <div class="flex flex-wrap gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    as-child
-                    class="rounded-lg border-dashed"
-                >
-                    <a :href="props.exportUrls.csv">Export CSV</a>
+            <div class="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" as-child class="rounded-lg">
+                    <a
+                        :href="props.exportUrls.csv"
+                        class="inline-flex items-center gap-1.5"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" x2="12" y1="15" y2="3" />
+                        </svg>
+                        Export CSV
+                    </a>
+                </Button>
+                <Button variant="outline" size="sm" as-child class="rounded-lg">
+                    <a
+                        :href="props.exportUrls.pdf"
+                        class="inline-flex items-center gap-1.5"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        >
+                            <path
+                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" x2="12" y1="15" y2="3" />
+                        </svg>
+                        Export PDF
+                    </a>
                 </Button>
                 <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     as-child
-                    class="rounded-lg border-dashed"
-                >
-                    <a :href="props.exportUrls.pdf">Export PDF</a>
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    as-child
-                    class="rounded-lg border-dashed"
+                    class="rounded-lg text-muted-foreground hover:text-foreground"
                 >
                     <Link href="/inventory/bookings/trash">Trash</Link>
                 </Button>
             </div>
         </div>
 
-        <div class="grid items-start gap-6 xl:grid-cols-[1fr_420px]">
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
+        <div class="grid items-start gap-6 xl:grid-cols-[1fr_400px]">
+            <div class="rounded-xl border border-border/50 bg-card shadow-sm">
                 <div
-                    class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                    class="flex flex-col gap-3 border-b border-border/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
                     <div>
                         <div class="text-sm font-semibold tracking-tight">
                             Calendar overview
                         </div>
-                        <div class="text-xs text-muted-foreground">
-                            Green blocks approved use, amber blocks pending
-                            requests, red blocks rejected requests.
+                        <div class="text-xs text-muted-foreground/80">
+                            Green = approved &middot; Amber = requested &middot;
+                            Red = rejected
                         </div>
                     </div>
-
-                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                    <div class="flex flex-wrap items-center gap-2">
                         <span
-                            class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-600 dark:text-emerald-400"
+                            class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold tracking-wider text-emerald-600 uppercase dark:text-emerald-400"
                         >
                             <span
                                 class="h-1.5 w-1.5 rounded-full bg-emerald-500"
@@ -432,7 +441,7 @@ function applyScannedAsset(tagCode: string): void {
                             Approved
                         </span>
                         <span
-                            class="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 font-medium text-amber-600 dark:text-amber-400"
+                            class="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400"
                         >
                             <span
                                 class="h-1.5 w-1.5 rounded-full bg-amber-500"
@@ -440,7 +449,7 @@ function applyScannedAsset(tagCode: string): void {
                             Requested
                         </span>
                         <span
-                            class="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 font-medium text-rose-600 dark:text-rose-400"
+                            class="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold tracking-wider text-rose-600 uppercase dark:text-rose-400"
                         >
                             <span
                                 class="h-1.5 w-1.5 rounded-full bg-rose-500"
@@ -449,71 +458,118 @@ function applyScannedAsset(tagCode: string): void {
                         </span>
                     </div>
                 </div>
-
-                <div data-testid="booking-calendar" class="h-[520px]">
+                <div data-testid="booking-calendar" class="p-3">
                     <FullCalendar
                         :plugins="[dayGridPlugin, interactionPlugin]"
                         initialView="dayGridMonth"
+                        :header-toolbar="{
+                            left: 'prev,next today',
+                            center: 'title',
+                            right: 'dayGridMonth,dayGridWeek,dayGridDay',
+                        }"
                         :events="events"
-                        height="100%"
+                        height="520px"
+                        :event-display="'block'"
                     >
                         <template #eventContent="{ event }">
                             <div
                                 data-testid="booking-calendar-event"
                                 :data-event-id="event.id"
+                                class="truncate px-1.5 py-0.5 text-[11px] leading-tight font-medium text-white"
+                                :title="event.title"
                             >
                                 {{ event.title }}
                             </div>
                         </template>
                     </FullCalendar>
+                    <div
+                        v-if="props.calendar_events.length === 0"
+                        class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-12 text-center"
+                    >
+                        <div
+                            class="rounded-full border border-border/40 bg-muted/40 p-3"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="text-muted-foreground"
+                            >
+                                <rect
+                                    width="18"
+                                    height="18"
+                                    x="3"
+                                    y="4"
+                                    rx="2"
+                                    ry="2"
+                                />
+                                <line x1="16" x2="16" y1="2" y2="6" />
+                                <line x1="8" x2="8" y1="2" y2="6" />
+                                <line x1="3" x2="21" y1="10" y2="10" />
+                            </svg>
+                        </div>
+                        <div class="text-sm font-medium text-muted-foreground">
+                            No bookings for this period
+                        </div>
+                        <div class="max-w-xs text-xs text-muted-foreground/70">
+                            Use the form on the right to submit a new booking
+                            request. Approved bookings will appear here.
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div
-                class="self-start rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                class="self-start rounded-xl border border-border/50 bg-card shadow-sm"
             >
+                <div class="border-b border-border/40 px-5 py-4">
+                    <div class="text-sm font-semibold tracking-tight">
+                        New booking request
+                    </div>
+                    <div class="text-xs text-muted-foreground/80">
+                        Select an accountable asset and choose your schedule.
+                    </div>
+                </div>
                 <Form
                     v-bind="BookingController.store.form()"
                     v-slot="{ errors, processing }"
-                    class="grid gap-5"
+                    class="grid gap-4 px-5 py-4"
                     data-shortcut="new"
                 >
-                    <Heading
-                        variant="small"
-                        title="New booking request"
-                        description="Select an accountable asset, then choose the requested schedule."
-                    />
-
-                    <div class="grid gap-2">
+                    <div class="grid gap-1.5">
                         <Label
                             for="asset_search"
                             class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Find asset</Label
+                            >Search asset</Label
                         >
                         <Input
                             id="asset_search"
                             v-model="assetSearch"
                             data-testid="booking-asset-search-input"
-                            placeholder="Search by tag or product name"
-                            class="rounded-lg"
+                            placeholder="Type tag code or product name"
+                            class="h-9 rounded-lg text-sm"
                         />
-                        <div class="text-xs text-muted-foreground">
-                            The selector loads up to 25 matching available
-                            assets at a time.
+                        <div class="text-[11px] text-muted-foreground/70">
+                            Loads up to 25 matching available assets.
                         </div>
                     </div>
 
-                    <div class="grid gap-2">
-                        <div
-                            class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-                        >
+                    <div class="grid gap-1.5">
+                        <div class="flex items-center justify-between">
                             <Label
                                 for="asset_id"
                                 class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >Asset</Label
+                                >Selected asset
+                                <span class="text-rose-500">*</span></Label
                             >
                             <QrScannerDialog
-                                button-label="Scan asset QR"
+                                button-label="Scan QR"
                                 title="Scan booking asset QR"
                                 description="Scan an asset tag to auto-select the matching asset for this booking request."
                                 @scanned="applyScannedAsset"
@@ -524,10 +580,10 @@ function applyScannedAsset(tagCode: string): void {
                             name="asset_id"
                             v-model="selectedAssetId"
                             data-testid="booking-asset-select"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                            class="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                             required
                         >
-                            <option value="" disabled>Select asset</option>
+                            <option value="" disabled>Select an asset</option>
                             <option
                                 v-for="a in assets"
                                 :key="a.id"
@@ -547,54 +603,56 @@ function applyScannedAsset(tagCode: string): void {
                         </select>
                         <div
                             v-if="assetScanFeedback"
-                            class="text-xs text-muted-foreground"
+                            class="text-[11px] text-muted-foreground/80"
                         >
                             {{ assetScanFeedback }}
                         </div>
                         <InputError :message="errors.asset_id" />
                     </div>
 
-                    <div class="grid gap-2">
-                        <Label
-                            for="start_at"
-                            class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Start</Label
-                        >
-                        <Input
-                            id="start_at"
-                            name="start_at"
-                            v-model="startAt"
-                            data-testid="booking-start-input"
-                            type="datetime-local"
-                            required
-                            class="rounded-lg"
-                        />
-                        <InputError :message="errors.start_at" />
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="grid gap-1.5">
+                            <Label
+                                for="start_at"
+                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >Start
+                                <span class="text-rose-500">*</span></Label
+                            >
+                            <Input
+                                id="start_at"
+                                name="start_at"
+                                v-model="startAt"
+                                data-testid="booking-start-input"
+                                type="datetime-local"
+                                required
+                                class="h-9 rounded-lg text-sm"
+                            />
+                            <InputError :message="errors.start_at" />
+                        </div>
+                        <div class="grid gap-1.5">
+                            <Label
+                                for="end_at"
+                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >End <span class="text-rose-500">*</span></Label
+                            >
+                            <Input
+                                id="end_at"
+                                name="end_at"
+                                v-model="endAt"
+                                data-testid="booking-end-input"
+                                type="datetime-local"
+                                required
+                                class="h-9 rounded-lg text-sm"
+                            />
+                            <InputError :message="errors.end_at" />
+                        </div>
                     </div>
 
-                    <div class="grid gap-2">
-                        <Label
-                            for="end_at"
-                            class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >End</Label
-                        >
-                        <Input
-                            id="end_at"
-                            name="end_at"
-                            v-model="endAt"
-                            data-testid="booking-end-input"
-                            type="datetime-local"
-                            required
-                            class="rounded-lg"
-                        />
-                        <InputError :message="errors.end_at" />
-                    </div>
-
-                    <div class="grid gap-2">
+                    <div class="grid gap-1.5">
                         <Label
                             for="purpose"
                             class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Purpose (optional)</Label
+                            >Purpose</Label
                         >
                         <Input
                             id="purpose"
@@ -602,313 +660,421 @@ function applyScannedAsset(tagCode: string): void {
                             v-model="purpose"
                             data-testid="booking-purpose-input"
                             placeholder="e.g. Classroom demo"
-                            class="rounded-lg"
+                            class="h-9 rounded-lg text-sm"
                         />
                         <InputError :message="errors.purpose" />
                     </div>
 
-                    <div class="flex items-center justify-end gap-2">
+                    <div class="pt-1">
                         <Button
                             type="submit"
                             :disabled="processing"
                             data-test="request-booking-button"
                             data-testid="request-booking-button"
-                            class="rounded-lg shadow-sm"
-                            >Request booking</Button
+                            class="w-full rounded-lg font-semibold shadow-sm"
                         >
+                            Submit booking request
+                        </Button>
                     </div>
                 </Form>
             </div>
         </div>
 
         <div class="grid gap-6 xl:grid-cols-2">
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div class="mb-4 flex items-center justify-between gap-3">
+            <div class="rounded-xl border border-border/50 bg-card shadow-sm">
+                <div
+                    class="flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4"
+                >
                     <div>
                         <div class="text-sm font-semibold tracking-tight">
                             Approval queue
                         </div>
-                        <div class="text-xs text-muted-foreground">
-                            Property custodians can approve or reject pending
-                            requests directly from this screen.
+                        <div class="text-xs text-muted-foreground/80">
+                            Custodians can approve or reject pending requests
+                            here.
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
                         <span
-                            class="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                            class="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400"
                         >
-                            <span class="h-1.5 w-1.5 rounded-full bg-primary" />
+                            <span
+                                class="h-1.5 w-1.5 rounded-full bg-amber-500"
+                            />
                             {{ approval_queue.length }} pending
                         </span>
                         <Checkbox
                             v-if="approval_queue.length > 0"
-                            :checked="allQueueSelected"
-                            :indeterminate="someQueueSelected"
-                            @update:checked="toggleSelectAllQueue"
+                            :model-value="allQueueSelected ? true : someQueueSelected ? 'indeterminate' : false"
+                            @update:model-value="toggleSelectAllQueue"
                             aria-label="Select all pending bookings"
                         />
                     </div>
                 </div>
 
-                <!-- Bulk action bar -->
-                <div
-                    v-if="can.approve && hasQueueSelection"
-                    class="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm"
-                >
-                    <span class="font-medium text-primary"
-                        >{{ selectedIds.size }} selected</span
-                    >
-                    <div class="ml-auto flex flex-wrap gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            class="h-7 rounded-lg text-xs"
-                            @click="runBulkApprove"
-                            >Approve</Button
-                        >
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            class="h-7 rounded-lg text-xs"
-                            @click="runBulkReject"
-                            >Reject</Button
-                        >
-                    </div>
-                </div>
-
-                <div v-if="approval_queue.length" class="grid gap-3">
+                <div class="px-5 py-4">
+                    <!-- Bulk action bar -->
                     <div
-                        v-for="booking in approval_queue"
-                        :key="booking.id"
-                        class="rounded-xl border border-border/40 p-4 shadow-sm"
+                        v-if="can.approve && hasQueueSelection"
+                        class="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm"
+                    >
+                        <span class="font-medium text-primary"
+                            >{{ selectedIds.size }} selected</span
+                        >
+                        <div class="ml-auto flex flex-wrap gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="h-7 rounded-lg text-xs"
+                                @click="runBulkApprove"
+                                >Approve</Button
+                            >
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                class="h-7 rounded-lg text-xs"
+                                @click="runBulkReject"
+                                >Reject</Button
+                            >
+                        </div>
+                    </div>
+
+                    <div v-if="approval_queue.length" class="grid gap-3">
+                        <div
+                            v-for="booking in approval_queue"
+                            :key="booking.id"
+                            class="group relative rounded-xl border border-border/40 bg-card p-4 transition-all hover:border-border/60 hover:shadow-sm"
+                            :class="{ 'bg-primary/5': selectedIds.has(booking.id) }"
+                        >
+                            <div
+                                class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+                            >
+                                <div class="flex items-start gap-3">
+                                    <Checkbox
+                                        :model-value="selectedIds.has(booking.id)"
+                                        @update:model-value="
+                                            () => toggleSelectQueue(booking.id)
+                                        "
+                                        aria-label="Select booking"
+                                        class="mt-1"
+                                    />
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-2">
+                                            <div class="text-sm font-semibold">
+                                                {{ booking.title }}
+                                            </div>
+                                            <span
+                                                :class="[
+                                                    'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
+                                                    statusColor(booking.status)
+                                                        .pill,
+                                                ]"
+                                            >
+                                                <span
+                                                    :class="[
+                                                        'h-1 w-1 rounded-full',
+                                                        statusColor(
+                                                            booking.status,
+                                                        ).bg,
+                                                    ]"
+                                                />
+                                                {{ booking.status }}
+                                            </span>
+                                        </div>
+                                        <div
+                                            class="text-xs text-muted-foreground"
+                                        >
+                                            Requested by
+                                            {{
+                                                booking.requester?.name ??
+                                                booking.requester?.email ??
+                                                'Unknown requester'
+                                            }}
+                                        </div>
+                                        <div
+                                            v-if="booking.requester_position"
+                                            class="text-xs text-muted-foreground/80"
+                                        >
+                                            {{ booking.requester_position.title
+                                            }}{{
+                                                booking.requester_position
+                                                    .department
+                                                    ? `, ${booking.requester_position.department}`
+                                                    : ''
+                                            }}
+                                        </div>
+                                        <div
+                                            class="text-[11px] text-muted-foreground/70 tabular-nums"
+                                        >
+                                            {{
+                                                formatDateTime(booking.start)
+                                            }}
+                                            — {{ formatDateTime(booking.end) }}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                class="mt-3 flex flex-wrap items-center gap-2 pl-7"
+                            >
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    as-child
+                                    class="h-7 rounded-lg text-xs"
+                                >
+                                    <Link
+                                        :href="`/inventory/bookings/${booking.id}`"
+                                        >View</Link
+                                    >
+                                </Button>
+                                <template v-if="can.approve">
+                                    <Form
+                                        v-bind="
+                                            BookingController.update.form(
+                                                booking.id,
+                                            )
+                                        "
+                                        class="inline"
+                                    >
+                                        <Button
+                                            type="submit"
+                                            name="action"
+                                            value="approve"
+                                            data-test="approve-booking-button"
+                                            data-testid="approve-booking-button"
+                                            size="sm"
+                                            class="h-7 rounded-lg text-xs"
+                                            >Approve</Button
+                                        >
+                                    </Form>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        class="h-7 rounded-lg text-xs"
+                                        @click="selectedRejectBooking = booking"
+                                        >Reject</Button
+                                    >
+                                </template>
+                                <Button
+                                    v-if="booking.can_delete"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="h-7 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                                    @click="openDeleteDialog(booking)"
+                                    >Delete</Button
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        v-else
+                        class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-10 text-center"
                     >
                         <div
-                            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+                            class="rounded-full border border-border/40 bg-muted/40 p-3"
                         >
-                            <div class="flex items-start gap-2">
-                                <Checkbox
-                                    :checked="selectedIds.has(booking.id)"
-                                    @update:checked="
-                                        () => toggleSelectQueue(booking.id)
-                                    "
-                                    aria-label="Select booking"
-                                    class="mt-0.5"
-                                />
-                                <div class="space-y-1 text-sm">
-                                    <div class="font-medium">
-                                        {{ booking.title }}
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="text-muted-foreground"
+                            >
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                <polyline points="22 4 12 14.01 9 11.01" />
+                            </svg>
+                        </div>
+                        <div class="text-sm font-medium text-muted-foreground">
+                            No pending requests
+                        </div>
+                        <div class="max-w-xs text-xs text-muted-foreground/70">
+                            The approval queue is clear. New booking requests
+                            will appear here for review.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rounded-xl border border-border/50 bg-card shadow-sm">
+                <div
+                    class="flex items-center justify-between gap-3 border-b border-border/40 px-5 py-4"
+                >
+                    <div>
+                        <div class="text-sm font-semibold tracking-tight">
+                            Booking records
+                        </div>
+                        <div class="text-xs text-muted-foreground/80">
+                            Full history with pagination.
+                        </div>
+                    </div>
+                    <span
+                        class="inline-flex items-center rounded-full border border-border/40 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+                        >{{ bookings.total }} total</span
+                    >
+                </div>
+
+                <div class="px-5 py-4">
+                    <div v-if="bookings.data.length" class="grid gap-3">
+                        <div
+                            v-for="booking in bookings.data"
+                            :key="booking.id"
+                            class="group rounded-xl border border-border/40 p-4 text-sm transition-all hover:border-border/60 hover:shadow-sm"
+                        >
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-2">
+                                        <div class="font-semibold">
+                                            {{ booking.title }}
+                                        </div>
                                     </div>
-                                    <div class="text-muted-foreground">
-                                        Requested by
+                                    <div
+                                        class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground"
+                                    >
+                                        <span
+                                            v-if="booking.asset_label"
+                                            class="inline-flex items-center gap-1"
+                                        >
+                                            <span
+                                                class="h-1 w-1 rounded-full bg-primary/40"
+                                            />
+                                            {{ booking.asset_label }}
+                                        </span>
+                                        <span
+                                            class="inline-flex items-center gap-1 tabular-nums"
+                                        >
+                                            <span
+                                                class="h-1 w-1 rounded-full bg-primary/40"
+                                            />
+                                            {{
+                                                formatDateTime(booking.start)
+                                            }}
+                                            — {{ formatDateTime(booking.end) }}
+                                        </span>
+                                    </div>
+                                    <div
+                                        class="text-xs text-muted-foreground/80"
+                                    >
                                         {{
                                             booking.requester?.name ??
                                             booking.requester?.email ??
                                             'Unknown requester'
                                         }}
-                                    </div>
-                                    <div
-                                        v-if="booking.requester_position"
-                                        class="text-muted-foreground"
-                                    >
-                                        {{ booking.requester_position.title
-                                        }}{{
-                                            booking.requester_position
-                                                .department
-                                                ? `, ${booking.requester_position.department}`
-                                                : ''
-                                        }}
-                                    </div>
-                                    <div
-                                        class="text-xs text-muted-foreground/80"
-                                    >
-                                        {{ formatDateTime(booking.start) }} to
-                                        {{ formatDateTime(booking.end) }}
+                                        <span
+                                            v-if="booking.approver"
+                                            class="text-muted-foreground/60"
+                                            >&middot; Processed by
+                                            {{ booking.approver.name }}</span
+                                        >
                                     </div>
                                 </div>
-                            </div>
-
-                            <span
-                                :class="[
-                                    'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium',
-                                    statusColor(booking.status).pill,
-                                ]"
-                            >
                                 <span
                                     :class="[
-                                        'h-1.5 w-1.5 rounded-full',
-                                        statusColor(booking.status).bg,
+                                        'inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
+                                        statusColor(booking.status).pill,
                                     ]"
-                                />
-                                {{ booking.status }}
-                            </span>
-                        </div>
-
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                as-child
-                                class="h-8 rounded-lg text-xs"
-                            >
-                                <Link
-                                    :href="`/inventory/bookings/${booking.id}`"
-                                    >View</Link
                                 >
-                            </Button>
-                            <template v-if="can.approve">
-                                <Form
-                                    v-bind="
-                                        BookingController.update.form(
-                                            booking.id,
-                                        )
-                                    "
-                                >
-                                    <Button
-                                        type="submit"
-                                        name="action"
-                                        value="approve"
-                                        data-test="approve-booking-button"
-                                        data-testid="approve-booking-button"
-                                        class="rounded-lg"
-                                        >Approve</Button
-                                    >
-                                </Form>
+                                    <span
+                                        :class="[
+                                            'h-1 w-1 rounded-full',
+                                            statusColor(booking.status).bg,
+                                        ]"
+                                    />
+                                    {{ booking.status }}
+                                </span>
+                            </div>
+                            <div class="mt-3 flex items-center gap-2">
                                 <Button
-                                    type="button"
-                                    variant="outline"
-                                    class="rounded-lg border-dashed"
-                                    @click="selectedRejectBooking = booking"
+                                    variant="ghost"
+                                    size="sm"
+                                    as-child
+                                    class="h-7 rounded-lg text-xs"
                                 >
-                                    Reject
+                                    <Link
+                                        :href="`/inventory/bookings/${booking.id}`"
+                                        >View</Link
+                                    >
                                 </Button>
-                            </template>
-                            <Button
-                                v-if="booking.can_delete"
-                                variant="ghost"
-                                size="sm"
-                                class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
-                                @click="openDeleteDialog(booking)"
-                            >
-                                Delete
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    v-else
-                    class="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground"
-                >
-                    No pending requests. The walkthrough queue is clear.
-                </div>
-            </div>
-
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div class="mb-4">
-                    <div class="text-sm font-semibold tracking-tight">
-                        Booking records
-                    </div>
-                    <div class="text-xs text-muted-foreground">
-                        Paginated records keep the page responsive while
-                        preserving access to the full booking history.
-                    </div>
-                </div>
-
-                <div class="grid gap-3">
-                    <div
-                        v-for="booking in bookings.data"
-                        :key="booking.id"
-                        class="rounded-xl border border-border/40 p-4 text-sm transition-colors hover:bg-muted/30"
-                    >
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="font-medium">{{ booking.title }}</div>
-                            <span
-                                :class="[
-                                    'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wider uppercase',
-                                    statusColor(booking.status).pill,
-                                ]"
-                            >
-                                <span
-                                    :class="[
-                                        'h-1 w-1 rounded-full',
-                                        statusColor(booking.status).bg,
-                                    ]"
-                                />
-                                {{ booking.status }}
-                            </span>
-                        </div>
-                        <div
-                            class="mt-2 space-y-1 text-xs text-muted-foreground"
-                        >
-                            <div v-if="booking.asset_label">
-                                Tag: {{ booking.asset_label }}
-                            </div>
-                            <div>
-                                {{ formatDateTime(booking.start) }} to
-                                {{ formatDateTime(booking.end) }}
-                            </div>
-                            <div>
-                                {{
-                                    booking.requester?.name ??
-                                    booking.requester?.email ??
-                                    'Unknown requester'
-                                }}
-                            </div>
-                            <div v-if="booking.approver">
-                                Processed by {{ booking.approver.name }}
-                            </div>
-                        </div>
-                        <div class="mt-2 flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                as-child
-                                class="h-7 rounded-lg text-xs"
-                            >
-                                <Link
-                                    :href="`/inventory/bookings/${booking.id}`"
-                                    >View</Link
+                                <Button
+                                    v-if="booking.can_delete"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="h-7 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                                    @click="openDeleteDialog(booking)"
+                                    >Delete</Button
                                 >
-                            </Button>
-                            <Button
-                                v-if="booking.can_delete"
-                                variant="ghost"
-                                size="sm"
-                                class="h-7 rounded-lg text-xs text-rose-600 hover:text-rose-700"
-                                @click="openDeleteDialog(booking)"
-                            >
-                                Delete
-                            </Button>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div
-                    v-if="bookings.links.length"
-                    class="mt-4 flex flex-wrap items-center justify-center gap-2"
-                >
-                    <Button
-                        v-for="(link, index) in bookings.links"
-                        :key="index"
-                        variant="ghost"
-                        size="sm"
-                        :disabled="!link.url"
-                        as-child
+                    <div
+                        v-else
+                        class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-10 text-center"
                     >
-                        <Link
-                            v-if="link.url"
-                            :href="link.url"
-                            preserve-scroll
-                            preserve-state
+                        <div
+                            class="rounded-full border border-border/40 bg-muted/40 p-3"
                         >
-                            <span v-html="link.label" />
-                        </Link>
-                        <span v-else v-html="link.label" />
-                    </Button>
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="text-muted-foreground"
+                            >
+                                <path
+                                    d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"
+                                />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" x2="8" y1="13" y2="13" />
+                                <line x1="16" x2="8" y1="17" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                        </div>
+                        <div class="text-sm font-medium text-muted-foreground">
+                            No booking records
+                        </div>
+                        <div class="max-w-xs text-xs text-muted-foreground/70">
+                            Submitted bookings will appear here once processed.
+                        </div>
+                    </div>
+
+                    <div
+                        v-if="bookings.links.length"
+                        class="mt-4 flex flex-wrap items-center justify-center gap-1"
+                    >
+                        <Button
+                            v-for="(link, index) in bookings.links"
+                            :key="index"
+                            variant="ghost"
+                            size="sm"
+                            :disabled="!link.url"
+                            as-child
+                            class="h-8 rounded-lg px-3 text-xs"
+                        >
+                            <Link
+                                v-if="link.url"
+                                :href="link.url"
+                                preserve-scroll
+                                preserve-state
+                            >
+                                <span v-html="link.label" />
+                            </Link>
+                            <span v-else v-html="link.label" />
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>

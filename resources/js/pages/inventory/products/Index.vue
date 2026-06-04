@@ -23,6 +23,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useBulkSelection } from '@/composables/useBulkSelection';
 import {
     index as productsIndex,
     create as productsCreate,
@@ -139,44 +140,21 @@ function confirmDelete(): void {
 }
 
 // ── Bulk actions ──
-const selectedIds = ref<Set<number>>(new Set());
 const bulkCategoryDialogOpen = ref(false);
 const bulkCategoryId = ref<string>('');
 const bulkActionDialogOpen = ref(false);
 const pendingBulkAction = ref<'activate' | 'deactivate' | null>(null);
 const isRefreshing = ref(false);
 
-const allSelected = computed(
-    () =>
-        props.products.data.length > 0 &&
-        selectedIds.value.size === props.products.data.length,
-);
-const someSelected = computed(
-    () =>
-        selectedIds.value.size > 0 &&
-        selectedIds.value.size < props.products.data.length,
-);
-const hasSelection = computed(() => selectedIds.value.size > 0);
-
-function toggleSelectAll(): void {
-    if (allSelected.value) {
-        selectedIds.value.clear();
-    } else {
-        selectedIds.value = new Set(props.products.data.map((p) => p.id));
-    }
-}
-
-function toggleSelect(id: number): void {
-    const next = new Set(selectedIds.value);
-
-    if (next.has(id)) {
-        next.delete(id);
-    } else {
-        next.add(id);
-    }
-
-    selectedIds.value = next;
-}
+const {
+    selectedIds,
+    allSelected,
+    someSelected,
+    hasSelection,
+    toggleSelectAll,
+    toggleSelect,
+    clearSelection,
+} = useBulkSelection(() => props.products.data);
 
 function runBulkActivate(): void {
     pendingBulkAction.value = 'activate';
@@ -208,7 +186,7 @@ function confirmBulkCategory(): void {
             onSuccess: () => {
                 bulkCategoryDialogOpen.value = false;
                 bulkCategoryId.value = '';
-                selectedIds.value.clear();
+                clearSelection();
             },
         },
     );
@@ -231,7 +209,7 @@ function confirmBulkAction(): void {
         },
         {
             onSuccess: () => {
-                selectedIds.value.clear();
+                clearSelection();
                 bulkActionDialogOpen.value = false;
                 pendingBulkAction.value = null;
             },
@@ -462,14 +440,15 @@ watch([search, type, categoryId, originId, active], () => {
                         v-for="p in products.data"
                         :key="p.id"
                         :data-testid="`product-row-${p.sku}`"
-                        class="rounded-xl border border-border/60 bg-card p-4 shadow-sm"
+                        class="rounded-xl border border-border/60 bg-card p-4 shadow-sm transition-colors"
+                    :class="{ 'bg-primary/5': selectedIds.has(p.id) }"
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-start gap-3">
                                 <Checkbox
                                     v-if="props.can.bulkUpdate"
-                                    :checked="selectedIds.has(p.id)"
-                                    @update:checked="() => toggleSelect(p.id)"
+                                    :model-value="selectedIds.has(p.id)"
+                                    @update:model-value="() => toggleSelect(p.id)"
                                     aria-label="Select product"
                                     class="mt-1"
                                 />
@@ -600,9 +579,8 @@ watch([search, type, categoryId, originId, active], () => {
                             >
                                 <th v-if="props.can.bulkUpdate" class="w-10">
                                     <Checkbox
-                                        :checked="allSelected"
-                                        :indeterminate="someSelected"
-                                        @update:checked="toggleSelectAll"
+                                        :model-value="allSelected ? true : someSelected ? 'indeterminate' : false"
+                                        @update:model-value="toggleSelectAll"
                                         aria-label="Select all products"
                                     />
                                 </th>
@@ -632,11 +610,12 @@ watch([search, type, categoryId, originId, active], () => {
                                 :key="p.id"
                                 :data-testid="`product-row-${p.sku}`"
                                 class="group transition-colors hover:bg-muted/40 [&>td]:px-4 [&>td]:py-3"
+                                :class="{ 'bg-primary/5': selectedIds.has(p.id) }"
                             >
                                 <td v-if="props.can.bulkUpdate">
                                     <Checkbox
-                                        :checked="selectedIds.has(p.id)"
-                                        @update:checked="
+                                        :model-value="selectedIds.has(p.id)"
+                                        @update:model-value="
                                             () => toggleSelect(p.id)
                                         "
                                         aria-label="Select product"

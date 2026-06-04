@@ -23,6 +23,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useBulkSelection } from '@/composables/useBulkSelection';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
 
@@ -106,32 +107,15 @@ const restoreDialogOpen = ref(false);
 const forceDeleteDialogOpen = ref(false);
 const bulkRestoreDialogOpen = ref(false);
 const bulkForceDeleteDialogOpen = ref(false);
-const selectedIds = ref<Set<number>>(new Set());
-
-const allSelected = computed(() => {
-    return (
-        props.requisitions.data.length > 0 &&
-        props.requisitions.data.every((r) => selectedIds.value.has(r.id))
-    );
-});
-
-const hasSelection = computed(() => selectedIds.value.size > 0);
-
-function toggleSelectAll(): void {
-    if (allSelected.value) {
-        props.requisitions.data.forEach((r) => selectedIds.value.delete(r.id));
-    } else {
-        props.requisitions.data.forEach((r) => selectedIds.value.add(r.id));
-    }
-}
-
-function toggleSelect(id: number): void {
-    if (selectedIds.value.has(id)) {
-        selectedIds.value.delete(id);
-    } else {
-        selectedIds.value.add(id);
-    }
-}
+const {
+    selectedIds,
+    allSelected,
+    someSelected,
+    hasSelection,
+    toggleSelectAll,
+    toggleSelect,
+    clearSelection,
+} = useBulkSelection(() => props.requisitions.data);
 
 function openRestoreDialog(requisition: RequisitionRow): void {
     selectedRequisition.value = requisition;
@@ -193,7 +177,7 @@ function confirmBulkRestore(): void {
         {
             onSuccess: () => {
                 bulkRestoreDialogOpen.value = false;
-                selectedIds.value.clear();
+                clearSelection();
             },
         },
     );
@@ -208,7 +192,7 @@ function confirmBulkForceDelete(): void {
         {
             onSuccess: () => {
                 bulkForceDeleteDialogOpen.value = false;
-                selectedIds.value.clear();
+                clearSelection();
             },
         },
     );
@@ -220,8 +204,12 @@ function confirmBulkForceDelete(): void {
 
     <div class="flex flex-col gap-6 p-4 sm:p-6">
         <!-- Filters -->
-        <div class="rounded-xl border border-border/60 bg-card p-4 shadow-sm">
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div class="rounded-xl border border-border/50 bg-card shadow-sm">
+            <div class="border-b border-border/40 px-5 py-4">
+                <div class="text-sm font-semibold tracking-tight">Filters</div>
+                <div class="text-xs text-muted-foreground/80">Narrow deleted requisitions by date range, deleter, or keyword.</div>
+            </div>
+            <div class="grid gap-4 px-5 py-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div class="grid gap-2">
                     <Label for="search">Search</Label>
                     <Input
@@ -278,37 +266,29 @@ function confirmBulkForceDelete(): void {
                 title="Trash"
                 description="Deleted requisitions can be restored here."
             />
-            <div class="flex items-center gap-2">
-                <template v-if="hasSelection">
-                    <span class="text-sm text-muted-foreground"
-                        >{{ selectedIds.size }} selected</span
-                    >
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        @click="openBulkRestoreDialog"
-                    >
-                        Restore Selected
-                    </Button>
-                    <Button
-                        variant="destructive"
-                        size="sm"
-                        @click="openBulkForceDeleteDialog"
-                    >
-                        Delete Selected Forever
-                    </Button>
-                </template>
-                <Button variant="outline" size="sm" as-child class="rounded-lg">
-                    <Link href="/inventory/requisitions"
-                        >Back to requisitions</Link
-                    >
-                </Button>
+            <Button variant="ghost" size="sm" as-child class="rounded-lg">
+                <Link href="/inventory/requisitions">Back to requisitions</Link>
+            </Button>
+        </div>
+
+        <!-- Bulk action bar -->
+        <div
+            v-if="hasSelection"
+            class="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm"
+        >
+            <span class="font-medium text-primary">{{ selectedIds.size }} selected</span>
+            <div class="ml-auto flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" @click="openBulkRestoreDialog">Restore</Button>
+                <Button variant="destructive" size="sm" @click="openBulkForceDeleteDialog">Delete forever</Button>
             </div>
         </div>
 
-        <div
-            class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm"
-        >
+        <div class="rounded-xl border border-border/50 bg-card shadow-sm">
+            <div class="flex items-center justify-between border-b border-border/40 px-5 py-4">
+                <div class="text-sm font-semibold tracking-tight">Deleted requisitions</div>
+                <span class="inline-flex items-center rounded-full border border-border/40 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">{{ requisitions.data.length }} total</span>
+            </div>
+            <div class="overflow-x-auto">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left">
                     <tr
@@ -316,8 +296,8 @@ function confirmBulkForceDelete(): void {
                     >
                         <th class="w-10">
                             <Checkbox
-                                :checked="allSelected"
-                                @update:checked="toggleSelectAll"
+                                :model-value="allSelected ? true : someSelected ? 'indeterminate' : false"
+                                @update:model-value="toggleSelectAll"
                                 aria-label="Select all"
                             />
                         </th>
@@ -346,12 +326,13 @@ function confirmBulkForceDelete(): void {
                     <tr
                         v-for="r in requisitions.data"
                         :key="r.id"
-                        class="[&>td]:px-4 [&>td]:py-3"
+                        class="transition-colors [&>td]:px-4 [&>td]:py-3"
+                        :class="{ 'bg-primary/5': selectedIds.has(r.id) }"
                     >
                         <td>
                             <Checkbox
-                                :checked="selectedIds.has(r.id)"
-                                @update:checked="() => toggleSelect(r.id)"
+                                :model-value="selectedIds.has(r.id)"
+                                @update:model-value="() => toggleSelect(r.id)"
                                 aria-label="Select requisition"
                             />
                         </td>
@@ -413,6 +394,7 @@ function confirmBulkForceDelete(): void {
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
 
         <Dialog v-model:open="restoreDialogOpen">

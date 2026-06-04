@@ -4,7 +4,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
  * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
  * @route '/inventory/handover/receipt/{handoverLog}'
  */
-const HandoverReceiptController = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+const HandoverReceiptController = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: HandoverReceiptController.url(args, options),
     method: 'get',
 })
@@ -19,7 +19,7 @@ HandoverReceiptController.definition = {
  * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
  * @route '/inventory/handover/receipt/{handoverLog}'
  */
-HandoverReceiptController.url = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+HandoverReceiptController.url = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { handoverLog: args }
     }
@@ -52,7 +52,7 @@ HandoverReceiptController.url = (args: { handoverLog: string | number | { id: st
  * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
  * @route '/inventory/handover/receipt/{handoverLog}'
  */
-HandoverReceiptController.get = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+HandoverReceiptController.get = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: HandoverReceiptController.url(args, options),
     method: 'get',
 })
@@ -61,7 +61,7 @@ HandoverReceiptController.get = (args: { handoverLog: string | number | { id: st
  * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
  * @route '/inventory/handover/receipt/{handoverLog}'
  */
-HandoverReceiptController.head = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+HandoverReceiptController.head = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: HandoverReceiptController.url(args, options),
     method: 'head',
 })
@@ -71,7 +71,7 @@ HandoverReceiptController.head = (args: { handoverLog: string | number | { id: s
  * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
  * @route '/inventory/handover/receipt/{handoverLog}'
  */
-    const HandoverReceiptControllerForm = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    const HandoverReceiptControllerForm = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: HandoverReceiptController.url(args, options),
         method: 'get',
     })
@@ -81,7 +81,7 @@ HandoverReceiptController.head = (args: { handoverLog: string | number | { id: s
  * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
  * @route '/inventory/handover/receipt/{handoverLog}'
  */
-        HandoverReceiptControllerForm.get = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        HandoverReceiptControllerForm.get = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: HandoverReceiptController.url(args, options),
             method: 'get',
         })
@@ -90,7 +90,7 @@ HandoverReceiptController.head = (args: { handoverLog: string | number | { id: s
  * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
  * @route '/inventory/handover/receipt/{handoverLog}'
  */
-        HandoverReceiptControllerForm.head = (args: { handoverLog: string | number | { id: string | number } } | [handoverLog: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        HandoverReceiptControllerForm.head = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: HandoverReceiptController.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',

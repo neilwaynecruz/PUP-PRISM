@@ -51,6 +51,23 @@ defineOptions({
     },
 });
 
+function formatDateTime(iso: string | null): string {
+    if (!iso) {
+        return '—';
+    }
+
+    const d = new Date(iso);
+
+    return d.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+}
+
 let recipientSearchTimer: number | undefined;
 watch(recipientSearch, () => {
     window.clearTimeout(recipientSearchTimer);
@@ -80,88 +97,91 @@ watch(recipientSearch, () => {
         <Heading
             variant="small"
             title="Digital asset handover"
-            description="Scan the asset tag and send a verification link to the recipient. The accountable position stays visible throughout the handover."
+            description="Transfer accountability by scanning an asset tag and sending a verification link to the recipient. Position records stay visible throughout."
         />
 
-        <div class="grid items-start gap-6 xl:grid-cols-[400px_1fr]">
+        <div class="grid items-start gap-6 xl:grid-cols-[560px_1fr]">
             <div
-                class="self-start rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                class="self-start rounded-xl border border-border/50 bg-card shadow-sm"
             >
-                <div
-                    class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
-                >
-                    <span
-                        class="inline-block h-1.5 w-1.5 rounded-full bg-primary/60"
-                    />
-                    Handover details
+                <div class="border-b border-border/40 px-5 py-4">
+                    <div class="text-sm font-semibold tracking-tight">
+                        Handover details
+                    </div>
+                    <div class="text-xs text-muted-foreground/80">
+                        Scan an asset tag and choose a recipient to initiate
+                        transfer.
+                    </div>
                 </div>
                 <Form
                     v-bind="HandoverController.store.form()"
                     v-slot="{ errors, processing }"
-                    class="grid gap-5"
+                    class="grid gap-4 px-5 py-4"
                 >
-                    <div class="grid gap-2">
-                        <div
-                            class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                    <!-- Asset tag -->
+                    <div class="grid gap-1.5">
+                        <Label
+                            for="asset_tag_code"
+                            class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                            >Asset tag code
+                            <span class="text-rose-500">*</span></Label
                         >
-                            <Label
-                                for="asset_tag_code"
-                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >Asset tag code</Label
-                            >
+                        <div class="flex items-center gap-2">
+                            <Input
+                                id="asset_tag_code"
+                                v-model="assetTagCode"
+                                name="asset_tag_code"
+                                data-testid="handover-asset-tag-input"
+                                placeholder="Scan or type tag code"
+                                required
+                                class="h-9 flex-1 rounded-lg text-sm"
+                            />
                             <QrScannerDialog
-                                button-label="Scan asset tag"
+                                button-label="Scan"
                                 title="Scan handover asset tag"
                                 description="Use the camera to read the asset label, or type the tag code manually."
                                 @scanned="assetTagCode = $event"
                             />
                         </div>
-                        <Input
-                            id="asset_tag_code"
-                            v-model="assetTagCode"
-                            name="asset_tag_code"
-                            data-testid="handover-asset-tag-input"
-                            placeholder="Scan / type tag code"
-                            required
-                            class="rounded-lg"
-                        />
                         <InputError :message="errors.asset_tag_code" />
                     </div>
 
-                    <div class="grid gap-2">
+                    <!-- Recipient search -->
+                    <div class="grid gap-1.5">
                         <Label
                             for="recipient_search"
                             class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Find recipient</Label
+                            >Search recipient</Label
                         >
                         <Input
                             id="recipient_search"
                             v-model="recipientSearch"
                             data-testid="handover-recipient-search-input"
-                            placeholder="Search by name or email"
-                            class="rounded-lg"
+                            placeholder="Type name or email to filter"
+                            class="h-9 rounded-lg text-sm"
                         />
-                        <div class="text-xs text-muted-foreground">
-                            The selector loads up to 25 matching recipients at a
-                            time.
+                        <div class="text-[11px] text-muted-foreground/70">
+                            Loads up to 25 matching recipients.
                         </div>
                     </div>
 
-                    <div class="grid gap-2">
+                    <!-- Recipient select -->
+                    <div class="grid gap-1.5">
                         <Label
                             for="to_user_id"
                             class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Recipient</Label
+                            >Selected recipient
+                            <span class="text-rose-500">*</span></Label
                         >
                         <select
                             id="to_user_id"
                             name="to_user_id"
                             data-testid="handover-recipient-select"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                            class="h-9 w-full rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none"
                             required
                         >
                             <option value="" disabled selected>
-                                Select recipient
+                                Select a recipient
                             </option>
                             <option
                                 v-for="u in users"
@@ -173,177 +193,208 @@ watch(recipientSearch, () => {
                                 }}
                             </option>
                         </select>
-                        <div class="text-xs text-muted-foreground">
-                            Recipients must already be assigned to an
-                            institutional position before the handover can
-                            proceed.
+                        <div class="text-[11px] text-muted-foreground/70">
+                            Recipients must be assigned to an institutional
+                            position.
                         </div>
                         <InputError :message="errors.to_user_id" />
                     </div>
 
-                    <div class="grid gap-2">
+                    <!-- Notes -->
+                    <div class="grid gap-1.5">
                         <Label
                             for="notes"
                             class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Notes (optional)</Label
+                            >Notes</Label
                         >
                         <Input
                             id="notes"
                             name="notes"
-                            placeholder="Optional notes"
-                            class="rounded-lg"
+                            placeholder="Optional transfer notes"
+                            class="h-9 rounded-lg text-sm"
                         />
                         <InputError :message="errors.notes" />
                     </div>
 
-                    <div class="flex justify-end">
+                    <!-- Submit -->
+                    <div class="pt-1">
                         <Button
                             type="submit"
                             :disabled="processing"
                             data-test="send-verification-button"
                             data-testid="send-verification-button"
-                            class="rounded-lg shadow-sm"
+                            class="w-full rounded-lg font-semibold shadow-sm"
                         >
-                            <span
-                                class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary-foreground/60"
-                            />Send verification
+                            Send verification
                         </Button>
                     </div>
                 </Form>
             </div>
 
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div class="mb-4 flex items-center justify-between">
-                    <div
-                        class="flex items-center gap-2 text-sm font-semibold tracking-tight"
-                    >
-                        <span
-                            class="inline-block h-1.5 w-1.5 rounded-full bg-sky-500/60"
-                        />
+            <div class="rounded-xl border border-border/50 bg-card shadow-sm">
+                <div
+                    class="flex items-center justify-between border-b border-border/40 px-5 py-4"
+                >
+                    <div class="text-sm font-semibold tracking-tight">
                         Recent handovers
                     </div>
-                    <span class="text-xs text-muted-foreground"
+                    <span
+                        class="inline-flex items-center rounded-full border border-border/40 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
                         >{{ recent.length }} total</span
                     >
                 </div>
 
-                <div v-if="recent.length" class="grid gap-3">
-                    <div
-                        v-for="r in recent"
-                        :key="r.id"
-                        class="group relative overflow-hidden rounded-xl border border-border/40 p-4 transition-all hover:border-border/60 hover:shadow-sm"
-                    >
+                <div class="px-5 py-4">
+                    <div v-if="recent.length" class="grid gap-3">
                         <div
-                            class="absolute top-0 left-0 h-full w-1 transition-colors"
-                            :class="
-                                r.verified_at
-                                    ? 'bg-emerald-500'
-                                    : 'bg-amber-500'
-                            "
-                        />
-
-                        <div
-                            class="flex flex-col gap-3 pl-3 sm:flex-row sm:items-start sm:justify-between"
+                            v-for="r in recent"
+                            :key="r.id"
+                            class="group relative overflow-hidden rounded-xl border border-border/40 transition-all hover:border-border/60 hover:shadow-sm"
                         >
-                            <div class="space-y-2">
-                                <div class="flex items-center gap-2">
-                                    <div class="font-medium">
-                                        {{ r.asset_name ?? 'Unknown asset' }}
-                                    </div>
-                                    <span
-                                        :class="[
-                                            'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
-                                            r.verified_at
-                                                ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                                                : 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400',
-                                        ]"
-                                    >
+                            <div
+                                class="absolute top-0 left-0 h-full w-1 transition-colors"
+                                :class="
+                                    r.verified_at
+                                        ? 'bg-emerald-500'
+                                        : 'bg-amber-500'
+                                "
+                            />
+                            <div
+                                class="flex flex-col gap-3 p-4 pl-4 sm:flex-row sm:items-start sm:justify-between"
+                            >
+                                <div class="space-y-2">
+                                    <div class="flex items-center gap-2">
+                                        <div class="text-sm font-semibold">
+                                            {{
+                                                r.asset_name ?? 'Unknown asset'
+                                            }}
+                                        </div>
                                         <span
                                             :class="[
-                                                'h-1 w-1 rounded-full',
+                                                'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase',
                                                 r.verified_at
-                                                    ? 'bg-emerald-500'
-                                                    : 'bg-amber-500',
+                                                    ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                                                    : 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400',
                                             ]"
-                                        />
-                                        {{
-                                            r.verified_at
-                                                ? 'Verified'
-                                                : 'Pending'
-                                        }}
-                                    </span>
-                                </div>
-                                <div
-                                    class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"
-                                >
-                                    <span
-                                        class="inline-flex items-center gap-1"
+                                        >
+                                            <span
+                                                :class="[
+                                                    'h-1 w-1 rounded-full',
+                                                    r.verified_at
+                                                        ? 'bg-emerald-500'
+                                                        : 'bg-amber-500',
+                                                ]"
+                                            />
+                                            {{
+                                                r.verified_at
+                                                    ? 'Verified'
+                                                    : 'Pending'
+                                            }}
+                                        </span>
+                                    </div>
+                                    <div
+                                        class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground"
                                     >
                                         <span
-                                            class="h-1 w-1 rounded-full bg-primary/40"
-                                        />
-                                        {{ r.tag_code ?? '—' }}
-                                    </span>
-                                    <span
-                                        class="inline-flex items-center gap-1"
-                                    >
+                                            class="inline-flex items-center gap-1"
+                                        >
+                                            <span
+                                                class="h-1 w-1 rounded-full bg-primary/40"
+                                            />
+                                            {{ r.tag_code ?? '—' }}
+                                        </span>
                                         <span
-                                            class="h-1 w-1 rounded-full bg-primary/40"
-                                        />
-                                        To:
-                                        {{ r.to?.name ?? r.to?.email ?? '—' }}
-                                    </span>
-                                </div>
-                                <div
-                                    v-if="r.to_position || r.from_position"
-                                    class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground/80"
-                                >
-                                    <span v-if="r.to_position">
-                                        {{ r.to_position.title
-                                        }}{{
-                                            r.to_position.department
-                                                ? `, ${r.to_position.department}`
-                                                : ''
-                                        }}
-                                    </span>
-                                    <span
-                                        v-if="r.from_position"
-                                        class="text-muted-foreground/60"
+                                            class="inline-flex items-center gap-1"
+                                        >
+                                            <span
+                                                class="h-1 w-1 rounded-full bg-primary/40"
+                                            />
+                                            To:
+                                            {{
+                                                r.to?.name ?? r.to?.email ?? '—'
+                                            }}
+                                        </span>
+                                    </div>
+                                    <div
+                                        v-if="r.to_position || r.from_position"
+                                        class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground/80"
                                     >
-                                        From: {{ r.from_position.title
-                                        }}{{
-                                            r.from_position.department
-                                                ? `, ${r.from_position.department}`
-                                                : ''
-                                        }}
-                                    </span>
+                                        <span v-if="r.to_position">
+                                            {{ r.to_position.title
+                                            }}{{
+                                                r.to_position.department
+                                                    ? `, ${r.to_position.department}`
+                                                    : ''
+                                            }}
+                                        </span>
+                                        <span
+                                            v-if="r.from_position"
+                                            class="text-muted-foreground/60"
+                                        >
+                                            From: {{ r.from_position.title
+                                            }}{{
+                                                r.from_position.department
+                                                    ? `, ${r.from_position.department}`
+                                                    : ''
+                                            }}
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div class="shrink-0 text-right">
-                                <div
-                                    class="text-[11px] text-muted-foreground/70 tabular-nums"
-                                >
-                                    {{ r.initiated_at ?? '—' }}
-                                </div>
-                                <div
-                                    v-if="r.verified_at"
-                                    class="text-[11px] text-emerald-600 tabular-nums dark:text-emerald-400"
-                                >
-                                    Verified {{ r.verified_at }}
+                                <div class="shrink-0 text-right">
+                                    <div
+                                        class="text-[11px] text-muted-foreground/70 tabular-nums"
+                                    >
+                                        {{ formatDateTime(r.initiated_at) }}
+                                    </div>
+                                    <div
+                                        v-if="r.verified_at"
+                                        class="text-[11px] text-emerald-600 tabular-nums dark:text-emerald-400"
+                                    >
+                                        {{ formatDateTime(r.verified_at) }}
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div
-                    v-else
-                    class="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground"
-                >
-                    No recent handovers found.
+                    <div
+                        v-else
+                        class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-10 text-center"
+                    >
+                        <div
+                            class="rounded-full border border-border/40 bg-muted/40 p-3"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="1.5"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                class="text-muted-foreground"
+                            >
+                                <rect
+                                    width="20"
+                                    height="14"
+                                    x="2"
+                                    y="5"
+                                    rx="2"
+                                />
+                                <line x1="2" x2="22" y1="10" y2="10" />
+                            </svg>
+                        </div>
+                        <div class="text-sm font-medium text-muted-foreground">
+                            No recent handovers
+                        </div>
+                        <div class="max-w-xs text-xs text-muted-foreground/70">
+                            Initiate a handover using the form. Completed
+                            transfers will appear here.
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

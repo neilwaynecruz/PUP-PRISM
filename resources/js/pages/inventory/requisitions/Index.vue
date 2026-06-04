@@ -24,6 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useBulkSelection } from '@/composables/useBulkSelection';
 import {
     destroy as requisitionTemplatesDestroy,
     duplicate as requisitionTemplatesDuplicate,
@@ -420,41 +421,18 @@ function confirmDelete(): void {
     });
 }
 
-const selectedIds = ref<Set<number>>(new Set());
 const bulkActionDialogOpen = ref(false);
 const pendingBulkAction = ref<'approve' | 'issue' | null>(null);
 
-const allSelected = computed(
-    () =>
-        props.requisitions.data.length > 0 &&
-        selectedIds.value.size === props.requisitions.data.length,
-);
-const someSelected = computed(
-    () =>
-        selectedIds.value.size > 0 &&
-        selectedIds.value.size < props.requisitions.data.length,
-);
-const hasSelection = computed(() => selectedIds.value.size > 0);
-
-function toggleSelectAll(): void {
-    if (allSelected.value) {
-        selectedIds.value.clear();
-    } else {
-        selectedIds.value = new Set(props.requisitions.data.map((r) => r.id));
-    }
-}
-
-function toggleSelect(id: number): void {
-    const next = new Set(selectedIds.value);
-
-    if (next.has(id)) {
-        next.delete(id);
-    } else {
-        next.add(id);
-    }
-
-    selectedIds.value = next;
-}
+const {
+    selectedIds,
+    allSelected,
+    someSelected,
+    hasSelection,
+    toggleSelectAll,
+    toggleSelect,
+    clearSelection,
+} = useBulkSelection(() => props.requisitions.data);
 
 function runBulkApprove(): void {
     pendingBulkAction.value = 'approve';
@@ -483,7 +461,7 @@ function confirmBulkAction(): void {
         },
         {
             onSuccess: () => {
-                selectedIds.value.clear();
+                clearSelection();
                 bulkActionDialogOpen.value = false;
                 pendingBulkAction.value = null;
             },
@@ -558,7 +536,8 @@ function confirmBulkAction(): void {
                     <div
                         v-for="r in requisitions.data"
                         :key="r.id"
-                        class="rounded-xl border border-border/40 p-4 text-sm"
+                        class="rounded-xl border border-border/40 p-4 text-sm transition-colors"
+                        :class="{ 'bg-primary/5': selectedIds.has(r.id) }"
                     >
                         <div class="flex items-center justify-between gap-3">
                             <div class="flex items-center gap-2">
@@ -567,8 +546,8 @@ function confirmBulkAction(): void {
                                         props.can.bulkApprove ||
                                         props.can.bulkIssue
                                     "
-                                    :checked="selectedIds.has(r.id)"
-                                    @update:checked="() => toggleSelect(r.id)"
+                                    :model-value="selectedIds.has(r.id)"
+                                    @update:model-value="() => toggleSelect(r.id)"
                                     aria-label="Select requisition"
                                 />
                                 <span class="font-medium">#{{ r.id }}</span>
@@ -628,9 +607,8 @@ function confirmBulkAction(): void {
                                     class="w-8 py-2 pr-2"
                                 >
                                     <Checkbox
-                                        :checked="allSelected"
-                                        :indeterminate="someSelected"
-                                        @update:checked="toggleSelectAll"
+                                        :model-value="allSelected ? true : someSelected ? 'indeterminate' : false"
+                                        @update:model-value="toggleSelectAll"
                                         aria-label="Select all requisitions"
                                     />
                                 </th>
@@ -645,7 +623,8 @@ function confirmBulkAction(): void {
                             <tr
                                 v-for="r in requisitions.data"
                                 :key="r.id"
-                                class="border-b border-border/40"
+                                class="border-b border-border/40 transition-colors"
+                                :class="{ 'bg-primary/5': selectedIds.has(r.id) }"
                             >
                                 <td
                                     v-if="
@@ -655,8 +634,8 @@ function confirmBulkAction(): void {
                                     class="py-2 pr-2"
                                 >
                                     <Checkbox
-                                        :checked="selectedIds.has(r.id)"
-                                        @update:checked="
+                                        :model-value="selectedIds.has(r.id)"
+                                        @update:model-value="
                                             () => toggleSelect(r.id)
                                         "
                                         aria-label="Select requisition"

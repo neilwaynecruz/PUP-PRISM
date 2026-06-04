@@ -1,6 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
- * @see vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:119
+ * @see [serialized-closure]:2
  * @route '/storage/{path}'
  */
 export const upload = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -14,7 +14,7 @@ upload.definition = {
 } satisfies RouteDefinition<["put"]>
 
 /**
- * @see vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:119
+ * @see [serialized-closure]:2
  * @route '/storage/{path}'
  */
 upload.url = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -41,7 +41,7 @@ upload.url = (args: { path: string | number } | [path: string | number ] | strin
 }
 
 /**
- * @see vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:119
+ * @see [serialized-closure]:2
  * @route '/storage/{path}'
  */
 upload.put = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -50,7 +50,7 @@ upload.put = (args: { path: string | number } | [path: string | number ] | strin
 })
 
     /**
- * @see vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:119
+ * @see [serialized-closure]:2
  * @route '/storage/{path}'
  */
     const uploadForm = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -64,7 +64,7 @@ upload.put = (args: { path: string | number } | [path: string | number ] | strin
     })
 
             /**
- * @see vendor/laravel/framework/src/Illuminate/Filesystem/FilesystemServiceProvider.php:119
+ * @see [serialized-closure]:2
  * @route '/storage/{path}'
  */
         uploadForm.put = (args: { path: string | number } | [path: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
