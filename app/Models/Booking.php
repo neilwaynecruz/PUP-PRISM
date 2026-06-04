@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\BookingStatus;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -74,6 +75,46 @@ class Booking extends Model
     public function deletedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'deleted_by');
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeBlocking(Builder $query): Builder
+    {
+        return $query->whereIn('status', self::blockingStatuses());
+    }
+
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopeForAssetWindow(
+        Builder $query,
+        int $assetId,
+        \DateTimeInterface $startAt,
+        \DateTimeInterface $endAt,
+        ?int $ignoreBookingId = null,
+    ): Builder {
+        return $query
+            ->where('asset_id', $assetId)
+            ->when(
+                $ignoreBookingId !== null,
+                fn (Builder $builder) => $builder->whereKeyNot($ignoreBookingId),
+            )
+            ->where('start_at', '<', $endAt)
+            ->where('end_at', '>', $startAt);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public static function blockingStatuses(): array
+    {
+        return [
+            BookingStatus::Approved->value,
+        ];
     }
 
     /**

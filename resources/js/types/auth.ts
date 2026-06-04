@@ -14,6 +14,13 @@ export type Auth = {
     roles: string[];
 };
 
+export type SessionMeta = {
+    lifetimeMinutes: number;
+    warningMinutes: number;
+    keepAliveUrl: string;
+    loginUrl: string;
+};
+
 export type TwoFactorConfigContent = {
     title: string;
     description: string;

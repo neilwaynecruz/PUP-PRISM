@@ -96,4 +96,9 @@ class RequisitionPolicy
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
+
+    public function forceDelete(User $user, Requisition $requisition): bool
+    {
+        return $user->hasAnyRole(['Admin', 'Supply Head']);
+    }
 }

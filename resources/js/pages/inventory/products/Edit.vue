@@ -32,7 +32,7 @@ type Product = {
     is_active: boolean;
 };
 
-defineProps<{
+const props = defineProps<{
     product: Product;
     categories: Option[];
     origins: Option[];

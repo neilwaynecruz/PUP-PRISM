@@ -2,14 +2,13 @@
 import { Link } from '@inertiajs/vue3';
 import {
     BookOpen,
-    FolderGit2,
     LayoutGrid,
     Package,
     Truck,
-    ClipboardList,
     BarChart3,
     ArrowLeftRight,
     FileText,
+    History,
     Settings,
 } from 'lucide-vue-next';
 import AppLogo from '@/components/AppLogo.vue';
@@ -26,6 +25,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
+import { index as auditLogsIndex } from '@/routes/inventory/audit-logs';
 import { index as bookingsIndex } from '@/routes/inventory/bookings';
 import { index as handoverIndex } from '@/routes/inventory/handover';
 import { index as movementsIndex } from '@/routes/inventory/movements';
@@ -66,9 +66,14 @@ const mainNavItems: NavItem[] = [
         icon: Truck,
     },
     {
-        title: 'Audit logs',
+        title: 'Stock movements',
         href: movementsIndex(),
         icon: BarChart3,
+    },
+    {
+        title: 'Audit logs',
+        href: auditLogsIndex(),
+        icon: History,
     },
 ];
 

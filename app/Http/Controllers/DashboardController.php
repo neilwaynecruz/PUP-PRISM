@@ -48,6 +48,7 @@ class DashboardController extends Controller
             'requisitionSummary' => $stats['requisitionSummary'] ?? [],
             'bookingSummary' => $stats['bookingSummary'] ?? [],
             'assetConditionSummary' => $stats['assetConditionSummary'] ?? [],
+            'recentlyDeleted' => $stats['recentlyDeleted'] ?? [],
             'exportUrls' => $user->hasRole('Admin') ? [
                 'assetConditionsCsv' => route('inventory.reports.asset-conditions', ['format' => 'csv'], absolute: false),
                 'assetConditionsPdf' => route('inventory.reports.asset-conditions', ['format' => 'pdf'], absolute: false),

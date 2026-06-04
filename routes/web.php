@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Inventory\AuditLogController;
 use App\Http\Controllers\Inventory\BookingController;
 use App\Http\Controllers\Inventory\HandoverController;
 use App\Http\Controllers\Inventory\HandoverReceiptController;
@@ -10,6 +11,7 @@ use App\Http\Controllers\Inventory\ProductController;
 use App\Http\Controllers\Inventory\ProductLabelController;
 use App\Http\Controllers\Inventory\ReceivingController;
 use App\Http\Controllers\Inventory\RequisitionController;
+use App\Http\Controllers\Inventory\RequisitionTemplateController;
 use App\Http\Controllers\Inventory\StockMovementController;
 use App\Http\Controllers\Inventory\TrashController;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +23,8 @@ Route::inertia('/', 'Welcome', [
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('session/keep-alive', fn () => response()->noContent()->header('Cache-Control', 'no-store'))
+        ->name('session.keep-alive');
 
     Route::get('admin/health', fn () => response()->noContent())
         ->middleware('role:Admin')
@@ -42,6 +46,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('bookings', [BookingController::class, 'index'])
                 ->name('bookings.index');
 
+            Route::get('bookings/{booking}', [BookingController::class, 'show'])
+                ->name('bookings.show');
+
             Route::post('bookings', [BookingController::class, 'store'])
                 ->name('bookings.store');
 
@@ -54,11 +61,38 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('bookings/{booking}/restore', [BookingController::class, 'restore'])
                 ->name('bookings.restore');
 
+            Route::delete('bookings/{booking}/force', [BookingController::class, 'forceDelete'])
+                ->name('bookings.force-delete');
+
+            Route::post('bookings/bulk-restore', [BookingController::class, 'bulkRestore'])
+                ->name('bookings.bulk-restore');
+
+            Route::post('bookings/bulk-force-delete', [BookingController::class, 'bulkForceDelete'])
+                ->name('bookings.bulk-force-delete');
+
+            Route::post('bookings/bulk-approve', [BookingController::class, 'bulkApprove'])
+                ->name('bookings.bulk-approve');
+
+            Route::post('bookings/bulk-reject', [BookingController::class, 'bulkReject'])
+                ->name('bookings.bulk-reject');
+
             Route::get('requisitions', [RequisitionController::class, 'index'])
                 ->name('requisitions.index');
 
             Route::post('requisitions', [RequisitionController::class, 'store'])
                 ->name('requisitions.store');
+
+            Route::post('requisition-templates', [RequisitionTemplateController::class, 'store'])
+                ->name('requisition-templates.store');
+
+            Route::put('requisition-templates/{requisitionTemplate}', [RequisitionTemplateController::class, 'update'])
+                ->name('requisition-templates.update');
+
+            Route::post('requisition-templates/{requisitionTemplate}/duplicate', [RequisitionTemplateController::class, 'duplicate'])
+                ->name('requisition-templates.duplicate');
+
+            Route::delete('requisition-templates/{requisitionTemplate}', [RequisitionTemplateController::class, 'destroy'])
+                ->name('requisition-templates.destroy');
 
             Route::get('requisitions/trash', [RequisitionController::class, 'trash'])
                 ->name('requisitions.trash');
@@ -71,6 +105,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::put('requisitions/{requisition}/restore', [RequisitionController::class, 'restore'])
                 ->name('requisitions.restore');
+
+            Route::delete('requisitions/{requisition}/force', [RequisitionController::class, 'forceDelete'])
+                ->name('requisitions.force-delete');
+
+            Route::post('requisitions/bulk-restore', [RequisitionController::class, 'bulkRestore'])
+                ->name('requisitions.bulk-restore');
+
+            Route::post('requisitions/bulk-force-delete', [RequisitionController::class, 'bulkForceDelete'])
+                ->name('requisitions.bulk-force-delete');
+
+            Route::post('requisitions/bulk-approve', [RequisitionController::class, 'bulkApprove'])
+                ->name('requisitions.bulk-approve');
+
+            Route::post('requisitions/bulk-issue', [RequisitionController::class, 'bulkIssue'])
+                ->name('requisitions.bulk-issue');
 
             Route::get('reports/products/{format}', [InventoryReportController::class, 'products'])
                 ->whereIn('format', ['csv', 'pdf'])
@@ -153,6 +202,30 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::put('products/{product}/restore', [ProductController::class, 'restore'])
             ->name('products.restore');
+
+        Route::delete('products/{product}/force', [ProductController::class, 'forceDelete'])
+            ->name('products.force-delete');
+
+        Route::post('products/bulk-restore', [ProductController::class, 'bulkRestore'])
+            ->name('products.bulk-restore');
+
+        Route::post('products/bulk-force-delete', [ProductController::class, 'bulkForceDelete'])
+            ->name('products.bulk-force-delete');
+
+        Route::post('products/bulk-activate', [ProductController::class, 'bulkActivate'])
+            ->name('products.bulk-activate');
+
+        Route::post('products/bulk-deactivate', [ProductController::class, 'bulkDeactivate'])
+            ->name('products.bulk-deactivate');
+
+        Route::post('products/bulk-change-category', [ProductController::class, 'bulkChangeCategory'])
+            ->name('products.bulk-change-category');
+
+        Route::get('audit-logs', [AuditLogController::class, 'index'])
+            ->name('audit-logs.index');
+
+        Route::get('audit-logs/export', [AuditLogController::class, 'export'])
+            ->name('audit-logs.export');
     });
 });
 

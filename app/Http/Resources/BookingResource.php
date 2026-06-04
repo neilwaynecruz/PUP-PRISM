@@ -29,6 +29,8 @@ class BookingResource extends InertiaJsonResource
             'approver' => $this->relationLoaded('approver') && $this->approver
                 ? (new UserResource($this->approver))->resolve($request)
                 : null,
+            'approver_position' => $this->positionSummary('approverPosition'),
+            'purpose' => $this->purpose,
             'requested_ip_address' => $this->requested_ip_address,
             'approved_ip_address' => $this->approved_ip_address,
             'deleted_at' => $this->deleted_at?->toIso8601String(),
@@ -36,6 +38,7 @@ class BookingResource extends InertiaJsonResource
                 ? (new UserResource($this->deletedBy))->resolve($request)
                 : null,
             'deletion_reason' => $this->deletion_reason,
+            'can_delete' => $request->user()?->can('delete', $this->resource) ?? false,
         ];
     }
 

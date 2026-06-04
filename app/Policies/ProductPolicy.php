@@ -56,4 +56,9 @@ class ProductPolicy
     {
         return $user->hasRole('Admin');
     }
+
+    public function forceDelete(User $user, Product $product): bool
+    {
+        return $user->hasRole('Admin');
+    }
 }

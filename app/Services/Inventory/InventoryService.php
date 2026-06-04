@@ -23,6 +23,7 @@ class InventoryService
     public function __construct(
         private readonly NotificationService $notifications,
     ) {}
+
     public function receive(User $user, Product $product, array $payload, ?string $ipAddress = null): void
     {
         if ($product->type === ProductType::Consumable) {
@@ -76,7 +77,9 @@ class InventoryService
                 ['on_hand_qty' => 0],
             );
 
+            $qtyBefore = (int) $stock->on_hand_qty;
             $stock->increment('on_hand_qty', $qty);
+            $qtyAfter = $qtyBefore + $qty;
 
             StockMovement::create([
                 'movement_type' => 'receive',
@@ -85,6 +88,8 @@ class InventoryService
                 'asset_id' => null,
                 'requisition_id' => null,
                 'qty_delta' => $qty,
+                'qty_before' => $qtyBefore,
+                'qty_after' => $qtyAfter,
                 'performed_by' => $user->id,
                 'accountable_position_id' => null,
                 'ip_address' => $ipAddress,
@@ -117,6 +122,8 @@ class InventoryService
                     'asset_id' => $asset->id,
                     'requisition_id' => null,
                     'qty_delta' => null,
+                    'qty_before' => null,
+                    'qty_after' => null,
                     'performed_by' => $user->id,
                     'accountable_position_id' => null,
                     'ip_address' => $ipAddress,
@@ -191,6 +198,7 @@ class InventoryService
                     throw new \RuntimeException("Insufficient stock for SKU {$product->sku}.");
                 }
 
+                $runningOnHand = (int) $stock->on_hand_qty;
                 $remaining = $qty;
 
                 /** @var Collection<int, StockLot> $lots */
@@ -211,6 +219,8 @@ class InventoryService
                     $consume = min($remaining, $lot->qty_remaining);
 
                     $lot->decrement('qty_remaining', $consume);
+                    $qtyBefore = $runningOnHand;
+                    $qtyAfter = $qtyBefore - $consume;
 
                     StockMovement::create([
                         'movement_type' => 'issue',
@@ -219,6 +229,8 @@ class InventoryService
                         'asset_id' => null,
                         'requisition_id' => $requisition->id,
                         'qty_delta' => -$consume,
+                        'qty_before' => $qtyBefore,
+                        'qty_after' => $qtyAfter,
                         'performed_by' => $user->id,
                         'accountable_position_id' => $requisition->requester_position_id,
                         'ip_address' => $ipAddress,
@@ -226,6 +238,7 @@ class InventoryService
                         'notes' => $notes,
                     ]);
 
+                    $runningOnHand = $qtyAfter;
                     $remaining -= $consume;
                 }
 

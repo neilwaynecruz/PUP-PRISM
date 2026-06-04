@@ -70,6 +70,12 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
                 'roles' => $request->user()?->getRoleNames() ?? [],
             ],
+            'session' => [
+                'lifetimeMinutes' => (int) config('session.lifetime', 120),
+                'warningMinutes' => max(1, min(5, ((int) config('session.lifetime', 120)) - 1)),
+                'keepAliveUrl' => route('session.keep-alive', absolute: false),
+                'loginUrl' => route('login', absolute: false),
+            ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }

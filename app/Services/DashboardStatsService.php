@@ -13,7 +13,6 @@ use App\Models\Product;
 use App\Models\Requisition;
 use App\Models\StockMovement;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
@@ -27,7 +26,7 @@ class DashboardStatsService
     {
         $from = isset($range['from']) ? CarbonImmutable::parse($range['from'])->startOfDay() : CarbonImmutable::now()->startOfMonth();
         $to = isset($range['to']) ? CarbonImmutable::parse($range['to'])->endOfDay() : CarbonImmutable::now()->endOfDay();
-        $cacheKey = 'dashboard_admin_' . $from->toDateString() . '_' . $to->toDateString();
+        $cacheKey = 'dashboard_admin_'.$from->toDateString().'_'.$to->toDateString();
 
         return Cache::remember($cacheKey, 60, function () use ($from, $to) {
             return [
@@ -40,6 +39,7 @@ class DashboardStatsService
                 'requisitionSummary' => $this->requisitionSummary($from, $to),
                 'bookingSummary' => $this->bookingSummary($from, $to),
                 'assetConditionSummary' => $this->assetConditionSummary(),
+                'recentlyDeleted' => $this->recentlyDeleted(),
             ];
         });
     }
@@ -208,5 +208,61 @@ class DashboardStatsService
         }
 
         return $summary;
+    }
+
+    /**
+     * @return list<array{id: int, type: string, name: string, deleted_at: string, deleted_by: string|null}>
+     */
+    private function recentlyDeleted(): array
+    {
+        $products = Product::onlyTrashed()
+            ->with('deletedBy:id,name')
+            ->orderByDesc('deleted_at')
+            ->limit(5)
+            ->get(['id', 'name', 'deleted_at'])
+            ->map(fn ($p) => [
+                'id' => $p->id,
+                'type' => 'product',
+                'name' => $p->name,
+                'deleted_at' => $p->deleted_at->format('M d, Y H:i'),
+                'deleted_by' => $p->deletedBy?->name ?? 'Unknown',
+                'restore_url' => route('inventory.products.restore', $p->id),
+            ]);
+
+        $bookings = Booking::onlyTrashed()
+            ->with('deletedBy:id,name', 'asset:id,tag_code')
+            ->orderByDesc('deleted_at')
+            ->limit(5)
+            ->get(['id', 'asset_id', 'deleted_at'])
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'type' => 'booking',
+                'name' => 'Booking: '.($b->asset?->tag_code ?? 'Unknown'),
+                'deleted_at' => $b->deleted_at->format('M d, Y H:i'),
+                'deleted_by' => $b->deletedBy?->name ?? 'Unknown',
+                'restore_url' => route('inventory.bookings.restore', $b->id),
+            ]);
+
+        $requisitions = Requisition::onlyTrashed()
+            ->with('deletedBy:id,name')
+            ->orderByDesc('deleted_at')
+            ->limit(5)
+            ->get(['id', 'deleted_at'])
+            ->map(fn ($r) => [
+                'id' => $r->id,
+                'type' => 'requisition',
+                'name' => 'Requisition #'.$r->id,
+                'deleted_at' => $r->deleted_at->format('M d, Y H:i'),
+                'deleted_by' => $r->deletedBy?->name ?? 'Unknown',
+                'restore_url' => route('inventory.requisitions.restore', $r->id),
+            ]);
+
+        return $products
+            ->merge($bookings)
+            ->merge($requisitions)
+            ->sortByDesc('deleted_at')
+            ->take(5)
+            ->values()
+            ->toArray();
     }
 }

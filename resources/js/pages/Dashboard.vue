@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import {
     BarController,
     BarElement,
@@ -32,6 +32,7 @@ Chart.register(
 type Alert = { id: number; type: string; message: string; detected_at: string };
 type TrendData = { labels: string[]; data: number[] };
 type SummaryData = Record<string, number>;
+type RecentlyDeleted = { id: number; type: string; name: string; deleted_at: string; deleted_by: string; restore_url: string };
 
 const props = defineProps<{
     dateRange: { from: string | null; to: string | null };
@@ -44,6 +45,7 @@ const props = defineProps<{
     requisitionSummary: SummaryData;
     bookingSummary: SummaryData;
     assetConditionSummary: SummaryData;
+    recentlyDeleted: RecentlyDeleted[];
     exportUrls: { assetConditionsCsv: string; assetConditionsPdf: string } | null;
 }>();
 
@@ -182,14 +184,14 @@ function renderBarChart(
             },
             scales: {
                 x: {
-                    ticks: { color: mutedColor, font: { family: "'Outfit', sans-serif", size: 11, weight: '500' } },
+                    ticks: { color: mutedColor, font: { family: "'Outfit', sans-serif", size: 11, weight: 500 } },
                     grid: { display: false },
                     border: { display: false },
                 },
                 y: {
                     beginAtZero: true,
                     ticks: { color: mutedColor, font: { family: "'Outfit', sans-serif", size: 11 }, padding: 8 },
-                    grid: { color: gridColor, drawBorder: false, lineWidth: 1 },
+                    grid: { color: gridColor, lineWidth: 1 },
                     border: { display: false },
                 },
             },
@@ -255,7 +257,7 @@ function renderLineChart(
                 y: {
                     beginAtZero: true,
                     ticks: { color: mutedColor, font: { family: "'Outfit', sans-serif", size: 11 }, padding: 8 },
-                    grid: { color: gridColor, drawBorder: false, lineWidth: 1 },
+                    grid: { color: gridColor, lineWidth: 1 },
                     border: { display: false },
                 },
             },
@@ -363,6 +365,10 @@ watch(
 function summaryEntries(summary: SummaryData): { key: string; value: number }[] {
     return Object.entries(summary).map(([key, value]) => ({ key, value }));
 }
+
+function restoreItem(url: string): void {
+    router.put(url, {}, { preserveScroll: true });
+}
 </script>
 
 <template>
@@ -414,6 +420,48 @@ function summaryEntries(summary: SummaryData): { key: string; value: number }[] 
                 />
                 <Button type="button" variant="default" size="sm" class="h-8 rounded-lg text-xs" @click="applyDateRange">Apply</Button>
             </div>
+        </div>
+
+        <!-- Recently Deleted Widget -->
+        <div v-if="isAdmin && recentlyDeleted.length > 0" class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div class="mb-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="text-sm font-semibold tracking-tight">Recently Deleted</div>
+                    <div class="h-1.5 w-1.5 rounded-full bg-rose-500/60" />
+                </div>
+                <Button variant="ghost" size="sm" as-child>
+                    <Link href="/inventory/trash">View Trash</Link>
+                </Button>
+            </div>
+            <ul class="space-y-2 text-sm">
+                <li
+                    v-for="item in recentlyDeleted"
+                    :key="`${item.type}-${item.id}`"
+                    class="flex items-center justify-between gap-3 rounded-lg border border-border/40 p-3 transition-colors hover:bg-muted/40"
+                >
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide"
+                            :class="{
+                                'bg-sky-500/10 text-sky-700 dark:text-sky-400': item.type === 'product',
+                                'bg-amber-500/10 text-amber-700 dark:text-amber-400': item.type === 'booking',
+                                'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400': item.type === 'requisition',
+                            }"
+                        >
+                            {{ item.type }}
+                        </span>
+                        <div>
+                            <div class="font-medium">{{ item.name }}</div>
+                            <div class="text-xs text-muted-foreground">
+                                Deleted by {{ item.deleted_by }} · {{ item.deleted_at }}
+                            </div>
+                        </div>
+                    </div>
+                    <Button variant="ghost" size="sm" class="h-7 text-xs" @click="restoreItem(item.restore_url)">
+                        Restore
+                    </Button>
+                </li>
+            </ul>
         </div>
 
         <!-- Quick Stats Row -->

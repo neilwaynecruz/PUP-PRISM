@@ -104,6 +104,19 @@ function sortIndicator(col: string): string {
     return direction.value === 'asc' ? ' \u2191' : ' \u2193';
 }
 
+function formatDateTime(iso: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+}
+
 function movementTypeLabel(mt: string): string {
     const labels: Record<string, string> = {
         receive: 'Received',
@@ -283,7 +296,7 @@ function movementTypeDot(mt: string): string {
                     </div>
                     <div v-if="m.qty_delta !== null">Quantity: {{ m.qty_delta }}</div>
                     <div v-if="m.notes">Notes: {{ m.notes }}</div>
-                    <div class="font-mono text-xs text-muted-foreground/70">{{ m.performed_at }}</div>
+                    <div class="text-xs text-muted-foreground/70">{{ formatDateTime(m.performed_at) }}</div>
                 </div>
             </div>
 
@@ -321,8 +334,8 @@ function movementTypeDot(mt: string): string {
                     </tr>
 
                     <tr v-for="m in movements.data" :key="m.id" class="[&>td]:px-4 [&>td]:py-3">
-                        <td class="whitespace-nowrap font-mono text-xs">
-                            {{ m.performed_at }}
+                        <td class="whitespace-nowrap text-xs text-muted-foreground">
+                            {{ formatDateTime(m.performed_at) }}
                         </td>
                         <td>
                             <span :class="['inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider', movementTypeColor(m.movement_type)]">

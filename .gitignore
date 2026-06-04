@@ -28,5 +28,8 @@ yarn-error.log
 /.vscode
 /.zed
 
+/test-results
+/debug_pest.txt
+
 /database/e2e.sqlite
 /tests/e2e/report

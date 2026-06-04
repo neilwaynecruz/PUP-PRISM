@@ -4,6 +4,16 @@ import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
 
@@ -33,6 +43,19 @@ const props = defineProps<{
 const search = ref(props.filters.search ?? '');
 const type = ref(props.filters.type ?? '');
 
+function formatDateTime(iso: string | null): string {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    return d.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+}
+
 const hasActiveFilters = computed(() => search.value !== '' || type.value !== '');
 
 watch([search, type], () => {
@@ -43,12 +66,22 @@ watch([search, type], () => {
     );
 });
 
-function restoreItem(item: TrashItem): void {
-    if (!confirm(`Restore this ${item.type}?`)) {
-        return;
-    }
+const selectedItem = ref<TrashItem | null>(null);
+const dialogOpen = ref(false);
 
-    router.put(item.restore_url);
+function openRestoreDialog(item: TrashItem): void {
+    selectedItem.value = item;
+    dialogOpen.value = true;
+}
+
+function confirmRestore(): void {
+    if (!selectedItem.value) return;
+    router.put(selectedItem.value.restore_url, {}, {
+        onSuccess: () => {
+            dialogOpen.value = false;
+            selectedItem.value = null;
+        },
+    });
 }
 
 function typeBadgeClass(itemType: string): string {
@@ -140,7 +173,7 @@ function typeBadgeClass(itemType: string): string {
                         </td>
                         <td class="font-medium">{{ item.label }}</td>
                         <td class="font-mono text-[11px] text-muted-foreground">{{ item.meta ?? '—' }}</td>
-                        <td class="font-mono text-xs text-muted-foreground">{{ item.deleted_at }}</td>
+                        <td class="text-muted-foreground">{{ formatDateTime(item.deleted_at) }}</td>
                         <td class="text-muted-foreground">{{ item.deleted_by?.name ?? '—' }}</td>
                         <td class="max-w-[200px] truncate text-muted-foreground" :title="item.deletion_reason ?? undefined">
                             {{ item.deletion_reason ?? '—' }}
@@ -150,7 +183,7 @@ function typeBadgeClass(itemType: string): string {
                                 variant="ghost"
                                 size="sm"
                                 class="h-8 rounded-lg text-xs"
-                                @click="restoreItem(item)"
+                                @click="openRestoreDialog(item)"
                             >
                                 Restore
                             </Button>
@@ -159,6 +192,23 @@ function typeBadgeClass(itemType: string): string {
                 </tbody>
             </table>
         </div>
+
+        <Dialog v-model:open="dialogOpen">
+            <DialogContent>
+                <DialogHeader class="space-y-3">
+                    <DialogTitle>Restore {{ selectedItem?.type }}?</DialogTitle>
+                    <DialogDescription>
+                        This will restore <strong>{{ selectedItem?.label }}</strong> back to the active list.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="gap-2">
+                    <DialogClose as-child>
+                        <Button variant="secondary">Cancel</Button>
+                    </DialogClose>
+                    <Button @click="confirmRestore">Restore</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         <div v-if="items.links.length" class="flex flex-wrap items-center justify-center gap-1">
             <Button

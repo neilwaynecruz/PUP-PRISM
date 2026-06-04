@@ -66,4 +66,9 @@ class BookingPolicy
     {
         return $user->hasAnyRole(['Admin', 'Property Custodian']);
     }
+
+    public function forceDelete(User $user, Booking $booking): bool
+    {
+        return $user->hasAnyRole(['Admin', 'Property Custodian']);
+    }
 }

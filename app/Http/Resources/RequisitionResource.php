@@ -42,6 +42,7 @@ class RequisitionResource extends InertiaJsonResource
                 ? (new UserResource($this->deletedBy))->resolve($request)
                 : null,
             'deletion_reason' => $this->deletion_reason,
+            'can_delete' => $request->user()?->can('delete', $this->resource) ?? false,
         ];
     }
 

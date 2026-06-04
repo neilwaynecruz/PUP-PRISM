@@ -1,6 +1,6 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
 /**
- * @see routes/web.php:25
+ * @see routes/web.php:29
  * @route '/admin/health'
  */
 export const health = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -14,7 +14,7 @@ health.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:25
+ * @see routes/web.php:29
  * @route '/admin/health'
  */
 health.url = (options?: RouteQueryOptions) => {
@@ -22,7 +22,7 @@ health.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:25
+ * @see routes/web.php:29
  * @route '/admin/health'
  */
 health.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -30,7 +30,7 @@ health.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:25
+ * @see routes/web.php:29
  * @route '/admin/health'
  */
 health.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -39,7 +39,7 @@ health.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:25
+ * @see routes/web.php:29
  * @route '/admin/health'
  */
     const healthForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -48,7 +48,7 @@ health.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:25
+ * @see routes/web.php:29
  * @route '/admin/health'
  */
         healthForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -56,7 +56,7 @@ health.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:25
+ * @see routes/web.php:29
  * @route '/admin/health'
  */
         healthForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

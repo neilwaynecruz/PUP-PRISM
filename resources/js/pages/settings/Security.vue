@@ -9,6 +9,16 @@ import PasswordInput from '@/components/PasswordInput.vue';
 import TwoFactorRecoveryCodes from '@/components/TwoFactorRecoveryCodes.vue';
 import TwoFactorSetupModal from '@/components/TwoFactorSetupModal.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import { edit } from '@/routes/security';
@@ -158,15 +168,35 @@ onUnmounted(() => clearTwoFactorAuthData());
             </p>
 
             <div class="relative inline">
-                <Form v-bind="disable.form()" #default="{ processing }">
-                    <Button
-                        variant="destructive"
-                        type="submit"
-                        :disabled="processing"
-                    >
-                        Disable 2FA
-                    </Button>
-                </Form>
+                <Dialog>
+                    <DialogTrigger as-child>
+                        <Button variant="destructive" type="button">
+                            Disable 2FA
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader class="space-y-3">
+                            <DialogTitle>Disable two-factor authentication?</DialogTitle>
+                            <DialogDescription>
+                                This will remove the extra security layer from your account. You will only need your password to log in.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter class="gap-2">
+                            <DialogClose as-child>
+                                <Button variant="secondary" type="button">Cancel</Button>
+                            </DialogClose>
+                            <Form v-bind="disable.form()" #default="{ processing }" class="inline">
+                                <Button
+                                    variant="destructive"
+                                    type="submit"
+                                    :disabled="processing"
+                                >
+                                    Disable 2FA
+                                </Button>
+                            </Form>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
 
             <TwoFactorRecoveryCodes />

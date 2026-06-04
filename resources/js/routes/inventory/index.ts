@@ -2,10 +2,12 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 import handover from './handover'
 import bookings from './bookings'
 import requisitions from './requisitions'
+import requisitionTemplates from './requisition-templates'
 import reports from './reports'
 import products from './products'
 import receiving from './receiving'
 import movements from './movements'
+import auditLogs from './audit-logs'
 /**
 * @see \App\Http\Controllers\Inventory\TrashController::__invoke
  * @see app/Http/Controllers/Inventory/TrashController.php:15
@@ -88,11 +90,13 @@ const inventory = {
     handover: Object.assign(handover, handover),
 bookings: Object.assign(bookings, bookings),
 requisitions: Object.assign(requisitions, requisitions),
+requisitionTemplates: Object.assign(requisitionTemplates, requisitionTemplates),
 reports: Object.assign(reports, reports),
 products: Object.assign(products, products),
 receiving: Object.assign(receiving, receiving),
 trash: Object.assign(trash, trash),
 movements: Object.assign(movements, movements),
+auditLogs: Object.assign(auditLogs, auditLogs),
 }
 
 export default inventory

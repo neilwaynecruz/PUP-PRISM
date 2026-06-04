@@ -162,6 +162,8 @@ class HandoverController extends Controller
                 'asset_id' => $asset->id,
                 'requisition_id' => null,
                 'qty_delta' => null,
+                'qty_before' => null,
+                'qty_after' => null,
                 'performed_by' => $user->id,
                 'accountable_position_id' => $handoverLog->to_position_id,
                 'ip_address' => $request->ip(),

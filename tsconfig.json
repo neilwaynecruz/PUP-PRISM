@@ -120,9 +120,13 @@
     "include": [
         "playwright.config.ts",
         "tests/e2e/**/*.ts",
-        "resources/js/**/*.ts",
         "resources/js/**/*.d.ts",
-        "resources/js/**/*.tsx", 
+        "resources/js/**/*.tsx",
+        "resources/js/**/*.ts",
         "resources/js/**/*.vue"
+    ],
+    "exclude": [
+        "resources/js/actions/**/*.ts",
+        "resources/js/routes/**/*.ts"
     ]
 }

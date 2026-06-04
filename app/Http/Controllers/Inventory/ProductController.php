@@ -12,6 +12,8 @@ use App\Models\Category;
 use App\Models\Origin;
 use App\Models\Product;
 use App\Models\ProductStock;
+use App\Models\StockMovement;
+use App\Services\AuditLogService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,16 +22,13 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 
 class ProductController extends Controller
 {
-    public function __construct()
-    {
-        $this->authorizeResource(Product::class, 'product');
-    }
-
     public function index(Request $request): Response
     {
+        $this->authorize('viewAny', Product::class);
         $search = $request->string('search')->trim()->toString();
         $type = $request->string('type')->trim()->toString();
         $categoryId = $request->integer('category_id') ?: null;
@@ -80,12 +79,15 @@ class ProductController extends Controller
             ],
             'can' => [
                 'create' => $request->user()?->can('create', Product::class) ?? false,
+                'bulkUpdate' => $request->user()?->hasAnyRole(['Admin', 'Supply Head']) ?? false,
             ],
         ]);
     }
 
     public function create(): Response
     {
+        $this->authorize('create', Product::class);
+
         return Inertia::render('inventory/products/Create', [
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
@@ -94,9 +96,11 @@ class ProductController extends Controller
 
     public function store(ProductStoreRequest $request): RedirectResponse
     {
+        $this->authorize('create', Product::class);
+
         $validated = $request->validated();
 
-        DB::transaction(function () use ($validated): void {
+        $product = DB::transaction(function () use ($validated): Product {
             $product = Product::create([
                 'sku' => $validated['sku'],
                 'name' => $validated['name'],
@@ -113,45 +117,132 @@ class ProductController extends Controller
                     'on_hand_qty' => 0,
                 ]);
             }
+
+            return $product;
         });
+
+        AuditLogService::logCreated($product);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Product created.')]);
 
         return to_route('inventory.products.index');
     }
 
-    public function show(Product $product): Response
+    public function show(Request $request, int $product): Response|SymfonyResponse
     {
-        $product->load([
-            'category:id,name',
-            'origin:id,name',
-            'stock:id,product_id,on_hand_qty',
-        ])->loadCount('assets');
+        $product = Product::query()->withTrashed()
+            ->with([
+                'category:id,name',
+                'origin:id,name',
+                'stock:id,product_id,on_hand_qty',
+            ])
+            ->withCount('assets')
+            ->find($product);
+
+        if (! $product) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Product not found or has been permanently deleted.')]);
+
+            return Inertia::location(route('inventory.products.index'));
+        }
+
+        $this->authorize('view', $product);
+
+        $stockMovements = StockMovement::query()
+            ->where('product_id', $product->id)
+            ->with([
+                'performedBy:id,name',
+                'stockLot:id,reference_no,received_at',
+                'requisition:id',
+                'asset:id,tag_code',
+                'accountablePosition:id,title,department_id',
+                'accountablePosition.department:id,name',
+            ])
+            ->orderByDesc('performed_at')
+            ->limit(20)
+            ->get()
+            ->map(fn (StockMovement $m) => [
+                'id' => $m->id,
+                'movement_type' => $m->movement_type,
+                'qty_delta' => $m->qty_delta,
+                'qty_before' => $m->qty_before,
+                'qty_after' => $m->qty_after,
+                'performed_by' => $m->performedBy?->name ?? 'System',
+                'performed_at' => $m->performed_at?->toIso8601String(),
+                'notes' => $m->notes,
+                'reference' => $m->requisition_id !== null
+                    ? "Requisition #{$m->requisition_id}"
+                    : ($m->stockLot?->reference_no !== null
+                        ? "Receiving {$m->stockLot->reference_no}"
+                        : ($m->asset?->tag_code !== null ? "Asset {$m->asset->tag_code}" : null)),
+                'source' => $m->movement_type === 'receive'
+                    ? 'Receiving'
+                    : ($m->movement_type === 'issue'
+                        ? 'Requisition issuance'
+                        : ($m->movement_type === 'transfer' ? 'Asset handover' : 'Inventory update')),
+                'accountable_position' => $m->accountablePosition
+                    ? trim(
+                        $m->accountablePosition->title
+                        .($m->accountablePosition->relationLoaded('department') && $m->accountablePosition->department?->name
+                            ? ", {$m->accountablePosition->department->name}"
+                            : '')
+                    )
+                    : null,
+            ])
+            ->all();
 
         return Inertia::render('inventory/products/Show', [
             'product' => (new ProductResource($product))->resolve(),
+            'stockMovements' => $stockMovements,
             'can' => [
-                'edit' => request()->user()?->can('update', $product) ?? false,
-                'printLabel' => request()->user()?->hasAnyRole(['Admin', 'Supply Head']) ?? false,
+                'edit' => $request->user()?->can('update', $product) ?? false,
+                'printLabel' => $request->user()?->hasAnyRole(['Admin', 'Supply Head']) ?? false,
             ],
+            'isDeleted' => $product->trashed(),
         ]);
     }
 
-    public function edit(Product $product): Response
+    public function edit(Request $request, int $product): Response|SymfonyResponse
     {
+        $product = Product::query()->withTrashed()
+            ->with([
+                'category:id,name',
+                'origin:id,name',
+                'stock:id,product_id,on_hand_qty',
+            ])
+            ->find($product);
+
+        if (! $product) {
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('Product not found or has been permanently deleted.')]);
+
+            return Inertia::location(route('inventory.products.index'));
+        }
+
+        $this->authorize('update', $product);
+
+        if ($product->trashed()) {
+            Inertia::flash('toast', ['type' => 'warning', 'message' => __('This product is in trash. Restore it before editing.')]);
+
+            return Inertia::location(route('inventory.products.trash'));
+        }
+
         return Inertia::render('inventory/products/Edit', [
             'product' => (new ProductResource($product))->resolve(),
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
             'can' => [
-                'delete' => request()->user()?->can('delete', $product) ?? false,
+                'delete' => $request->user()?->can('delete', $product) ?? false,
             ],
         ]);
     }
 
     public function update(ProductUpdateRequest $request, Product $product): RedirectResponse
     {
+        $this->authorize('update', $product);
+
+        $oldValues = $product->toArray();
         $product->update($request->validated());
+
+        AuditLogService::logUpdated($product, $oldValues);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Product updated.')]);
 
@@ -160,11 +251,15 @@ class ProductController extends Controller
 
     public function destroy(Request $request, Product $product): RedirectResponse
     {
+        $this->authorize('delete', $product);
+
         try {
             $product->deleted_by = $request->user()?->id;
             $product->deletion_reason = $request->string('deletion_reason')->trim()->toString() ?: null;
             $product->save();
             $product->delete();
+
+            AuditLogService::logDeleted($product);
         } catch (QueryException $e) {
             report($e);
 
@@ -185,6 +280,11 @@ class ProductController extends Controller
     {
         $this->authorize('trash', Product::class);
 
+        $search = $request->string('search')->trim()->toString();
+        $dateFrom = $request->string('date_from')->trim()->toString();
+        $dateTo = $request->string('date_to')->trim()->toString();
+        $deletedBy = $request->integer('deleted_by');
+
         $products = Product::query()
             ->onlyTrashed()
             ->with([
@@ -193,26 +293,278 @@ class ProductController extends Controller
                 'stock:id,product_id,on_hand_qty',
                 'deletedBy:id,name,email',
             ])
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('sku', 'like', "%{$search}%")
+                        ->orWhere('name', 'like', "%{$search}%");
+                });
+            })
+            ->when($dateFrom, fn ($q) => $q->whereDate('deleted_at', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('deleted_at', '<=', $dateTo))
+            ->when($deletedBy, fn ($q) => $q->where('deleted_by', $deletedBy))
             ->orderByDesc('deleted_at')
             ->paginate(15)
             ->withQueryString();
 
+        $deleters = Product::query()
+            ->onlyTrashed()
+            ->whereNotNull('deleted_by')
+            ->distinct()
+            ->join('users', 'products.deleted_by', '=', 'users.id')
+            ->select('users.id', 'users.name')
+            ->orderBy('users.name')
+            ->get();
+
         return Inertia::render('inventory/products/Trash', [
             'products' => (new ProductCollection($products))->toArray($request),
+            'filters' => [
+                'search' => $search,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+                'deleted_by' => $deletedBy,
+            ],
+            'deleters' => $deleters,
         ]);
     }
 
     public function restore(int $product): RedirectResponse
     {
+        /** @var Product $product */
         $product = Product::query()->withTrashed()->findOrFail($product);
 
         $this->authorize('restore', $product);
 
         $product->restore();
 
+        AuditLogService::logRestored($product);
+
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Product restored.')]);
 
-        return to_route('inventory.products.index');
+        return back();
+    }
+
+    public function forceDelete(int $product): RedirectResponse
+    {
+        /** @var Product $product */
+        $product = Product::query()->withTrashed()->findOrFail($product);
+
+        $this->authorize('forceDelete', $product);
+
+        try {
+            AuditLogService::logForceDeleted($product);
+            $product->forceDelete();
+
+            Inertia::flash('toast', ['type' => 'success', 'message' => __('Product permanently deleted.')]);
+        } catch (QueryException $e) {
+            report($e);
+
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('Unable to permanently delete this product because it is referenced by other records.'),
+            ]);
+        }
+
+        return back();
+    }
+
+    public function bulkRestore(Request $request): RedirectResponse
+    {
+        $ids = $request->input('ids', []);
+
+        if (empty($ids)) {
+            return back();
+        }
+
+        $restored = 0;
+        foreach ($ids as $id) {
+            /** @var Product|null $product */
+            $product = Product::query()->withTrashed()->find($id);
+            if ($product && $product->trashed()) {
+                $this->authorize('restore', $product);
+                $product->restore();
+                AuditLogService::logRestored($product);
+                $restored++;
+            }
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __("{$restored} product(s) restored."),
+        ]);
+
+        return back();
+    }
+
+    public function bulkForceDelete(Request $request): RedirectResponse
+    {
+        $ids = $request->input('ids', []);
+
+        if (empty($ids)) {
+            return back();
+        }
+
+        $deleted = 0;
+        $errors = 0;
+
+        foreach ($ids as $id) {
+            /** @var Product|null $product */
+            $product = Product::query()->withTrashed()->find($id);
+            if ($product && $product->trashed()) {
+                try {
+                    $this->authorize('forceDelete', $product);
+                    AuditLogService::logForceDeleted($product);
+                    $product->forceDelete();
+                    $deleted++;
+                } catch (QueryException $e) {
+                    report($e);
+                    $errors++;
+                }
+            }
+        }
+
+        $message = "{$deleted} product(s) permanently deleted.";
+        if ($errors > 0) {
+            $message .= " {$errors} could not be deleted due to references.";
+        }
+
+        Inertia::flash('toast', [
+            'type' => $errors > 0 ? 'warning' : 'success',
+            'message' => __($message),
+        ]);
+
+        return back();
+    }
+
+    public function bulkActivate(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct'],
+        ]);
+
+        $products = Product::query()
+            ->whereIn('id', $validated['ids'])
+            ->get();
+
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($products as $product) {
+            $this->authorize('update', $product);
+
+            if ($product->is_active) {
+                $skipped++;
+
+                continue;
+            }
+
+            $oldValues = $product->toArray();
+            $product->update(['is_active' => true]);
+            AuditLogService::logUpdated($product, $oldValues, "Product {$product->sku} activated.");
+            $updated++;
+        }
+
+        $message = "{$updated} product(s) activated.";
+
+        if ($skipped > 0) {
+            $message .= " {$skipped} already active.";
+        }
+
+        Inertia::flash('toast', [
+            'type' => $skipped > 0 ? 'warning' : 'success',
+            'message' => __($message),
+        ]);
+
+        return back();
+    }
+
+    public function bulkDeactivate(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct'],
+        ]);
+
+        $products = Product::query()
+            ->whereIn('id', $validated['ids'])
+            ->get();
+
+        $updated = 0;
+        $skipped = 0;
+
+        foreach ($products as $product) {
+            $this->authorize('update', $product);
+
+            if (! $product->is_active) {
+                $skipped++;
+
+                continue;
+            }
+
+            $oldValues = $product->toArray();
+            $product->update(['is_active' => false]);
+            AuditLogService::logUpdated($product, $oldValues, "Product {$product->sku} deactivated.");
+            $updated++;
+        }
+
+        $message = "{$updated} product(s) deactivated.";
+
+        if ($skipped > 0) {
+            $message .= " {$skipped} already inactive.";
+        }
+
+        Inertia::flash('toast', [
+            'type' => $skipped > 0 ? 'warning' : 'success',
+            'message' => __($message),
+        ]);
+
+        return back();
+    }
+
+    public function bulkChangeCategory(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct'],
+            'category_id' => ['required', 'integer', 'exists:categories,id'],
+        ]);
+
+        $products = Product::query()
+            ->whereIn('id', $validated['ids'])
+            ->get();
+
+        $updated = 0;
+        $skipped = 0;
+        $categoryId = (int) $validated['category_id'];
+        $categoryName = Category::query()->whereKey($categoryId)->value('name') ?? __('Selected category');
+
+        foreach ($products as $product) {
+            $this->authorize('update', $product);
+
+            if ((int) $product->category_id === $categoryId) {
+                $skipped++;
+
+                continue;
+            }
+
+            $oldValues = $product->toArray();
+            $product->update(['category_id' => $categoryId]);
+            AuditLogService::logUpdated($product, $oldValues, "Product {$product->sku} moved to category {$categoryName}.");
+            $updated++;
+        }
+
+        $message = "{$updated} product(s) moved to {$categoryName}.";
+
+        if ($skipped > 0) {
+            $message .= " {$skipped} already matched that category.";
+        }
+
+        Inertia::flash('toast', [
+            'type' => $skipped > 0 ? 'warning' : 'success',
+            'message' => __($message),
+        ]);
+
+        return back();
     }
 
     /**

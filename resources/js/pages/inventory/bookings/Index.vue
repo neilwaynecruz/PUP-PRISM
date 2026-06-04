@@ -8,11 +8,32 @@ import BookingController from '@/actions/App/Http/Controllers/Inventory/BookingC
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index as bookingsIndex } from '@/routes/inventory/bookings';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    index as bookingsIndex,
+    destroy as bookingsDestroy,
+    bulkApprove as bookingsBulkApprove,
+    bulkReject as bookingsBulkReject,
+} from '@/routes/inventory/bookings';
 
 type AssetOption = {
     id: number;
@@ -25,7 +46,7 @@ type AssetOption = {
     } | null;
 };
 
-type BookingEvent = {
+type BookingBase = {
     id: number;
     asset_id: number;
     asset_label?: string | null;
@@ -33,7 +54,6 @@ type BookingEvent = {
     start: string;
     end: string;
     status: 'Requested' | 'Approved' | 'Rejected' | 'Cancelled';
-    requester_id: number;
     requester: {
         name: string;
         email: string;
@@ -46,6 +66,11 @@ type BookingEvent = {
         name: string;
         email: string;
     } | null;
+    can_delete: boolean;
+};
+
+type BookingEvent = BookingBase & {
+    requester_id: number;
 };
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
@@ -83,6 +108,143 @@ const endAt = ref<string>('');
 const purpose = ref<string>('');
 const assetSearch = ref<string>(props.filters.asset_search ?? '');
 const assetScanFeedback = ref<string>('');
+const selectedRejectBooking = ref<BookingBase | null>(null);
+const selectedBooking = ref<BookingBase | null>(null);
+const deleteDialogOpen = ref(false);
+const deleteReason = ref('');
+const deleteReasonCustom = ref('');
+
+const deletionReasons = [
+    { value: 'No longer needed', label: 'No longer needed' },
+    { value: 'Cancelled by requester', label: 'Cancelled by requester' },
+    { value: 'Schedule conflict', label: 'Schedule conflict' },
+    { value: 'Data entry error', label: 'Data entry error' },
+    { value: 'Other', label: 'Other (please specify)' },
+];
+
+const isOtherReason = computed(() => deleteReason.value === 'Other');
+const canConfirmDelete = computed(() => {
+    if (!deleteReason.value) {
+return false;
+}
+
+    if (deleteReason.value === 'Other' && !deleteReasonCustom.value.trim()) {
+return false;
+}
+
+    return true;
+});
+
+function getDeletionReason(): string {
+    if (deleteReason.value === 'Other') {
+        return deleteReasonCustom.value.trim();
+    }
+
+    return deleteReason.value;
+}
+
+function formatDateTime(iso: string | null): string {
+    if (!iso) {
+return '—';
+}
+
+    const d = new Date(iso);
+
+    return d.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+    });
+}
+
+function openDeleteDialog(booking: BookingBase): void {
+    selectedBooking.value = booking;
+    deleteReason.value = '';
+    deleteReasonCustom.value = '';
+    deleteDialogOpen.value = true;
+}
+
+function confirmDelete(): void {
+    if (!selectedBooking.value || !canConfirmDelete.value) {
+return;
+}
+
+    router.delete(bookingsDestroy(selectedBooking.value.id).url, {
+        data: { deletion_reason: getDeletionReason() },
+        onSuccess: () => {
+            deleteDialogOpen.value = false;
+            selectedBooking.value = null;
+            deleteReason.value = '';
+            deleteReasonCustom.value = '';
+        },
+    });
+}
+
+// ── Bulk actions on approval queue ──
+const selectedIds = ref<Set<number>>(new Set());
+const bulkActionDialogOpen = ref(false);
+const pendingBulkAction = ref<'approve' | 'reject' | null>(null);
+
+const allQueueSelected = computed(() =>
+    props.approval_queue.length > 0 && selectedIds.value.size === props.approval_queue.length
+);
+const someQueueSelected = computed(() =>
+    selectedIds.value.size > 0 && selectedIds.value.size < props.approval_queue.length
+);
+const hasQueueSelection = computed(() => selectedIds.value.size > 0);
+
+function toggleSelectAllQueue(): void {
+    if (allQueueSelected.value) {
+        selectedIds.value.clear();
+    } else {
+        selectedIds.value = new Set(props.approval_queue.map((b) => b.id));
+    }
+}
+
+function toggleSelectQueue(id: number): void {
+    const next = new Set(selectedIds.value);
+
+    if (next.has(id)) {
+        next.delete(id);
+    } else {
+        next.add(id);
+    }
+
+    selectedIds.value = next;
+}
+
+function runBulkApprove(): void {
+    pendingBulkAction.value = 'approve';
+    bulkActionDialogOpen.value = true;
+}
+
+function runBulkReject(): void {
+    pendingBulkAction.value = 'reject';
+    bulkActionDialogOpen.value = true;
+}
+
+function confirmBulkAction(): void {
+    if (!pendingBulkAction.value) {
+        return;
+    }
+
+    const endpoint = pendingBulkAction.value === 'approve'
+        ? bookingsBulkApprove().url
+        : bookingsBulkReject().url;
+
+    router.post(endpoint, {
+        ids: Array.from(selectedIds.value),
+    }, {
+        onSuccess: () => {
+            selectedIds.value.clear();
+            bulkActionDialogOpen.value = false;
+            pendingBulkAction.value = null;
+        },
+    });
+}
 
 const statusColor = (status: BookingEvent['status']) => {
     switch (status) {
@@ -151,22 +313,6 @@ watch(
     },
     { deep: true },
 );
-
-function badgeVariant(status: BookingEvent['status']): 'default' | 'secondary' | 'destructive' | 'outline' {
-    if (status === 'Approved') {
-        return 'default';
-    }
-
-    if (status === 'Requested') {
-        return 'secondary';
-    }
-
-    if (status === 'Rejected') {
-        return 'destructive';
-    }
-
-    return 'outline';
-}
 
 function applyScannedAsset(tagCode: string): void {
     const match = props.assets.find((asset) => asset.tag_code === tagCode.trim());
@@ -250,7 +396,7 @@ function applyScannedAsset(tagCode: string): void {
             </div>
 
             <div class="self-start rounded-xl border border-border/60 bg-card p-5 shadow-sm">
-                <Form v-bind="BookingController.store.form()" v-slot="{ errors, processing }" class="grid gap-5">
+                <Form v-bind="BookingController.store.form()" v-slot="{ errors, processing }" class="grid gap-5" data-shortcut="new">
                     <Heading
                         variant="small"
                         title="New booking request"
@@ -328,10 +474,28 @@ function applyScannedAsset(tagCode: string): void {
                         <div class="text-sm font-semibold tracking-tight">Approval queue</div>
                         <div class="text-xs text-muted-foreground">Property custodians can approve or reject pending requests directly from this screen.</div>
                     </div>
-                    <span class="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-                        <span class="h-1.5 w-1.5 rounded-full bg-primary" />
-                        {{ approval_queue.length }} pending
-                    </span>
+                    <div class="flex items-center gap-2">
+                        <span class="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                            <span class="h-1.5 w-1.5 rounded-full bg-primary" />
+                            {{ approval_queue.length }} pending
+                        </span>
+                        <Checkbox
+                            v-if="approval_queue.length > 0"
+                            :checked="allQueueSelected"
+                            :indeterminate="someQueueSelected"
+                            @update:checked="toggleSelectAllQueue"
+                            aria-label="Select all pending bookings"
+                        />
+                    </div>
+                </div>
+
+                <!-- Bulk action bar -->
+                <div v-if="can.approve && hasQueueSelection" class="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-sm">
+                    <span class="font-medium text-primary">{{ selectedIds.size }} selected</span>
+                    <div class="ml-auto flex flex-wrap gap-2">
+                        <Button variant="outline" size="sm" class="h-7 rounded-lg text-xs" @click="runBulkApprove">Approve</Button>
+                        <Button variant="outline" size="sm" class="h-7 rounded-lg text-xs" @click="runBulkReject">Reject</Button>
+                    </div>
                 </div>
 
                 <div v-if="approval_queue.length" class="grid gap-3">
@@ -341,8 +505,15 @@ function applyScannedAsset(tagCode: string): void {
                         class="rounded-xl border border-border/40 p-4 shadow-sm"
                     >
                         <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                            <div class="space-y-1 text-sm">
-                                <div class="font-medium">{{ booking.title }}</div>
+                            <div class="flex items-start gap-2">
+                                <Checkbox
+                                    :checked="selectedIds.has(booking.id)"
+                                    @update:checked="() => toggleSelectQueue(booking.id)"
+                                    aria-label="Select booking"
+                                    class="mt-0.5"
+                                />
+                                <div class="space-y-1 text-sm">
+                                    <div class="font-medium">{{ booking.title }}</div>
                                 <div class="text-muted-foreground">
                                     Requested by
                                     {{ booking.requester?.name ?? booking.requester?.email ?? 'Unknown requester' }}
@@ -350,7 +521,8 @@ function applyScannedAsset(tagCode: string): void {
                                 <div v-if="booking.requester_position" class="text-muted-foreground">
                                     {{ booking.requester_position.title }}{{ booking.requester_position.department ? `, ${booking.requester_position.department}` : '' }}
                                 </div>
-                                <div class="text-xs text-muted-foreground/80">{{ booking.start }} to {{ booking.end }}</div>
+                                <div class="text-xs text-muted-foreground/80">{{ formatDateTime(booking.start) }} to {{ formatDateTime(booking.end) }}</div>
+                                </div>
                             </div>
 
                             <span :class="['inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium', statusColor(booking.status).pill]">
@@ -359,13 +531,32 @@ function applyScannedAsset(tagCode: string): void {
                             </span>
                         </div>
 
-                        <div v-if="can.approve" class="mt-4 flex flex-wrap gap-2">
-                            <Form v-bind="BookingController.update.form(booking.id)">
-                                <Button type="submit" name="action" value="approve" data-test="approve-booking-button" data-testid="approve-booking-button" class="rounded-lg">Approve</Button>
-                            </Form>
-                            <Form v-bind="BookingController.update.form(booking.id)">
-                                <Button type="submit" name="action" value="reject" variant="outline" class="rounded-lg border-dashed">Reject</Button>
-                            </Form>
+                        <div class="mt-4 flex flex-wrap gap-2">
+                            <Button variant="ghost" size="sm" as-child class="h-8 rounded-lg text-xs">
+                                <Link :href="`/inventory/bookings/${booking.id}`">View</Link>
+                            </Button>
+                            <template v-if="can.approve">
+                                <Form v-bind="BookingController.update.form(booking.id)">
+                                    <Button type="submit" name="action" value="approve" data-test="approve-booking-button" data-testid="approve-booking-button" class="rounded-lg">Approve</Button>
+                                </Form>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    class="rounded-lg border-dashed"
+                                    @click="selectedRejectBooking = booking"
+                                >
+                                    Reject
+                                </Button>
+                            </template>
+                            <Button
+                                v-if="booking.can_delete"
+                                variant="ghost"
+                                size="sm"
+                                class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                                @click="openDeleteDialog(booking)"
+                            >
+                                Delete
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -396,9 +587,23 @@ function applyScannedAsset(tagCode: string): void {
                         </div>
                         <div class="mt-2 space-y-1 text-xs text-muted-foreground">
                             <div v-if="booking.asset_label">Tag: {{ booking.asset_label }}</div>
-                            <div>{{ booking.start }} to {{ booking.end }}</div>
+                            <div>{{ formatDateTime(booking.start) }} to {{ formatDateTime(booking.end) }}</div>
                             <div>{{ booking.requester?.name ?? booking.requester?.email ?? 'Unknown requester' }}</div>
                             <div v-if="booking.approver">Processed by {{ booking.approver.name }}</div>
+                        </div>
+                        <div class="mt-2 flex items-center gap-2">
+                            <Button variant="ghost" size="sm" as-child class="h-7 rounded-lg text-xs">
+                                <Link :href="`/inventory/bookings/${booking.id}`">View</Link>
+                            </Button>
+                            <Button
+                                v-if="booking.can_delete"
+                                variant="ghost"
+                                size="sm"
+                                class="h-7 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                                @click="openDeleteDialog(booking)"
+                            >
+                                Delete
+                            </Button>
                         </div>
                     </div>
                 </div>
@@ -420,5 +625,87 @@ function applyScannedAsset(tagCode: string): void {
                 </div>
             </div>
         </div>
+
+        <Dialog :open="selectedRejectBooking !== null" @update:open="(open) => { if (!open) selectedRejectBooking = null; }">
+            <DialogContent v-if="selectedRejectBooking">
+                <DialogHeader class="space-y-3">
+                    <DialogTitle>Reject booking request?</DialogTitle>
+                    <DialogDescription>
+                        This will permanently reject the booking request for <strong>{{ selectedRejectBooking.title }}</strong>. The requester will be notified.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="gap-2">
+                    <DialogClose as-child>
+                        <Button variant="secondary" type="button">Cancel</Button>
+                    </DialogClose>
+                    <Form v-bind="BookingController.update.form(selectedRejectBooking.id)" class="inline" @success="selectedRejectBooking = null">
+                        <Button type="submit" name="action" value="reject" variant="destructive">Confirm reject</Button>
+                    </Form>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog v-model:open="bulkActionDialogOpen">
+            <DialogContent>
+                <DialogHeader class="space-y-3">
+                    <DialogTitle>
+                        {{ pendingBulkAction === 'approve' ? 'Approve selected bookings?' : 'Reject selected bookings?' }}
+                    </DialogTitle>
+                    <DialogDescription>
+                        This will process <strong>{{ selectedIds.size }} selected booking request(s)</strong> in the approval queue.
+                    </DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="gap-2">
+                    <DialogClose as-child>
+                        <Button variant="secondary" type="button">Cancel</Button>
+                    </DialogClose>
+                    <Button :variant="pendingBulkAction === 'reject' ? 'destructive' : 'default'" @click="confirmBulkAction">
+                        {{ pendingBulkAction === 'approve' ? 'Confirm approve' : 'Confirm reject' }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog v-model:open="deleteDialogOpen">
+            <DialogContent>
+                <DialogHeader class="space-y-3">
+                    <DialogTitle>Delete booking?</DialogTitle>
+                    <DialogDescription>
+                        This will move the booking for <strong>{{ selectedBooking?.title }}</strong> to the trash. You can restore it later if needed.
+                    </DialogDescription>
+                </DialogHeader>
+                <div class="grid gap-4 py-4">
+                    <div class="grid gap-2">
+                        <Label for="delete-reason">Reason for deletion <span class="text-rose-500">*</span></Label>
+                        <Select v-model="deleteReason">
+                            <SelectTrigger id="delete-reason">
+                                <SelectValue placeholder="Select a reason..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem v-for="reason in deletionReasons" :key="reason.value" :value="reason.value">
+                                    {{ reason.label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div v-if="isOtherReason" class="grid gap-2">
+                        <Label for="delete-reason-custom">Please specify <span class="text-rose-500">*</span></Label>
+                        <textarea
+                            id="delete-reason-custom"
+                            v-model="deleteReasonCustom"
+                            placeholder="Enter your reason..."
+                            rows="3"
+                            class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        ></textarea>
+                    </div>
+                </div>
+                <DialogFooter class="gap-2">
+                    <DialogClose as-child>
+                        <Button variant="secondary">Cancel</Button>
+                    </DialogClose>
+                    <Button variant="destructive" :disabled="!canConfirmDelete" @click="confirmDelete">Delete</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

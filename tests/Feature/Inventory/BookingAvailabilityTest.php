@@ -124,3 +124,100 @@ test('property custodian can reject a pending booking request', function () {
     expect($booking->approver_position_id)->toBe($approverPosition->id);
     expect($booking->approved_ip_address)->not->toBeNull();
 });
+
+test('back-to-back bookings do not conflict when one starts exactly as another ends', function () {
+    $position = Position::factory()->create();
+    $csrfToken = 'booking-adjacent-token';
+
+    $user = User::factory()->assignedPosition($position)->create();
+    $user->assignRole('Property Custodian');
+
+    $product = Product::factory()->asset()->create();
+    $asset = Asset::factory()->assignedToPosition($position)->create([
+        'product_id' => $product->id,
+        'status' => AssetStatus::Available,
+    ]);
+
+    $startAt = CarbonImmutable::now()->addDays(2)->startOfHour();
+    $endAt = $startAt->addHours(2);
+
+    Booking::factory()->create([
+        'asset_id' => $asset->id,
+        'requester_id' => $user->id,
+        'requester_position_id' => $position->id,
+        'approver_id' => $user->id,
+        'approver_position_id' => $position->id,
+        'start_at' => $startAt,
+        'end_at' => $endAt,
+        'status' => BookingStatus::Approved,
+    ]);
+
+    $this->actingAs($user)
+        ->withSession(['_token' => $csrfToken])
+        ->post(route('inventory.bookings.store', absolute: false), [
+            '_token' => $csrfToken,
+            'asset_id' => $asset->id,
+            'start_at' => $endAt->toIso8601String(),
+            'end_at' => $endAt->addHour()->toIso8601String(),
+        ])
+        ->assertSessionDoesntHaveErrors();
+
+    expect(Booking::query()->where('asset_id', $asset->id)->count())->toBe(2);
+});
+
+test('booking approval rechecks overlaps before approving a pending request', function () {
+    $position = Position::factory()->create();
+    $csrfToken = 'booking-approve-conflict-token';
+
+    $approver = User::factory()->assignedPosition($position)->create();
+    $approver->assignRole('Property Custodian');
+
+    $requester = User::factory()->assignedPosition($position)->create();
+    $requester->assignRole('Property Custodian');
+
+    $product = Product::factory()->asset()->create();
+    $asset = Asset::factory()->assignedToPosition($position)->create([
+        'product_id' => $product->id,
+        'status' => AssetStatus::Available,
+    ]);
+
+    $startAt = CarbonImmutable::now()->addDays(3)->startOfHour();
+    $endAt = $startAt->addHours(2);
+
+    $firstBooking = Booking::factory()->create([
+        'asset_id' => $asset->id,
+        'requester_id' => $requester->id,
+        'requester_position_id' => $position->id,
+        'status' => BookingStatus::Requested,
+        'start_at' => $startAt,
+        'end_at' => $endAt,
+    ]);
+
+    $secondBooking = Booking::factory()->create([
+        'asset_id' => $asset->id,
+        'requester_id' => $requester->id,
+        'requester_position_id' => $position->id,
+        'status' => BookingStatus::Requested,
+        'start_at' => $startAt->addMinutes(15),
+        'end_at' => $endAt->addMinutes(15),
+    ]);
+
+    $this->actingAs($approver)
+        ->withSession(['_token' => $csrfToken])
+        ->put(route('inventory.bookings.update', $firstBooking, absolute: false), [
+            '_token' => $csrfToken,
+            'action' => 'approve',
+        ])
+        ->assertRedirect();
+
+    $this->actingAs($approver)
+        ->withSession(['_token' => $csrfToken])
+        ->put(route('inventory.bookings.update', $secondBooking, absolute: false), [
+            '_token' => $csrfToken,
+            'action' => 'approve',
+        ])
+        ->assertSessionHasErrors(['start_at']);
+
+    expect($firstBooking->refresh()->status)->toBe(BookingStatus::Approved);
+    expect($secondBooking->refresh()->status)->toBe(BookingStatus::Requested);
+});

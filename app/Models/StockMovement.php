@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'asset_id',
     'requisition_id',
     'qty_delta',
+    'qty_before',
+    'qty_after',
     'performed_by',
     'accountable_position_id',
     'ip_address',
@@ -81,6 +83,9 @@ class StockMovement extends Model
     {
         return [
             'performed_at' => 'datetime',
+            'qty_delta' => 'integer',
+            'qty_before' => 'integer',
+            'qty_after' => 'integer',
         ];
     }
 }
