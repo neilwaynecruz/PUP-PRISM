@@ -3,7 +3,6 @@ import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
     Dialog,
     DialogClose,
@@ -12,8 +11,8 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
 
@@ -44,8 +43,12 @@ const search = ref(props.filters.search ?? '');
 const type = ref(props.filters.type ?? '');
 
 function formatDateTime(iso: string | null): string {
-    if (!iso) return '—';
+    if (!iso) {
+        return '—';
+    }
+
     const d = new Date(iso);
+
     return d.toLocaleString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -56,7 +59,9 @@ function formatDateTime(iso: string | null): string {
     });
 }
 
-const hasActiveFilters = computed(() => search.value !== '' || type.value !== '');
+const hasActiveFilters = computed(
+    () => search.value !== '' || type.value !== '',
+);
 
 watch([search, type], () => {
     router.get(
@@ -75,13 +80,20 @@ function openRestoreDialog(item: TrashItem): void {
 }
 
 function confirmRestore(): void {
-    if (!selectedItem.value) return;
-    router.put(selectedItem.value.restore_url, {}, {
-        onSuccess: () => {
-            dialogOpen.value = false;
-            selectedItem.value = null;
+    if (!selectedItem.value) {
+        return;
+    }
+
+    router.put(
+        selectedItem.value.restore_url,
+        {},
+        {
+            onSuccess: () => {
+                dialogOpen.value = false;
+                selectedItem.value = null;
+            },
         },
-    });
+    );
 }
 
 function typeBadgeClass(itemType: string): string {
@@ -133,16 +145,23 @@ function typeBadgeClass(itemType: string): string {
                 variant="ghost"
                 size="sm"
                 class="h-8 rounded-lg text-xs"
-                @click="search = ''; type = ''"
+                @click="
+                    search = '';
+                    type = '';
+                "
             >
                 Clear filters
             </Button>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm">
+        <div
+            class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm"
+        >
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left">
-                    <tr class="[&>th]:px-4 [&>th]:py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                    <tr
+                        class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
+                    >
                         <th>Type</th>
                         <th>Label</th>
                         <th>Meta</th>
@@ -154,7 +173,10 @@ function typeBadgeClass(itemType: string): string {
                 </thead>
                 <tbody class="divide-y divide-border/60">
                     <tr v-if="items.data.length === 0">
-                        <td class="px-4 py-8 text-center text-sm text-muted-foreground" colspan="7">
+                        <td
+                            class="px-4 py-8 text-center text-sm text-muted-foreground"
+                            colspan="7"
+                        >
                             Trash is empty.
                         </td>
                     </tr>
@@ -165,17 +187,26 @@ function typeBadgeClass(itemType: string): string {
                     >
                         <td>
                             <span
-                                class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide"
+                                class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
                                 :class="typeBadgeClass(item.type)"
                             >
                                 {{ item.type }}
                             </span>
                         </td>
                         <td class="font-medium">{{ item.label }}</td>
-                        <td class="font-mono text-[11px] text-muted-foreground">{{ item.meta ?? '—' }}</td>
-                        <td class="text-muted-foreground">{{ formatDateTime(item.deleted_at) }}</td>
-                        <td class="text-muted-foreground">{{ item.deleted_by?.name ?? '—' }}</td>
-                        <td class="max-w-[200px] truncate text-muted-foreground" :title="item.deletion_reason ?? undefined">
+                        <td class="font-mono text-[11px] text-muted-foreground">
+                            {{ item.meta ?? '—' }}
+                        </td>
+                        <td class="text-muted-foreground">
+                            {{ formatDateTime(item.deleted_at) }}
+                        </td>
+                        <td class="text-muted-foreground">
+                            {{ item.deleted_by?.name ?? '—' }}
+                        </td>
+                        <td
+                            class="max-w-[200px] truncate text-muted-foreground"
+                            :title="item.deletion_reason ?? undefined"
+                        >
                             {{ item.deletion_reason ?? '—' }}
                         </td>
                         <td class="text-right">
@@ -198,7 +229,9 @@ function typeBadgeClass(itemType: string): string {
                 <DialogHeader class="space-y-3">
                     <DialogTitle>Restore {{ selectedItem?.type }}?</DialogTitle>
                     <DialogDescription>
-                        This will restore <strong>{{ selectedItem?.label }}</strong> back to the active list.
+                        This will restore
+                        <strong>{{ selectedItem?.label }}</strong> back to the
+                        active list.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
@@ -210,7 +243,10 @@ function typeBadgeClass(itemType: string): string {
             </DialogContent>
         </Dialog>
 
-        <div v-if="items.links.length" class="flex flex-wrap items-center justify-center gap-1">
+        <div
+            v-if="items.links.length"
+            class="flex flex-wrap items-center justify-center gap-1"
+        >
             <Button
                 v-for="(link, i) in items.links"
                 :key="i"
@@ -219,9 +255,16 @@ function typeBadgeClass(itemType: string): string {
                 :disabled="!link.url"
                 as-child
                 class="h-8 rounded-lg text-xs"
-                :class="link.active ? 'bg-primary/10 text-primary font-medium' : ''"
+                :class="
+                    link.active ? 'bg-primary/10 font-medium text-primary' : ''
+                "
             >
-                <Link v-if="link.url" :href="link.url" preserve-scroll preserve-state>
+                <Link
+                    v-if="link.url"
+                    :href="link.url"
+                    preserve-scroll
+                    preserve-state
+                >
                     <span v-html="link.label" />
                 </Link>
                 <span v-else v-html="link.label" />

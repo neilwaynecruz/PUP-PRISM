@@ -5,6 +5,15 @@ import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -14,16 +23,6 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
 
@@ -67,12 +66,16 @@ const hasActiveFilters = computed(() => {
 });
 
 function applyFilters(): void {
-    router.get('/inventory/bookings/trash', {
-        search: search.value || null,
-        date_from: dateFrom.value || null,
-        date_to: dateTo.value || null,
-        deleted_by: deletedBy.value || null,
-    }, { preserveState: true, preserveScroll: true });
+    router.get(
+        '/inventory/bookings/trash',
+        {
+            search: search.value || null,
+            date_from: dateFrom.value || null,
+            date_to: dateTo.value || null,
+            deleted_by: deletedBy.value || null,
+        },
+        { preserveState: true, preserveScroll: true },
+    );
 }
 
 function resetFilters(): void {
@@ -84,8 +87,12 @@ function resetFilters(): void {
 }
 
 function formatDateTime(iso: string | null): string {
-    if (!iso) return '—';
+    if (!iso) {
+        return '—';
+    }
+
     const d = new Date(iso);
+
     return d.toLocaleString('en-US', {
         month: 'short',
         day: 'numeric',
@@ -104,16 +111,19 @@ const bulkForceDeleteDialogOpen = ref(false);
 const selectedIds = ref<Set<number>>(new Set());
 
 const allSelected = computed(() => {
-    return props.bookings.data.length > 0 && props.bookings.data.every(b => selectedIds.value.has(b.id));
+    return (
+        props.bookings.data.length > 0 &&
+        props.bookings.data.every((b) => selectedIds.value.has(b.id))
+    );
 });
 
 const hasSelection = computed(() => selectedIds.value.size > 0);
 
 function toggleSelectAll(): void {
     if (allSelected.value) {
-        props.bookings.data.forEach(b => selectedIds.value.delete(b.id));
+        props.bookings.data.forEach((b) => selectedIds.value.delete(b.id));
     } else {
-        props.bookings.data.forEach(b => selectedIds.value.add(b.id));
+        props.bookings.data.forEach((b) => selectedIds.value.add(b.id));
     }
 }
 
@@ -144,17 +154,27 @@ function openBulkForceDeleteDialog(): void {
 }
 
 function confirmRestore(): void {
-    if (!selectedBooking.value) return;
-    router.put(`/inventory/bookings/${selectedBooking.value.id}/restore`, {}, {
-        onSuccess: () => {
-            restoreDialogOpen.value = false;
-            selectedBooking.value = null;
+    if (!selectedBooking.value) {
+        return;
+    }
+
+    router.put(
+        `/inventory/bookings/${selectedBooking.value.id}/restore`,
+        {},
+        {
+            onSuccess: () => {
+                restoreDialogOpen.value = false;
+                selectedBooking.value = null;
+            },
         },
-    });
+    );
 }
 
 function confirmForceDelete(): void {
-    if (!selectedBooking.value) return;
+    if (!selectedBooking.value) {
+        return;
+    }
+
     router.delete(`/inventory/bookings/${selectedBooking.value.id}/force`, {
         onSuccess: () => {
             forceDeleteDialogOpen.value = false;
@@ -164,25 +184,33 @@ function confirmForceDelete(): void {
 }
 
 function confirmBulkRestore(): void {
-    router.post('/inventory/bookings/bulk-restore', {
-        ids: Array.from(selectedIds.value),
-    }, {
-        onSuccess: () => {
-            bulkRestoreDialogOpen.value = false;
-            selectedIds.value.clear();
+    router.post(
+        '/inventory/bookings/bulk-restore',
+        {
+            ids: Array.from(selectedIds.value),
         },
-    });
+        {
+            onSuccess: () => {
+                bulkRestoreDialogOpen.value = false;
+                selectedIds.value.clear();
+            },
+        },
+    );
 }
 
 function confirmBulkForceDelete(): void {
-    router.post('/inventory/bookings/bulk-force-delete', {
-        ids: Array.from(selectedIds.value),
-    }, {
-        onSuccess: () => {
-            bulkForceDeleteDialogOpen.value = false;
-            selectedIds.value.clear();
+    router.post(
+        '/inventory/bookings/bulk-force-delete',
+        {
+            ids: Array.from(selectedIds.value),
         },
-    });
+        {
+            onSuccess: () => {
+                bulkForceDeleteDialogOpen.value = false;
+                selectedIds.value.clear();
+            },
+        },
+    );
 }
 </script>
 
@@ -195,7 +223,12 @@ function confirmBulkForceDelete(): void {
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div class="grid gap-2">
                     <Label for="search">Search</Label>
-                    <Input id="search" v-model="search" placeholder="Asset tag or name..." @keyup.enter="applyFilters" />
+                    <Input
+                        id="search"
+                        v-model="search"
+                        placeholder="Asset tag or name..."
+                        @keyup.enter="applyFilters"
+                    />
                 </div>
                 <div class="grid gap-2">
                     <Label for="date_from">Deleted From</Label>
@@ -213,7 +246,11 @@ function confirmBulkForceDelete(): void {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="">All users</SelectItem>
-                            <SelectItem v-for="user in deleters" :key="user.id" :value="String(user.id)">
+                            <SelectItem
+                                v-for="user in deleters"
+                                :key="user.id"
+                                :value="String(user.id)"
+                            >
                                 {{ user.name }}
                             </SelectItem>
                         </SelectContent>
@@ -223,7 +260,12 @@ function confirmBulkForceDelete(): void {
                     <Label class="invisible">Actions</Label>
                     <div class="flex gap-2">
                         <Button @click="applyFilters">Filter</Button>
-                        <Button v-if="hasActiveFilters" variant="ghost" @click="resetFilters">Reset</Button>
+                        <Button
+                            v-if="hasActiveFilters"
+                            variant="ghost"
+                            @click="resetFilters"
+                            >Reset</Button
+                        >
                     </div>
                 </div>
             </div>
@@ -237,11 +279,21 @@ function confirmBulkForceDelete(): void {
             />
             <div class="flex items-center gap-2">
                 <template v-if="hasSelection">
-                    <span class="text-sm text-muted-foreground">{{ selectedIds.size }} selected</span>
-                    <Button variant="outline" size="sm" @click="openBulkRestoreDialog">
+                    <span class="text-sm text-muted-foreground"
+                        >{{ selectedIds.size }} selected</span
+                    >
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        @click="openBulkRestoreDialog"
+                    >
                         Restore Selected
                     </Button>
-                    <Button variant="destructive" size="sm" @click="openBulkForceDeleteDialog">
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        @click="openBulkForceDeleteDialog"
+                    >
                         Delete Selected Forever
                     </Button>
                 </template>
@@ -251,10 +303,14 @@ function confirmBulkForceDelete(): void {
             </div>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm">
+        <div
+            class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm"
+        >
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left">
-                    <tr class="[&>th]:px-4 [&>th]:py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                    <tr
+                        class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
+                    >
                         <th class="w-10">
                             <Checkbox
                                 :checked="allSelected"
@@ -299,18 +355,38 @@ function confirmBulkForceDelete(): void {
                         </td>
                         <td class="font-medium">{{ b.asset_label ?? '—' }}</td>
                         <td>
-                            <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide"
-                                :class="b.status === 'approved' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'"
+                            <span
+                                class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
+                                :class="
+                                    b.status === 'approved'
+                                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                "
                             >
                                 {{ b.status }}
                             </span>
                         </td>
-                        <td class="text-muted-foreground">{{ b.requester?.name ?? '—' }}</td>
-                        <td class="text-muted-foreground">{{ formatDateTime(b.start) }}</td>
-                        <td class="text-muted-foreground">{{ formatDateTime(b.end) }}</td>
-                        <td class="text-muted-foreground">{{ formatDateTime(b.deleted_at) }}</td>
-                        <td class="text-muted-foreground">{{ b.deleted_by?.name ?? '—' }}</td>
-                        <td class="max-w-[200px] truncate text-muted-foreground" :title="b.deletion_reason ?? undefined">{{ b.deletion_reason ?? '—' }}</td>
+                        <td class="text-muted-foreground">
+                            {{ b.requester?.name ?? '—' }}
+                        </td>
+                        <td class="text-muted-foreground">
+                            {{ formatDateTime(b.start) }}
+                        </td>
+                        <td class="text-muted-foreground">
+                            {{ formatDateTime(b.end) }}
+                        </td>
+                        <td class="text-muted-foreground">
+                            {{ formatDateTime(b.deleted_at) }}
+                        </td>
+                        <td class="text-muted-foreground">
+                            {{ b.deleted_by?.name ?? '—' }}
+                        </td>
+                        <td
+                            class="max-w-[200px] truncate text-muted-foreground"
+                            :title="b.deletion_reason ?? undefined"
+                        >
+                            {{ b.deletion_reason ?? '—' }}
+                        </td>
                         <td class="text-right">
                             <div class="flex items-center justify-end gap-1">
                                 <Button
@@ -341,7 +417,11 @@ function confirmBulkForceDelete(): void {
                 <DialogHeader class="space-y-3">
                     <DialogTitle>Restore booking?</DialogTitle>
                     <DialogDescription>
-                        This will restore the booking for <strong>{{ selectedBooking?.asset_label ?? '—' }}</strong> back to active bookings.
+                        This will restore the booking for
+                        <strong>{{
+                            selectedBooking?.asset_label ?? '—'
+                        }}</strong>
+                        back to active bookings.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
@@ -356,18 +436,31 @@ function confirmBulkForceDelete(): void {
         <Dialog v-model:open="forceDeleteDialogOpen">
             <DialogContent>
                 <DialogHeader class="space-y-3">
-                    <DialogTitle class="text-rose-600">Permanently delete booking?</DialogTitle>
+                    <DialogTitle class="text-rose-600"
+                        >Permanently delete booking?</DialogTitle
+                    >
                     <DialogDescription>
-                        This will <strong class="text-rose-600">permanently delete</strong> the booking for <strong>{{ selectedBooking?.asset_label ?? '—' }}</strong>.
-                        <br><br>
-                        <span class="text-rose-600 font-medium">This action cannot be undone.</span>
+                        This will
+                        <strong class="text-rose-600"
+                            >permanently delete</strong
+                        >
+                        the booking for
+                        <strong>{{
+                            selectedBooking?.asset_label ?? '—'
+                        }}</strong
+                        >. <br /><br />
+                        <span class="font-medium text-rose-600"
+                            >This action cannot be undone.</span
+                        >
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>
                         <Button variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button variant="destructive" @click="confirmForceDelete">Permanently Delete</Button>
+                    <Button variant="destructive" @click="confirmForceDelete"
+                        >Permanently Delete</Button
+                    >
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -377,7 +470,9 @@ function confirmBulkForceDelete(): void {
                 <DialogHeader class="space-y-3">
                     <DialogTitle>Bulk restore bookings?</DialogTitle>
                     <DialogDescription>
-                        This will restore <strong>{{ selectedIds.size }} booking(s)</strong> to the active bookings list.
+                        This will restore
+                        <strong>{{ selectedIds.size }} booking(s)</strong> to
+                        the active bookings list.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
@@ -392,23 +487,39 @@ function confirmBulkForceDelete(): void {
         <Dialog v-model:open="bulkForceDeleteDialogOpen">
             <DialogContent>
                 <DialogHeader class="space-y-3">
-                    <DialogTitle class="text-rose-600">Permanently delete {{ selectedIds.size }} bookings?</DialogTitle>
+                    <DialogTitle class="text-rose-600"
+                        >Permanently delete
+                        {{ selectedIds.size }} bookings?</DialogTitle
+                    >
                     <DialogDescription>
-                        This will <strong class="text-rose-600">permanently delete</strong> <strong>{{ selectedIds.size }} booking(s)</strong>.
-                        <br><br>
-                        <span class="text-rose-600 font-medium">This action cannot be undone.</span>
+                        This will
+                        <strong class="text-rose-600"
+                            >permanently delete</strong
+                        >
+                        <strong>{{ selectedIds.size }} booking(s)</strong>.
+                        <br /><br />
+                        <span class="font-medium text-rose-600"
+                            >This action cannot be undone.</span
+                        >
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>
                         <Button variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button variant="destructive" @click="confirmBulkForceDelete">Permanently Delete All</Button>
+                    <Button
+                        variant="destructive"
+                        @click="confirmBulkForceDelete"
+                        >Permanently Delete All</Button
+                    >
                 </DialogFooter>
             </DialogContent>
         </Dialog>
 
-        <div v-if="bookings.links.length" class="flex flex-wrap items-center justify-center gap-1">
+        <div
+            v-if="bookings.links.length"
+            class="flex flex-wrap items-center justify-center gap-1"
+        >
             <Button
                 v-for="(link, i) in bookings.links"
                 :key="i"
@@ -417,9 +528,16 @@ function confirmBulkForceDelete(): void {
                 :disabled="!link.url"
                 as-child
                 class="h-8 rounded-lg text-xs"
-                :class="link.active ? 'bg-primary/10 text-primary font-medium' : ''"
+                :class="
+                    link.active ? 'bg-primary/10 font-medium text-primary' : ''
+                "
             >
-                <Link v-if="link.url" :href="link.url" preserve-scroll preserve-state>
+                <Link
+                    v-if="link.url"
+                    :href="link.url"
+                    preserve-scroll
+                    preserve-state
+                >
                     <span v-html="link.label" />
                 </Link>
                 <span v-else v-html="link.label" />

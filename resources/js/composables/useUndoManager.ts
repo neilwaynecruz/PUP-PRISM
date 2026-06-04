@@ -1,5 +1,5 @@
-import { ref, computed } from 'vue';
 import { router } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
 
 interface UndoableAction {
     id: string;
@@ -30,7 +30,7 @@ export function useUndoManager(options: UndoOptions = {}) {
      */
     const pendingActions = computed(() => {
         return Array.from(actions.value.values())
-            .filter(action => Date.now() < action.expiresAt)
+            .filter((action) => Date.now() < action.expiresAt)
             .sort((a, b) => b.timestamp - a.timestamp);
     });
 
@@ -45,7 +45,7 @@ export function useUndoManager(options: UndoOptions = {}) {
     const registerDelete = (
         resourceType: 'product' | 'booking' | 'requisition',
         resourceId: number,
-        data: Record<string, unknown>
+        data: Record<string, unknown>,
     ): string => {
         const id = `${resourceType}-${resourceId}-${Date.now()}`;
 
@@ -54,8 +54,10 @@ export function useUndoManager(options: UndoOptions = {}) {
 
         // Limit number of tracked actions
         if (actions.value.size >= maxActions) {
-            const oldestKey = Array.from(actions.value.entries())
-                .sort(([, a], [, b]) => a.timestamp - b.timestamp)[0]?.[0];
+            const oldestKey = Array.from(actions.value.entries()).sort(
+                ([, a], [, b]) => a.timestamp - b.timestamp,
+            )[0]?.[0];
+
             if (oldestKey) {
                 actions.value.delete(oldestKey);
             }
@@ -87,7 +89,7 @@ export function useUndoManager(options: UndoOptions = {}) {
     const registerRestore = (
         resourceType: 'product' | 'booking' | 'requisition',
         resourceId: number,
-        data: Record<string, unknown>
+        data: Record<string, unknown>,
     ): string => {
         const id = `${resourceType}-${resourceId}-restore-${Date.now()}`;
 
@@ -117,6 +119,7 @@ export function useUndoManager(options: UndoOptions = {}) {
      */
     const undo = async (actionId: string): Promise<boolean> => {
         const action = actions.value.get(actionId);
+
         if (!action || Date.now() > action.expiresAt) {
             return false;
         }
@@ -146,6 +149,7 @@ export function useUndoManager(options: UndoOptions = {}) {
             return success;
         } catch (error) {
             console.error('Undo failed:', error);
+
             return false;
         } finally {
             processingUndos.value.delete(actionId);
@@ -155,26 +159,34 @@ export function useUndoManager(options: UndoOptions = {}) {
     /**
      * Undo a delete (restore the item)
      */
-    const performUndoDelete = async (action: UndoableAction): Promise<boolean> => {
+    const performUndoDelete = async (
+        action: UndoableAction,
+    ): Promise<boolean> => {
         return new Promise((resolve) => {
             const restoreUrl = `/inventory/${action.resourceType}s/${action.resourceId}/restore`;
 
-            router.put(restoreUrl, {}, {
-                preserveScroll: true,
-                onSuccess: () => {
-                    resolve(true);
+            router.put(
+                restoreUrl,
+                {},
+                {
+                    preserveScroll: true,
+                    onSuccess: () => {
+                        resolve(true);
+                    },
+                    onError: () => {
+                        resolve(false);
+                    },
                 },
-                onError: () => {
-                    resolve(false);
-                },
-            });
+            );
         });
     };
 
     /**
      * Undo a restore (re-delete the item)
      */
-    const performUndoRestore = async (action: UndoableAction): Promise<boolean> => {
+    const performUndoRestore = async (
+        action: UndoableAction,
+    ): Promise<boolean> => {
         return new Promise((resolve) => {
             const deleteUrl = `/inventory/${action.resourceType}s/${action.resourceId}`;
 
@@ -202,6 +214,7 @@ export function useUndoManager(options: UndoOptions = {}) {
      */
     const cleanupExpired = (): void => {
         const now = Date.now();
+
         for (const [id, action] of actions.value.entries()) {
             if (now > action.expiresAt) {
                 actions.value.delete(id);
@@ -253,5 +266,6 @@ export function getGlobalUndoManager(): ReturnType<typeof useUndoManager> {
     if (!globalUndoManager) {
         globalUndoManager = useUndoManager({ timeout: 30000 });
     }
+
     return globalUndoManager;
 }

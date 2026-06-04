@@ -176,16 +176,26 @@ onUnmounted(() => clearTwoFactorAuthData());
                     </DialogTrigger>
                     <DialogContent>
                         <DialogHeader class="space-y-3">
-                            <DialogTitle>Disable two-factor authentication?</DialogTitle>
+                            <DialogTitle
+                                >Disable two-factor authentication?</DialogTitle
+                            >
                             <DialogDescription>
-                                This will remove the extra security layer from your account. You will only need your password to log in.
+                                This will remove the extra security layer from
+                                your account. You will only need your password
+                                to log in.
                             </DialogDescription>
                         </DialogHeader>
                         <DialogFooter class="gap-2">
                             <DialogClose as-child>
-                                <Button variant="secondary" type="button">Cancel</Button>
+                                <Button variant="secondary" type="button"
+                                    >Cancel</Button
+                                >
                             </DialogClose>
-                            <Form v-bind="disable.form()" #default="{ processing }" class="inline">
+                            <Form
+                                v-bind="disable.form()"
+                                #default="{ processing }"
+                                class="inline"
+                            >
                                 <Button
                                     variant="destructive"
                                     type="submit"

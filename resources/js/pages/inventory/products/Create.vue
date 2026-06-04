@@ -6,7 +6,10 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index as productsIndex, create as productsCreate } from '@/routes/inventory/products';
+import {
+    index as productsIndex,
+    create as productsCreate,
+} from '@/routes/inventory/products';
 
 type Option = { id: number; name: string };
 
@@ -43,13 +46,25 @@ defineOptions({
         >
             <div class="grid gap-2">
                 <Label for="sku">SKU / Barcode</Label>
-                <Input id="sku" name="sku" data-testid="product-sku-input" required placeholder="e.g. 4801234567890" />
+                <Input
+                    id="sku"
+                    name="sku"
+                    data-testid="product-sku-input"
+                    required
+                    placeholder="e.g. 4801234567890"
+                />
                 <InputError :message="errors.sku" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="name">Product name</Label>
-                <Input id="name" name="name" data-testid="product-name-input" required placeholder="e.g. 1L Fresh Milk" />
+                <Input
+                    id="name"
+                    name="name"
+                    data-testid="product-name-input"
+                    required
+                    placeholder="e.g. 1L Fresh Milk"
+                />
                 <InputError :message="errors.name" />
             </div>
 
@@ -93,7 +108,11 @@ defineOptions({
                         class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
                     >
                         <option value="">None</option>
-                        <option v-for="c in categories" :key="c.id" :value="c.id">
+                        <option
+                            v-for="c in categories"
+                            :key="c.id"
+                            :value="c.id"
+                        >
                             {{ c.name }}
                         </option>
                     </select>
@@ -136,9 +155,13 @@ defineOptions({
                 <Button variant="ghost" as-child>
                     <Link :href="productsIndex()">Cancel</Link>
                 </Button>
-                <Button :disabled="processing" data-test="create-product-submit" data-testid="create-product-submit">Create</Button>
+                <Button
+                    :disabled="processing"
+                    data-test="create-product-submit"
+                    data-testid="create-product-submit"
+                    >Create</Button
+                >
             </div>
         </Form>
     </div>
 </template>
-

@@ -2,10 +2,18 @@
 import { Head, Link } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
-import { index as productsIndex, show as productShow } from '@/routes/inventory/products';
+import {
+    index as productsIndex,
+    show as productShow,
+} from '@/routes/inventory/products';
 
 defineProps<{
-    product: { id: number; sku: string; name: string; type: 'asset' | 'consumable' };
+    product: {
+        id: number;
+        sku: string;
+        name: string;
+        type: 'asset' | 'consumable';
+    };
     qr_svg: string;
 }>();
 
@@ -54,4 +62,3 @@ function printLabel() {
         </div>
     </div>
 </template>
-

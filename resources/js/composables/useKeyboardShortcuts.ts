@@ -49,14 +49,21 @@ export function useKeyboardShortcuts(): void {
                 return;
             }
 
-            if (path.includes('/inventory/products') && !path.includes('/create')) {
+            if (
+                path.includes('/inventory/products') &&
+                !path.includes('/create')
+            ) {
                 router.get(productsCreate().url);
             } else if (path.includes('/inventory/bookings')) {
                 const form = document.querySelector('[data-shortcut="new"]');
 
                 if (form) {
-                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    const firstInput = form.querySelector<HTMLInputElement>('input, select');
+                    form.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                    });
+                    const firstInput =
+                        form.querySelector<HTMLInputElement>('input, select');
                     firstInput?.focus();
                 }
             } else if (path.includes('/inventory/requisitions')) {
@@ -64,8 +71,12 @@ export function useKeyboardShortcuts(): void {
                 const form = document.querySelector('[data-shortcut="new"]');
 
                 if (form) {
-                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    const firstInput = form.querySelector<HTMLInputElement>('input, select');
+                    form.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center',
+                    });
+                    const firstInput =
+                        form.querySelector<HTMLInputElement>('input, select');
                     firstInput?.focus();
                 }
             }

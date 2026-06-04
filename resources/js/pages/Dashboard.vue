@@ -12,7 +12,14 @@ import {
     PointElement,
     Tooltip,
 } from 'chart.js';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+} from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
@@ -32,13 +39,32 @@ Chart.register(
 type Alert = { id: number; type: string; message: string; detected_at: string };
 type TrendData = { labels: string[]; data: number[] };
 type SummaryData = Record<string, number>;
-type RecentlyDeleted = { id: number; type: string; name: string; deleted_at: string; deleted_by: string; restore_url: string };
+type RecentlyDeleted = {
+    id: number;
+    type: string;
+    name: string;
+    deleted_at: string;
+    deleted_by: string;
+    restore_url: string;
+};
 
 const props = defineProps<{
     dateRange: { from: string | null; to: string | null };
     alerts: Alert[];
-    lowStock: { id: number; sku: string; name: string; category: string | null; on_hand_qty: number | null; reorder_threshold: number }[];
-    unserviceableAssets: { id: number; tag_code: string; status: string; name: string | null }[];
+    lowStock: {
+        id: number;
+        sku: string;
+        name: string;
+        category: string | null;
+        on_hand_qty: number | null;
+        reorder_threshold: number;
+    }[];
+    unserviceableAssets: {
+        id: number;
+        tag_code: string;
+        status: string;
+        name: string | null;
+    }[];
     assetStatusCounts: { labels: string[]; data: number[] };
     receivingTrends: TrendData;
     issuingTrends: TrendData;
@@ -46,7 +72,10 @@ const props = defineProps<{
     bookingSummary: SummaryData;
     assetConditionSummary: SummaryData;
     recentlyDeleted: RecentlyDeleted[];
-    exportUrls: { assetConditionsCsv: string; assetConditionsPdf: string } | null;
+    exportUrls: {
+        assetConditionsCsv: string;
+        assetConditionsPdf: string;
+    } | null;
 }>();
 
 defineOptions({
@@ -135,7 +164,11 @@ const chartHoverColors = [
 ];
 
 function getCssVar(name: string): string {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#000';
+    return (
+        getComputedStyle(document.documentElement)
+            .getPropertyValue(name)
+            .trim() || '#000'
+    );
 }
 
 function renderBarChart(
@@ -148,7 +181,9 @@ function renderBarChart(
     const gridColor = getCssVar('--border');
     const mutedColor = getCssVar('--muted-foreground');
     const barColors = labels.map((_, i) => chartColors[i % chartColors.length]);
-    const barHoverColors = labels.map((_, i) => chartHoverColors[i % chartHoverColors.length]);
+    const barHoverColors = labels.map(
+        (_, i) => chartHoverColors[i % chartHoverColors.length],
+    );
 
     return new Chart(canvas, {
         type: 'bar',
@@ -184,13 +219,24 @@ function renderBarChart(
             },
             scales: {
                 x: {
-                    ticks: { color: mutedColor, font: { family: "'Outfit', sans-serif", size: 11, weight: 500 } },
+                    ticks: {
+                        color: mutedColor,
+                        font: {
+                            family: "'Outfit', sans-serif",
+                            size: 11,
+                            weight: 500,
+                        },
+                    },
                     grid: { display: false },
                     border: { display: false },
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { color: mutedColor, font: { family: "'Outfit', sans-serif", size: 11 }, padding: 8 },
+                    ticks: {
+                        color: mutedColor,
+                        font: { family: "'Outfit', sans-serif", size: 11 },
+                        padding: 8,
+                    },
                     grid: { color: gridColor, lineWidth: 1 },
                     border: { display: false },
                 },
@@ -198,7 +244,8 @@ function renderBarChart(
             interaction: { mode: 'index', intersect: false },
             onHover: (event, activeElements) => {
                 if (event.native?.target instanceof HTMLElement) {
-                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                    event.native.target.style.cursor =
+                        activeElements.length > 0 ? 'pointer' : 'default';
                 }
             },
         },
@@ -250,13 +297,21 @@ function renderLineChart(
             },
             scales: {
                 x: {
-                    ticks: { color: mutedColor, font: { family: "'Outfit', sans-serif", size: 10 }, maxRotation: 45 },
+                    ticks: {
+                        color: mutedColor,
+                        font: { family: "'Outfit', sans-serif", size: 10 },
+                        maxRotation: 45,
+                    },
                     grid: { display: false },
                     border: { display: false },
                 },
                 y: {
                     beginAtZero: true,
-                    ticks: { color: mutedColor, font: { family: "'Outfit', sans-serif", size: 11 }, padding: 8 },
+                    ticks: {
+                        color: mutedColor,
+                        font: { family: "'Outfit', sans-serif", size: 11 },
+                        padding: 8,
+                    },
                     grid: { color: gridColor, lineWidth: 1 },
                     border: { display: false },
                 },
@@ -264,7 +319,8 @@ function renderLineChart(
             interaction: { mode: 'index', intersect: false },
             onHover: (event, activeElements) => {
                 if (event.native?.target instanceof HTMLElement) {
-                    event.native.target.style.cursor = activeElements.length > 0 ? 'pointer' : 'default';
+                    event.native.target.style.cursor =
+                        activeElements.length > 0 ? 'pointer' : 'default';
                 }
             },
         },
@@ -362,7 +418,9 @@ watch(
     { deep: true },
 );
 
-function summaryEntries(summary: SummaryData): { key: string; value: number }[] {
+function summaryEntries(
+    summary: SummaryData,
+): { key: string; value: number }[] {
     return Object.entries(summary).map(([key, value]) => ({ key, value }));
 }
 
@@ -378,7 +436,9 @@ function restoreItem(url: string): void {
         data-testid="dashboard-page"
         class="flex h-full flex-1 flex-col gap-6 overflow-x-auto p-4 sm:p-6"
     >
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        >
             <Heading
                 variant="small"
                 title="Dashboard"
@@ -386,25 +446,63 @@ function restoreItem(url: string): void {
             />
 
             <div v-if="props.exportUrls" class="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" as-child class="rounded-lg border-dashed">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    as-child
+                    class="rounded-lg border-dashed"
+                >
                     <a :href="props.exportUrls.assetConditionsCsv">
-                        <span class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" />Asset report CSV
+                        <span
+                            class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary"
+                        />Asset report CSV
                     </a>
                 </Button>
-                <Button variant="outline" size="sm" as-child class="rounded-lg border-dashed">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    as-child
+                    class="rounded-lg border-dashed"
+                >
                     <a :href="props.exportUrls.assetConditionsPdf">
-                        <span class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary" />Asset report PDF
+                        <span
+                            class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary"
+                        />Asset report PDF
                     </a>
                 </Button>
             </div>
         </div>
 
         <!-- Date Range Filter -->
-        <div v-if="isAdmin" class="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm sm:flex-row sm:items-center">
+        <div
+            v-if="isAdmin"
+            class="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm sm:flex-row sm:items-center"
+        >
             <div class="flex gap-2">
-                <Button type="button" variant="outline" size="sm" class="h-8 rounded-lg text-xs" @click="setPreset('today')">Today</Button>
-                <Button type="button" variant="outline" size="sm" class="h-8 rounded-lg text-xs" @click="setPreset('week')">This week</Button>
-                <Button type="button" variant="outline" size="sm" class="h-8 rounded-lg text-xs" @click="setPreset('month')">This month</Button>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    class="h-8 rounded-lg text-xs"
+                    @click="setPreset('today')"
+                    >Today</Button
+                >
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    class="h-8 rounded-lg text-xs"
+                    @click="setPreset('week')"
+                    >This week</Button
+                >
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    class="h-8 rounded-lg text-xs"
+                    @click="setPreset('month')"
+                    >This month</Button
+                >
             </div>
             <div class="flex items-center gap-2">
                 <input
@@ -418,15 +516,27 @@ function restoreItem(url: string): void {
                     type="date"
                     class="h-8 rounded-lg border border-input bg-background px-2 text-xs transition-colors focus:border-ring focus:outline-none"
                 />
-                <Button type="button" variant="default" size="sm" class="h-8 rounded-lg text-xs" @click="applyDateRange">Apply</Button>
+                <Button
+                    type="button"
+                    variant="default"
+                    size="sm"
+                    class="h-8 rounded-lg text-xs"
+                    @click="applyDateRange"
+                    >Apply</Button
+                >
             </div>
         </div>
 
         <!-- Recently Deleted Widget -->
-        <div v-if="isAdmin && recentlyDeleted.length > 0" class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+        <div
+            v-if="isAdmin && recentlyDeleted.length > 0"
+            class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+        >
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                    <div class="text-sm font-semibold tracking-tight">Recently Deleted</div>
+                    <div class="text-sm font-semibold tracking-tight">
+                        Recently Deleted
+                    </div>
                     <div class="h-1.5 w-1.5 rounded-full bg-rose-500/60" />
                 </div>
                 <Button variant="ghost" size="sm" as-child>
@@ -441,11 +551,14 @@ function restoreItem(url: string): void {
                 >
                     <div class="flex items-center gap-3">
                         <span
-                            class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide"
+                            class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
                             :class="{
-                                'bg-sky-500/10 text-sky-700 dark:text-sky-400': item.type === 'product',
-                                'bg-amber-500/10 text-amber-700 dark:text-amber-400': item.type === 'booking',
-                                'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400': item.type === 'requisition',
+                                'bg-sky-500/10 text-sky-700 dark:text-sky-400':
+                                    item.type === 'product',
+                                'bg-amber-500/10 text-amber-700 dark:text-amber-400':
+                                    item.type === 'booking',
+                                'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400':
+                                    item.type === 'requisition',
                             }"
                         >
                             {{ item.type }}
@@ -453,11 +566,17 @@ function restoreItem(url: string): void {
                         <div>
                             <div class="font-medium">{{ item.name }}</div>
                             <div class="text-xs text-muted-foreground">
-                                Deleted by {{ item.deleted_by }} · {{ item.deleted_at }}
+                                Deleted by {{ item.deleted_by }} ·
+                                {{ item.deleted_at }}
                             </div>
                         </div>
                     </div>
-                    <Button variant="ghost" size="sm" class="h-7 text-xs" @click="restoreItem(item.restore_url)">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 text-xs"
+                        @click="restoreItem(item.restore_url)"
+                    >
                         Restore
                     </Button>
                 </li>
@@ -466,40 +585,108 @@ function restoreItem(url: string): void {
 
         <!-- Quick Stats Row -->
         <div v-if="isAdmin" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20">
-                <div class="absolute right-3 top-3 h-2 w-2 rounded-full bg-primary/40 group-hover:bg-primary transition-colors" />
-                <div class="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">Assets</div>
-                <div class="mt-2 font-display text-2xl font-bold text-foreground">{{ props.assetStatusCounts.data.reduce((a, b) => a + b, 0) }}</div>
-                <div class="mt-1 text-xs text-muted-foreground">Total tracked</div>
+            <div
+                class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
+            >
+                <div
+                    class="absolute top-3 right-3 h-2 w-2 rounded-full bg-primary/40 transition-colors group-hover:bg-primary"
+                />
+                <div
+                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                >
+                    Assets
+                </div>
+                <div
+                    class="mt-2 font-display text-2xl font-bold text-foreground"
+                >
+                    {{
+                        props.assetStatusCounts.data.reduce((a, b) => a + b, 0)
+                    }}
+                </div>
+                <div class="mt-1 text-xs text-muted-foreground">
+                    Total tracked
+                </div>
             </div>
-            <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20">
-                <div class="absolute right-3 top-3 h-2 w-2 rounded-full bg-amber-500/40 group-hover:bg-amber-500 transition-colors" />
-                <div class="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">Low Stock</div>
-                <div class="mt-2 font-display text-2xl font-bold text-foreground">{{ lowStock.length }}</div>
-                <div class="mt-1 text-xs text-muted-foreground">Consumables below threshold</div>
+            <div
+                class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
+            >
+                <div
+                    class="absolute top-3 right-3 h-2 w-2 rounded-full bg-amber-500/40 transition-colors group-hover:bg-amber-500"
+                />
+                <div
+                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                >
+                    Low Stock
+                </div>
+                <div
+                    class="mt-2 font-display text-2xl font-bold text-foreground"
+                >
+                    {{ lowStock.length }}
+                </div>
+                <div class="mt-1 text-xs text-muted-foreground">
+                    Consumables below threshold
+                </div>
             </div>
-            <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20">
-                <div class="absolute right-3 top-3 h-2 w-2 rounded-full bg-rose-500/40 group-hover:bg-rose-500 transition-colors" />
-                <div class="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">Unserviceable</div>
-                <div class="mt-2 font-display text-2xl font-bold text-foreground">{{ unserviceableAssets.length }}</div>
-                <div class="mt-1 text-xs text-muted-foreground">Assets needing attention</div>
+            <div
+                class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
+            >
+                <div
+                    class="absolute top-3 right-3 h-2 w-2 rounded-full bg-rose-500/40 transition-colors group-hover:bg-rose-500"
+                />
+                <div
+                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                >
+                    Unserviceable
+                </div>
+                <div
+                    class="mt-2 font-display text-2xl font-bold text-foreground"
+                >
+                    {{ unserviceableAssets.length }}
+                </div>
+                <div class="mt-1 text-xs text-muted-foreground">
+                    Assets needing attention
+                </div>
             </div>
-            <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/20">
-                <div class="absolute right-3 top-3 h-2 w-2 rounded-full bg-emerald-500/40 group-hover:bg-emerald-500 transition-colors" />
-                <div class="text-xs font-medium uppercase tracking-wider text-muted-foreground/70">Alerts</div>
-                <div class="mt-2 font-display text-2xl font-bold text-foreground">{{ alerts.length }}</div>
-                <div class="mt-1 text-xs text-muted-foreground">Active system alerts</div>
+            <div
+                class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
+            >
+                <div
+                    class="absolute top-3 right-3 h-2 w-2 rounded-full bg-emerald-500/40 transition-colors group-hover:bg-emerald-500"
+                />
+                <div
+                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                >
+                    Alerts
+                </div>
+                <div
+                    class="mt-2 font-display text-2xl font-bold text-foreground"
+                >
+                    {{ alerts.length }}
+                </div>
+                <div class="mt-1 text-xs text-muted-foreground">
+                    Active system alerts
+                </div>
             </div>
         </div>
 
         <!-- Trends -->
         <div v-if="isAdmin" class="grid gap-6 lg:grid-cols-2">
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4 flex items-center justify-between">
-                    <div class="text-sm font-semibold tracking-tight">Receiving trends</div>
+                    <div class="text-sm font-semibold tracking-tight">
+                        Receiving trends
+                    </div>
                     <div class="h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
                 </div>
-                <div v-if="receivingTrends.data.length === 0 || receivingTrends.data.every(v => v === 0)" class="text-sm text-muted-foreground">
+                <div
+                    v-if="
+                        receivingTrends.data.length === 0 ||
+                        receivingTrends.data.every((v) => v === 0)
+                    "
+                    class="text-sm text-muted-foreground"
+                >
                     No receiving activity in selected range.
                 </div>
                 <div v-else class="h-48">
@@ -507,12 +694,22 @@ function restoreItem(url: string): void {
                 </div>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4 flex items-center justify-between">
-                    <div class="text-sm font-semibold tracking-tight">Issuing trends</div>
+                    <div class="text-sm font-semibold tracking-tight">
+                        Issuing trends
+                    </div>
                     <div class="h-1.5 w-1.5 rounded-full bg-sky-500/60" />
                 </div>
-                <div v-if="issuingTrends.data.length === 0 || issuingTrends.data.every(v => v === 0)" class="text-sm text-muted-foreground">
+                <div
+                    v-if="
+                        issuingTrends.data.length === 0 ||
+                        issuingTrends.data.every((v) => v === 0)
+                    "
+                    class="text-sm text-muted-foreground"
+                >
                     No issuing activity in selected range.
                 </div>
                 <div v-else class="h-48">
@@ -523,44 +720,95 @@ function restoreItem(url: string): void {
 
         <!-- Summaries -->
         <div v-if="isAdmin" class="grid gap-6 lg:grid-cols-3">
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4 flex items-center justify-between">
-                    <div class="text-sm font-semibold tracking-tight">Requisition status</div>
+                    <div class="text-sm font-semibold tracking-tight">
+                        Requisition status
+                    </div>
                     <div class="h-1.5 w-1.5 rounded-full bg-primary/60" />
                 </div>
-                <div v-if="summaryEntries(requisitionSummary).length === 0" class="text-sm text-muted-foreground">No data.</div>
+                <div
+                    v-if="summaryEntries(requisitionSummary).length === 0"
+                    class="text-sm text-muted-foreground"
+                >
+                    No data.
+                </div>
                 <ul v-else class="space-y-2 text-sm">
-                    <li v-for="entry in summaryEntries(requisitionSummary)" :key="entry.key" class="flex items-center justify-between rounded-lg border border-border/40 p-2">
-                        <span class="capitalize text-muted-foreground">{{ entry.key }}</span>
-                        <span class="font-mono text-xs font-semibold">{{ entry.value }}</span>
+                    <li
+                        v-for="entry in summaryEntries(requisitionSummary)"
+                        :key="entry.key"
+                        class="flex items-center justify-between rounded-lg border border-border/40 p-2"
+                    >
+                        <span class="text-muted-foreground capitalize">{{
+                            entry.key
+                        }}</span>
+                        <span class="font-mono text-xs font-semibold">{{
+                            entry.value
+                        }}</span>
                     </li>
                 </ul>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4 flex items-center justify-between">
-                    <div class="text-sm font-semibold tracking-tight">Booking status</div>
+                    <div class="text-sm font-semibold tracking-tight">
+                        Booking status
+                    </div>
                     <div class="h-1.5 w-1.5 rounded-full bg-amber-500/60" />
                 </div>
-                <div v-if="summaryEntries(bookingSummary).length === 0" class="text-sm text-muted-foreground">No data.</div>
+                <div
+                    v-if="summaryEntries(bookingSummary).length === 0"
+                    class="text-sm text-muted-foreground"
+                >
+                    No data.
+                </div>
                 <ul v-else class="space-y-2 text-sm">
-                    <li v-for="entry in summaryEntries(bookingSummary)" :key="entry.key" class="flex items-center justify-between rounded-lg border border-border/40 p-2">
-                        <span class="capitalize text-muted-foreground">{{ entry.key }}</span>
-                        <span class="font-mono text-xs font-semibold">{{ entry.value }}</span>
+                    <li
+                        v-for="entry in summaryEntries(bookingSummary)"
+                        :key="entry.key"
+                        class="flex items-center justify-between rounded-lg border border-border/40 p-2"
+                    >
+                        <span class="text-muted-foreground capitalize">{{
+                            entry.key
+                        }}</span>
+                        <span class="font-mono text-xs font-semibold">{{
+                            entry.value
+                        }}</span>
                     </li>
                 </ul>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4 flex items-center justify-between">
-                    <div class="text-sm font-semibold tracking-tight">Asset conditions</div>
+                    <div class="text-sm font-semibold tracking-tight">
+                        Asset conditions
+                    </div>
                     <div class="h-1.5 w-1.5 rounded-full bg-rose-500/60" />
                 </div>
-                <div v-if="summaryEntries(assetConditionSummary).length === 0" class="text-sm text-muted-foreground">No data.</div>
+                <div
+                    v-if="summaryEntries(assetConditionSummary).length === 0"
+                    class="text-sm text-muted-foreground"
+                >
+                    No data.
+                </div>
                 <ul v-else class="space-y-2 text-sm">
-                    <li v-for="entry in summaryEntries(assetConditionSummary)" :key="entry.key" class="flex items-center justify-between rounded-lg border border-border/40 p-2">
-                        <span class="capitalize text-muted-foreground">{{ entry.key }}</span>
-                        <span class="font-mono text-xs font-semibold">{{ entry.value }}</span>
+                    <li
+                        v-for="entry in summaryEntries(assetConditionSummary)"
+                        :key="entry.key"
+                        class="flex items-center justify-between rounded-lg border border-border/40 p-2"
+                    >
+                        <span class="text-muted-foreground capitalize">{{
+                            entry.key
+                        }}</span>
+                        <span class="font-mono text-xs font-semibold">{{
+                            entry.value
+                        }}</span>
                     </li>
                 </ul>
             </div>
@@ -568,9 +816,13 @@ function restoreItem(url: string): void {
 
         <!-- Existing widgets -->
         <div v-if="isAdmin" class="grid gap-6 lg:grid-cols-2">
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4 flex items-center justify-between">
-                    <div class="text-sm font-semibold tracking-tight">Unserviceable / Condemned assets</div>
+                    <div class="text-sm font-semibold tracking-tight">
+                        Unserviceable / Condemned assets
+                    </div>
                     <div class="h-1.5 w-1.5 rounded-full bg-primary/60" />
                 </div>
                 <div class="h-64">
@@ -578,37 +830,69 @@ function restoreItem(url: string): void {
                 </div>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4 flex items-center justify-between">
-                    <div class="text-sm font-semibold tracking-tight">Low-stock consumables</div>
+                    <div class="text-sm font-semibold tracking-tight">
+                        Low-stock consumables
+                    </div>
                     <div class="h-1.5 w-1.5 rounded-full bg-amber-500/60" />
                 </div>
-                <div v-if="lowStock.length === 0" class="text-sm text-muted-foreground">
+                <div
+                    v-if="lowStock.length === 0"
+                    class="text-sm text-muted-foreground"
+                >
                     No low-stock items found.
                 </div>
                 <ul v-else class="space-y-3 text-sm">
-                    <li v-for="p in lowStock" :key="p.id" class="flex items-center justify-between gap-3 rounded-lg border border-border/40 p-3 transition-colors hover:bg-muted/40">
+                    <li
+                        v-for="p in lowStock"
+                        :key="p.id"
+                        class="flex items-center justify-between gap-3 rounded-lg border border-border/40 p-3 transition-colors hover:bg-muted/40"
+                    >
                         <div class="min-w-0">
                             <div class="truncate font-medium">{{ p.name }}</div>
                             <div class="text-xs text-muted-foreground">
-                                {{ p.category ?? '—' }} &middot; <span class="font-mono text-[11px]">{{ p.sku }}</span>
+                                {{ p.category ?? '—' }} &middot;
+                                <span class="font-mono text-[11px]">{{
+                                    p.sku
+                                }}</span>
                             </div>
                         </div>
                         <div class="shrink-0 text-right">
-                            <div class="font-mono text-xs font-semibold">{{ p.on_hand_qty ?? 0 }} <span class="font-sans font-normal text-muted-foreground">/ {{ p.reorder_threshold ?? 0 }}</span></div>
-                            <div class="text-[10px] uppercase tracking-wider text-muted-foreground/70">on hand / threshold</div>
+                            <div class="font-mono text-xs font-semibold">
+                                {{ p.on_hand_qty ?? 0 }}
+                                <span
+                                    class="font-sans font-normal text-muted-foreground"
+                                    >/ {{ p.reorder_threshold ?? 0 }}</span
+                                >
+                            </div>
+                            <div
+                                class="text-[10px] tracking-wider text-muted-foreground/70 uppercase"
+                            >
+                                on hand / threshold
+                            </div>
                         </div>
                     </li>
                 </ul>
             </div>
         </div>
 
-        <div v-if="isAdmin" class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+        <div
+            v-if="isAdmin"
+            class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+        >
             <div class="mb-4 flex items-center justify-between">
-                <div class="text-sm font-semibold tracking-tight">Unserviceable / Condemned assets</div>
+                <div class="text-sm font-semibold tracking-tight">
+                    Unserviceable / Condemned assets
+                </div>
                 <div class="h-1.5 w-1.5 rounded-full bg-rose-500/60" />
             </div>
-            <div v-if="unserviceableAssets.length === 0" class="text-sm text-muted-foreground">
+            <div
+                v-if="unserviceableAssets.length === 0"
+                class="text-sm text-muted-foreground"
+            >
                 No assets in these statuses.
             </div>
             <ul v-else class="space-y-2 text-sm">
@@ -619,24 +903,43 @@ function restoreItem(url: string): void {
                 >
                     <span class="font-medium">{{ a.name ?? 'Asset' }}</span>
                     <span class="text-xs text-muted-foreground">
-                        {{ a.status }} &middot; <span class="font-mono text-[11px]">{{ a.tag_code }}</span>
+                        {{ a.status }} &middot;
+                        <span class="font-mono text-[11px]">{{
+                            a.tag_code
+                        }}</span>
                     </span>
                 </li>
             </ul>
         </div>
 
-        <div v-if="isAdmin" class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+        <div
+            v-if="isAdmin"
+            class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+        >
             <div class="mb-4 flex items-center justify-between">
-                <div class="text-sm font-semibold tracking-tight">System Alerts</div>
+                <div class="text-sm font-semibold tracking-tight">
+                    System Alerts
+                </div>
                 <div class="h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
             </div>
-            <div v-if="alerts.length === 0" class="text-sm text-muted-foreground">
+            <div
+                v-if="alerts.length === 0"
+                class="text-sm text-muted-foreground"
+            >
                 No active alerts.
             </div>
             <ul v-else class="space-y-3 text-sm">
-                <li v-for="a in alerts" :key="a.id" class="rounded-lg border border-border/40 bg-muted/20 p-4 transition-colors hover:bg-muted/40">
-                    <div class="flex items-center gap-2 text-xs text-muted-foreground">
-                        <span class="inline-block h-1.5 w-1.5 rounded-full bg-primary/60" />
+                <li
+                    v-for="a in alerts"
+                    :key="a.id"
+                    class="rounded-lg border border-border/40 bg-muted/20 p-4 transition-colors hover:bg-muted/40"
+                >
+                    <div
+                        class="flex items-center gap-2 text-xs text-muted-foreground"
+                    >
+                        <span
+                            class="inline-block h-1.5 w-1.5 rounded-full bg-primary/60"
+                        />
                         {{ a.type }} &middot; {{ a.detected_at }}
                     </div>
                     <div class="mt-1.5 leading-relaxed">{{ a.message }}</div>

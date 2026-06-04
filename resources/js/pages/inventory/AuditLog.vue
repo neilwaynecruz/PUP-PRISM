@@ -13,7 +13,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { exportMethod as auditLogsExport, index as auditLogsIndex } from '@/routes/inventory/audit-logs';
+import {
+    exportMethod as auditLogsExport,
+    index as auditLogsIndex,
+} from '@/routes/inventory/audit-logs';
 
 interface LogChange {
     field: string;
@@ -81,10 +84,10 @@ let pollTimer: number | null = null;
 const hasActiveFilters = computed(() => {
     return Boolean(
         search.value ||
-            action.value ||
-            modelType.value ||
-            dateFrom.value ||
-            dateTo.value,
+        action.value ||
+        modelType.value ||
+        dateFrom.value ||
+        dateTo.value,
     );
 });
 
@@ -195,14 +198,12 @@ function getActionColor(actionValue: string): string {
         update: 'bg-blue-500/10 text-blue-700 dark:text-blue-400',
         delete: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
         restore: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
-        force_delete:
-            'bg-red-500/10 text-red-700 dark:text-red-400',
+        force_delete: 'bg-red-500/10 text-red-700 dark:text-red-400',
         approve: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400',
         reject: 'bg-rose-500/10 text-rose-700 dark:text-rose-400',
         issue: 'bg-sky-500/10 text-sky-700 dark:text-sky-400',
         receive: 'bg-teal-500/10 text-teal-700 dark:text-teal-400',
-        transfer:
-            'bg-violet-500/10 text-violet-700 dark:text-violet-400',
+        transfer: 'bg-violet-500/10 text-violet-700 dark:text-violet-400',
     };
 
     return (
@@ -238,7 +239,9 @@ onUnmounted(() => {
     <Head title="Audit Log" />
 
     <div class="flex flex-col gap-6 p-4 sm:p-6">
-        <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+        <div
+            class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
+        >
             <Heading
                 variant="small"
                 title="Audit Log"
@@ -344,9 +347,7 @@ onUnmounted(() => {
             </div>
         </div>
 
-        <div
-            class="rounded-xl border border-border/60 bg-card shadow-sm"
-        >
+        <div class="rounded-xl border border-border/60 bg-card shadow-sm">
             <div v-if="isRefreshing" class="p-4">
                 <TableSkeleton :rows="6" :columns="6" />
             </div>
@@ -408,9 +409,13 @@ onUnmounted(() => {
                                 :key="`${log.id}-${change.field}`"
                                 class="text-sm"
                             >
-                                <span class="font-medium">{{ change.label }}:</span>
+                                <span class="font-medium"
+                                    >{{ change.label }}:</span
+                                >
                                 <span class="text-muted-foreground">
-                                    "{{ change.old_value }}" → "{{ change.new_value }}"
+                                    "{{ change.old_value }}" → "{{
+                                        change.new_value
+                                    }}"
                                 </span>
                             </div>
                         </div>
@@ -424,16 +429,30 @@ onUnmounted(() => {
                             </summary>
                             <div class="mt-3 grid gap-3">
                                 <div>
-                                    <div class="mb-1 text-xs font-semibold uppercase text-muted-foreground">
+                                    <div
+                                        class="mb-1 text-xs font-semibold text-muted-foreground uppercase"
+                                    >
                                         Previous
                                     </div>
-                                    <pre class="overflow-x-auto rounded bg-muted/60 p-3 text-xs">{{ formatJson(log.raw_old_values) }}</pre>
+                                    <pre
+                                        class="overflow-x-auto rounded bg-muted/60 p-3 text-xs"
+                                        >{{
+                                            formatJson(log.raw_old_values)
+                                        }}</pre
+                                    >
                                 </div>
                                 <div>
-                                    <div class="mb-1 text-xs font-semibold uppercase text-muted-foreground">
+                                    <div
+                                        class="mb-1 text-xs font-semibold text-muted-foreground uppercase"
+                                    >
                                         New
                                     </div>
-                                    <pre class="overflow-x-auto rounded bg-muted/60 p-3 text-xs">{{ formatJson(log.raw_new_values) }}</pre>
+                                    <pre
+                                        class="overflow-x-auto rounded bg-muted/60 p-3 text-xs"
+                                        >{{
+                                            formatJson(log.raw_new_values)
+                                        }}</pre
+                                    >
                                 </div>
                             </div>
                         </details>
@@ -497,7 +516,11 @@ onUnmounted(() => {
                                     <div class="flex items-center gap-2">
                                         <span
                                             class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium"
-                                            :class="getModelTypeColor(log.model_type)"
+                                            :class="
+                                                getModelTypeColor(
+                                                    log.model_type,
+                                                )
+                                            "
                                         >
                                             {{ log.model_label }}
                                         </span>
@@ -523,31 +546,61 @@ onUnmounted(() => {
                                                 :key="`${log.id}-${change.field}`"
                                                 class="text-sm"
                                             >
-                                                <span class="font-medium">{{ change.label }}:</span>
-                                                <span class="text-muted-foreground">
-                                                    "{{ change.old_value }}" → "{{ change.new_value }}"
+                                                <span class="font-medium"
+                                                    >{{ change.label }}:</span
+                                                >
+                                                <span
+                                                    class="text-muted-foreground"
+                                                >
+                                                    "{{ change.old_value }}" →
+                                                    "{{ change.new_value }}"
                                                 </span>
                                             </div>
                                         </div>
                                         <details
-                                            v-if="log.raw_old_values || log.raw_new_values"
+                                            v-if="
+                                                log.raw_old_values ||
+                                                log.raw_new_values
+                                            "
                                             class="rounded-lg border border-border/50 p-3"
                                         >
-                                            <summary class="cursor-pointer text-sm font-medium">
+                                            <summary
+                                                class="cursor-pointer text-sm font-medium"
+                                            >
                                                 Advanced details
                                             </summary>
-                                            <div class="mt-3 grid gap-3 xl:grid-cols-2">
+                                            <div
+                                                class="mt-3 grid gap-3 xl:grid-cols-2"
+                                            >
                                                 <div>
-                                                    <div class="mb-1 text-xs font-semibold uppercase text-muted-foreground">
+                                                    <div
+                                                        class="mb-1 text-xs font-semibold text-muted-foreground uppercase"
+                                                    >
                                                         Previous
                                                     </div>
-                                                    <pre class="overflow-x-auto rounded bg-muted/60 p-3 text-xs">{{ formatJson(log.raw_old_values) }}</pre>
+                                                    <pre
+                                                        class="overflow-x-auto rounded bg-muted/60 p-3 text-xs"
+                                                        >{{
+                                                            formatJson(
+                                                                log.raw_old_values,
+                                                            )
+                                                        }}</pre
+                                                    >
                                                 </div>
                                                 <div>
-                                                    <div class="mb-1 text-xs font-semibold uppercase text-muted-foreground">
+                                                    <div
+                                                        class="mb-1 text-xs font-semibold text-muted-foreground uppercase"
+                                                    >
                                                         New
                                                     </div>
-                                                    <pre class="overflow-x-auto rounded bg-muted/60 p-3 text-xs">{{ formatJson(log.raw_new_values) }}</pre>
+                                                    <pre
+                                                        class="overflow-x-auto rounded bg-muted/60 p-3 text-xs"
+                                                        >{{
+                                                            formatJson(
+                                                                log.raw_new_values,
+                                                            )
+                                                        }}</pre
+                                                    >
                                                 </div>
                                             </div>
                                         </details>

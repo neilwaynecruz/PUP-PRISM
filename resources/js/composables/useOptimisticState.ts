@@ -22,7 +22,8 @@ interface OptimisticOptions {
  * Optimistic UI state management with automatic rollback on failure
  */
 export function useOptimisticState(options: OptimisticOptions = {}) {
-    const { maxRetries = 3, retryDelay = 1000 } = options;
+    // Options reserved for future retry logic: maxRetries=3, retryDelay=1000
+    void options;
 
     const items = ref<OptimisticItem[]>([]);
     const pendingActions = ref<Map<string, PendingAction>>(new Map());
@@ -74,9 +75,16 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
     /**
      * Apply optimistic update - modify item immediately
      */
-    const optimisticUpdate = (id: string, itemId: string | number, newData: Partial<OptimisticItem>): OptimisticItem | null => {
-        const index = items.value.findIndex(item => item.id === itemId);
-        if (index === -1) return null;
+    const optimisticUpdate = (
+        id: string,
+        itemId: string | number,
+        newData: Partial<OptimisticItem>,
+    ): OptimisticItem | null => {
+        const index = items.value.findIndex((item) => item.id === itemId);
+
+        if (index === -1) {
+            return null;
+        }
 
         const originalData = { ...items.value[index] };
         processingIds.value.add(itemId);
@@ -90,15 +98,22 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
         });
 
         items.value[index] = { ...originalData, ...newData } as OptimisticItem;
+
         return originalData;
     };
 
     /**
      * Apply optimistic delete - remove item immediately
      */
-    const optimisticDelete = (id: string, itemId: string | number): OptimisticItem | null => {
-        const index = items.value.findIndex(item => item.id === itemId);
-        if (index === -1) return null;
+    const optimisticDelete = (
+        id: string,
+        itemId: string | number,
+    ): OptimisticItem | null => {
+        const index = items.value.findIndex((item) => item.id === itemId);
+
+        if (index === -1) {
+            return null;
+        }
 
         const originalData = items.value[index];
         processingIds.value.add(itemId);
@@ -111,6 +126,7 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
         });
 
         items.value.splice(index, 1);
+
         return originalData;
     };
 
@@ -119,17 +135,25 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
      */
     const confirmSuccess = (id: string, serverData?: OptimisticItem): void => {
         const action = pendingActions.value.get(id);
-        if (!action) return;
 
-        processingIds.value.delete(action.optimisticData?.id ?? action.originalData?.id ?? id);
+        if (!action) {
+            return;
+        }
+
+        processingIds.value.delete(
+            action.optimisticData?.id ?? action.originalData?.id ?? id,
+        );
         pendingActions.value.delete(id);
         errorMap.value.delete(id);
 
         // Update with server data if provided (for creates/updates)
         if (serverData && action.type !== 'delete') {
-            const index = items.value.findIndex(item =>
-                item.id === action.optimisticData?.id || item.id === action.originalData?.id
+            const index = items.value.findIndex(
+                (item) =>
+                    item.id === action.optimisticData?.id ||
+                    item.id === action.originalData?.id,
             );
+
             if (index !== -1) {
                 items.value[index] = serverData;
             }
@@ -141,25 +165,35 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
      */
     const rollback = (id: string, error?: Error): void => {
         const action = pendingActions.value.get(id);
-        if (!action) return;
 
-        const itemId = action.optimisticData?.id ?? action.originalData?.id ?? id;
+        if (!action) {
+            return;
+        }
+
+        const itemId =
+            action.optimisticData?.id ?? action.originalData?.id ?? id;
         processingIds.value.delete(itemId);
 
         switch (action.type) {
             case 'create':
                 // Remove the optimistically added item
-                items.value = items.value.filter(item => item.id !== action.optimisticData?.id);
+                items.value = items.value.filter(
+                    (item) => item.id !== action.optimisticData?.id,
+                );
                 break;
 
             case 'update':
                 // Restore original data
                 if (action.originalData) {
-                    const index = items.value.findIndex(item => item.id === itemId);
+                    const index = items.value.findIndex(
+                        (item) => item.id === itemId,
+                    );
+
                     if (index !== -1 && action.originalData) {
                         items.value[index] = action.originalData;
                     }
                 }
+
                 break;
 
             case 'delete':
@@ -167,6 +201,7 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
                 if (action.originalData) {
                     items.value.push(action.originalData);
                 }
+
                 break;
         }
 
@@ -180,9 +215,15 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
     /**
      * Retry a failed action
      */
-    const retry = async (id: string, actionFn: () => Promise<OptimisticItem>): Promise<boolean> => {
+    const retry = async (
+        id: string,
+        actionFn: () => Promise<OptimisticItem>,
+    ): Promise<boolean> => {
         const action = pendingActions.value.get(id);
-        if (!action) return false;
+
+        if (!action) {
+            return false;
+        }
 
         clearError(id);
 
@@ -192,31 +233,45 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
                 if (action.optimisticData) {
                     items.value.unshift(action.optimisticData);
                 }
+
                 break;
             case 'update':
                 if (action.optimisticData) {
-                    const index = items.value.findIndex(item => item.id === action.optimisticData?.id);
+                    const index = items.value.findIndex(
+                        (item) => item.id === action.optimisticData?.id,
+                    );
+
                     if (index !== -1) {
                         items.value[index] = action.optimisticData;
                     }
                 }
+
                 break;
             case 'delete':
                 if (action.originalData) {
-                    const index = items.value.findIndex(item => item.id === action.originalData?.id);
+                    const index = items.value.findIndex(
+                        (item) => item.id === action.originalData?.id,
+                    );
+
                     if (index !== -1) {
                         items.value.splice(index, 1);
                     }
                 }
+
                 break;
         }
 
         try {
             const result = await actionFn();
             confirmSuccess(id, result);
+
             return true;
         } catch (error) {
-            rollback(id, error instanceof Error ? error : new Error('Retry failed'));
+            rollback(
+                id,
+                error instanceof Error ? error : new Error('Retry failed'),
+            );
+
             return false;
         }
     };

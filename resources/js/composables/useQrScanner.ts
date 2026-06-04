@@ -18,7 +18,8 @@ export function useQrScanner(options: UseQrScannerOptions) {
     let frameRequestId: number | null = null;
 
     const hasCameraSupport =
-        typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia;
+        typeof navigator !== 'undefined' &&
+        !!navigator.mediaDevices?.getUserMedia;
 
     function stop(): void {
         if (frameRequestId !== null) {
@@ -117,7 +118,10 @@ export function useQrScanner(options: UseQrScannerOptions) {
         } catch (caughtError) {
             stop();
 
-            const message = caughtError instanceof Error ? caughtError.message : 'Unable to start the camera.';
+            const message =
+                caughtError instanceof Error
+                    ? caughtError.message
+                    : 'Unable to start the camera.';
 
             error.value = message.includes('Permission')
                 ? 'Camera access was blocked. Allow camera permission or enter the code manually.'

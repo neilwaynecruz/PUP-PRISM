@@ -13,15 +13,19 @@ import {
 } from '@/components/ui/dialog';
 import { useQrScanner } from '@/composables/useQrScanner';
 
-withDefaults(defineProps<{
-    buttonLabel?: string;
-    title?: string;
-    description?: string;
-}>(), {
-    buttonLabel: 'Scan QR',
-    title: 'Scan QR code',
-    description: 'Use your phone or tablet camera. Manual entry stays available if the camera is unavailable.',
-});
+withDefaults(
+    defineProps<{
+        buttonLabel?: string;
+        title?: string;
+        description?: string;
+    }>(),
+    {
+        buttonLabel: 'Scan QR',
+        title: 'Scan QR code',
+        description:
+            'Use your phone or tablet camera. Manual entry stays available if the camera is unavailable.',
+    },
+);
 
 const emit = defineEmits<{
     scanned: [value: string];
@@ -58,7 +62,12 @@ watch(isOpen, async (open) => {
 </script>
 
 <template>
-    <Button type="button" variant="outline" class="w-full sm:w-auto" @click="isOpen = true">
+    <Button
+        type="button"
+        variant="outline"
+        class="w-full sm:w-auto"
+        @click="isOpen = true"
+    >
         <ScanLine class="mr-2 size-4" />
         {{ buttonLabel }}
     </Button>
@@ -72,13 +81,23 @@ watch(isOpen, async (open) => {
 
             <div class="grid gap-4">
                 <div class="flex flex-wrap items-center gap-2">
-                    <Badge v-if="isRunning" variant="default">Live camera</Badge>
-                    <Badge v-else-if="isStarting" variant="secondary">Starting</Badge>
-                    <Badge v-else variant="outline">Manual fallback ready</Badge>
-                    <span class="text-sm text-muted-foreground">{{ status }}</span>
+                    <Badge v-if="isRunning" variant="default"
+                        >Live camera</Badge
+                    >
+                    <Badge v-else-if="isStarting" variant="secondary"
+                        >Starting</Badge
+                    >
+                    <Badge v-else variant="outline"
+                        >Manual fallback ready</Badge
+                    >
+                    <span class="text-sm text-muted-foreground">{{
+                        status
+                    }}</span>
                 </div>
 
-                <div class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-muted/30 dark:border-sidebar-border">
+                <div
+                    class="overflow-hidden rounded-xl border border-sidebar-border/70 bg-muted/30 dark:border-sidebar-border"
+                >
                     <div class="relative aspect-4/3">
                         <video
                             ref="videoRef"
@@ -91,7 +110,9 @@ watch(isOpen, async (open) => {
                         <div
                             class="pointer-events-none absolute inset-0 flex items-center justify-center p-6"
                         >
-                            <div class="size-full rounded-xl border-2 border-dashed border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]" />
+                            <div
+                                class="size-full rounded-xl border-2 border-dashed border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]"
+                            />
                         </div>
 
                         <div
@@ -99,7 +120,9 @@ watch(isOpen, async (open) => {
                             class="absolute inset-0 flex items-center justify-center bg-background/95 p-6 text-center"
                         >
                             <div class="grid gap-2">
-                                <CameraOff class="mx-auto size-8 text-muted-foreground" />
+                                <CameraOff
+                                    class="mx-auto size-8 text-muted-foreground"
+                                />
                                 <Heading
                                     variant="small"
                                     title="Camera not supported"
@@ -110,7 +133,10 @@ watch(isOpen, async (open) => {
                     </div>
                 </div>
 
-                <div v-if="error" class="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                <div
+                    v-if="error"
+                    class="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+                >
                     {{ error }}
                 </div>
 
@@ -123,7 +149,12 @@ watch(isOpen, async (open) => {
                     >
                         Retry camera
                     </Button>
-                    <Button type="button" variant="ghost" @click="isOpen = false">Close</Button>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        @click="isOpen = false"
+                        >Close</Button
+                    >
                 </div>
             </div>
         </DialogContent>

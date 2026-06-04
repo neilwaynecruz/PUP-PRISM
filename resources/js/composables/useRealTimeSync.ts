@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { computed, onMounted, onUnmounted, ref } from 'vue';
 
 interface SyncOptions {
     interval?: number;
@@ -13,7 +13,7 @@ interface SyncOptions {
  * Works without WebSocket infrastructure - can be upgraded to Echo later
  */
 export function useRealTimeSync<T>(options: SyncOptions = {}) {
-    const { interval = 30000, enabled = true, onUpdate, compareFn } = options;
+    const { interval = 30000, enabled = true, onUpdate } = options;
 
     const lastSyncedAt = ref<Date | null>(null);
     const isSyncing = ref(false);
@@ -27,7 +27,9 @@ export function useRealTimeSync<T>(options: SyncOptions = {}) {
      * Perform a sync by refreshing the current page data
      */
     const sync = async (preserveScroll = true): Promise<void> => {
-        if (isSyncing.value) return;
+        if (isSyncing.value) {
+            return;
+        }
 
         isSyncing.value = true;
         syncError.value = null;
@@ -45,7 +47,8 @@ export function useRealTimeSync<T>(options: SyncOptions = {}) {
                 },
             } as Record<string, unknown>);
         } catch (error) {
-            syncError.value = error instanceof Error ? error : new Error('Sync failed');
+            syncError.value =
+                error instanceof Error ? error : new Error('Sync failed');
         } finally {
             isSyncing.value = false;
         }
@@ -56,6 +59,7 @@ export function useRealTimeSync<T>(options: SyncOptions = {}) {
      */
     const startAutoSync = (): void => {
         stopAutoSync();
+
         if (enabled && interval > 0) {
             syncTimer = window.setInterval(() => sync(true), interval);
         }
@@ -83,7 +87,7 @@ export function useRealTimeSync<T>(options: SyncOptions = {}) {
 
         if (hasChanged && expectedChanges) {
             // Check if expected changes are present
-            return expectedChanges.every(change => newData.includes(change));
+            return expectedChanges.every((change) => newData.includes(change));
         }
 
         return hasChanged;
@@ -116,7 +120,7 @@ export function useRealTimeSync<T>(options: SyncOptions = {}) {
 export function useDashboardSync(updateInterval = 30000) {
     return useRealTimeSync({
         interval: updateInterval,
-        onUpdate: (data) => {
+        onUpdate: () => {
             // Dashboard stats are automatically refreshed via Inertia
             console.log('Dashboard synced at', new Date().toISOString());
         },
@@ -127,11 +131,13 @@ export function useDashboardSync(updateInterval = 30000) {
  * Table-specific real-time sync with optimistic updates
  */
 export function useTableSync<T extends { data: unknown[]; total?: number }>(
-    options: { interval?: number; dataKey?: string } = {}
+    options: { interval?: number; dataKey?: string } = {},
 ) {
-    const { interval = 30000, dataKey = 'items' } = options;
+    const { interval = 30000 } = options;
 
-    const pendingChanges = ref<Map<string, 'create' | 'update' | 'delete'>>(new Map());
+    const pendingChanges = ref<Map<string, 'create' | 'update' | 'delete'>>(
+        new Map(),
+    );
 
     const { sync, isSyncing } = useRealTimeSync<T>({
         interval,
@@ -141,7 +147,10 @@ export function useTableSync<T extends { data: unknown[]; total?: number }>(
         },
     });
 
-    const markPending = (id: string, action: 'create' | 'update' | 'delete'): void => {
+    const markPending = (
+        id: string,
+        action: 'create' | 'update' | 'delete',
+    ): void => {
         pendingChanges.value.set(id, action);
     };
 

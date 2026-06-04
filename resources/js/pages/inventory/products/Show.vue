@@ -2,7 +2,11 @@
 import { Head, Link } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
-import { edit as productsEdit, index as productsIndex, label as productLabel } from '@/routes/inventory/products';
+import {
+    edit as productsEdit,
+    index as productsIndex,
+    label as productLabel,
+} from '@/routes/inventory/products';
 
 type Product = {
     id: number;
@@ -45,8 +49,8 @@ defineProps<{
 
 function formatDateTime(iso: string | null): string {
     if (!iso) {
-return '—';
-}
+        return '—';
+    }
 
     const d = new Date(iso);
 
@@ -75,17 +79,24 @@ defineOptions({
     <Head :title="product.name" />
 
     <div class="flex flex-col gap-6 p-4" data-testid="product-show-page">
-        <div v-if="isDeleted" class="rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900 dark:bg-rose-950">
+        <div
+            v-if="isDeleted"
+            class="rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900 dark:bg-rose-950"
+        >
             <div class="flex items-center gap-3">
                 <span class="h-2 w-2 rounded-full bg-rose-500" />
-                <span class="font-medium text-rose-900 dark:text-rose-100">This product has been deleted and is in trash.</span>
+                <span class="font-medium text-rose-900 dark:text-rose-100"
+                    >This product has been deleted and is in trash.</span
+                >
                 <Button variant="ghost" size="sm" as-child class="ml-auto">
                     <Link href="/inventory/products/trash">Go to Trash</Link>
                 </Button>
             </div>
         </div>
 
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div
+            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+        >
             <Heading
                 variant="small"
                 :title="product.name"
@@ -99,38 +110,64 @@ defineOptions({
                 <Button v-if="can.printLabel" variant="ghost" as-child>
                     <Link :href="productLabel(product.id)">Print label</Link>
                 </Button>
-                <Button v-if="can.edit" as-child data-test="show-edit-product-button" data-testid="show-edit-product-button">
+                <Button
+                    v-if="can.edit"
+                    as-child
+                    data-test="show-edit-product-button"
+                    data-testid="show-edit-product-button"
+                >
                     <Link :href="productsEdit(product.id)">Edit</Link>
                 </Button>
             </div>
         </div>
 
         <div class="grid gap-4 md:grid-cols-2">
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Type</div>
-                <div class="mt-1 font-medium capitalize">{{ product.type }}</div>
+                <div class="mt-1 font-medium capitalize">
+                    {{ product.type }}
+                </div>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Status</div>
                 <div class="mt-1 font-medium">
                     {{ product.is_active ? 'Active' : 'Inactive' }}
                 </div>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Category</div>
-                <div class="mt-1 font-medium">{{ product.category ?? '—' }}</div>
+                <div class="mt-1 font-medium">
+                    {{ product.category ?? '—' }}
+                </div>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Origin</div>
                 <div class="mt-1 font-medium">{{ product.origin ?? '—' }}</div>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
-                <div class="text-sm text-muted-foreground">Reorder threshold</div>
-                <div class="mt-1 font-medium" data-testid="product-reorder-threshold-value">{{ product.reorder_threshold ?? 0 }}</div>
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
+                <div class="text-sm text-muted-foreground">
+                    Reorder threshold
+                </div>
+                <div
+                    class="mt-1 font-medium"
+                    data-testid="product-reorder-threshold-value"
+                >
+                    {{ product.reorder_threshold ?? 0 }}
+                </div>
             </div>
 
             <div
@@ -138,7 +175,12 @@ defineOptions({
                 class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
             >
                 <div class="text-sm text-muted-foreground">Stock</div>
-                <div class="mt-1 font-medium" data-testid="product-on-hand-value">On hand: {{ product.on_hand_qty ?? 0 }}</div>
+                <div
+                    class="mt-1 font-medium"
+                    data-testid="product-on-hand-value"
+                >
+                    On hand: {{ product.on_hand_qty ?? 0 }}
+                </div>
             </div>
 
             <div
@@ -146,15 +188,28 @@ defineOptions({
                 class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
             >
                 <div class="text-sm text-muted-foreground">Assets</div>
-                <div class="mt-1 font-medium" data-testid="product-assets-count-value">{{ product.assets_count }}</div>
+                <div
+                    class="mt-1 font-medium"
+                    data-testid="product-assets-count-value"
+                >
+                    {{ product.assets_count }}
+                </div>
             </div>
         </div>
 
         <!-- Stock movement history -->
-        <div v-if="product.type === 'consumable'" class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
-            <div class="mb-4 text-sm font-semibold tracking-tight">Stock movement history</div>
+        <div
+            v-if="product.type === 'consumable'"
+            class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+        >
+            <div class="mb-4 text-sm font-semibold tracking-tight">
+                Stock movement history
+            </div>
 
-            <div v-if="stockMovements.length === 0" class="text-sm text-muted-foreground">
+            <div
+                v-if="stockMovements.length === 0"
+                class="text-sm text-muted-foreground"
+            >
                 No stock movements recorded yet.
             </div>
 
@@ -174,39 +229,76 @@ defineOptions({
                             </div>
                             <span
                                 class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
-                                :class="m.movement_type === 'receive' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : m.movement_type === 'issue' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400' : 'bg-slate-500/10 text-slate-700 dark:text-slate-400'"
+                                :class="
+                                    m.movement_type === 'receive'
+                                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                        : m.movement_type === 'issue'
+                                          ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400'
+                                          : 'bg-slate-500/10 text-slate-700 dark:text-slate-400'
+                                "
                             >
                                 {{ m.movement_type }}
                             </span>
                         </div>
                         <div class="mt-3 grid gap-2 text-sm">
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="text-muted-foreground">Change</span>
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <span class="text-muted-foreground"
+                                    >Change</span
+                                >
                                 <span
                                     class="font-mono"
-                                    :class="m.qty_delta > 0 ? 'text-emerald-600' : m.qty_delta < 0 ? 'text-rose-600' : ''"
+                                    :class="
+                                        m.qty_delta > 0
+                                            ? 'text-emerald-600'
+                                            : m.qty_delta < 0
+                                              ? 'text-rose-600'
+                                              : ''
+                                    "
                                 >
-                                    {{ m.qty_delta > 0 ? '+' : '' }}{{ m.qty_delta }}
+                                    {{ m.qty_delta > 0 ? '+' : ''
+                                    }}{{ m.qty_delta }}
                                 </span>
                             </div>
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="text-muted-foreground">Before</span>
-                                <span class="font-mono">{{ m.qty_before ?? '—' }}</span>
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <span class="text-muted-foreground"
+                                    >Before</span
+                                >
+                                <span class="font-mono">{{
+                                    m.qty_before ?? '—'
+                                }}</span>
                             </div>
-                            <div class="flex items-center justify-between gap-3">
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
                                 <span class="text-muted-foreground">After</span>
-                                <span class="font-mono">{{ m.qty_after ?? '—' }}</span>
+                                <span class="font-mono">{{
+                                    m.qty_after ?? '—'
+                                }}</span>
                             </div>
-                            <div class="flex items-center justify-between gap-3">
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
                                 <span class="text-muted-foreground">By</span>
                                 <span>{{ m.performed_by }}</span>
                             </div>
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="text-muted-foreground">Reference</span>
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <span class="text-muted-foreground"
+                                    >Reference</span
+                                >
                                 <span>{{ m.reference ?? '—' }}</span>
                             </div>
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="text-muted-foreground">Accountable</span>
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <span class="text-muted-foreground"
+                                    >Accountable</span
+                                >
                                 <span>{{ m.accountable_position ?? '—' }}</span>
                             </div>
                             <div>
@@ -219,7 +311,9 @@ defineOptions({
 
                 <div class="hidden overflow-x-auto md:block">
                     <table class="w-full text-sm">
-                        <thead class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                        <thead
+                            class="text-left text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase"
+                        >
                             <tr class="border-b border-border/60">
                                 <th class="py-2 pr-3">Date</th>
                                 <th class="py-2 pr-3">Source</th>
@@ -238,26 +332,54 @@ defineOptions({
                                 :key="m.id"
                                 class="border-b border-border/40"
                             >
-                                <td class="py-2 pr-3 text-muted-foreground">{{ formatDateTime(m.performed_at) }}</td>
+                                <td class="py-2 pr-3 text-muted-foreground">
+                                    {{ formatDateTime(m.performed_at) }}
+                                </td>
                                 <td class="py-2 pr-3">{{ m.source }}</td>
                                 <td class="py-2 pr-3">
                                     <span
                                         class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
-                                        :class="m.movement_type === 'receive' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400' : m.movement_type === 'issue' ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400' : 'bg-slate-500/10 text-slate-700 dark:text-slate-400'"
+                                        :class="
+                                            m.movement_type === 'receive'
+                                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                                : m.movement_type === 'issue'
+                                                  ? 'bg-rose-500/10 text-rose-700 dark:text-rose-400'
+                                                  : 'bg-slate-500/10 text-slate-700 dark:text-slate-400'
+                                        "
                                     >
                                         {{ m.movement_type }}
                                     </span>
                                 </td>
-                                <td class="py-2 pr-3 text-right font-mono">{{ m.qty_before ?? '—' }}</td>
-                                <td class="py-2 pr-3 text-right font-mono"
-                                    :class="m.qty_delta > 0 ? 'text-emerald-600' : m.qty_delta < 0 ? 'text-rose-600' : ''"
-                                >
-                                    {{ m.qty_delta > 0 ? '+' : '' }}{{ m.qty_delta }}
+                                <td class="py-2 pr-3 text-right font-mono">
+                                    {{ m.qty_before ?? '—' }}
                                 </td>
-                                <td class="py-2 pr-3 text-right font-mono">{{ m.qty_after ?? '—' }}</td>
+                                <td
+                                    class="py-2 pr-3 text-right font-mono"
+                                    :class="
+                                        m.qty_delta > 0
+                                            ? 'text-emerald-600'
+                                            : m.qty_delta < 0
+                                              ? 'text-rose-600'
+                                              : ''
+                                    "
+                                >
+                                    {{ m.qty_delta > 0 ? '+' : ''
+                                    }}{{ m.qty_delta }}
+                                </td>
+                                <td class="py-2 pr-3 text-right font-mono">
+                                    {{ m.qty_after ?? '—' }}
+                                </td>
                                 <td class="py-2 pr-3">{{ m.performed_by }}</td>
-                                <td class="py-2 pr-3 text-muted-foreground">{{ m.reference ?? m.accountable_position ?? '—' }}</td>
-                                <td class="py-2 pr-3 text-muted-foreground">{{ m.notes ?? '—' }}</td>
+                                <td class="py-2 pr-3 text-muted-foreground">
+                                    {{
+                                        m.reference ??
+                                        m.accountable_position ??
+                                        '—'
+                                    }}
+                                </td>
+                                <td class="py-2 pr-3 text-muted-foreground">
+                                    {{ m.notes ?? '—' }}
+                                </td>
                             </tr>
                         </tbody>
                     </table>

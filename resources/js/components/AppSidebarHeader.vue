@@ -24,7 +24,9 @@ function openGlobalSearch(): void {
         class="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-sidebar-border/50 bg-card/50 px-5 backdrop-blur-sm transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4"
     >
         <div class="flex items-center gap-2.5">
-            <SidebarTrigger class="-ml-1 text-muted-foreground hover:text-foreground transition-colors" />
+            <SidebarTrigger
+                class="-ml-1 text-muted-foreground transition-colors hover:text-foreground"
+            />
             <template v-if="breadcrumbs && breadcrumbs.length > 0">
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
             </template>
@@ -39,7 +41,10 @@ function openGlobalSearch(): void {
         >
             <Search class="h-4 w-4" />
             <span class="hidden sm:inline">Search</span>
-            <span class="hidden rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground md:inline-flex">Ctrl+K</span>
+            <span
+                class="hidden rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground md:inline-flex"
+                >Ctrl+K</span
+            >
         </Button>
     </header>
 </template>

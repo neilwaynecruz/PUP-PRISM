@@ -107,9 +107,14 @@ function makeDraftLine(line?: Partial<TemplateLine>): DraftLine {
     };
 }
 
-function buildPayloadLines(lines: DraftLine[]): Array<{ sku: string; qty_requested: number }> {
+function buildPayloadLines(
+    lines: DraftLine[],
+): Array<{ sku: string; qty_requested: number }> {
     return lines
-        .filter((line) => line.sku.trim() !== '' || line.qty_requested.trim() !== '')
+        .filter(
+            (line) =>
+                line.sku.trim() !== '' || line.qty_requested.trim() !== '',
+        )
         .map((line) => ({
             sku: line.sku.trim(),
             qty_requested: Number.parseInt(line.qty_requested, 10) || 0,
@@ -139,13 +144,19 @@ function firstTemplateNameSuggestion(): string {
     return firstLine?.name ?? firstLine?.sku ?? '';
 }
 
-function currentLineError(index: number, field: 'sku' | 'qty_requested'): string | undefined {
+function currentLineError(
+    index: number,
+    field: 'sku' | 'qty_requested',
+): string | undefined {
     const key = `lines.${index}.${field}` as const;
 
     return requisitionForm.errors[key] || saveTemplateForm.errors[key];
 }
 
-function editorLineError(index: number, field: 'sku' | 'qty_requested'): string | undefined {
+function editorLineError(
+    index: number,
+    field: 'sku' | 'qty_requested',
+): string | undefined {
     return templateEditorForm.errors[`lines.${index}.${field}` as const];
 }
 
@@ -226,7 +237,10 @@ const canSubmitRequisition = computed(
 );
 
 const canSaveTemplate = computed(
-    () => props.can.manageTemplates && requisitionForm.lines.length > 0 && !hasIncompleteLines.value,
+    () =>
+        props.can.manageTemplates &&
+        requisitionForm.lines.length > 0 &&
+        !hasIncompleteLines.value,
 );
 
 function addRequestLine(): void {
@@ -287,7 +301,9 @@ function openTemplateEditor(template: TemplateSummary): void {
     templateEditorForm.clearErrors();
     templateEditorForm.name = template.name;
     templateEditorForm.notes = template.notes ?? '';
-    templateEditorForm.lines = template.lines.map((line) => makeDraftLine(line));
+    templateEditorForm.lines = template.lines.map((line) =>
+        makeDraftLine(line),
+    );
     templateEditorDialogOpen.value = true;
 }
 
@@ -346,13 +362,16 @@ function confirmTemplateDelete(): void {
         return;
     }
 
-    router.delete(requisitionTemplatesDestroy(templatePendingDeletion.value.id).url, {
-        preserveScroll: true,
-        onSuccess: () => {
-            templateDeleteDialogOpen.value = false;
-            templatePendingDeletion.value = null;
+    router.delete(
+        requisitionTemplatesDestroy(templatePendingDeletion.value.id).url,
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                templateDeleteDialogOpen.value = false;
+                templatePendingDeletion.value = null;
+            },
         },
-    });
+    );
 }
 
 function submitRequisition(): void {
@@ -405,11 +424,15 @@ const selectedIds = ref<Set<number>>(new Set());
 const bulkActionDialogOpen = ref(false);
 const pendingBulkAction = ref<'approve' | 'issue' | null>(null);
 
-const allSelected = computed(() =>
-    props.requisitions.data.length > 0 && selectedIds.value.size === props.requisitions.data.length,
+const allSelected = computed(
+    () =>
+        props.requisitions.data.length > 0 &&
+        selectedIds.value.size === props.requisitions.data.length,
 );
-const someSelected = computed(() =>
-    selectedIds.value.size > 0 && selectedIds.value.size < props.requisitions.data.length,
+const someSelected = computed(
+    () =>
+        selectedIds.value.size > 0 &&
+        selectedIds.value.size < props.requisitions.data.length,
 );
 const hasSelection = computed(() => selectedIds.value.size > 0);
 
@@ -472,9 +495,18 @@ function confirmBulkAction(): void {
 <template>
     <Head title="Requisitions" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="requisitions-index-page">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <Heading variant="small" title="Requisitions" description="Submit, template, and track issuance requests." />
+    <div
+        class="flex flex-col gap-6 p-4 sm:p-6"
+        data-testid="requisitions-index-page"
+    >
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        >
+            <Heading
+                variant="small"
+                title="Requisitions"
+                description="Submit, template, and track issuance requests."
+            />
 
             <div class="flex flex-wrap gap-2">
                 <Button variant="outline" as-child>
@@ -490,18 +522,38 @@ function confirmBulkAction(): void {
         </div>
 
         <div
-            v-if="(props.can.bulkApprove || props.can.bulkIssue) && hasSelection"
+            v-if="
+                (props.can.bulkApprove || props.can.bulkIssue) && hasSelection
+            "
             class="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm"
         >
-            <span class="font-medium text-primary">{{ selectedIds.size }} selected</span>
+            <span class="font-medium text-primary"
+                >{{ selectedIds.size }} selected</span
+            >
             <div class="ml-auto flex flex-wrap gap-2">
-                <Button v-if="props.can.bulkApprove" variant="outline" size="sm" class="h-7 rounded-lg text-xs" @click="runBulkApprove">Approve</Button>
-                <Button v-if="props.can.bulkIssue" variant="outline" size="sm" class="h-7 rounded-lg text-xs" @click="runBulkIssue">Issue</Button>
+                <Button
+                    v-if="props.can.bulkApprove"
+                    variant="outline"
+                    size="sm"
+                    class="h-7 rounded-lg text-xs"
+                    @click="runBulkApprove"
+                    >Approve</Button
+                >
+                <Button
+                    v-if="props.can.bulkIssue"
+                    variant="outline"
+                    size="sm"
+                    class="h-7 rounded-lg text-xs"
+                    @click="runBulkIssue"
+                    >Issue</Button
+                >
             </div>
         </div>
 
         <div class="grid gap-6 lg:grid-cols-3">
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm lg:col-span-2">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm lg:col-span-2"
+            >
                 <div class="grid gap-3 md:hidden">
                     <div
                         v-for="r in requisitions.data"
@@ -511,24 +563,42 @@ function confirmBulkAction(): void {
                         <div class="flex items-center justify-between gap-3">
                             <div class="flex items-center gap-2">
                                 <Checkbox
-                                    v-if="props.can.bulkApprove || props.can.bulkIssue"
+                                    v-if="
+                                        props.can.bulkApprove ||
+                                        props.can.bulkIssue
+                                    "
                                     :checked="selectedIds.has(r.id)"
                                     @update:checked="() => toggleSelect(r.id)"
                                     aria-label="Select requisition"
                                 />
                                 <span class="font-medium">#{{ r.id }}</span>
                             </div>
-                            <div class="text-muted-foreground">{{ r.status }}</div>
+                            <div class="text-muted-foreground">
+                                {{ r.status }}
+                            </div>
                         </div>
                         <div class="mt-2 space-y-1 text-muted-foreground">
-                            <div>{{ r.requester.name ?? r.requester.email ?? '—' }}</div>
+                            <div>
+                                {{
+                                    r.requester.name ?? r.requester.email ?? '—'
+                                }}
+                            </div>
                             <div v-if="r.requester_position">
-                                {{ r.requester_position.title }}{{ r.requester_position.department ? `, ${r.requester_position.department}` : '' }}
+                                {{ r.requester_position.title
+                                }}{{
+                                    r.requester_position.department
+                                        ? `, ${r.requester_position.department}`
+                                        : ''
+                                }}
                             </div>
                             <div>{{ formatDateTime(r.created_at) }}</div>
                         </div>
                         <div class="mt-3 flex items-center gap-2">
-                            <Button variant="ghost" as-child data-testid="open-requisition-button">
+                            <Button
+                                variant="ghost"
+                                as-child
+                                data-testid="open-requisition-button"
+                            >
                                 <Link :href="requisitionsShow(r.id)">Open</Link>
                             </Button>
                             <Button
@@ -546,9 +616,17 @@ function confirmBulkAction(): void {
 
                 <div class="hidden overflow-x-auto md:block">
                     <table class="w-full text-sm">
-                        <thead class="text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+                        <thead
+                            class="text-left text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase"
+                        >
                             <tr class="border-b border-border/60">
-                                <th v-if="props.can.bulkApprove || props.can.bulkIssue" class="w-8 py-2 pr-2">
+                                <th
+                                    v-if="
+                                        props.can.bulkApprove ||
+                                        props.can.bulkIssue
+                                    "
+                                    class="w-8 py-2 pr-2"
+                                >
                                     <Checkbox
                                         :checked="allSelected"
                                         :indeterminate="someSelected"
@@ -569,26 +647,60 @@ function confirmBulkAction(): void {
                                 :key="r.id"
                                 class="border-b border-border/40"
                             >
-                                <td v-if="props.can.bulkApprove || props.can.bulkIssue" class="py-2 pr-2">
+                                <td
+                                    v-if="
+                                        props.can.bulkApprove ||
+                                        props.can.bulkIssue
+                                    "
+                                    class="py-2 pr-2"
+                                >
                                     <Checkbox
                                         :checked="selectedIds.has(r.id)"
-                                        @update:checked="() => toggleSelect(r.id)"
+                                        @update:checked="
+                                            () => toggleSelect(r.id)
+                                        "
                                         aria-label="Select requisition"
                                     />
                                 </td>
-                                <td class="py-2 pr-3 font-medium">#{{ r.id }}</td>
+                                <td class="py-2 pr-3 font-medium">
+                                    #{{ r.id }}
+                                </td>
                                 <td class="py-2 pr-3">{{ r.status }}</td>
                                 <td class="py-2 pr-3">
-                                    <div>{{ r.requester.name ?? r.requester.email ?? '—' }}</div>
-                                    <div v-if="r.requester_position" class="text-xs text-muted-foreground">
-                                        {{ r.requester_position.title }}{{ r.requester_position.department ? `, ${r.requester_position.department}` : '' }}
+                                    <div>
+                                        {{
+                                            r.requester.name ??
+                                            r.requester.email ??
+                                            '—'
+                                        }}
+                                    </div>
+                                    <div
+                                        v-if="r.requester_position"
+                                        class="text-xs text-muted-foreground"
+                                    >
+                                        {{ r.requester_position.title
+                                        }}{{
+                                            r.requester_position.department
+                                                ? `, ${r.requester_position.department}`
+                                                : ''
+                                        }}
                                     </div>
                                 </td>
-                                <td class="py-2 pr-3 text-muted-foreground">{{ formatDateTime(r.created_at) }}</td>
+                                <td class="py-2 pr-3 text-muted-foreground">
+                                    {{ formatDateTime(r.created_at) }}
+                                </td>
                                 <td class="py-2 pr-3 text-right">
-                                    <div class="flex items-center justify-end gap-1">
-                                        <Button variant="ghost" as-child data-testid="open-requisition-button">
-                                            <Link :href="requisitionsShow(r.id)">Open</Link>
+                                    <div
+                                        class="flex items-center justify-end gap-1"
+                                    >
+                                        <Button
+                                            variant="ghost"
+                                            as-child
+                                            data-testid="open-requisition-button"
+                                        >
+                                            <Link :href="requisitionsShow(r.id)"
+                                                >Open</Link
+                                            >
                                         </Button>
                                         <Button
                                             v-if="r.can_delete"
@@ -608,21 +720,32 @@ function confirmBulkAction(): void {
             </div>
 
             <div class="grid gap-6">
-                <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+                <div
+                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                >
                     <div class="mb-4 flex items-start justify-between gap-3">
                         <div>
-                            <div class="text-sm font-semibold tracking-tight">Saved templates</div>
+                            <div class="text-sm font-semibold tracking-tight">
+                                Saved templates
+                            </div>
                             <div class="text-xs text-muted-foreground">
-                                Reuse frequent requisitions without bypassing stock checks or approvals.
+                                Reuse frequent requisitions without bypassing
+                                stock checks or approvals.
                             </div>
                         </div>
-                        <span class="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                        <span
+                            class="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+                        >
                             {{ templates.length }} saved
                         </span>
                     </div>
 
-                    <div v-if="templates.length === 0" class="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
-                        No requisition templates yet. Build a request below, then save it as a reusable template.
+                    <div
+                        v-if="templates.length === 0"
+                        class="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground"
+                    >
+                        No requisition templates yet. Build a request below,
+                        then save it as a reusable template.
                     </div>
 
                     <div v-else class="grid gap-3">
@@ -633,53 +756,122 @@ function confirmBulkAction(): void {
                         >
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <div class="font-medium">{{ template.name }}</div>
+                                    <div class="font-medium">
+                                        {{ template.name }}
+                                    </div>
                                     <div class="text-xs text-muted-foreground">
-                                        {{ template.line_count }} line<span v-if="template.line_count !== 1">s</span>
-                                        • Updated {{ formatDateTime(template.updated_at) }}
+                                        {{ template.line_count }} line<span
+                                            v-if="template.line_count !== 1"
+                                            >s</span
+                                        >
+                                        • Updated
+                                        {{
+                                            formatDateTime(template.updated_at)
+                                        }}
                                     </div>
                                 </div>
                                 <span
                                     class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium"
-                                    :class="template.lines.some((line) => !line.availability.available)
-                                        ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                                        : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'"
+                                    :class="
+                                        template.lines.some(
+                                            (line) =>
+                                                !line.availability.available,
+                                        )
+                                            ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                            : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                    "
                                 >
-                                    {{ template.lines.some((line) => !line.availability.available) ? 'Needs review' : 'Ready' }}
+                                    {{
+                                        template.lines.some(
+                                            (line) =>
+                                                !line.availability.available,
+                                        )
+                                            ? 'Needs review'
+                                            : 'Ready'
+                                    }}
                                 </span>
                             </div>
 
-                            <div v-if="template.notes" class="mt-2 text-sm text-muted-foreground">
+                            <div
+                                v-if="template.notes"
+                                class="mt-2 text-sm text-muted-foreground"
+                            >
                                 {{ template.notes }}
                             </div>
 
                             <div class="mt-3 grid gap-2 text-sm">
                                 <div
-                                    v-for="(line, index) in template.lines.slice(0, 3)"
+                                    v-for="(
+                                        line, index
+                                    ) in template.lines.slice(0, 3)"
                                     :key="`${template.id}-${line.sku}-${index}`"
                                     class="rounded-lg bg-muted/40 px-3 py-2"
                                 >
-                                    <div class="flex items-center justify-between gap-3">
+                                    <div
+                                        class="flex items-center justify-between gap-3"
+                                    >
                                         <div>
-                                            <div class="font-medium">{{ line.name ?? line.sku }}</div>
-                                            <div class="font-mono text-[11px] text-muted-foreground">{{ line.sku }}</div>
+                                            <div class="font-medium">
+                                                {{ line.name ?? line.sku }}
+                                            </div>
+                                            <div
+                                                class="font-mono text-[11px] text-muted-foreground"
+                                            >
+                                                {{ line.sku }}
+                                            </div>
                                         </div>
-                                        <div class="text-xs font-medium text-muted-foreground">Qty {{ line.qty_requested }}</div>
+                                        <div
+                                            class="text-xs font-medium text-muted-foreground"
+                                        >
+                                            Qty {{ line.qty_requested }}
+                                        </div>
                                     </div>
-                                    <div v-if="line.availability.message" class="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                                    <div
+                                        v-if="line.availability.message"
+                                        class="mt-1 text-xs text-amber-700 dark:text-amber-400"
+                                    >
                                         {{ line.availability.message }}
                                     </div>
                                 </div>
-                                <div v-if="template.lines.length > 3" class="text-xs text-muted-foreground">
-                                    +{{ template.lines.length - 3 }} more line<span v-if="template.lines.length - 3 !== 1">s</span>
+                                <div
+                                    v-if="template.lines.length > 3"
+                                    class="text-xs text-muted-foreground"
+                                >
+                                    +{{ template.lines.length - 3 }} more
+                                    line<span
+                                        v-if="template.lines.length - 3 !== 1"
+                                        >s</span
+                                    >
                                 </div>
                             </div>
 
                             <div class="mt-4 flex flex-wrap gap-2">
-                                <Button size="sm" class="rounded-lg" @click="applyTemplate(template)">Use template</Button>
-                                <Button variant="outline" size="sm" class="rounded-lg" @click="openTemplateEditor(template)">Edit</Button>
-                                <Button variant="outline" size="sm" class="rounded-lg" @click="duplicateTemplate(template)">Duplicate</Button>
-                                <Button variant="ghost" size="sm" class="rounded-lg text-rose-600 hover:text-rose-700" @click="openTemplateDeleteDialog(template)">
+                                <Button
+                                    size="sm"
+                                    class="rounded-lg"
+                                    @click="applyTemplate(template)"
+                                    >Use template</Button
+                                >
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="rounded-lg"
+                                    @click="openTemplateEditor(template)"
+                                    >Edit</Button
+                                >
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    class="rounded-lg"
+                                    @click="duplicateTemplate(template)"
+                                    >Duplicate</Button
+                                >
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    class="rounded-lg text-rose-600 hover:text-rose-700"
+                                    @click="openTemplateDeleteDialog(template)"
+                                >
                                     Delete
                                 </Button>
                             </div>
@@ -687,14 +879,35 @@ function confirmBulkAction(): void {
                     </div>
                 </div>
 
-                <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
-                    <form class="grid gap-4" data-shortcut="new" @submit.prevent="submitRequisition">
-                        <Heading variant="small" title="New requisition" description="Build a quick request or start from a saved template." />
+                <div
+                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                >
+                    <form
+                        class="grid gap-4"
+                        data-shortcut="new"
+                        @submit.prevent="submitRequisition"
+                    >
+                        <Heading
+                            variant="small"
+                            title="New requisition"
+                            description="Build a quick request or start from a saved template."
+                        />
 
                         <div class="grid gap-3">
-                            <div class="flex items-center justify-between gap-3">
-                                <Label class="text-sm font-medium">Line items</Label>
-                                <Button type="button" variant="outline" size="sm" class="rounded-lg" @click="addRequestLine">Add line</Button>
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <Label class="text-sm font-medium"
+                                    >Line items</Label
+                                >
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    class="rounded-lg"
+                                    @click="addRequestLine"
+                                    >Add line</Button
+                                >
                             </div>
 
                             <div
@@ -703,8 +916,12 @@ function confirmBulkAction(): void {
                                 class="rounded-xl border border-border/50 p-4"
                             >
                                 <div class="grid gap-3">
-                                    <div class="flex items-center justify-between gap-3">
-                                        <div class="text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
+                                    <div
+                                        class="flex items-center justify-between gap-3"
+                                    >
+                                        <div
+                                            class="text-xs font-semibold tracking-wider text-muted-foreground/70 uppercase"
+                                        >
                                             Item {{ index + 1 }}
                                         </div>
                                         <Button
@@ -712,22 +929,37 @@ function confirmBulkAction(): void {
                                             variant="ghost"
                                             size="sm"
                                             class="h-7 rounded-lg px-2 text-xs text-muted-foreground"
-                                            :disabled="requisitionForm.lines.length === 1"
+                                            :disabled="
+                                                requisitionForm.lines.length ===
+                                                1
+                                            "
                                             @click="removeRequestLine(index)"
                                         >
                                             Remove
                                         </Button>
                                     </div>
 
-                                    <div class="grid gap-3 sm:grid-cols-[1fr_116px]">
+                                    <div
+                                        class="grid gap-3 sm:grid-cols-[1fr_116px]"
+                                    >
                                         <div class="grid gap-2">
-                                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                                <Label :for="`line-sku-${line.key}`">SKU</Label>
+                                            <div
+                                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                                            >
+                                                <Label
+                                                    :for="`line-sku-${line.key}`"
+                                                    >SKU</Label
+                                                >
                                                 <QrScannerDialog
                                                     button-label="Scan SKU"
                                                     title="Scan requisition SKU"
                                                     description="Use the camera to capture a labeled product QR code, or type the SKU manually."
-                                                    @scanned="line.sku = $event; clearLineAvailability(line)"
+                                                    @scanned="
+                                                        line.sku = $event;
+                                                        clearLineAvailability(
+                                                            line,
+                                                        );
+                                                    "
                                                 />
                                             </div>
                                             <Input
@@ -737,19 +969,36 @@ function confirmBulkAction(): void {
                                                 data-testid="requisition-sku-input"
                                                 placeholder="e.g. 4801234567890"
                                                 required
-                                                @input="clearLineAvailability(line)"
+                                                @input="
+                                                    clearLineAvailability(line)
+                                                "
                                             />
-                                            <div v-if="line.name" class="text-xs text-muted-foreground">
+                                            <div
+                                                v-if="line.name"
+                                                class="text-xs text-muted-foreground"
+                                            >
                                                 {{ line.name }}
                                             </div>
-                                            <div v-if="line.availabilityMessage" class="text-xs text-amber-700 dark:text-amber-400">
+                                            <div
+                                                v-if="line.availabilityMessage"
+                                                class="text-xs text-amber-700 dark:text-amber-400"
+                                            >
                                                 {{ line.availabilityMessage }}
                                             </div>
-                                            <InputError :message="currentLineError(index, 'sku')" />
+                                            <InputError
+                                                :message="
+                                                    currentLineError(
+                                                        index,
+                                                        'sku',
+                                                    )
+                                                "
+                                            />
                                         </div>
 
                                         <div class="grid gap-2">
-                                            <Label :for="`line-qty-${line.key}`">Qty</Label>
+                                            <Label :for="`line-qty-${line.key}`"
+                                                >Qty</Label
+                                            >
                                             <Input
                                                 :id="`line-qty-${line.key}`"
                                                 v-model="line.qty_requested"
@@ -759,7 +1008,14 @@ function confirmBulkAction(): void {
                                                 min="1"
                                                 required
                                             />
-                                            <InputError :message="currentLineError(index, 'qty_requested')" />
+                                            <InputError
+                                                :message="
+                                                    currentLineError(
+                                                        index,
+                                                        'qty_requested',
+                                                    )
+                                                "
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -767,7 +1023,9 @@ function confirmBulkAction(): void {
                         </div>
 
                         <div class="grid gap-2">
-                            <Label for="requisition-notes">Notes (optional)</Label>
+                            <Label for="requisition-notes"
+                                >Notes (optional)</Label
+                            >
                             <Input
                                 id="requisition-notes"
                                 v-model="requisitionForm.notes"
@@ -775,20 +1033,34 @@ function confirmBulkAction(): void {
                                 data-testid="requisition-notes-input"
                                 placeholder="Reason, destination, or context"
                             />
-                            <InputError :message="requisitionForm.errors.notes || saveTemplateForm.errors.notes" />
+                            <InputError
+                                :message="
+                                    requisitionForm.errors.notes ||
+                                    saveTemplateForm.errors.notes
+                                "
+                            />
                         </div>
 
-                        <div v-if="hasIncompleteLines" class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
-                            Finish or remove incomplete lines before submitting or saving this request as a template.
+                        <div
+                            v-if="hasIncompleteLines"
+                            class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300"
+                        >
+                            Finish or remove incomplete lines before submitting
+                            or saving this request as a template.
                         </div>
 
-                        <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-2"
+                        >
                             <Button
                                 v-if="props.can.manageTemplates"
                                 type="button"
                                 variant="outline"
                                 class="rounded-lg border-dashed"
-                                :disabled="!canSaveTemplate || saveTemplateForm.processing"
+                                :disabled="
+                                    !canSaveTemplate ||
+                                    saveTemplateForm.processing
+                                "
                                 @click="openSaveTemplateDialog"
                             >
                                 Save as template
@@ -797,7 +1069,10 @@ function confirmBulkAction(): void {
                             <div class="ml-auto flex items-center gap-2">
                                 <Button
                                     type="submit"
-                                    :disabled="requisitionForm.processing || !canSubmitRequisition"
+                                    :disabled="
+                                        requisitionForm.processing ||
+                                        !canSubmitRequisition
+                                    "
                                     data-test="submit-requisition-button"
                                     data-testid="submit-requisition-button"
                                 >
@@ -815,21 +1090,34 @@ function confirmBulkAction(): void {
                 <DialogHeader class="space-y-3">
                     <DialogTitle>Save requisition template</DialogTitle>
                     <DialogDescription>
-                        Save the current requisition lines and notes as a reusable template.
+                        Save the current requisition lines and notes as a
+                        reusable template.
                     </DialogDescription>
                 </DialogHeader>
                 <div class="grid gap-4 py-4">
                     <div class="grid gap-2">
                         <Label for="template-name">Template name</Label>
-                        <Input id="template-name" v-model="saveTemplateForm.name" placeholder="e.g. Monthly office supplies" />
+                        <Input
+                            id="template-name"
+                            v-model="saveTemplateForm.name"
+                            placeholder="e.g. Monthly office supplies"
+                        />
                         <InputError :message="saveTemplateForm.errors.name" />
                     </div>
                 </div>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>
-                        <Button variant="secondary" type="button">Cancel</Button>
+                        <Button variant="secondary" type="button"
+                            >Cancel</Button
+                        >
                     </DialogClose>
-                    <Button :disabled="saveTemplateForm.processing || saveTemplateForm.name.trim() === ''" @click="saveCurrentTemplate">
+                    <Button
+                        :disabled="
+                            saveTemplateForm.processing ||
+                            saveTemplateForm.name.trim() === ''
+                        "
+                        @click="saveCurrentTemplate"
+                    >
                         Save template
                     </Button>
                 </DialogFooter>
@@ -841,27 +1129,44 @@ function confirmBulkAction(): void {
                 <DialogHeader class="space-y-3">
                     <DialogTitle>Edit template</DialogTitle>
                     <DialogDescription>
-                        Update reusable lines, quantities, and notes without changing the current requisition workflow.
+                        Update reusable lines, quantities, and notes without
+                        changing the current requisition workflow.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div class="grid gap-4 py-4">
                     <div class="grid gap-2">
                         <Label for="edit-template-name">Template name</Label>
-                        <Input id="edit-template-name" v-model="templateEditorForm.name" />
+                        <Input
+                            id="edit-template-name"
+                            v-model="templateEditorForm.name"
+                        />
                         <InputError :message="templateEditorForm.errors.name" />
                     </div>
 
                     <div class="grid gap-2">
                         <Label for="edit-template-notes">Notes</Label>
-                        <Input id="edit-template-notes" v-model="templateEditorForm.notes" placeholder="Optional context for this template" />
-                        <InputError :message="templateEditorForm.errors.notes" />
+                        <Input
+                            id="edit-template-notes"
+                            v-model="templateEditorForm.notes"
+                            placeholder="Optional context for this template"
+                        />
+                        <InputError
+                            :message="templateEditorForm.errors.notes"
+                        />
                     </div>
 
                     <div class="grid gap-3">
                         <div class="flex items-center justify-between gap-3">
                             <Label>Template lines</Label>
-                            <Button type="button" variant="outline" size="sm" class="rounded-lg" @click="addTemplateEditorLine">Add line</Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                class="rounded-lg"
+                                @click="addTemplateEditorLine"
+                                >Add line</Button
+                            >
                         </div>
 
                         <div
@@ -869,29 +1174,49 @@ function confirmBulkAction(): void {
                             :key="line.key"
                             class="rounded-xl border border-border/50 p-4"
                         >
-                            <div class="grid gap-3 sm:grid-cols-[1fr_116px_auto]">
+                            <div
+                                class="grid gap-3 sm:grid-cols-[1fr_116px_auto]"
+                            >
                                 <div class="grid gap-2">
-                                    <Label :for="`template-line-sku-${line.key}`">SKU</Label>
+                                    <Label
+                                        :for="`template-line-sku-${line.key}`"
+                                        >SKU</Label
+                                    >
                                     <Input
                                         :id="`template-line-sku-${line.key}`"
                                         v-model="line.sku"
                                         placeholder="e.g. 4801234567890"
                                         @input="clearLineAvailability(line)"
                                     />
-                                    <div v-if="line.availabilityMessage" class="text-xs text-amber-700 dark:text-amber-400">
+                                    <div
+                                        v-if="line.availabilityMessage"
+                                        class="text-xs text-amber-700 dark:text-amber-400"
+                                    >
                                         {{ line.availabilityMessage }}
                                     </div>
-                                    <InputError :message="editorLineError(index, 'sku')" />
+                                    <InputError
+                                        :message="editorLineError(index, 'sku')"
+                                    />
                                 </div>
                                 <div class="grid gap-2">
-                                    <Label :for="`template-line-qty-${line.key}`">Qty</Label>
+                                    <Label
+                                        :for="`template-line-qty-${line.key}`"
+                                        >Qty</Label
+                                    >
                                     <Input
                                         :id="`template-line-qty-${line.key}`"
                                         v-model="line.qty_requested"
                                         type="number"
                                         min="1"
                                     />
-                                    <InputError :message="editorLineError(index, 'qty_requested')" />
+                                    <InputError
+                                        :message="
+                                            editorLineError(
+                                                index,
+                                                'qty_requested',
+                                            )
+                                        "
+                                    />
                                 </div>
                                 <div class="flex items-end">
                                     <Button
@@ -899,7 +1224,10 @@ function confirmBulkAction(): void {
                                         variant="ghost"
                                         size="sm"
                                         class="h-9 rounded-lg text-muted-foreground"
-                                        :disabled="templateEditorForm.lines.length === 1"
+                                        :disabled="
+                                            templateEditorForm.lines.length ===
+                                            1
+                                        "
                                         @click="removeTemplateEditorLine(index)"
                                     >
                                         Remove
@@ -912,9 +1240,17 @@ function confirmBulkAction(): void {
 
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>
-                        <Button variant="secondary" type="button">Cancel</Button>
+                        <Button variant="secondary" type="button"
+                            >Cancel</Button
+                        >
                     </DialogClose>
-                    <Button :disabled="templateEditorForm.processing || templateEditorForm.name.trim() === ''" @click="updateTemplate">
+                    <Button
+                        :disabled="
+                            templateEditorForm.processing ||
+                            templateEditorForm.name.trim() === ''
+                        "
+                        @click="updateTemplate"
+                    >
                         Update template
                     </Button>
                 </DialogFooter>
@@ -926,14 +1262,20 @@ function confirmBulkAction(): void {
                 <DialogHeader class="space-y-3">
                     <DialogTitle>Delete template?</DialogTitle>
                     <DialogDescription>
-                        This will permanently delete <strong>{{ templatePendingDeletion?.name }}</strong>.
+                        This will permanently delete
+                        <strong>{{ templatePendingDeletion?.name }}</strong
+                        >.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>
-                        <Button variant="secondary" type="button">Cancel</Button>
+                        <Button variant="secondary" type="button"
+                            >Cancel</Button
+                        >
                     </DialogClose>
-                    <Button variant="destructive" @click="confirmTemplateDelete">Delete template</Button>
+                    <Button variant="destructive" @click="confirmTemplateDelete"
+                        >Delete template</Button
+                    >
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -943,31 +1285,43 @@ function confirmBulkAction(): void {
                 <DialogHeader class="space-y-3">
                     <DialogTitle>Delete requisition?</DialogTitle>
                     <DialogDescription>
-                        This will move requisition <strong>#{{ selectedRequisition?.id }}</strong> to the trash. You can restore it later if needed.
+                        This will move requisition
+                        <strong>#{{ selectedRequisition?.id }}</strong> to the
+                        trash. You can restore it later if needed.
                     </DialogDescription>
                 </DialogHeader>
                 <div class="grid gap-4 py-4">
                     <div class="grid gap-2">
-                        <Label for="delete-reason">Reason for deletion <span class="text-rose-500">*</span></Label>
+                        <Label for="delete-reason"
+                            >Reason for deletion
+                            <span class="text-rose-500">*</span></Label
+                        >
                         <Select v-model="deleteReason">
                             <SelectTrigger id="delete-reason">
                                 <SelectValue placeholder="Select a reason..." />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem v-for="reason in deletionReasons" :key="reason.value" :value="reason.value">
+                                <SelectItem
+                                    v-for="reason in deletionReasons"
+                                    :key="reason.value"
+                                    :value="reason.value"
+                                >
                                     {{ reason.label }}
                                 </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div v-if="isOtherReason" class="grid gap-2">
-                        <Label for="delete-reason-custom">Please specify <span class="text-rose-500">*</span></Label>
+                        <Label for="delete-reason-custom"
+                            >Please specify
+                            <span class="text-rose-500">*</span></Label
+                        >
                         <textarea
                             id="delete-reason-custom"
                             v-model="deleteReasonCustom"
                             placeholder="Enter your reason..."
                             rows="3"
-                            class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                         ></textarea>
                     </div>
                 </div>
@@ -975,7 +1329,12 @@ function confirmBulkAction(): void {
                     <DialogClose as-child>
                         <Button variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button variant="destructive" :disabled="!canConfirmDelete" @click="confirmDelete">Delete</Button>
+                    <Button
+                        variant="destructive"
+                        :disabled="!canConfirmDelete"
+                        @click="confirmDelete"
+                        >Delete</Button
+                    >
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -984,10 +1343,19 @@ function confirmBulkAction(): void {
             <DialogContent>
                 <DialogHeader class="space-y-3">
                     <DialogTitle>
-                        {{ pendingBulkAction === 'approve' ? 'Approve selected requisitions?' : 'Issue selected requisitions?' }}
+                        {{
+                            pendingBulkAction === 'approve'
+                                ? 'Approve selected requisitions?'
+                                : 'Issue selected requisitions?'
+                        }}
                     </DialogTitle>
                     <DialogDescription>
-                        This will process <strong>{{ selectedIds.size }} selected requisition(s)</strong> while preserving your current filters and pagination.
+                        This will process
+                        <strong
+                            >{{ selectedIds.size }} selected
+                            requisition(s)</strong
+                        >
+                        while preserving your current filters and pagination.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
@@ -995,7 +1363,11 @@ function confirmBulkAction(): void {
                         <Button variant="secondary">Cancel</Button>
                     </DialogClose>
                     <Button @click="confirmBulkAction">
-                        {{ pendingBulkAction === 'approve' ? 'Confirm approve' : 'Confirm issue' }}
+                        {{
+                            pendingBulkAction === 'approve'
+                                ? 'Confirm approve'
+                                : 'Confirm issue'
+                        }}
                     </Button>
                 </DialogFooter>
             </DialogContent>

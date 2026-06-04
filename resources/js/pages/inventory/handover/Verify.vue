@@ -18,8 +18,16 @@ defineProps<{
         asset_name: string | null;
         from_user: { id: number; name: string; email: string } | null;
         to_user: { id: number; name: string; email: string } | null;
-        from_position: { title: string; code: string; department: string | null } | null;
-        to_position: { title: string; code: string; department: string | null } | null;
+        from_position: {
+            title: string;
+            code: string;
+            department: string | null;
+        } | null;
+        to_position: {
+            title: string;
+            code: string;
+            department: string | null;
+        } | null;
         verified_at: string | null;
     };
     email_verified: boolean;
@@ -50,10 +58,13 @@ function captureSignature(event?: Event): void {
     if (signaturePng.value.length > maxSignatureBytes) {
         event?.preventDefault();
         signaturePng.value = '';
+
         if (signaturePngInput.value) {
             signaturePngInput.value.value = '';
         }
-        signatureSizeError.value = 'Signature is too large. Please clear it and sign again with fewer strokes.';
+
+        signatureSizeError.value =
+            'Signature is too large. Please clear it and sign again with fewer strokes.';
     }
 }
 
@@ -62,6 +73,7 @@ function clearSignature(): void {
     pad?.clearSignature();
     signaturePng.value = '';
     signatureSizeError.value = '';
+
     if (signaturePngInput.value) {
         signaturePngInput.value.value = '';
     }
@@ -71,7 +83,10 @@ function clearSignature(): void {
 <template>
     <Head title="Verify handover" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="handover-verify-page">
+    <div
+        class="flex flex-col gap-6 p-4 sm:p-6"
+        data-testid="handover-verify-page"
+    >
         <Heading
             variant="small"
             title="Verify handover"
@@ -80,25 +95,50 @@ function clearSignature(): void {
 
         <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
             <div class="grid gap-2 text-sm">
-                <div><span class="text-muted-foreground">Asset:</span> {{ handover.asset_name ?? '—' }}</div>
-                <div><span class="text-muted-foreground">Tag:</span> {{ handover.tag_code ?? '—' }}</div>
+                <div>
+                    <span class="text-muted-foreground">Asset:</span>
+                    {{ handover.asset_name ?? '—' }}
+                </div>
+                <div>
+                    <span class="text-muted-foreground">Tag:</span>
+                    {{ handover.tag_code ?? '—' }}
+                </div>
                 <div>
                     <span class="text-muted-foreground">From:</span>
-                    {{ handover.from_user?.name ?? handover.from_user?.email ?? '—' }}
+                    {{
+                        handover.from_user?.name ??
+                        handover.from_user?.email ??
+                        '—'
+                    }}
                 </div>
                 <div v-if="handover.from_position">
                     <span class="text-muted-foreground">From position:</span>
-                    {{ handover.from_position.title }}{{ handover.from_position.department ? `, ${handover.from_position.department}` : '' }}
+                    {{ handover.from_position.title
+                    }}{{
+                        handover.from_position.department
+                            ? `, ${handover.from_position.department}`
+                            : ''
+                    }}
                 </div>
                 <div>
                     <span class="text-muted-foreground">To:</span>
-                    {{ handover.to_user?.name ?? handover.to_user?.email ?? '—' }}
+                    {{
+                        handover.to_user?.name ?? handover.to_user?.email ?? '—'
+                    }}
                 </div>
                 <div v-if="handover.to_position">
                     <span class="text-muted-foreground">To position:</span>
-                    {{ handover.to_position.title }}{{ handover.to_position.department ? `, ${handover.to_position.department}` : '' }}
+                    {{ handover.to_position.title
+                    }}{{
+                        handover.to_position.department
+                            ? `, ${handover.to_position.department}`
+                            : ''
+                    }}
                 </div>
-                <div><span class="text-muted-foreground">Status:</span> {{ handover.verified_at ? 'Verified' : 'Pending' }}</div>
+                <div>
+                    <span class="text-muted-foreground">Status:</span>
+                    {{ handover.verified_at ? 'Verified' : 'Pending' }}
+                </div>
             </div>
         </div>
 
@@ -114,11 +154,22 @@ function clearSignature(): void {
                 @submit="captureSignature()"
             >
                 <input type="hidden" name="token" :value="handover.token" />
-                <input ref="signaturePngInput" type="hidden" name="signature_png" :value="signaturePng" />
+                <input
+                    ref="signaturePngInput"
+                    type="hidden"
+                    name="signature_png"
+                    :value="signaturePng"
+                />
                 <InputError :message="errors.token" />
                 <InputError :message="signatureSizeError" />
                 <InputError :message="errors.signature_png" />
-                <Button type="submit" :disabled="processing" data-test="verify-handover-button" data-testid="verify-handover-button">Verify</Button>
+                <Button
+                    type="submit"
+                    :disabled="processing"
+                    data-test="verify-handover-button"
+                    data-testid="verify-handover-button"
+                    >Verify</Button
+                >
             </Form>
 
             <Button
@@ -127,16 +178,26 @@ function clearSignature(): void {
                 data-test="download-receipt-button"
                 data-testid="download-receipt-button"
             >
-                <a :href="handoverReceipt(handover.id).url">Download receipt (PDF)</a>
+                <a :href="handoverReceipt(handover.id).url"
+                    >Download receipt (PDF)</a
+                >
             </Button>
         </div>
 
-        <div v-if="email_verified && !handover.verified_at" class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+        <div
+            v-if="email_verified && !handover.verified_at"
+            class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+        >
             <div class="mb-2 font-medium">Recipient signature</div>
             <div class="mb-3 text-sm text-muted-foreground">
-                Your signature is captured only as an internal proof of accountability for this handover.
+                Your signature is captured only as an internal proof of
+                accountability for this handover.
             </div>
-            <div class="rounded-lg border border-input bg-background" data-testid="handover-signature-pad" @mouseup="captureSignature()">
+            <div
+                class="rounded-lg border border-input bg-background"
+                data-testid="handover-signature-pad"
+                @mouseup="captureSignature()"
+            >
                 <VueSignaturePad
                     ref="signaturePad"
                     width="100%"
@@ -144,8 +205,12 @@ function clearSignature(): void {
                 />
             </div>
             <div class="mt-3 flex items-center gap-2">
-                <Button type="button" variant="ghost" @click="clearSignature()">Clear</Button>
-                <div class="text-sm text-muted-foreground">Sign before verifying.</div>
+                <Button type="button" variant="ghost" @click="clearSignature()"
+                    >Clear</Button
+                >
+                <div class="text-sm text-muted-foreground">
+                    Sign before verifying.
+                </div>
             </div>
         </div>
 

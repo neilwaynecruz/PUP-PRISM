@@ -38,7 +38,7 @@ function syncActivityFromStorage(event?: StorageEvent): void {
     const rawValue = localStorage.getItem(activityStorageKey);
     const nextActivity = rawValue ? Number(rawValue) : NaN;
 
-    if (! Number.isNaN(nextActivity) && nextActivity > lastActivity) {
+    if (!Number.isNaN(nextActivity) && nextActivity > lastActivity) {
         lastActivity = nextActivity;
     }
 }
@@ -58,7 +58,7 @@ function checkSession(): void {
     } else if (minutesUntilExpiry <= 0) {
         showWarning.value = false;
 
-        if (! wasExpired) {
+        if (!wasExpired) {
             wasExpired = true;
             window.location.href = session.value.loginUrl;
         }
@@ -83,7 +83,7 @@ async function keepAlive(): Promise<void> {
             },
         });
 
-        if (! response.ok) {
+        if (!response.ok) {
             throw new Error('Session refresh failed.');
         }
 
@@ -98,7 +98,9 @@ async function keepAlive(): Promise<void> {
 
 onMounted(() => {
     syncActivityFromStorage();
-    activityEvents.forEach((event) => document.addEventListener(event, updateActivity));
+    activityEvents.forEach((event) =>
+        document.addEventListener(event, updateActivity),
+    );
     window.addEventListener('storage', syncActivityFromStorage);
 
     checkTimer = setInterval(checkSession, 30000);
@@ -106,7 +108,9 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    activityEvents.forEach((event) => document.removeEventListener(event, updateActivity));
+    activityEvents.forEach((event) =>
+        document.removeEventListener(event, updateActivity),
+    );
     window.removeEventListener('storage', syncActivityFromStorage);
 
     if (checkTimer) {
@@ -129,7 +133,9 @@ onUnmounted(() => {
                 <DialogTitle>Session expiring soon</DialogTitle>
                 <DialogDescription>
                     Your session will expire in about
-                    <span class="font-medium">{{ minutesRemaining ?? session.warningMinutes }}</span>
+                    <span class="font-medium">{{
+                        minutesRemaining ?? session.warningMinutes
+                    }}</span>
                     minute<span v-if="(minutesRemaining ?? 0) !== 1">s</span>
                     due to inactivity. Would you like to stay logged in?
                 </DialogDescription>
@@ -138,7 +144,9 @@ onUnmounted(() => {
                 <Button variant="secondary" @click="showWarning = false"
                     >Dismiss</Button
                 >
-                <Button :disabled="isRefreshing" @click="keepAlive">Keep me logged in</Button>
+                <Button :disabled="isRefreshing" @click="keepAlive"
+                    >Keep me logged in</Button
+                >
             </DialogFooter>
         </DialogContent>
     </Dialog>

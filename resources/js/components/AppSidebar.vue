@@ -87,16 +87,32 @@ const footerNavItems: NavItem[] = [
 </script>
 
 <template>
-    <Sidebar collapsible="icon" variant="inset" class="border-r border-sidebar-border/50">
+    <Sidebar
+        collapsible="icon"
+        variant="inset"
+        class="border-r border-sidebar-border/50"
+    >
         <SidebarHeader class="px-3 py-5">
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton size="lg" as-child class="hover:bg-sidebar-accent/60 transition-colors duration-200">
-                        <Link :href="dashboard()" class="flex items-center gap-3">
-                            <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm">
+                    <SidebarMenuButton
+                        size="lg"
+                        as-child
+                        class="transition-colors duration-200 hover:bg-sidebar-accent/60"
+                    >
+                        <Link
+                            :href="dashboard()"
+                            class="flex items-center gap-3"
+                        >
+                            <div
+                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm"
+                            >
                                 <AppLogo class="h-5 w-5" />
                             </div>
-                            <span class="font-display text-lg font-semibold tracking-tight">PRISM</span>
+                            <span
+                                class="font-display text-lg font-semibold tracking-tight"
+                                >PRISM</span
+                            >
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>

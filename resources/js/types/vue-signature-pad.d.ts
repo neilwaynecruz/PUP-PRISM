@@ -20,4 +20,3 @@ declare module 'vue-signature-pad' {
 
     export default install;
 }
-

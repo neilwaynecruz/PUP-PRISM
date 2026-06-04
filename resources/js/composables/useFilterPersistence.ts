@@ -1,5 +1,5 @@
-import { ref, computed, watch } from 'vue';
 import { router, usePage } from '@inertiajs/vue3';
+import { ref, computed, watch } from 'vue';
 
 interface FilterConfig {
     key: string;
@@ -24,20 +24,23 @@ interface PersistenceOptions {
  */
 export function useFilterPersistence(
     filters: FilterConfig[],
-    options: PersistenceOptions = {}
+    options: PersistenceOptions = {},
 ) {
-    const { syncWithUrl = true, preserveOnNavigate = true, debounceMs = 300 } = options;
+    const { syncWithUrl = true, debounceMs = 300 } = options;
 
     const page = usePage();
     const urlParams = new URLSearchParams(window.location.search);
 
     // Initialize state from URL or defaults
     const initialState: FilterState = {};
+
     for (const filter of filters) {
         const urlValue = urlParams.get(filter.key);
-        initialState[filter.key] = (urlValue !== null
-            ? parseValue(urlValue, filter.defaultValue)
-            : filter.defaultValue) as string | number | boolean | null | undefined;
+        initialState[filter.key] = (
+            urlValue !== null
+                ? parseValue(urlValue, filter.defaultValue)
+                : filter.defaultValue
+        ) as string | number | boolean | null | undefined;
     }
 
     const state = ref<FilterState>({ ...initialState });
@@ -50,11 +53,14 @@ export function useFilterPersistence(
     function parseValue(value: string, defaultValue: unknown): unknown {
         if (typeof defaultValue === 'number') {
             const parsed = parseInt(value, 10);
+
             return isNaN(parsed) ? defaultValue : parsed;
         }
+
         if (typeof defaultValue === 'boolean') {
             return value === 'true' || value === '1';
         }
+
         return value;
     }
 
@@ -65,13 +71,17 @@ export function useFilterPersistence(
         if (value === null || value === undefined || value === '') {
             return null;
         }
+
         return String(value);
     }
 
     /**
      * Update a single filter value
      */
-    const setFilter = (key: string, value: string | number | boolean | null): void => {
+    const setFilter = (
+        key: string,
+        value: string | number | boolean | null,
+    ): void => {
         state.value[key] = value;
         scheduleSync();
     };
@@ -88,7 +98,7 @@ export function useFilterPersistence(
      * Reset a single filter to default
      */
     const resetFilter = (key: string): void => {
-        const filter = filters.find(f => f.key === key);
+        const filter = filters.find((f) => f.key === key);
         state.value[key] = filter?.defaultValue ?? null;
         scheduleSync();
     };
@@ -100,6 +110,7 @@ export function useFilterPersistence(
         for (const filter of filters) {
             state.value[filter.key] = filter.defaultValue ?? null;
         }
+
         scheduleSync();
     };
 
@@ -107,7 +118,9 @@ export function useFilterPersistence(
      * Schedule URL sync with debounce
      */
     const scheduleSync = (): void => {
-        if (!syncWithUrl) return;
+        if (!syncWithUrl) {
+            return;
+        }
 
         if (debounceTimer !== null) {
             clearTimeout(debounceTimer);
@@ -123,18 +136,22 @@ export function useFilterPersistence(
     /**
      * Sync current state to URL
      */
-    const syncToUrl = (options: { preserveScroll?: boolean; preserveState?: boolean } = {}): void => {
+    const syncToUrl = (
+        options: { preserveScroll?: boolean; preserveState?: boolean } = {},
+    ): void => {
         const params = new URLSearchParams();
 
         for (const [key, value] of Object.entries(state.value)) {
             const serialized = serializeValue(value);
+
             if (serialized !== null) {
                 params.set(key, serialized);
             }
         }
 
         const queryString = params.toString();
-        const url = window.location.pathname + (queryString ? `?${queryString}` : '');
+        const url =
+            window.location.pathname + (queryString ? `?${queryString}` : '');
 
         router.visit(url, {
             method: 'get',
@@ -149,12 +166,15 @@ export function useFilterPersistence(
      */
     const getQueryString = computed(() => {
         const params = new URLSearchParams();
+
         for (const [key, value] of Object.entries(state.value)) {
             const serialized = serializeValue(value);
+
             if (serialized !== null) {
                 params.set(key, serialized);
             }
         }
+
         return params.toString();
     });
 
@@ -168,11 +188,18 @@ export function useFilterPersistence(
 
             if (currentValue !== defaultValue) {
                 // Handle null/undefined equivalence
-                if (currentValue === null && defaultValue === undefined) continue;
-                if (currentValue === undefined && defaultValue === null) continue;
+                if (currentValue === null && defaultValue === undefined) {
+                    continue;
+                }
+
+                if (currentValue === undefined && defaultValue === null) {
+                    continue;
+                }
+
                 return true;
             }
         }
+
         return false;
     });
 
@@ -181,16 +208,24 @@ export function useFilterPersistence(
      */
     const activeFilterCount = computed(() => {
         let count = 0;
+
         for (const filter of filters) {
             const currentValue = state.value[filter.key];
             const defaultValue = filter.defaultValue;
 
             if (currentValue !== defaultValue) {
-                if (currentValue === null && defaultValue === undefined) continue;
-                if (currentValue === undefined && defaultValue === null) continue;
+                if (currentValue === null && defaultValue === undefined) {
+                    continue;
+                }
+
+                if (currentValue === undefined && defaultValue === null) {
+                    continue;
+                }
+
                 count++;
             }
         }
+
         return count;
     });
 
@@ -201,23 +236,31 @@ export function useFilterPersistence(
         if (debounceTimer !== null) {
             clearTimeout(debounceTimer);
         }
+
         syncToUrl({ preserveScroll: false });
     };
 
     // Watch for URL changes (browser back/forward)
     if (syncWithUrl) {
-        watch(() => page.url, (newUrl) => {
-            if (!newUrl) return;
+        watch(
+            () => page.url,
+            (newUrl) => {
+                if (!newUrl) {
+                    return;
+                }
 
-            const newParams = new URLSearchParams(window.location.search);
+                const newParams = new URLSearchParams(window.location.search);
 
-            for (const filter of filters) {
-                const urlValue = newParams.get(filter.key);
-                state.value[filter.key] = (urlValue !== null
-                    ? parseValue(urlValue, filter.defaultValue)
-                    : filter.defaultValue) as string | number | boolean | null | undefined;
-            }
-        });
+                for (const filter of filters) {
+                    const urlValue = newParams.get(filter.key);
+                    state.value[filter.key] = (
+                        urlValue !== null
+                            ? parseValue(urlValue, filter.defaultValue)
+                            : filter.defaultValue
+                    ) as string | number | boolean | null | undefined;
+                }
+            },
+        );
     }
 
     return {
@@ -244,7 +287,11 @@ export function usePaginationPersistence(defaultPerPage: number = 15) {
     /**
      * Handle page change with auto-adjustment
      */
-    const setPage = (page: number, totalItems?: number, currentItems?: number): void => {
+    const setPage = (
+        page: number,
+        totalItems?: number,
+        currentItems?: number,
+    ): void => {
         // Auto-adjust if deleting last item on page
         if (currentItems === 0 && page > 1 && totalItems !== undefined) {
             const totalPages = Math.ceil(totalItems / perPage.value);
@@ -267,6 +314,7 @@ export function usePaginationPersistence(defaultPerPage: number = 15) {
      */
     const needsPageAdjustment = (totalItems: number): boolean => {
         const totalPages = Math.max(1, Math.ceil(totalItems / perPage.value));
+
         return currentPage.value > totalPages;
     };
 
@@ -275,6 +323,7 @@ export function usePaginationPersistence(defaultPerPage: number = 15) {
      */
     const getAdjustedPage = (totalItems: number): number => {
         const totalPages = Math.max(1, Math.ceil(totalItems / perPage.value));
+
         return Math.min(currentPage.value, totalPages);
     };
 

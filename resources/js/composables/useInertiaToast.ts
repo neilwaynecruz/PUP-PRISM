@@ -1,6 +1,6 @@
 import { usePage } from '@inertiajs/vue3';
-import { toast } from 'vue-sonner';
 import { watch } from 'vue';
+import { toast } from 'vue-sonner';
 
 type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -14,7 +14,10 @@ export function useInertiaToast(): void {
 
     watch(
         () => {
-            const flash = (page.props as Record<string, unknown>).flash as Record<string, unknown> | undefined;
+            const flash = (page.props as Record<string, unknown>).flash as
+                | Record<string, unknown>
+                | undefined;
+
             return flash?.toast as FlashToast | undefined;
         },
         (flashToast) => {

@@ -28,12 +28,22 @@ const iconMap: Record<IconType, LucideIcon> = {
 </script>
 
 <template>
-    <div class="flex flex-col items-center justify-center py-12 px-4 text-center">
-        <div class="flex h-16 w-16 items-center justify-center rounded-full bg-muted/50 mb-4">
-            <component :is="iconMap[icon]" class="h-8 w-8 text-muted-foreground/60" />
+    <div
+        class="flex flex-col items-center justify-center px-4 py-12 text-center"
+    >
+        <div
+            class="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted/50"
+        >
+            <component
+                :is="iconMap[icon]"
+                class="h-8 w-8 text-muted-foreground/60"
+            />
         </div>
         <h3 class="text-lg font-medium text-foreground">{{ title }}</h3>
-        <p v-if="description" class="mt-2 text-sm text-muted-foreground max-w-sm">
+        <p
+            v-if="description"
+            class="mt-2 max-w-sm text-sm text-muted-foreground"
+        >
             {{ description }}
         </p>
         <div v-if="actionLabel && actionHref" class="mt-6">

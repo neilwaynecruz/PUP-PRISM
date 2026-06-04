@@ -71,14 +71,17 @@ test.describe('Asset Handover Flow', () => {
         if (box) {
             // Draw a deliberate signature
             const steps = 20;
+
             for (let i = 0; i <= steps; i++) {
                 const x = box.x + 20 + (i / steps) * 120;
                 const y = box.y + 40 + Math.sin((i / steps) * Math.PI * 2) * 20;
                 await page.mouse.move(x, y);
+
                 if (i === 0) {
                     await page.mouse.down();
                 }
             }
+
             await page.mouse.up();
             await page.waitForTimeout(500);
         }

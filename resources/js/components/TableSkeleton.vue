@@ -1,13 +1,16 @@
 <script setup lang="ts">
 import { Skeleton } from '@/components/ui/skeleton';
 
-withDefaults(defineProps<{
-    rows?: number;
-    columns?: number;
-}>(), {
-    rows: 5,
-    columns: 6,
-});
+withDefaults(
+    defineProps<{
+        rows?: number;
+        columns?: number;
+    }>(),
+    {
+        rows: 5,
+        columns: 6,
+    },
+);
 </script>
 
 <template>
@@ -22,7 +25,11 @@ withDefaults(defineProps<{
             />
         </div>
         <!-- Row skeletons -->
-        <div v-for="r in rows" :key="`r-${r}`" class="flex items-center gap-3 border-b border-border/40 py-3">
+        <div
+            v-for="r in rows"
+            :key="`r-${r}`"
+            class="flex items-center gap-3 border-b border-border/40 py-3"
+        >
             <Skeleton
                 v-for="c in columns"
                 :key="`c-${r}-${c}`"

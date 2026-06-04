@@ -19,7 +19,9 @@ const { isCurrentUrl } = useCurrentUrl();
 
 <template>
     <SidebarGroup class="py-0">
-        <SidebarGroupLabel class="px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+        <SidebarGroupLabel
+            class="px-3 text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase"
+        >
             Platform
         </SidebarGroupLabel>
         <SidebarMenu class="gap-0.5">
@@ -31,7 +33,10 @@ const { isCurrentUrl } = useCurrentUrl();
                     class="group relative transition-all duration-200 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:shadow-sm dark:data-[active=true]:bg-primary/15"
                 >
                     <Link :href="item.href" class="flex items-center gap-3">
-                        <component :is="item.icon" class="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                        <component
+                            :is="item.icon"
+                            class="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110"
+                        />
                         <span class="font-medium">{{ item.title }}</span>
                     </Link>
                 </SidebarMenuButton>

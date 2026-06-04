@@ -17,7 +17,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index as productsIndex, show as productsShow } from '@/routes/inventory/products';
+import {
+    index as productsIndex,
+    show as productsShow,
+} from '@/routes/inventory/products';
 
 type Option = { id: number; name: string };
 
@@ -82,20 +85,36 @@ function confirmDelete(): void {
         >
             <div class="grid gap-2">
                 <Label for="sku">SKU / Barcode</Label>
-                <Input id="sku" name="sku" data-testid="product-sku-input" required :default-value="product.sku" />
+                <Input
+                    id="sku"
+                    name="sku"
+                    data-testid="product-sku-input"
+                    required
+                    :default-value="product.sku"
+                />
                 <InputError :message="errors.sku" />
             </div>
 
             <div class="grid gap-2">
                 <Label for="name">Product name</Label>
-                <Input id="name" name="name" data-testid="product-name-input" required :default-value="product.name" />
+                <Input
+                    id="name"
+                    name="name"
+                    data-testid="product-name-input"
+                    required
+                    :default-value="product.name"
+                />
                 <InputError :message="errors.name" />
             </div>
 
             <div class="grid gap-2 md:grid-cols-2">
                 <div class="grid gap-2">
                     <Label>Type</Label>
-                    <Input :default-value="product.type" data-testid="product-type-input" disabled />
+                    <Input
+                        :default-value="product.type"
+                        data-testid="product-type-input"
+                        disabled
+                    />
                 </div>
 
                 <div class="grid gap-2">
@@ -123,7 +142,11 @@ function confirmDelete(): void {
                         :defaultValue="product.category_id ?? ''"
                     >
                         <option value="">None</option>
-                        <option v-for="c in categories" :key="c.id" :value="c.id">
+                        <option
+                            v-for="c in categories"
+                            :key="c.id"
+                            :value="c.id"
+                        >
                             {{ c.name }}
                         </option>
                     </select>
@@ -185,22 +208,28 @@ function confirmDelete(): void {
                         <DialogHeader class="space-y-3">
                             <DialogTitle>Move product to trash?</DialogTitle>
                             <DialogDescription>
-                                This product will be moved to trash and can be restored later. You may optionally provide a reason for deletion.
+                                This product will be moved to trash and can be
+                                restored later. You may optionally provide a
+                                reason for deletion.
                             </DialogDescription>
                         </DialogHeader>
                         <div class="grid gap-2">
-                            <Label for="deletion_reason">Reason (optional)</Label>
+                            <Label for="deletion_reason"
+                                >Reason (optional)</Label
+                            >
                             <textarea
                                 id="deletion_reason"
                                 v-model="reason"
                                 placeholder="Enter a reason for deletion..."
                                 rows="3"
-                                class="min-h-[80px] rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                class="min-h-[80px] rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                             />
                         </div>
                         <DialogFooter class="gap-2">
                             <DialogClose as-child>
-                                <Button variant="secondary" @click="reason = ''">Cancel</Button>
+                                <Button variant="secondary" @click="reason = ''"
+                                    >Cancel</Button
+                                >
                             </DialogClose>
                             <Button
                                 variant="destructive"
@@ -211,9 +240,13 @@ function confirmDelete(): void {
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-                <Button :disabled="processing" data-test="save-product-button" data-testid="save-product-button">Save</Button>
+                <Button
+                    :disabled="processing"
+                    data-test="save-product-button"
+                    data-testid="save-product-button"
+                    >Save</Button
+                >
             </div>
         </Form>
     </div>
 </template>
-

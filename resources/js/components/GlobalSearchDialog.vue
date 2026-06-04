@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { router, usePage } from '@inertiajs/vue3';
-import { BookOpen, FileText, History, LayoutGrid, Package, Settings, Truck } from 'lucide-vue-next';
+import {
+    BookOpen,
+    FileText,
+    History,
+    LayoutGrid,
+    Package,
+    Settings,
+    Truck,
+} from 'lucide-vue-next';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import {
     Dialog,
@@ -14,7 +22,10 @@ import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 import { index as auditLogsIndex } from '@/routes/inventory/audit-logs';
 import { index as bookingsIndex } from '@/routes/inventory/bookings';
-import { index as productsIndex, create as productsCreate } from '@/routes/inventory/products';
+import {
+    index as productsIndex,
+    create as productsCreate,
+} from '@/routes/inventory/products';
 import { index as receivingIndex } from '@/routes/inventory/receiving';
 import { index as requisitionsIndex } from '@/routes/inventory/requisitions';
 import type { NavItem } from '@/types';
@@ -137,11 +148,9 @@ const filteredItems = computed(() => {
     }
 
     return items.value.filter((item) => {
-        const haystack = [
-            item.title,
-            item.description,
-            ...item.keywords,
-        ].join(' ').toLowerCase();
+        const haystack = [item.title, item.description, ...item.keywords]
+            .join(' ')
+            .toLowerCase();
 
         return haystack.includes(normalizedQuery);
     });
@@ -161,10 +170,12 @@ function activateItem(item: SearchItem): void {
     closeDialog();
 
     if (
-        item.title === 'New Booking Request'
-        || item.title === 'New Requisition'
+        item.title === 'New Booking Request' ||
+        item.title === 'New Requisition'
     ) {
-        const form = document.querySelector<HTMLElement>('[data-shortcut="new"]');
+        const form = document.querySelector<HTMLElement>(
+            '[data-shortcut="new"]',
+        );
 
         if (form) {
             form.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -189,12 +200,20 @@ onUnmounted(() => {
 </script>
 
 <template>
-    <Dialog :open="open" @update:open="(value) => { if (!value) closeDialog(); }">
+    <Dialog
+        :open="open"
+        @update:open="
+            (value) => {
+                if (!value) closeDialog();
+            }
+        "
+    >
         <DialogContent class="max-w-2xl gap-0 overflow-hidden p-0">
             <DialogHeader class="border-b border-border/60 px-5 py-4">
                 <DialogTitle>Global search</DialogTitle>
                 <DialogDescription>
-                    Jump to key modules and common actions. Press <span class="font-medium">Esc</span> to close.
+                    Jump to key modules and common actions. Press
+                    <span class="font-medium">Esc</span> to close.
                 </DialogDescription>
             </DialogHeader>
 
@@ -215,7 +234,9 @@ onUnmounted(() => {
                     class="flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted/60"
                     @click="activateItem(item)"
                 >
-                    <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                    <div
+                        class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                    >
                         <component :is="item.icon" class="h-4 w-4" />
                     </div>
                     <div class="min-w-0 flex-1">
