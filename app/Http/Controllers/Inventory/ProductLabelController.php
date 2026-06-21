@@ -16,6 +16,8 @@ class ProductLabelController extends Controller
 {
     public function show(Product $product): Response
     {
+        $this->authorize('view', $product);
+
         $qrSvg = $this->makeQrSvg($product->sku);
 
         return Inertia::render('inventory/labels/ProductLabel', [

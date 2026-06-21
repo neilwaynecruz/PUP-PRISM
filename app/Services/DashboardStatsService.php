@@ -13,7 +13,6 @@ use App\Models\Product;
 use App\Models\Requisition;
 use App\Models\StockMovement;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class DashboardStatsService
@@ -26,22 +25,19 @@ class DashboardStatsService
     {
         $from = isset($range['from']) ? CarbonImmutable::parse($range['from'])->startOfDay() : CarbonImmutable::now()->startOfMonth();
         $to = isset($range['to']) ? CarbonImmutable::parse($range['to'])->endOfDay() : CarbonImmutable::now()->endOfDay();
-        $cacheKey = 'dashboard_admin_'.$from->toDateString().'_'.$to->toDateString();
 
-        return Cache::remember($cacheKey, 60, function () use ($from, $to) {
-            return [
-                'alerts' => $this->activeAlerts(),
-                'lowStock' => $this->lowStockProducts(),
-                'unserviceableAssets' => $this->unserviceableAssets(),
-                'assetStatusCounts' => $this->assetStatusCounts(),
-                'receivingTrends' => $this->movementTrends('receive', $from, $to),
-                'issuingTrends' => $this->movementTrends('issue', $from, $to),
-                'requisitionSummary' => $this->requisitionSummary($from, $to),
-                'bookingSummary' => $this->bookingSummary($from, $to),
-                'assetConditionSummary' => $this->assetConditionSummary(),
-                'recentlyDeleted' => $this->recentlyDeleted(),
-            ];
-        });
+        return [
+            'alerts' => $this->activeAlerts(),
+            'lowStock' => $this->lowStockProducts(),
+            'unserviceableAssets' => $this->unserviceableAssets(),
+            'assetStatusCounts' => $this->assetStatusCounts(),
+            'receivingTrends' => $this->movementTrends('receive', $from, $to),
+            'issuingTrends' => $this->movementTrends('issue', $from, $to),
+            'requisitionSummary' => $this->requisitionSummary($from, $to),
+            'bookingSummary' => $this->bookingSummary($from, $to),
+            'assetConditionSummary' => $this->assetConditionSummary(),
+            'recentlyDeleted' => $this->recentlyDeleted(),
+        ];
     }
 
     /**

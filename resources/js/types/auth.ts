@@ -9,9 +9,21 @@ export type User = {
     [key: string]: unknown;
 };
 
+export type AuthPermissions = {
+    viewProducts: boolean;
+    createProducts: boolean;
+    viewHandover: boolean;
+    viewBookings: boolean;
+    viewRequisitions: boolean;
+    viewReceiving: boolean;
+    viewMovements: boolean;
+    viewAuditLogs: boolean;
+};
+
 export type Auth = {
     user: User;
     roles: string[];
+    permissions: AuthPermissions;
 };
 
 export type SessionMeta = {

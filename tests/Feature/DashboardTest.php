@@ -22,7 +22,7 @@ test('authenticated users can visit the dashboard', function () {
     $response->assertOk();
 });
 
-test('dashboard responses include short lived private cache headers', function () {
+test('dashboard responses disable client caching for authenticated users', function () {
     Role::findOrCreate('Admin');
     $admin = User::factory()->create(['email_verified_at' => now()]);
     $admin->assignRole('Admin');
@@ -35,7 +35,7 @@ test('dashboard responses include short lived private cache headers', function (
 
     expect($cacheControl)
         ->toContain('private')
-        ->toContain('max-age=30');
+        ->toContain('no-store');
 });
 
 test('admin dashboard aggregates unserviceable and condemned asset counts', function () {

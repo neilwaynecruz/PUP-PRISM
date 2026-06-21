@@ -1,5 +1,5 @@
 import { router, usePage } from '@inertiajs/vue3';
-import { ref, computed, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 
 interface FilterConfig {
     key: string;
@@ -239,6 +239,12 @@ export function useFilterPersistence(
 
         syncToUrl({ preserveScroll: false });
     };
+
+    onBeforeUnmount(() => {
+        if (debounceTimer !== null) {
+            clearTimeout(debounceTimer);
+        }
+    });
 
     // Watch for URL changes (browser back/forward)
     if (syncWithUrl) {

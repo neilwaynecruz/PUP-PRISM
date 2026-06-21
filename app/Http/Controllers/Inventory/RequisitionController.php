@@ -38,6 +38,8 @@ class RequisitionController extends Controller
         Request $request,
         RequisitionTemplateService $templates,
     ): Response {
+        $this->authorize('viewAny', Requisition::class);
+
         $requisitions = Requisition::query()
             ->with(['requester:id,name,email', 'requesterPosition:id,department_id,title', 'requesterPosition.department:id,name'])
             ->orderByDesc('created_at')
@@ -86,6 +88,8 @@ class RequisitionController extends Controller
 
             return Inertia::location(route('inventory.requisitions.index'));
         }
+
+        $this->authorize('view', $requisition);
 
         return Inertia::render('inventory/requisitions/Show', [
             'requisition' => (new RequisitionResource($requisition))->resolve($request),

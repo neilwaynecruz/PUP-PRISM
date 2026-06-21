@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import dayGridPlugin from '@fullcalendar/daygrid';
+import type { CalendarOptions } from '@fullcalendar/core';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/vue3';
 import { Form, Head, Link, router } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import BookingController from '@/actions/App/Http/Controllers/Inventory/BookingController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -285,6 +286,19 @@ const events = computed(() =>
     })),
 );
 
+const calendarOptions = computed<CalendarOptions>(() => ({
+    plugins: [dayGridPlugin, interactionPlugin],
+    initialView: 'dayGridMonth',
+    headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'dayGridMonth,dayGridWeek,dayGridDay',
+    },
+    events: events.value,
+    height: 520,
+    eventDisplay: 'block',
+}));
+
 let assetSearchTimer: number | undefined;
 watch(assetSearch, () => {
     window.clearTimeout(assetSearchTimer);
@@ -301,6 +315,10 @@ watch(assetSearch, () => {
             },
         );
     }, 250);
+});
+
+onBeforeUnmount(() => {
+    window.clearTimeout(assetSearchTimer);
 });
 
 watch(
@@ -459,18 +477,7 @@ function applyScannedAsset(tagCode: string): void {
                     </div>
                 </div>
                 <div data-testid="booking-calendar" class="p-3">
-                    <FullCalendar
-                        :plugins="[dayGridPlugin, interactionPlugin]"
-                        initialView="dayGridMonth"
-                        :header-toolbar="{
-                            left: 'prev,next today',
-                            center: 'title',
-                            right: 'dayGridMonth,dayGridWeek,dayGridDay',
-                        }"
-                        :events="events"
-                        height="520px"
-                        :event-display="'block'"
-                    >
+                    <FullCalendar :options="calendarOptions">
                         <template #eventContent="{ event }">
                             <div
                                 data-testid="booking-calendar-event"

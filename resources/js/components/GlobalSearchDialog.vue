@@ -1,14 +1,5 @@
 <script setup lang="ts">
-import { router, usePage } from '@inertiajs/vue3';
-import {
-    BookOpen,
-    FileText,
-    History,
-    LayoutGrid,
-    Package,
-    Settings,
-    Truck,
-} from 'lucide-vue-next';
+import { BookOpen, FileText } from 'lucide-vue-next';
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue';
 import {
     Dialog,
@@ -18,98 +9,23 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { useAppNavigation } from '@/composables/useAppNavigation';
+import { useInventoryNavigation } from '@/lib/inventoryNavigation';
+import type { InventorySearchItem } from '@/lib/inventoryNavigation';
 import { toUrl } from '@/lib/utils';
-import { dashboard } from '@/routes';
-import { index as auditLogsIndex } from '@/routes/inventory/audit-logs';
 import { index as bookingsIndex } from '@/routes/inventory/bookings';
-import {
-    index as productsIndex,
-    create as productsCreate,
-} from '@/routes/inventory/products';
-import { index as receivingIndex } from '@/routes/inventory/receiving';
 import { index as requisitionsIndex } from '@/routes/inventory/requisitions';
-import type { NavItem } from '@/types';
 
-type SearchItem = NavItem & {
-    description: string;
-    keywords: string[];
-    roles?: string[];
-};
-
-const page = usePage();
 const open = ref(false);
 const query = ref('');
 const searchInput = ref<HTMLInputElement | null>(null);
+const { navigateTo } = useAppNavigation();
+const { searchItems } = useInventoryNavigation();
 
-const items = computed<SearchItem[]>(() => {
+const items = computed<InventorySearchItem[]>(() => {
     const currentPath =
         typeof window === 'undefined' ? '' : window.location.pathname;
-    const userRoles = (page.props.auth?.roles ?? []) as string[];
-
-    const baseItems: SearchItem[] = [
-        {
-            title: 'Dashboard',
-            href: dashboard(),
-            icon: LayoutGrid,
-            description: 'Overview, alerts, and operational widgets',
-            keywords: ['dashboard', 'overview', 'alerts'],
-        },
-        {
-            title: 'Products',
-            href: productsIndex(),
-            icon: Package,
-            description: 'Browse inventory items and stock levels',
-            keywords: ['products', 'inventory', 'stock', 'catalog'],
-            roles: ['Admin', 'Supply Head', 'Property Custodian'],
-        },
-        {
-            title: 'New Product',
-            href: productsCreate(),
-            icon: Package,
-            description: 'Create a new product record',
-            keywords: ['new', 'create', 'product'],
-            roles: ['Admin', 'Supply Head'],
-        },
-        {
-            title: 'Bookings',
-            href: bookingsIndex(),
-            icon: BookOpen,
-            description: 'Request, review, and track asset bookings',
-            keywords: ['bookings', 'calendar', 'schedule', 'reserve'],
-            roles: ['Admin', 'Supply Head', 'Property Custodian'],
-        },
-        {
-            title: 'Requisitions',
-            href: requisitionsIndex(),
-            icon: FileText,
-            description: 'Submit and process issuance requests',
-            keywords: ['requisitions', 'issue', 'requests'],
-            roles: ['Admin', 'Supply Head', 'Property Custodian'],
-        },
-        {
-            title: 'Receiving',
-            href: receivingIndex(),
-            icon: Truck,
-            description: 'Receive new stock and assets',
-            keywords: ['receiving', 'deliveries', 'stock in'],
-            roles: ['Admin', 'Supply Head'],
-        },
-        {
-            title: 'Audit Log',
-            href: auditLogsIndex(),
-            icon: History,
-            description: 'Review operational changes and approval history',
-            keywords: ['audit', 'logs', 'history', 'changes'],
-            roles: ['Admin'],
-        },
-        {
-            title: 'Settings',
-            href: '/settings/profile',
-            icon: Settings,
-            description: 'Profile, appearance, and account settings',
-            keywords: ['settings', 'profile', 'security', 'appearance'],
-        },
-    ];
+    const baseItems = [...searchItems.value];
 
     if (currentPath.includes('/inventory/bookings')) {
         baseItems.unshift({
@@ -131,13 +47,7 @@ const items = computed<SearchItem[]>(() => {
         });
     }
 
-    return baseItems.filter((item) => {
-        if (!item.roles || item.roles.length === 0) {
-            return true;
-        }
-
-        return item.roles.some((role) => userRoles.includes(role));
-    });
+    return baseItems;
 });
 
 const filteredItems = computed(() => {
@@ -166,7 +76,7 @@ function closeDialog(): void {
     query.value = '';
 }
 
-function activateItem(item: SearchItem): void {
+function activateItem(item: InventorySearchItem): void {
     closeDialog();
 
     if (
@@ -185,7 +95,11 @@ function activateItem(item: SearchItem): void {
         return;
     }
 
-    router.get(toUrl(item.href));
+    navigateTo(item.href, item.title);
+}
+
+function itemKey(item: InventorySearchItem): string {
+    return `${item.title}-${toUrl(item.href)}`;
 }
 
 onMounted(() => {
@@ -229,7 +143,7 @@ onUnmounted(() => {
             <div class="max-h-[420px] overflow-y-auto px-2 py-2">
                 <button
                     v-for="item in filteredItems"
-                    :key="`${item.title}-${toUrl(item.href)}`"
+                    :key="itemKey(item)"
                     type="button"
                     class="flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted/60"
                     @click="activateItem(item)"

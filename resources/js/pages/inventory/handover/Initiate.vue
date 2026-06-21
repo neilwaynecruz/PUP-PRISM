@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, router } from '@inertiajs/vue3';
-import { ref, watch } from 'vue';
+import { onBeforeUnmount, ref, watch } from 'vue';
 import HandoverController from '@/actions/App/Http/Controllers/Inventory/HandoverController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -84,6 +84,10 @@ watch(recipientSearch, () => {
             },
         );
     }, 250);
+});
+
+onBeforeUnmount(() => {
+    window.clearTimeout(recipientSearchTimer);
 });
 </script>
 

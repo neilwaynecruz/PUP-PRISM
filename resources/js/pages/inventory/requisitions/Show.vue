@@ -378,7 +378,7 @@ defineOptions({
                         <div class="flex items-center justify-between gap-3">
                             <span class="text-muted-foreground">Issued</span>
                             <span
-                                :data-testid="`requisition-line-issued-${l.sku ?? l.id}`"
+                                :data-testid="`requisition-line-issued-mobile-${l.sku ?? l.id}`"
                                 >{{ l.qty_issued }}</span
                             >
                         </div>

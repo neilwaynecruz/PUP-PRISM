@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import StockMovementController from '@/actions/App/Http/Controllers/Inventory/StockMovementController';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
@@ -90,6 +90,10 @@ watch([type, search, dateFrom, dateTo, performedBy], () => {
             replace: true,
         });
     }, 250);
+});
+
+onBeforeUnmount(() => {
+    window.clearTimeout(timer);
 });
 
 function toggleSort(column: string): void {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import TableSkeleton from '@/components/TableSkeleton.vue';
 import { Button } from '@/components/ui/button';
@@ -263,6 +263,10 @@ watch([search, type, categoryId, originId, active], () => {
         });
     }, 250);
 });
+
+onBeforeUnmount(() => {
+    window.clearTimeout(searchTimer);
+});
 </script>
 
 <template>
@@ -439,7 +443,7 @@ watch([search, type, categoryId, originId, active], () => {
                     <div
                         v-for="p in products.data"
                         :key="p.id"
-                        :data-testid="`product-row-${p.sku}`"
+                        :data-testid="`product-mobile-row-${p.sku}`"
                         class="rounded-xl border border-border/60 bg-card p-4 shadow-sm transition-colors"
                     :class="{ 'bg-primary/5': selectedIds.has(p.id) }"
                     >
@@ -542,8 +546,8 @@ watch([search, type, categoryId, originId, active], () => {
                                 variant="ghost"
                                 size="sm"
                                 as-child
-                                data-test="view-product-button"
-                                data-testid="view-product-button"
+                                data-test="view-product-button-mobile"
+                                data-testid="view-product-button-mobile"
                             >
                                 <Link :href="productsShow(p.id)">View</Link>
                             </Button>
@@ -551,8 +555,8 @@ watch([search, type, categoryId, originId, active], () => {
                                 variant="ghost"
                                 size="sm"
                                 as-child
-                                data-test="edit-product-button"
-                                data-testid="edit-product-button"
+                                data-test="edit-product-button-mobile"
+                                data-testid="edit-product-button-mobile"
                             >
                                 <Link :href="productsEdit(p.id)">Edit</Link>
                             </Button>

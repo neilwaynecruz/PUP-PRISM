@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import TableSkeleton from '@/components/TableSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { useAppNavigation } from '@/composables/useAppNavigation';
 import {
     Select,
     SelectContent,
@@ -78,6 +79,7 @@ const dateFrom = ref(props.filters.date_from);
 const dateTo = ref(props.filters.date_to);
 const isRefreshing = ref(false);
 const lastUpdatedAt = ref<Date | null>(null);
+const { isNavigating } = useAppNavigation();
 
 let pollTimer: number | null = null;
 
@@ -125,7 +127,10 @@ function resetFilters(): void {
 }
 
 function pollLogs(): void {
-    if (document.visibilityState !== 'visible') {
+    if (
+        document.visibilityState !== 'visible' ||
+        isNavigating.value
+    ) {
         return;
     }
 
@@ -233,12 +238,27 @@ onUnmounted(() => {
     stopPolling();
     document.removeEventListener('visibilitychange', handleVisibilityChange);
 });
+
+watch(isNavigating, (navigating) => {
+    if (navigating) {
+        stopPolling();
+
+        return;
+    }
+
+    if (document.visibilityState === 'visible') {
+        startPolling();
+    }
+});
 </script>
 
 <template>
     <Head title="Audit Log" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
+    <div
+        class="flex flex-col gap-6 p-4 sm:p-6"
+        data-testid="audit-logs-page"
+    >
         <div
             class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
         >

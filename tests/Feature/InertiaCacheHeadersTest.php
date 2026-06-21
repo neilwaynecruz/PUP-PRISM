@@ -3,7 +3,7 @@
 use App\Models\User;
 use Spatie\Permission\Models\Role;
 
-test('products index uses short lived private cache headers', function () {
+test('products index disables client caching for authenticated users', function () {
     Role::findOrCreate('Admin');
 
     $user = User::factory()->create(['email_verified_at' => now()]);
@@ -17,14 +17,16 @@ test('products index uses short lived private cache headers', function () {
 
     expect($cacheControl)
         ->toContain('private')
-        ->toContain('max-age=30');
+        ->toContain('no-store');
 });
 
-test('settings profile page is excluded from short lived inertia cache headers', function () {
+test('settings profile page also disables client caching for authenticated users', function () {
     $user = User::factory()->create(['email_verified_at' => now()]);
 
     $response = $this->actingAs($user)->get(route('profile.edit'));
 
     $response->assertOk();
-    expect($response->headers->get('Cache-Control'))->not->toContain('max-age=30');
+    expect($response->headers->get('Cache-Control'))
+        ->toContain('private')
+        ->toContain('no-store');
 });

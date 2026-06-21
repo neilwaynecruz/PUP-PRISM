@@ -58,7 +58,7 @@ onUnmounted(() => clearTwoFactorAuthData());
 
     <h1 class="sr-only">Security settings</h1>
 
-    <div class="space-y-6">
+    <div class="space-y-6" data-testid="security-settings-page">
         <Heading
             variant="small"
             title="Update password"

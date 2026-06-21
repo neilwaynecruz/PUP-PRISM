@@ -34,6 +34,8 @@ class BookingController extends Controller
 
     public function index(Request $request): Response
     {
+        $this->authorize('viewAny', Booking::class);
+
         $currentUser = Auth::user();
         $assetSearch = $request->string('asset_search')->trim()->toString();
 
@@ -132,6 +134,8 @@ class BookingController extends Controller
 
             return Inertia::location(route('inventory.bookings.index'));
         }
+
+        $this->authorize('view', $booking);
 
         return Inertia::render('inventory/bookings/Show', [
             'booking' => (new BookingResource($booking))->resolve($request),

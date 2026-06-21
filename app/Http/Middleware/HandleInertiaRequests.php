@@ -2,6 +2,12 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AuditLog;
+use App\Models\Booking;
+use App\Models\Product;
+use App\Models\Requisition;
+use App\Models\StockMovement;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
@@ -9,18 +15,6 @@ use Symfony\Component\HttpFoundation\Response;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * @var array<int, string>
-     */
-    private const CACHEABLE_ROUTE_NAMES = [
-        'dashboard',
-        'inventory.bookings.index',
-        'inventory.handover.index',
-        'inventory.movements.index',
-        'inventory.products.index',
-        'inventory.requisitions.index',
-    ];
-
     /**
      * The root template that's loaded on the first page visit.
      *
@@ -37,8 +31,8 @@ class HandleInertiaRequests extends Middleware
     {
         $response = parent::handle($request, $next);
 
-        if ($this->shouldCacheResponse($request, $response)) {
-            $response->headers->set('Cache-Control', 'private, max-age=30');
+        if ($this->shouldDisableClientCaching($request, $response)) {
+            $response->headers->set('Cache-Control', 'private, no-store');
         }
 
         return $response;
@@ -63,12 +57,15 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
-                'roles' => $request->user()?->getRoleNames() ?? [],
+                'user' => $user,
+                'roles' => $user?->getRoleNames() ?? [],
+                'permissions' => $this->sharePermissions($user),
             ],
             'session' => [
                 'lifetimeMinutes' => (int) config('session.lifetime', 120),
@@ -80,7 +77,37 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 
-    private function shouldCacheResponse(Request $request, Response $response): bool
+    /**
+     * @return array<string, bool>
+     */
+    private function sharePermissions(?User $user): array
+    {
+        if (! $user instanceof User) {
+            return [
+                'viewProducts' => false,
+                'createProducts' => false,
+                'viewHandover' => false,
+                'viewBookings' => false,
+                'viewRequisitions' => false,
+                'viewReceiving' => false,
+                'viewMovements' => false,
+                'viewAuditLogs' => false,
+            ];
+        }
+
+        return [
+            'viewProducts' => $user->can('viewAny', Product::class),
+            'createProducts' => $user->can('create', Product::class),
+            'viewHandover' => $user->hasAnyRole(['Admin', 'Property Custodian']),
+            'viewBookings' => $user->can('viewAny', Booking::class),
+            'viewRequisitions' => $user->can('viewAny', Requisition::class),
+            'viewReceiving' => $user->hasAnyRole(['Admin', 'Supply Head']),
+            'viewMovements' => $user->can('viewAny', StockMovement::class),
+            'viewAuditLogs' => $user->can('viewAny', AuditLog::class),
+        ];
+    }
+
+    private function shouldDisableClientCaching(Request $request, Response $response): bool
     {
         if (! $request->isMethod('GET')) {
             return false;
@@ -90,6 +117,6 @@ class HandleInertiaRequests extends Middleware
             return false;
         }
 
-        return $request->routeIs(self::CACHEABLE_ROUTE_NAMES);
+        return $request->user() instanceof User;
     }
 }

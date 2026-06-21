@@ -36,7 +36,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('stock_movements', function (Blueprint $table) {
-            $table->foreignId('sale_id')->nullable()->after('asset_id')->constrained('sales')->nullOnDelete();
+            if (Schema::hasTable('sales')) {
+                $table->foreignId('sale_id')->nullable()->after('asset_id')->constrained('sales')->nullOnDelete();
+            } else {
+                $table->unsignedBigInteger('sale_id')->nullable()->after('asset_id');
+            }
+
             $table->index(['sale_id', 'performed_at']);
         });
     }

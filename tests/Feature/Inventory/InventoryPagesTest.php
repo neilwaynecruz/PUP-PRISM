@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Booking;
 use App\Models\Department;
 use App\Models\Position;
 use App\Models\Product;
@@ -53,4 +54,22 @@ test('admin can open the stock movements index with paginated data', function ()
             ->component('inventory/movements/Index')
             ->has('movements.data', 1)
             ->where('movements.data.0.product.sku', 'SKU-MOVE-0001'));
+});
+
+test('supply head cannot open another users booking details directly', function () {
+    $position = Position::factory()->create();
+
+    $supplyHead = User::factory()->assignedPosition($position)->create();
+    $supplyHead->assignRole('Supply Head');
+
+    $requester = User::factory()->assignedPosition($position)->create();
+
+    $booking = Booking::factory()->create([
+        'requester_id' => $requester->id,
+        'requester_position_id' => $requester->position_id,
+    ]);
+
+    $this->actingAs($supplyHead)
+        ->get(route('inventory.bookings.show', $booking, absolute: false))
+        ->assertForbidden();
 });

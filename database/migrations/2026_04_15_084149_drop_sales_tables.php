@@ -53,5 +53,18 @@ return new class extends Migration
         if (Schema::getConnection()->getDriverName() === 'pgsql') {
             DB::statement('ALTER TABLE sale_lines ADD CONSTRAINT sale_lines_qty_check CHECK (qty > 0)');
         }
+
+        if (Schema::hasTable('stock_movements') && Schema::hasColumn('stock_movements', 'sale_id')) {
+            if (Schema::getConnection()->getDriverName() === 'pgsql') {
+                DB::statement('ALTER TABLE stock_movements DROP CONSTRAINT IF EXISTS stock_movements_sale_id_foreign');
+                DB::statement('ALTER TABLE stock_movements ADD CONSTRAINT stock_movements_sale_id_foreign FOREIGN KEY (sale_id) REFERENCES sales (id) ON DELETE SET NULL');
+
+                return;
+            }
+
+            Schema::table('stock_movements', function (Blueprint $table) {
+                $table->foreign('sale_id')->references('id')->on('sales')->nullOnDelete();
+            });
+        }
     }
 };

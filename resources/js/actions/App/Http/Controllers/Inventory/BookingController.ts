@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::update
- * @see app/Http/Controllers/Inventory/BookingController.php:171
+ * @see app/Http/Controllers/Inventory/BookingController.php:175
  * @route '/inventory/bookings/{booking}'
  */
 export const update = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -16,7 +16,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::update
- * @see app/Http/Controllers/Inventory/BookingController.php:171
+ * @see app/Http/Controllers/Inventory/BookingController.php:175
  * @route '/inventory/bookings/{booking}'
  */
 update.url = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -49,7 +49,7 @@ update.url = (args: { booking: number | { id: number } } | [booking: number | { 
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::update
- * @see app/Http/Controllers/Inventory/BookingController.php:171
+ * @see app/Http/Controllers/Inventory/BookingController.php:175
  * @route '/inventory/bookings/{booking}'
  */
 update.put = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -59,7 +59,7 @@ update.put = (args: { booking: number | { id: number } } | [booking: number | { 
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::update
- * @see app/Http/Controllers/Inventory/BookingController.php:171
+ * @see app/Http/Controllers/Inventory/BookingController.php:175
  * @route '/inventory/bookings/{booking}'
  */
     const updateForm = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -74,7 +74,7 @@ update.put = (args: { booking: number | { id: number } } | [booking: number | { 
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::update
- * @see app/Http/Controllers/Inventory/BookingController.php:171
+ * @see app/Http/Controllers/Inventory/BookingController.php:175
  * @route '/inventory/bookings/{booking}'
  */
         updateForm.put = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -168,7 +168,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::show
- * @see app/Http/Controllers/Inventory/BookingController.php:112
+ * @see app/Http/Controllers/Inventory/BookingController.php:114
  * @route '/inventory/bookings/{booking}'
  */
 export const show = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -183,7 +183,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::show
- * @see app/Http/Controllers/Inventory/BookingController.php:112
+ * @see app/Http/Controllers/Inventory/BookingController.php:114
  * @route '/inventory/bookings/{booking}'
  */
 show.url = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -211,7 +211,7 @@ show.url = (args: { booking: string | number } | [booking: string | number ] | s
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::show
- * @see app/Http/Controllers/Inventory/BookingController.php:112
+ * @see app/Http/Controllers/Inventory/BookingController.php:114
  * @route '/inventory/bookings/{booking}'
  */
 show.get = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -220,7 +220,7 @@ show.get = (args: { booking: string | number } | [booking: string | number ] | s
 })
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::show
- * @see app/Http/Controllers/Inventory/BookingController.php:112
+ * @see app/Http/Controllers/Inventory/BookingController.php:114
  * @route '/inventory/bookings/{booking}'
  */
 show.head = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -230,7 +230,7 @@ show.head = (args: { booking: string | number } | [booking: string | number ] | 
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::show
- * @see app/Http/Controllers/Inventory/BookingController.php:112
+ * @see app/Http/Controllers/Inventory/BookingController.php:114
  * @route '/inventory/bookings/{booking}'
  */
     const showForm = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -240,7 +240,7 @@ show.head = (args: { booking: string | number } | [booking: string | number ] | 
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::show
- * @see app/Http/Controllers/Inventory/BookingController.php:112
+ * @see app/Http/Controllers/Inventory/BookingController.php:114
  * @route '/inventory/bookings/{booking}'
  */
         showForm.get = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -249,7 +249,7 @@ show.head = (args: { booking: string | number } | [booking: string | number ] | 
         })
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::show
- * @see app/Http/Controllers/Inventory/BookingController.php:112
+ * @see app/Http/Controllers/Inventory/BookingController.php:114
  * @route '/inventory/bookings/{booking}'
  */
         showForm.head = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -265,7 +265,7 @@ show.head = (args: { booking: string | number } | [booking: string | number ] | 
     show.form = showForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::store
- * @see app/Http/Controllers/Inventory/BookingController.php:150
+ * @see app/Http/Controllers/Inventory/BookingController.php:154
  * @route '/inventory/bookings'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -280,7 +280,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::store
- * @see app/Http/Controllers/Inventory/BookingController.php:150
+ * @see app/Http/Controllers/Inventory/BookingController.php:154
  * @route '/inventory/bookings'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -289,7 +289,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::store
- * @see app/Http/Controllers/Inventory/BookingController.php:150
+ * @see app/Http/Controllers/Inventory/BookingController.php:154
  * @route '/inventory/bookings'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -299,7 +299,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::store
- * @see app/Http/Controllers/Inventory/BookingController.php:150
+ * @see app/Http/Controllers/Inventory/BookingController.php:154
  * @route '/inventory/bookings'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -309,7 +309,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::store
- * @see app/Http/Controllers/Inventory/BookingController.php:150
+ * @see app/Http/Controllers/Inventory/BookingController.php:154
  * @route '/inventory/bookings'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -320,7 +320,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::destroy
- * @see app/Http/Controllers/Inventory/BookingController.php:309
+ * @see app/Http/Controllers/Inventory/BookingController.php:313
  * @route '/inventory/bookings/{booking}'
  */
 export const destroy = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -335,7 +335,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::destroy
- * @see app/Http/Controllers/Inventory/BookingController.php:309
+ * @see app/Http/Controllers/Inventory/BookingController.php:313
  * @route '/inventory/bookings/{booking}'
  */
 destroy.url = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -368,7 +368,7 @@ destroy.url = (args: { booking: number | { id: number } } | [booking: number | {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::destroy
- * @see app/Http/Controllers/Inventory/BookingController.php:309
+ * @see app/Http/Controllers/Inventory/BookingController.php:313
  * @route '/inventory/bookings/{booking}'
  */
 destroy.delete = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -378,7 +378,7 @@ destroy.delete = (args: { booking: number | { id: number } } | [booking: number 
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::destroy
- * @see app/Http/Controllers/Inventory/BookingController.php:309
+ * @see app/Http/Controllers/Inventory/BookingController.php:313
  * @route '/inventory/bookings/{booking}'
  */
     const destroyForm = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -393,7 +393,7 @@ destroy.delete = (args: { booking: number | { id: number } } | [booking: number 
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::destroy
- * @see app/Http/Controllers/Inventory/BookingController.php:309
+ * @see app/Http/Controllers/Inventory/BookingController.php:313
  * @route '/inventory/bookings/{booking}'
  */
         destroyForm.delete = (args: { booking: number | { id: number } } | [booking: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -409,7 +409,7 @@ destroy.delete = (args: { booking: number | { id: number } } | [booking: number 
     destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:325
+ * @see app/Http/Controllers/Inventory/BookingController.php:329
  * @route '/inventory/bookings/trash'
  */
 export const trash = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -424,7 +424,7 @@ trash.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:325
+ * @see app/Http/Controllers/Inventory/BookingController.php:329
  * @route '/inventory/bookings/trash'
  */
 trash.url = (options?: RouteQueryOptions) => {
@@ -433,7 +433,7 @@ trash.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:325
+ * @see app/Http/Controllers/Inventory/BookingController.php:329
  * @route '/inventory/bookings/trash'
  */
 trash.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -442,7 +442,7 @@ trash.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:325
+ * @see app/Http/Controllers/Inventory/BookingController.php:329
  * @route '/inventory/bookings/trash'
  */
 trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -452,7 +452,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:325
+ * @see app/Http/Controllers/Inventory/BookingController.php:329
  * @route '/inventory/bookings/trash'
  */
     const trashForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -462,7 +462,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:325
+ * @see app/Http/Controllers/Inventory/BookingController.php:329
  * @route '/inventory/bookings/trash'
  */
         trashForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -471,7 +471,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:325
+ * @see app/Http/Controllers/Inventory/BookingController.php:329
  * @route '/inventory/bookings/trash'
  */
         trashForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -487,7 +487,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     trash.form = trashForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::restore
- * @see app/Http/Controllers/Inventory/BookingController.php:377
+ * @see app/Http/Controllers/Inventory/BookingController.php:381
  * @route '/inventory/bookings/{booking}/restore'
  */
 export const restore = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -502,7 +502,7 @@ restore.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::restore
- * @see app/Http/Controllers/Inventory/BookingController.php:377
+ * @see app/Http/Controllers/Inventory/BookingController.php:381
  * @route '/inventory/bookings/{booking}/restore'
  */
 restore.url = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -530,7 +530,7 @@ restore.url = (args: { booking: string | number } | [booking: string | number ] 
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::restore
- * @see app/Http/Controllers/Inventory/BookingController.php:377
+ * @see app/Http/Controllers/Inventory/BookingController.php:381
  * @route '/inventory/bookings/{booking}/restore'
  */
 restore.put = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -540,7 +540,7 @@ restore.put = (args: { booking: string | number } | [booking: string | number ] 
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::restore
- * @see app/Http/Controllers/Inventory/BookingController.php:377
+ * @see app/Http/Controllers/Inventory/BookingController.php:381
  * @route '/inventory/bookings/{booking}/restore'
  */
     const restoreForm = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -555,7 +555,7 @@ restore.put = (args: { booking: string | number } | [booking: string | number ] 
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::restore
- * @see app/Http/Controllers/Inventory/BookingController.php:377
+ * @see app/Http/Controllers/Inventory/BookingController.php:381
  * @route '/inventory/bookings/{booking}/restore'
  */
         restoreForm.put = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -571,7 +571,7 @@ restore.put = (args: { booking: string | number } | [booking: string | number ] 
     restore.form = restoreForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::forceDelete
- * @see app/Http/Controllers/Inventory/BookingController.php:393
+ * @see app/Http/Controllers/Inventory/BookingController.php:397
  * @route '/inventory/bookings/{booking}/force'
  */
 export const forceDelete = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -586,7 +586,7 @@ forceDelete.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::forceDelete
- * @see app/Http/Controllers/Inventory/BookingController.php:393
+ * @see app/Http/Controllers/Inventory/BookingController.php:397
  * @route '/inventory/bookings/{booking}/force'
  */
 forceDelete.url = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -614,7 +614,7 @@ forceDelete.url = (args: { booking: string | number } | [booking: string | numbe
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::forceDelete
- * @see app/Http/Controllers/Inventory/BookingController.php:393
+ * @see app/Http/Controllers/Inventory/BookingController.php:397
  * @route '/inventory/bookings/{booking}/force'
  */
 forceDelete.delete = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -624,7 +624,7 @@ forceDelete.delete = (args: { booking: string | number } | [booking: string | nu
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::forceDelete
- * @see app/Http/Controllers/Inventory/BookingController.php:393
+ * @see app/Http/Controllers/Inventory/BookingController.php:397
  * @route '/inventory/bookings/{booking}/force'
  */
     const forceDeleteForm = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -639,7 +639,7 @@ forceDelete.delete = (args: { booking: string | number } | [booking: string | nu
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::forceDelete
- * @see app/Http/Controllers/Inventory/BookingController.php:393
+ * @see app/Http/Controllers/Inventory/BookingController.php:397
  * @route '/inventory/bookings/{booking}/force'
  */
         forceDeleteForm.delete = (args: { booking: string | number } | [booking: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -655,7 +655,7 @@ forceDelete.delete = (args: { booking: string | number } | [booking: string | nu
     forceDelete.form = forceDeleteForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkRestore
- * @see app/Http/Controllers/Inventory/BookingController.php:408
+ * @see app/Http/Controllers/Inventory/BookingController.php:412
  * @route '/inventory/bookings/bulk-restore'
  */
 export const bulkRestore = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -670,7 +670,7 @@ bulkRestore.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkRestore
- * @see app/Http/Controllers/Inventory/BookingController.php:408
+ * @see app/Http/Controllers/Inventory/BookingController.php:412
  * @route '/inventory/bookings/bulk-restore'
  */
 bulkRestore.url = (options?: RouteQueryOptions) => {
@@ -679,7 +679,7 @@ bulkRestore.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkRestore
- * @see app/Http/Controllers/Inventory/BookingController.php:408
+ * @see app/Http/Controllers/Inventory/BookingController.php:412
  * @route '/inventory/bookings/bulk-restore'
  */
 bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -689,7 +689,7 @@ bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkRestore
- * @see app/Http/Controllers/Inventory/BookingController.php:408
+ * @see app/Http/Controllers/Inventory/BookingController.php:412
  * @route '/inventory/bookings/bulk-restore'
  */
     const bulkRestoreForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -699,7 +699,7 @@ bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkRestore
- * @see app/Http/Controllers/Inventory/BookingController.php:408
+ * @see app/Http/Controllers/Inventory/BookingController.php:412
  * @route '/inventory/bookings/bulk-restore'
  */
         bulkRestoreForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -710,7 +710,7 @@ bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     bulkRestore.form = bulkRestoreForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/BookingController.php:436
+ * @see app/Http/Controllers/Inventory/BookingController.php:440
  * @route '/inventory/bookings/bulk-force-delete'
  */
 export const bulkForceDelete = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -725,7 +725,7 @@ bulkForceDelete.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/BookingController.php:436
+ * @see app/Http/Controllers/Inventory/BookingController.php:440
  * @route '/inventory/bookings/bulk-force-delete'
  */
 bulkForceDelete.url = (options?: RouteQueryOptions) => {
@@ -734,7 +734,7 @@ bulkForceDelete.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/BookingController.php:436
+ * @see app/Http/Controllers/Inventory/BookingController.php:440
  * @route '/inventory/bookings/bulk-force-delete'
  */
 bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -744,7 +744,7 @@ bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/BookingController.php:436
+ * @see app/Http/Controllers/Inventory/BookingController.php:440
  * @route '/inventory/bookings/bulk-force-delete'
  */
     const bulkForceDeleteForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -754,7 +754,7 @@ bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/BookingController.php:436
+ * @see app/Http/Controllers/Inventory/BookingController.php:440
  * @route '/inventory/bookings/bulk-force-delete'
  */
         bulkForceDeleteForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -765,7 +765,7 @@ bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
     bulkForceDelete.form = bulkForceDeleteForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkApprove
- * @see app/Http/Controllers/Inventory/BookingController.php:208
+ * @see app/Http/Controllers/Inventory/BookingController.php:212
  * @route '/inventory/bookings/bulk-approve'
  */
 export const bulkApprove = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -780,7 +780,7 @@ bulkApprove.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkApprove
- * @see app/Http/Controllers/Inventory/BookingController.php:208
+ * @see app/Http/Controllers/Inventory/BookingController.php:212
  * @route '/inventory/bookings/bulk-approve'
  */
 bulkApprove.url = (options?: RouteQueryOptions) => {
@@ -789,7 +789,7 @@ bulkApprove.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkApprove
- * @see app/Http/Controllers/Inventory/BookingController.php:208
+ * @see app/Http/Controllers/Inventory/BookingController.php:212
  * @route '/inventory/bookings/bulk-approve'
  */
 bulkApprove.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -799,7 +799,7 @@ bulkApprove.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkApprove
- * @see app/Http/Controllers/Inventory/BookingController.php:208
+ * @see app/Http/Controllers/Inventory/BookingController.php:212
  * @route '/inventory/bookings/bulk-approve'
  */
     const bulkApproveForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -809,7 +809,7 @@ bulkApprove.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkApprove
- * @see app/Http/Controllers/Inventory/BookingController.php:208
+ * @see app/Http/Controllers/Inventory/BookingController.php:212
  * @route '/inventory/bookings/bulk-approve'
  */
         bulkApproveForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -820,7 +820,7 @@ bulkApprove.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     bulkApprove.form = bulkApproveForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkReject
- * @see app/Http/Controllers/Inventory/BookingController.php:262
+ * @see app/Http/Controllers/Inventory/BookingController.php:266
  * @route '/inventory/bookings/bulk-reject'
  */
 export const bulkReject = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -835,7 +835,7 @@ bulkReject.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkReject
- * @see app/Http/Controllers/Inventory/BookingController.php:262
+ * @see app/Http/Controllers/Inventory/BookingController.php:266
  * @route '/inventory/bookings/bulk-reject'
  */
 bulkReject.url = (options?: RouteQueryOptions) => {
@@ -844,7 +844,7 @@ bulkReject.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkReject
- * @see app/Http/Controllers/Inventory/BookingController.php:262
+ * @see app/Http/Controllers/Inventory/BookingController.php:266
  * @route '/inventory/bookings/bulk-reject'
  */
 bulkReject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -854,7 +854,7 @@ bulkReject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkReject
- * @see app/Http/Controllers/Inventory/BookingController.php:262
+ * @see app/Http/Controllers/Inventory/BookingController.php:266
  * @route '/inventory/bookings/bulk-reject'
  */
     const bulkRejectForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -864,7 +864,7 @@ bulkReject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\BookingController::bulkReject
- * @see app/Http/Controllers/Inventory/BookingController.php:262
+ * @see app/Http/Controllers/Inventory/BookingController.php:266
  * @route '/inventory/bookings/bulk-reject'
  */
         bulkRejectForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
