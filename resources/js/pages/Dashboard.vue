@@ -21,6 +21,7 @@ import {
     watch,
 } from 'vue';
 import Heading from '@/components/Heading.vue';
+import ForecastWidget from '@/components/inventory/ForecastWidget.vue';
 import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
 
@@ -39,6 +40,25 @@ Chart.register(
 type Alert = { id: number; type: string; message: string; detected_at: string };
 type TrendData = { labels: string[]; data: number[] };
 type SummaryData = Record<string, number>;
+type ForecastSummary = {
+    forecast_date: string | null;
+    last_generated_at: string | null;
+    urgent_count: number;
+    at_risk_count: number;
+    average_confidence: number | null;
+    items: {
+        product_id: number;
+        product_name: string;
+        sku: string;
+        current_on_hand_qty: number;
+        reorder_point_qty: number;
+        predicted_daily_consumption: number;
+        predicted_days_until_stockout: number | null;
+        predicted_stockout_date: string | null;
+        recommended_reorder_qty: number;
+        confidence_score: number | null;
+    }[];
+};
 type RecentlyDeleted = {
     id: number;
     type: string;
@@ -49,8 +69,10 @@ type RecentlyDeleted = {
 };
 
 const props = defineProps<{
+    canViewForecasting: boolean;
     dateRange: { from: string | null; to: string | null };
     alerts: Alert[];
+    forecastSummary: ForecastSummary;
     lowStock: {
         id: number;
         sku: string;
@@ -79,6 +101,7 @@ const props = defineProps<{
 }>();
 
 defineOptions({
+    name: 'DashboardPage',
     layout: {
         breadcrumbs: [
             {
@@ -582,6 +605,11 @@ function restoreItem(url: string): void {
                 </li>
             </ul>
         </div>
+
+        <ForecastWidget
+            v-if="canViewForecasting"
+            :summary="forecastSummary"
+        />
 
         <!-- Quick Stats Row -->
         <div v-if="isAdmin" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -33,6 +33,24 @@ export type SessionMeta = {
     loginUrl: string;
 };
 
+export type RealtimeNotificationItem = {
+    id: string;
+    type: string;
+    category: string;
+    severity: 'success' | 'info' | 'warning' | 'error';
+    title: string;
+    message: string;
+    url: string | null;
+    createdAt: string | null;
+    readAt: string | null;
+    data: Record<string, unknown>;
+};
+
+export type SharedNotifications = {
+    unreadCount: number;
+    items: RealtimeNotificationItem[];
+};
+
 export type TwoFactorConfigContent = {
     title: string;
     description: string;

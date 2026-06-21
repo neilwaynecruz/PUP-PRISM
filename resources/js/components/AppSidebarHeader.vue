@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { LoaderCircle, Search } from 'lucide-vue-next';
+import AppNotificationMenu from '@/components/AppNotificationMenu.vue';
 import Breadcrumbs from '@/components/Breadcrumbs.vue';
 import { Button } from '@/components/ui/button';
 import { SidebarTrigger } from '@/components/ui/sidebar';
@@ -54,6 +55,8 @@ function openGlobalSearch(): void {
                     {{ pendingLabel ? `Opening ${pendingLabel}...` : 'Loading module...' }}
                 </span>
             </div>
+
+            <AppNotificationMenu />
 
             <Button
                 type="button"

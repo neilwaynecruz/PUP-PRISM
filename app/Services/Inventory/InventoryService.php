@@ -13,6 +13,7 @@ use App\Models\RequisitionLine;
 use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\User;
+use App\Services\InventoryRealtimeService;
 use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -22,6 +23,7 @@ class InventoryService
 {
     public function __construct(
         private readonly NotificationService $notifications,
+        private readonly InventoryRealtimeService $realtime,
     ) {}
 
     public function receive(User $user, Product $product, array $payload, ?string $ipAddress = null): void
@@ -60,43 +62,18 @@ class InventoryService
         ?string $notes = null,
         ?string $ipAddress = null,
     ): void {
-        DB::transaction(function () use ($user, $product, $qty, $referenceNo, $receivedAt, $expiresAt, $notes, $ipAddress): void {
-            $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+        $result = DB::transaction(fn (): array => $this->performConsumableReceipt(
+            user: $user,
+            product: $product,
+            qty: $qty,
+            referenceNo: $referenceNo,
+            receivedAt: $receivedAt,
+            expiresAt: $expiresAt,
+            notes: $notes,
+            ipAddress: $ipAddress,
+        ));
 
-            $lot = StockLot::create([
-                'product_id' => $product->id,
-                'reference_no' => $referenceNo,
-                'received_at' => ($receivedAt ?? CarbonImmutable::now()),
-                'expires_at' => $expiresAt?->toDateString(),
-                'qty_received' => $qty,
-                'qty_remaining' => $qty,
-            ]);
-
-            $stock = ProductStock::query()->firstOrCreate(
-                ['product_id' => $product->id],
-                ['on_hand_qty' => 0],
-            );
-
-            $qtyBefore = (int) $stock->on_hand_qty;
-            $stock->increment('on_hand_qty', $qty);
-            $qtyAfter = $qtyBefore + $qty;
-
-            StockMovement::create([
-                'movement_type' => 'receive',
-                'product_id' => $product->id,
-                'stock_lot_id' => $lot->id,
-                'asset_id' => null,
-                'requisition_id' => null,
-                'qty_delta' => $qty,
-                'qty_before' => $qtyBefore,
-                'qty_after' => $qtyAfter,
-                'performed_by' => $user->id,
-                'accountable_position_id' => null,
-                'ip_address' => $ipAddress,
-                'performed_at' => CarbonImmutable::now(),
-                'notes' => $notes,
-            ]);
-        });
+        $this->realtime->stockReceived($result['product'], $result['on_hand_qty'], $qty);
     }
 
     /**
@@ -104,34 +81,15 @@ class InventoryService
      */
     public function receiveAssets(User $user, Product $product, array $tagCodes, ?string $notes = null, ?string $ipAddress = null): void
     {
-        DB::transaction(function () use ($user, $product, $tagCodes, $notes, $ipAddress): void {
-            $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+        $result = DB::transaction(fn (): array => $this->performAssetReceipt(
+            user: $user,
+            product: $product,
+            tagCodes: $tagCodes,
+            notes: $notes,
+            ipAddress: $ipAddress,
+        ));
 
-            foreach ($tagCodes as $tagCode) {
-                $asset = Asset::create([
-                    'product_id' => $product->id,
-                    'position_id' => null,
-                    'tag_code' => $tagCode,
-                    'status' => AssetStatus::Available,
-                ]);
-
-                StockMovement::create([
-                    'movement_type' => 'receive',
-                    'product_id' => $product->id,
-                    'stock_lot_id' => null,
-                    'asset_id' => $asset->id,
-                    'requisition_id' => null,
-                    'qty_delta' => null,
-                    'qty_before' => null,
-                    'qty_after' => null,
-                    'performed_by' => $user->id,
-                    'accountable_position_id' => null,
-                    'ip_address' => $ipAddress,
-                    'performed_at' => CarbonImmutable::now(),
-                    'notes' => $notes,
-                ]);
-            }
-        });
+        $this->realtime->stockReceived($result['product'], null, $result['delta']);
     }
 
     /**
@@ -139,20 +97,25 @@ class InventoryService
      */
     public function batchReceive(User $user, array $lines, ?string $ipAddress = null): void
     {
-        DB::transaction(function () use ($user, $lines, $ipAddress): void {
+        /** @var array<int, array{product: Product, on_hand_qty: int|null, delta: int}> $stockChanges */
+        $stockChanges = DB::transaction(function () use ($user, $lines, $ipAddress): array {
+            $changes = [];
+
             foreach ($lines as $line) {
                 $product = Product::query()->where('sku', $line['sku'])->firstOrFail();
 
                 if ($line['tag_codes'] !== null) {
-                    $this->receiveAssets(
+                    $result = $this->performAssetReceipt(
                         user: $user,
                         product: $product,
                         tagCodes: $line['tag_codes'],
                         notes: $line['notes'] ?? null,
                         ipAddress: $ipAddress,
                     );
+
+                    $changes[] = $result;
                 } else {
-                    $this->receiveConsumable(
+                    $result = $this->performConsumableReceipt(
                         user: $user,
                         product: $product,
                         qty: $line['qty'],
@@ -162,15 +125,26 @@ class InventoryService
                         notes: $line['notes'] ?? null,
                         ipAddress: $ipAddress,
                     );
+
+                    $changes[] = $result;
                 }
             }
+
+            return $changes;
         });
+
+        foreach ($stockChanges as $change) {
+            $this->realtime->stockReceived($change['product'], $change['on_hand_qty'], $change['delta']);
+        }
     }
 
     public function issueRequisition(User $user, Requisition $requisition, ?string $notes = null, ?string $ipAddress = null): void
     {
-        DB::transaction(function () use ($user, $requisition, $notes, $ipAddress): void {
+        /** @var array{stock_changes: array<int, array{product: Product, on_hand_qty: int, delta: int, requisition_id: int}>, low_stock_alerts: array<int, array{product: Product, on_hand_qty: int}>} $result */
+        $result = DB::transaction(function () use ($user, $requisition, $notes, $ipAddress): array {
             $requisition = Requisition::query()->whereKey($requisition->id)->lockForUpdate()->firstOrFail();
+            $stockChanges = [];
+            $lowStockAlerts = [];
 
             if ($requisition->status !== RequisitionStatus::Approved) {
                 throw new \RuntimeException('Only approved requisitions can be issued.');
@@ -253,12 +227,23 @@ class InventoryService
                 ]);
 
                 $freshStock = $stock->fresh();
-                if (
-                    $freshStock !== null
-                    && $product->reorder_threshold !== null
-                    && $freshStock->on_hand_qty <= $product->reorder_threshold
-                ) {
-                    $this->notifications->lowStockAlert($product, $freshStock->on_hand_qty);
+                if ($freshStock !== null) {
+                    $stockChanges[] = [
+                        'product' => $product->fresh() ?? $product,
+                        'on_hand_qty' => (int) $freshStock->on_hand_qty,
+                        'delta' => -$qty,
+                        'requisition_id' => $requisition->id,
+                    ];
+
+                    if (
+                        $product->reorder_threshold !== null
+                        && $freshStock->on_hand_qty <= $product->reorder_threshold
+                    ) {
+                        $lowStockAlerts[] = [
+                            'product' => $product->fresh() ?? $product,
+                            'on_hand_qty' => (int) $freshStock->on_hand_qty,
+                        ];
+                    }
                 }
             }
 
@@ -270,6 +255,128 @@ class InventoryService
                 'issued_at' => CarbonImmutable::now(),
                 'notes' => $notes ?? $requisition->notes,
             ]);
+
+            return [
+                'stock_changes' => $stockChanges,
+                'low_stock_alerts' => $lowStockAlerts,
+            ];
         });
+
+        foreach ($result['stock_changes'] as $stockChange) {
+            $this->realtime->stockIssued(
+                $stockChange['product'],
+                $stockChange['on_hand_qty'],
+                $stockChange['delta'],
+                $stockChange['requisition_id'],
+            );
+        }
+
+        foreach ($result['low_stock_alerts'] as $lowStockAlert) {
+            $this->notifications->lowStockAlert(
+                $lowStockAlert['product'],
+                $lowStockAlert['on_hand_qty'],
+            );
+        }
+    }
+
+    /**
+     * @return array{product: Product, on_hand_qty: int, delta: int}
+     */
+    private function performConsumableReceipt(
+        User $user,
+        Product $product,
+        int $qty,
+        ?string $referenceNo = null,
+        ?CarbonImmutable $receivedAt = null,
+        ?CarbonImmutable $expiresAt = null,
+        ?string $notes = null,
+        ?string $ipAddress = null,
+    ): array {
+        $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+
+        $lot = StockLot::create([
+            'product_id' => $product->id,
+            'reference_no' => $referenceNo,
+            'received_at' => ($receivedAt ?? CarbonImmutable::now()),
+            'expires_at' => $expiresAt?->toDateString(),
+            'qty_received' => $qty,
+            'qty_remaining' => $qty,
+        ]);
+
+        $stock = ProductStock::query()->firstOrCreate(
+            ['product_id' => $product->id],
+            ['on_hand_qty' => 0],
+        );
+
+        $qtyBefore = (int) $stock->on_hand_qty;
+        $stock->increment('on_hand_qty', $qty);
+        $qtyAfter = $qtyBefore + $qty;
+
+        StockMovement::create([
+            'movement_type' => 'receive',
+            'product_id' => $product->id,
+            'stock_lot_id' => $lot->id,
+            'asset_id' => null,
+            'requisition_id' => null,
+            'qty_delta' => $qty,
+            'qty_before' => $qtyBefore,
+            'qty_after' => $qtyAfter,
+            'performed_by' => $user->id,
+            'accountable_position_id' => null,
+            'ip_address' => $ipAddress,
+            'performed_at' => CarbonImmutable::now(),
+            'notes' => $notes,
+        ]);
+
+        return [
+            'product' => $product->fresh() ?? $product,
+            'on_hand_qty' => $qtyAfter,
+            'delta' => $qty,
+        ];
+    }
+
+    /**
+     * @param  array<int, string>  $tagCodes
+     * @return array{product: Product, on_hand_qty: int|null, delta: int}
+     */
+    private function performAssetReceipt(
+        User $user,
+        Product $product,
+        array $tagCodes,
+        ?string $notes = null,
+        ?string $ipAddress = null,
+    ): array {
+        $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+
+        foreach ($tagCodes as $tagCode) {
+            $asset = Asset::create([
+                'product_id' => $product->id,
+                'position_id' => null,
+                'tag_code' => $tagCode,
+                'status' => AssetStatus::Available,
+            ]);
+
+            StockMovement::create([
+                'movement_type' => 'receive',
+                'product_id' => $product->id,
+                'stock_lot_id' => null,
+                'asset_id' => $asset->id,
+                'requisition_id' => null,
+                'qty_delta' => null,
+                'qty_before' => null,
+                'qty_after' => null,
+                'performed_by' => $user->id,
+                'accountable_position_id' => null,
+                'ip_address' => $ipAddress,
+                'performed_at' => CarbonImmutable::now(),
+                'notes' => $notes,
+            ]);
+        }
+
+        return [
+            'product' => $product->fresh() ?? $product,
+            'on_hand_qty' => null,
+            'delta' => count($tagCodes),
+        ];
     }
 }

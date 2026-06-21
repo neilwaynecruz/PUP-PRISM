@@ -12,6 +12,7 @@ use App\Models\HandoverLog;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Notifications\HandoverVerificationNotification;
+use App\Services\InventoryRealtimeService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,10 @@ use Inertia\Response;
 
 class HandoverController extends Controller
 {
+    public function __construct(
+        private readonly InventoryRealtimeService $realtime,
+    ) {}
+
     public function index(Request $request): Response
     {
         $recipientSearch = $request->string('recipient_search')->trim()->toString();
@@ -91,6 +96,7 @@ class HandoverController extends Controller
             handoverLogId: $handover->id,
             token: $rawToken,
         ));
+        $this->realtime->handoverInitiated($handover);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Verification link sent to recipient.')]);
 
@@ -171,6 +177,7 @@ class HandoverController extends Controller
                 'notes' => $handoverLog->notes,
             ]);
         });
+        $this->realtime->handoverVerified($handoverLog->fresh() ?? $handoverLog);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Handover verified.')]);
 

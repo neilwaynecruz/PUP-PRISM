@@ -8,16 +8,15 @@ use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\Position;
 use App\Models\Product;
-use App\Models\ProductStock;
 use App\Models\Requisition;
-use App\Models\RequisitionLine;
-use App\Models\StockLot;
 use App\Models\User;
 use App\Notifications\BookingStatusChangedNotification;
 use App\Notifications\BookingSubmittedNotification;
+use App\Notifications\HandoverVerificationNotification;
 use App\Notifications\LowStockAlertNotification;
 use App\Notifications\RequisitionStatusChangedNotification;
 use App\Notifications\RequisitionSubmittedNotification;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Facades\Notification;
 
 uses()->group('notifications');
@@ -26,7 +25,7 @@ describe('Requisition workflow notifications', function () {
     beforeEach(function () {
         Notification::fake();
 
-        (new \Database\Seeders\RoleSeeder)->run();
+        (new RoleSeeder)->run();
 
         $this->supplyHead = User::factory()->create();
         $this->supplyHead->assignRole('Supply Head');
@@ -91,7 +90,7 @@ describe('Booking workflow notifications', function () {
     beforeEach(function () {
         Notification::fake();
 
-        (new \Database\Seeders\RoleSeeder)->run();
+        (new RoleSeeder)->run();
 
         $this->custodian = User::factory()->create();
         $this->custodian->assignRole('Property Custodian');
@@ -156,7 +155,7 @@ describe('Low stock alert notification', function () {
     beforeEach(function () {
         Notification::fake();
 
-        (new \Database\Seeders\RoleSeeder)->run();
+        (new RoleSeeder)->run();
 
         $this->supplyHead = User::factory()->create();
         $this->supplyHead->assignRole('Supply Head');
@@ -172,5 +171,75 @@ describe('Low stock alert notification', function () {
         Notification::assertSentTo($this->supplyHead, LowStockAlertNotification::class, function ($notification) {
             return $notification->currentStock === 5;
         });
+    });
+});
+
+describe('Notification delivery channels', function () {
+    it('adds database and broadcast delivery to requisition notifications', function () {
+        $requester = User::factory()->create([
+            'position_id' => Position::factory()->create()->id,
+        ]);
+
+        $requisition = Requisition::factory()->create([
+            'requester_id' => $requester->id,
+        ]);
+
+        $submitted = new RequisitionSubmittedNotification($requisition);
+        $statusChanged = new RequisitionStatusChangedNotification($requisition, 'approved');
+
+        expect($submitted->via($requester))->toBe(['mail', 'database', 'broadcast']);
+        expect($statusChanged->via($requester))->toBe(['mail', 'database', 'broadcast']);
+        expect($submitted->toArray($requester))->toMatchArray([
+            'category' => 'requisition',
+            'severity' => 'info',
+        ]);
+    });
+
+    it('adds database and broadcast delivery to booking notifications', function () {
+        $requester = User::factory()->create([
+            'position_id' => Position::factory()->create()->id,
+        ]);
+
+        $product = Product::factory()->create([
+            'type' => ProductType::Asset,
+            'is_active' => true,
+        ]);
+
+        $asset = Asset::factory()->create([
+            'product_id' => $product->id,
+            'status' => AssetStatus::Available,
+        ]);
+
+        $booking = Booking::factory()->create([
+            'asset_id' => $asset->id,
+            'requester_id' => $requester->id,
+        ]);
+
+        $submitted = new BookingSubmittedNotification($booking);
+        $statusChanged = new BookingStatusChangedNotification($booking, 'approved');
+
+        expect($submitted->via($requester))->toBe(['mail', 'database', 'broadcast']);
+        expect($statusChanged->via($requester))->toBe(['mail', 'database', 'broadcast']);
+        expect($statusChanged->toArray($requester))->toMatchArray([
+            'category' => 'booking',
+            'severity' => 'success',
+        ]);
+    });
+
+    it('adds database and broadcast delivery to alert and handover notifications', function () {
+        $user = User::factory()->create();
+        $product = Product::factory()->create([
+            'reorder_threshold' => 10,
+        ]);
+
+        $lowStock = new LowStockAlertNotification($product, 4);
+        $handover = new HandoverVerificationNotification(10, 'verification-token');
+
+        expect($lowStock->via($user))->toBe(['mail', 'database', 'broadcast']);
+        expect($handover->via($user))->toBe(['mail', 'database', 'broadcast']);
+        expect($handover->toArray($user))->toMatchArray([
+            'category' => 'handover',
+            'severity' => 'info',
+        ]);
     });
 });

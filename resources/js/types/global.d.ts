@@ -1,4 +1,4 @@
-import type { Auth, SessionMeta } from '@/types/auth';
+import type { Auth, SessionMeta, SharedNotifications } from '@/types/auth';
 
 // Extend ImportMeta interface for Vite...
 declare module 'vite/client' {
@@ -19,6 +19,7 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             session: SessionMeta;
+            notifications: SharedNotifications;
             sidebarOpen: boolean;
             [key: string]: unknown;
         };

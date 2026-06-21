@@ -14,6 +14,7 @@ use App\Http\Controllers\Inventory\RequisitionController;
 use App\Http\Controllers\Inventory\RequisitionTemplateController;
 use App\Http\Controllers\Inventory\StockMovementController;
 use App\Http\Controllers\Inventory\TrashController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
 
@@ -25,6 +26,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('session/keep-alive', fn () => response()->noContent()->header('Cache-Control', 'no-store'))
         ->name('session.keep-alive');
+    Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::put('{notification}/read', [NotificationController::class, 'markAsRead'])
+            ->name('read');
+
+        Route::put('read-all', [NotificationController::class, 'markAllAsRead'])
+            ->name('read-all');
+    });
 
     Route::get('admin/health', fn () => response()->noContent())
         ->middleware('role:Admin')

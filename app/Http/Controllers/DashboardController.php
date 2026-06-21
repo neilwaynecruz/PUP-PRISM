@@ -19,6 +19,7 @@ class DashboardController extends Controller
     public function __invoke(Request $request): Response
     {
         $user = $request->user();
+        $canViewForecasting = $user?->hasAnyRole(['Admin', 'Supply Head']) ?? false;
 
         $validated = Validator::make($request->all(), [
             'from' => ['nullable', 'date'],
@@ -26,14 +27,26 @@ class DashboardController extends Controller
         ])->validate();
 
         $range = ['from' => $validated['from'] ?? null, 'to' => $validated['to'] ?? null];
+        $emptyForecastSummary = [
+            'forecast_date' => null,
+            'last_generated_at' => null,
+            'urgent_count' => 0,
+            'at_risk_count' => 0,
+            'average_confidence' => null,
+            'items' => [],
+        ];
 
         $stats = $user->hasRole('Admin')
             ? $this->statsService->getAdminStats($range)
             : [];
 
         return Inertia::render('Dashboard', [
+            'canViewForecasting' => $canViewForecasting,
             'dateRange' => $range,
             'alerts' => $stats['alerts'] ?? [],
+            'forecastSummary' => $canViewForecasting
+                ? ($stats['forecastSummary'] ?? $this->statsService->getForecastSummary())
+                : $emptyForecastSummary,
             'lowStock' => $stats['lowStock'] ?? [],
             'unserviceableAssets' => $stats['unserviceableAssets'] ?? [],
             'assetStatusCounts' => [

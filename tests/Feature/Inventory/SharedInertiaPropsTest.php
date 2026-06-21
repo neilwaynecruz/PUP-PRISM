@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\Product;
 use App\Models\User;
+use App\Notifications\LowStockAlertNotification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
@@ -39,4 +41,23 @@ test('authenticated inertia pages share role-aware inventory permissions', funct
             ->where('auth.permissions.viewReceiving', true)
             ->where('auth.permissions.viewMovements', false)
             ->where('auth.permissions.viewAuditLogs', false));
+});
+
+test('authenticated inertia pages share recent notifications and unread counts', function () {
+    $user = User::factory()->create();
+    $product = Product::factory()->create([
+        'reorder_threshold' => 10,
+    ]);
+
+    $user->notify(new LowStockAlertNotification($product, 4));
+
+    $this->actingAs($user)
+        ->get(route('dashboard', absolute: false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('notifications.unreadCount', 1)
+            ->has('notifications.items', 1)
+            ->where('notifications.items.0.category', 'inventory')
+            ->where('notifications.items.0.severity', 'warning')
+            ->where('notifications.items.0.title', 'Low stock alert'));
 });

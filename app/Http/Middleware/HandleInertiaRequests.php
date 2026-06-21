@@ -10,6 +10,7 @@ use App\Models\StockMovement;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Notifications\DatabaseNotification;
 use Inertia\Middleware;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -73,6 +74,12 @@ class HandleInertiaRequests extends Middleware
                 'keepAliveUrl' => route('session.keep-alive', absolute: false),
                 'loginUrl' => route('login', absolute: false),
             ],
+            'notifications' => $user instanceof User
+                ? fn (): array => $this->shareNotifications($user)
+                : [
+                    'unreadCount' => 0,
+                    'items' => [],
+                ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
         ];
     }
@@ -118,5 +125,35 @@ class HandleInertiaRequests extends Middleware
         }
 
         return $request->user() instanceof User;
+    }
+
+    /**
+     * @return array{unreadCount: int, items: array<int, array<string, mixed>>}
+     */
+    private function shareNotifications(User $user): array
+    {
+        $items = $user->notifications()
+            ->latest()
+            ->limit(8)
+            ->get()
+            ->map(fn (DatabaseNotification $notification): array => [
+                'id' => $notification->id,
+                'type' => (string) ($notification->data['type'] ?? $notification->type),
+                'category' => (string) ($notification->data['category'] ?? 'system'),
+                'severity' => (string) ($notification->data['severity'] ?? 'info'),
+                'title' => (string) ($notification->data['title'] ?? __('Notification')),
+                'message' => (string) ($notification->data['message'] ?? ''),
+                'url' => $notification->data['url'] ?? null,
+                'createdAt' => $notification->created_at?->toIso8601String(),
+                'readAt' => $notification->read_at?->toIso8601String(),
+                'data' => $notification->data,
+            ])
+            ->values()
+            ->all();
+
+        return [
+            'unreadCount' => $user->unreadNotifications()->count(),
+            'items' => $items,
+        ];
     }
 }

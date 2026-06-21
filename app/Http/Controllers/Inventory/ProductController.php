@@ -9,11 +9,15 @@ use App\Http\Requests\Inventory\ProductUpdateRequest;
 use App\Http\Resources\ProductCollection;
 use App\Http\Resources\ProductResource;
 use App\Models\Category;
+use App\Models\ForecastSnapshot;
 use App\Models\Origin;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\StockMovement;
 use App\Services\AuditLogService;
+use App\Services\Forecasting\Data\ForecastResult;
+use App\Services\Forecasting\DemandForecaster;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -128,13 +132,14 @@ class ProductController extends Controller
         return to_route('inventory.products.index');
     }
 
-    public function show(Request $request, int $product): Response|SymfonyResponse
+    public function show(Request $request, DemandForecaster $forecaster, int $product): Response|SymfonyResponse
     {
         $product = Product::query()->withTrashed()
             ->with([
                 'category:id,name',
                 'origin:id,name',
                 'stock:id,product_id,on_hand_qty',
+                'forecastProfile:id,product_id,method,lookback_days,forecast_horizon_days,lead_time_days,safety_stock_days,smoothing_factor,trend_factor,is_active',
             ])
             ->withCount('assets')
             ->find($product);
@@ -190,8 +195,31 @@ class ProductController extends Controller
             ])
             ->all();
 
+        $forecast = null;
+
+        if ($product->type === ProductType::Consumable) {
+            $latestSnapshot = ForecastSnapshot::query()
+                ->where('product_id', $product->id)
+                ->latest('forecast_date')
+                ->latest('generated_at')
+                ->first();
+
+            if (
+                $latestSnapshot instanceof ForecastSnapshot
+                && $latestSnapshot->forecast_date?->toDateString() === CarbonImmutable::now()->toDateString()
+            ) {
+                $forecast = $this->formatForecastSnapshot($latestSnapshot);
+            } else {
+                $forecast = $this->formatForecastResult(
+                    $forecaster->forecast($product, $product->forecastProfile),
+                    'live',
+                );
+            }
+        }
+
         return Inertia::render('inventory/products/Show', [
             'product' => (new ProductResource($product))->resolve(),
+            'forecast' => $forecast,
             'stockMovements' => $stockMovements,
             'can' => [
                 'edit' => $request->user()?->can('update', $product) ?? false,
@@ -644,5 +672,61 @@ class ProductController extends Controller
             ],
             $options,
         ));
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatForecastSnapshot(ForecastSnapshot $snapshot): array
+    {
+        $rawData = is_array($snapshot->raw_data) ? $snapshot->raw_data : [];
+
+        return [
+            'method' => $snapshot->forecast_method,
+            'source' => 'snapshot',
+            'current_on_hand_qty' => $snapshot->current_on_hand_qty,
+            'reorder_point_qty' => $snapshot->reorder_point_qty,
+            'predicted_daily_consumption' => round($snapshot->predicted_daily_consumption, 2),
+            'predicted_days_until_stockout' => $snapshot->predicted_days_until_stockout,
+            'predicted_stockout_date' => $snapshot->predicted_stockout_date?->toDateString(),
+            'recommended_reorder_qty' => $snapshot->recommended_reorder_qty,
+            'confidence_score' => $snapshot->confidence_score !== null
+                ? round($snapshot->confidence_score, 2)
+                : null,
+            'generated_at' => $snapshot->generated_at?->toISOString(),
+            'historical_daily' => data_get($rawData, 'historical_daily', []),
+            'forecast_daily' => data_get($rawData, 'forecast_daily', []),
+            'history_window_days' => (int) data_get($rawData, 'summary.lookback_days', 0),
+            'forecast_horizon_days' => (int) data_get($rawData, 'summary.forecast_horizon_days', 0),
+            'lead_time_days' => (int) data_get($rawData, 'summary.lead_time_days', 0),
+            'safety_stock_days' => (int) data_get($rawData, 'summary.safety_stock_days', 0),
+            'has_sufficient_history' => (bool) data_get($rawData, 'summary.has_sufficient_history', false),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function formatForecastResult(ForecastResult $result, string $source = 'live'): array
+    {
+        return [
+            'method' => $result->method,
+            'source' => $source,
+            'current_on_hand_qty' => $result->currentOnHandQty,
+            'reorder_point_qty' => $result->reorderPointQty,
+            'predicted_daily_consumption' => $result->predictedDailyConsumption,
+            'predicted_days_until_stockout' => $result->predictedDaysUntilStockout,
+            'predicted_stockout_date' => $result->predictedStockoutDate?->toDateString(),
+            'recommended_reorder_qty' => $result->recommendedReorderQty,
+            'confidence_score' => $result->confidenceScore,
+            'generated_at' => $result->generatedAt->toISOString(),
+            'historical_daily' => $result->historicalDailyConsumption,
+            'forecast_daily' => $result->forecastDailyConsumption,
+            'history_window_days' => $result->lookbackDays,
+            'forecast_horizon_days' => $result->forecastHorizonDays,
+            'lead_time_days' => $result->leadTimeDays,
+            'safety_stock_days' => $result->safetyStockDays,
+            'has_sufficient_history' => $result->hasSufficientHistory,
+        ];
     }
 }

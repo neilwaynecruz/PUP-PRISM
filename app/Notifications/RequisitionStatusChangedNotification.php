@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Requisition;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -21,7 +22,7 @@ class RequisitionStatusChangedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database', 'broadcast'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -64,9 +65,30 @@ class RequisitionStatusChangedNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $url = route('inventory.requisitions.show', $this->requisition, absolute: false);
+        $severity = match ($this->action) {
+            'rejected' => 'warning',
+            'issued' => 'success',
+            default => 'info',
+        };
+
         return [
+            'type' => 'requisition.status-changed',
+            'category' => 'requisition',
+            'severity' => $severity,
+            'title' => __('Requisition status updated'),
+            'message' => __('Requisition #:id was :action.', [
+                'id' => $this->requisition->id,
+                'action' => $this->action,
+            ]),
+            'url' => $url,
             'requisition_id' => $this->requisition->id,
             'action' => $this->action,
         ];
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toArray($notifiable));
     }
 }

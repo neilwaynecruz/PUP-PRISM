@@ -16,6 +16,10 @@ use Illuminate\Support\Facades\Notification;
 
 class NotificationService
 {
+    public function __construct(
+        private readonly InventoryRealtimeService $realtime,
+    ) {}
+
     /**
      * Notify Supply Head users when a new requisition is submitted.
      */
@@ -31,6 +35,8 @@ class NotificationService
             $recipients,
             new RequisitionSubmittedNotification($requisition),
         );
+
+        $this->realtime->requisitionSubmitted($requisition);
     }
 
     /**
@@ -47,6 +53,8 @@ class NotificationService
         $requester->notify(
             new RequisitionStatusChangedNotification($requisition, $action),
         );
+
+        $this->realtime->requisitionStatusChanged($requisition, $action);
     }
 
     /**
@@ -64,6 +72,8 @@ class NotificationService
             $recipients,
             new BookingSubmittedNotification($booking),
         );
+
+        $this->realtime->bookingSubmitted($booking);
     }
 
     /**
@@ -80,6 +90,8 @@ class NotificationService
         $requester->notify(
             new BookingStatusChangedNotification($booking, $action),
         );
+
+        $this->realtime->bookingStatusChanged($booking, $action);
     }
 
     /**

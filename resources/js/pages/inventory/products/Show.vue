@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
+import ProductForecastPanel from '@/components/inventory/ProductForecastPanel.vue';
 import { Button } from '@/components/ui/button';
 import {
     edit as productsEdit,
@@ -37,8 +38,29 @@ type StockMovement = {
     accountable_position: string | null;
 };
 
+type ProductForecast = {
+    method: string;
+    source: 'snapshot' | 'live';
+    current_on_hand_qty: number;
+    reorder_point_qty: number;
+    predicted_daily_consumption: number;
+    predicted_days_until_stockout: number | null;
+    predicted_stockout_date: string | null;
+    recommended_reorder_qty: number;
+    confidence_score: number | null;
+    generated_at: string;
+    historical_daily: { date: string; qty: number }[];
+    forecast_daily: { date: string; predicted_qty: number }[];
+    history_window_days: number;
+    forecast_horizon_days: number;
+    lead_time_days: number;
+    safety_stock_days: number;
+    has_sufficient_history: boolean;
+};
+
 defineProps<{
     product: Product;
+    forecast: ProductForecast | null;
     stockMovements: StockMovement[];
     can: {
         edit: boolean;
@@ -65,6 +87,7 @@ function formatDateTime(iso: string | null): string {
 }
 
 defineOptions({
+    name: 'InventoryProductShowPage',
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: productsIndex() },
@@ -196,6 +219,11 @@ defineOptions({
                 </div>
             </div>
         </div>
+
+        <ProductForecastPanel
+            v-if="product.type === 'consumable'"
+            :forecast="forecast"
+        />
 
         <!-- Stock movement history -->
         <div

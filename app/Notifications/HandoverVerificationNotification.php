@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -25,7 +26,7 @@ class HandoverVerificationNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database', 'broadcast'];
     }
 
     /**
@@ -54,8 +55,25 @@ class HandoverVerificationNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        /** @var string $url */
+        $url = route('inventory.handover.verify', [
+            'handoverLog' => $this->handoverLogId,
+            'token' => $this->token,
+        ], absolute: false);
+
         return [
+            'type' => 'handover.verification-required',
+            'category' => 'handover',
+            'severity' => 'info',
+            'title' => __('Handover verification required'),
+            'message' => __('An internal asset handover is awaiting your verification.'),
+            'url' => $url,
             'handover_log_id' => $this->handoverLogId,
         ];
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toArray($notifiable));
     }
 }

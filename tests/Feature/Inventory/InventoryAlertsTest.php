@@ -28,3 +28,34 @@ test('alerts command generates low stock and expiring alerts', function () {
     expect(InventoryAlert::query()->where('type', 'low_stock')->count())->toBe(1);
     expect(InventoryAlert::query()->where('type', 'expiring')->count())->toBe(1);
 });
+
+test('alerts command preserves forecast-generated alerts', function () {
+    $product = Product::factory()->consumable()->create([
+        'sku' => 'SKU-ALERT-FORECAST',
+        'reorder_threshold' => 4,
+    ]);
+
+    ProductStock::factory()->create([
+        'product_id' => $product->id,
+        'on_hand_qty' => 10,
+    ]);
+
+    InventoryAlert::query()->create([
+        'type' => 'forecast_stockout',
+        'product_id' => $product->id,
+        'stock_lot_id' => null,
+        'message' => 'Forecast stockout warning.',
+        'detected_at' => now(),
+        'resolved_at' => null,
+    ]);
+
+    $this->artisan('app:inventory-generate-alerts')->assertExitCode(0);
+
+    expect(
+        InventoryAlert::query()
+            ->where('type', 'forecast_stockout')
+            ->where('product_id', $product->id)
+            ->whereNull('resolved_at')
+            ->count()
+    )->toBe(1);
+});

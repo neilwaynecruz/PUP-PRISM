@@ -8,6 +8,7 @@ use App\Enums\ProductType;
 use App\Enums\RequisitionStatus;
 use App\Models\Asset;
 use App\Models\Booking;
+use App\Models\ForecastSnapshot;
 use App\Models\InventoryAlert;
 use App\Models\Product;
 use App\Models\Requisition;
@@ -28,6 +29,7 @@ class DashboardStatsService
 
         return [
             'alerts' => $this->activeAlerts(),
+            'forecastSummary' => $this->getForecastSummary(),
             'lowStock' => $this->lowStockProducts(),
             'unserviceableAssets' => $this->unserviceableAssets(),
             'assetStatusCounts' => $this->assetStatusCounts(),
@@ -37,6 +39,108 @@ class DashboardStatsService
             'bookingSummary' => $this->bookingSummary($from, $to),
             'assetConditionSummary' => $this->assetConditionSummary(),
             'recentlyDeleted' => $this->recentlyDeleted(),
+        ];
+    }
+
+    /**
+     * @return array{
+     *     forecast_date: string|null,
+     *     last_generated_at: string|null,
+     *     urgent_count: int,
+     *     at_risk_count: int,
+     *     average_confidence: float|null,
+     *     items: list<array{
+     *         product_id: int,
+     *         product_name: string,
+     *         sku: string,
+     *         current_on_hand_qty: int,
+     *         reorder_point_qty: int,
+     *         predicted_daily_consumption: float,
+     *         predicted_days_until_stockout: int|null,
+     *         predicted_stockout_date: string|null,
+     *         recommended_reorder_qty: int,
+     *         confidence_score: float|null
+     *     }>
+     * }
+     */
+    public function getForecastSummary(): array
+    {
+        $snapshots = ForecastSnapshot::query()
+            ->with('product:id,sku,name')
+            ->orderByDesc('forecast_date')
+            ->orderByDesc('generated_at')
+            ->get();
+
+        if ($snapshots->isEmpty()) {
+            return [
+                'forecast_date' => null,
+                'last_generated_at' => null,
+                'urgent_count' => 0,
+                'at_risk_count' => 0,
+                'average_confidence' => null,
+                'items' => [],
+            ];
+        }
+
+        $latestForecastDate = $snapshots->first()?->forecast_date?->toDateString()
+            ?? CarbonImmutable::parse((string) $snapshots->first()?->forecast_date)->toDateString();
+        $latestSnapshots = $snapshots
+            ->filter(fn (ForecastSnapshot $snapshot) => (
+                $snapshot->forecast_date?->toDateString()
+                ?? CarbonImmutable::parse((string) $snapshot->forecast_date)->toDateString()
+            ) === $latestForecastDate)
+            ->values();
+        $items = $latestSnapshots
+            ->sort(function (ForecastSnapshot $left, ForecastSnapshot $right): int {
+                $leftDays = $left->predicted_days_until_stockout ?? PHP_INT_MAX;
+                $rightDays = $right->predicted_days_until_stockout ?? PHP_INT_MAX;
+
+                if ($leftDays === $rightDays) {
+                    return $right->recommended_reorder_qty <=> $left->recommended_reorder_qty;
+                }
+
+                return $leftDays <=> $rightDays;
+            })
+            ->take(8)
+            ->map(fn (ForecastSnapshot $snapshot) => [
+                'product_id' => $snapshot->product_id,
+                'product_name' => $snapshot->product?->name ?? 'Unknown product',
+                'sku' => $snapshot->product?->sku ?? 'N/A',
+                'current_on_hand_qty' => $snapshot->current_on_hand_qty,
+                'reorder_point_qty' => $snapshot->reorder_point_qty,
+                'predicted_daily_consumption' => round($snapshot->predicted_daily_consumption, 2),
+                'predicted_days_until_stockout' => $snapshot->predicted_days_until_stockout,
+                'predicted_stockout_date' => $snapshot->predicted_stockout_date?->toDateString(),
+                'recommended_reorder_qty' => $snapshot->recommended_reorder_qty,
+                'confidence_score' => $snapshot->confidence_score !== null
+                    ? round($snapshot->confidence_score, 2)
+                    : null,
+            ])
+            ->values()
+            ->toArray();
+
+        $confidenceScores = $latestSnapshots
+            ->pluck('confidence_score')
+            ->filter(fn (mixed $score) => $score !== null)
+            ->map(fn (mixed $score) => (float) $score);
+
+        return [
+            'forecast_date' => $latestForecastDate,
+            'last_generated_at' => ($latestGeneratedAt = $latestSnapshots->max('generated_at')) !== null
+                ? CarbonImmutable::parse((string) $latestGeneratedAt)->toISOString()
+                : null,
+            'urgent_count' => $latestSnapshots
+                ->filter(fn (ForecastSnapshot $snapshot) => $snapshot->predicted_days_until_stockout !== null
+                    && $snapshot->predicted_days_until_stockout <= 7)
+                ->count(),
+            'at_risk_count' => $latestSnapshots
+                ->filter(fn (ForecastSnapshot $snapshot) => $snapshot->predicted_days_until_stockout !== null
+                    && $snapshot->predicted_days_until_stockout <= 14)
+                ->count(),
+            'average_confidence' => $confidenceScores->isNotEmpty()
+                ? round((float) $confidenceScores->avg(), 2)
+                : null,
+            'items' => $items,
         ];
     }
 

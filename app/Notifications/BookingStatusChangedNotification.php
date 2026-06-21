@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -21,7 +22,7 @@ class BookingStatusChangedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['mail', 'database', 'broadcast'];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -66,9 +67,26 @@ class BookingStatusChangedNotification extends Notification
      */
     public function toArray(object $notifiable): array
     {
+        $assetTag = $this->booking->asset?->tag_code ?? 'Unknown asset';
+        $url = route('inventory.bookings.show', $this->booking->id, absolute: false);
+
         return [
+            'type' => 'booking.status-changed',
+            'category' => 'booking',
+            'severity' => $this->action === 'rejected' ? 'warning' : 'success',
+            'title' => __('Booking status updated'),
+            'message' => __('Your booking for asset :tag was :action.', [
+                'tag' => $assetTag,
+                'action' => $this->action,
+            ]),
+            'url' => $url,
             'booking_id' => $this->booking->id,
             'action' => $this->action,
         ];
+    }
+
+    public function toBroadcast(object $notifiable): BroadcastMessage
+    {
+        return new BroadcastMessage($this->toArray($notifiable));
     }
 }

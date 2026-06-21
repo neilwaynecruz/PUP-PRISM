@@ -18,11 +18,9 @@ class InventoryGenerateAlerts extends Command
     /**
      * Execute the console command.
      */
-    public function handle()
+    public function handle(): int
     {
         $now = CarbonImmutable::now();
-
-        InventoryAlert::query()->delete();
 
         $lowStockProducts = Product::query()
             ->where('type', ProductType::Consumable)
@@ -33,18 +31,35 @@ class InventoryGenerateAlerts extends Command
             ->with(['stock:id,product_id,on_hand_qty'])
             ->get();
 
+        $activeLowStockProductIds = [];
+
         foreach ($lowStockProducts as $product) {
             $onHand = $product->stock?->on_hand_qty ?? 0;
+            $activeLowStockProductIds[] = $product->id;
 
-            InventoryAlert::create([
-                'type' => 'low_stock',
-                'product_id' => $product->id,
-                'stock_lot_id' => null,
-                'message' => "Low stock: {$product->name} ({$product->sku}) has {$onHand} on hand (threshold {$product->reorder_threshold}).",
-                'detected_at' => $now,
-                'resolved_at' => null,
-            ]);
+            InventoryAlert::query()->updateOrCreate(
+                [
+                    'type' => 'low_stock',
+                    'product_id' => $product->id,
+                    'stock_lot_id' => null,
+                    'resolved_at' => null,
+                ],
+                [
+                    'message' => "Low stock: {$product->name} ({$product->sku}) has {$onHand} on hand (threshold {$product->reorder_threshold}).",
+                    'detected_at' => $now,
+                ],
+            );
         }
+
+        $staleLowStockAlerts = InventoryAlert::query()
+            ->where('type', 'low_stock')
+            ->whereNull('resolved_at');
+
+        if ($activeLowStockProductIds !== []) {
+            $staleLowStockAlerts->whereNotIn('product_id', $activeLowStockProductIds);
+        }
+
+        $staleLowStockAlerts->update(['resolved_at' => $now]);
 
         $expiringLots = StockLot::query()
             ->where('qty_remaining', '>', 0)
@@ -53,17 +68,37 @@ class InventoryGenerateAlerts extends Command
             ->with(['product:id,sku,name'])
             ->get();
 
+        $activeExpiringLotIds = [];
+
         foreach ($expiringLots as $lot) {
-            InventoryAlert::create([
-                'type' => 'expiring',
-                'product_id' => $lot->product_id,
-                'stock_lot_id' => $lot->id,
-                'message' => "Expiring soon: {$lot->product->name} ({$lot->product->sku}) lot #{$lot->id} expires {$lot->expires_at}.",
-                'detected_at' => $now,
-                'resolved_at' => null,
-            ]);
+            $activeExpiringLotIds[] = $lot->id;
+
+            InventoryAlert::query()->updateOrCreate(
+                [
+                    'type' => 'expiring',
+                    'product_id' => $lot->product_id,
+                    'stock_lot_id' => $lot->id,
+                    'resolved_at' => null,
+                ],
+                [
+                    'message' => "Expiring soon: {$lot->product->name} ({$lot->product->sku}) lot #{$lot->id} expires {$lot->expires_at}.",
+                    'detected_at' => $now,
+                ],
+            );
         }
 
+        $staleExpiringAlerts = InventoryAlert::query()
+            ->where('type', 'expiring')
+            ->whereNull('resolved_at');
+
+        if ($activeExpiringLotIds !== []) {
+            $staleExpiringAlerts->whereNotIn('stock_lot_id', $activeExpiringLotIds);
+        }
+
+        $staleExpiringAlerts->update(['resolved_at' => $now]);
+
         $this->info('Inventory alerts generated.');
+
+        return self::SUCCESS;
     }
 }

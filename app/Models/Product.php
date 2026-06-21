@@ -65,11 +65,27 @@ class Product extends Model
     }
 
     /**
+     * @return HasOne<ForecastProfile, $this>
+     */
+    public function forecastProfile(): HasOne
+    {
+        return $this->hasOne(ForecastProfile::class);
+    }
+
+    /**
      * @return HasMany<StockLot, $this>
      */
     public function lots(): HasMany
     {
         return $this->hasMany(StockLot::class);
+    }
+
+    /**
+     * @return HasMany<ForecastSnapshot, $this>
+     */
+    public function forecastSnapshots(): HasMany
+    {
+        return $this->hasMany(ForecastSnapshot::class);
     }
 
     /**
