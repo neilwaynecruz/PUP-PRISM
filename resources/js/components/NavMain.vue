@@ -14,6 +14,7 @@ import { toUrl } from '@/lib/utils';
 import type { NavItem } from '@/types';
 
 defineProps<{
+    title: string;
     items: NavItem[];
 }>();
 
@@ -34,7 +35,7 @@ function isPendingItem(item: NavItem): boolean {
         <SidebarGroupLabel
             class="px-3 text-[10px] font-semibold tracking-widest text-muted-foreground/70 uppercase"
         >
-            Platform
+            {{ title }}
         </SidebarGroupLabel>
         <SidebarMenu class="gap-0.5">
             <SidebarMenuItem v-for="item in items" :key="item.title">

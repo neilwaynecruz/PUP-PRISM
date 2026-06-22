@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import dayGridPlugin from '@fullcalendar/daygrid';
 import type { CalendarOptions } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/vue3';
 import { Form, Head, Link, router } from '@inertiajs/vue3';

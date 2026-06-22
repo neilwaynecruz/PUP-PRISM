@@ -6,7 +6,6 @@ import TableSkeleton from '@/components/TableSkeleton.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAppNavigation } from '@/composables/useAppNavigation';
 import {
     Select,
     SelectContent,
@@ -14,6 +13,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { useAppNavigation } from '@/composables/useAppNavigation';
 import {
     exportMethod as auditLogsExport,
     index as auditLogsIndex,

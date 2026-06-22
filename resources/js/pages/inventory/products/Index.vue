@@ -341,12 +341,12 @@ onBeforeUnmount(() => {
                     data-testid="product-search-input"
                     data-shortcut="search"
                     placeholder="Search by SKU or name…"
-                    class="rounded-lg"
+                    class="h-10 rounded-lg"
                 />
 
                 <select
                     v-model="type"
-                    class="h-9 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
+                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
                 >
                     <option value="">All types</option>
                     <option value="consumable">Consumables</option>
@@ -355,7 +355,7 @@ onBeforeUnmount(() => {
 
                 <select
                     v-model="categoryId"
-                    class="h-9 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
+                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
                 >
                     <option value="">All categories</option>
                     <option
@@ -369,7 +369,7 @@ onBeforeUnmount(() => {
 
                 <select
                     v-model="originId"
-                    class="h-9 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
+                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
                 >
                     <option value="">All origins</option>
                     <option
@@ -383,7 +383,7 @@ onBeforeUnmount(() => {
 
                 <select
                     v-model="active"
-                    class="h-9 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
+                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
                 >
                     <option value="">All statuses</option>
                     <option value="1">Active</option>

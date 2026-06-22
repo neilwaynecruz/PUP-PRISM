@@ -213,9 +213,94 @@ export function useInventoryNavigation() {
         filterByPermission(searchNavigationItems, permissions.value),
     );
 
+    const groupedNavItems = computed(() => {
+        const perms = permissions.value;
+
+        return [
+            {
+                group: 'Overview',
+                items: filterByPermission([
+                    {
+                        title: 'Dashboard',
+                        href: dashboard(),
+                        icon: LayoutGrid,
+                    }
+                ], perms)
+            },
+            {
+                group: 'Inventory',
+                items: filterByPermission([
+                    {
+                        title: 'Products',
+                        href: productsIndex(),
+                        icon: Package,
+                        permission: 'viewProducts',
+                    },
+                    {
+                        title: 'Receiving',
+                        href: receivingIndex(),
+                        icon: Truck,
+                        permission: 'viewReceiving',
+                    },
+                    {
+                        title: 'Stock Movements',
+                        href: movementsIndex(),
+                        icon: BarChart3,
+                        permission: 'viewMovements',
+                    }
+                ], perms)
+            },
+            {
+                group: 'Operations',
+                items: filterByPermission([
+                    {
+                        title: 'Handover',
+                        href: handoverIndex(),
+                        icon: ArrowLeftRight,
+                        permission: 'viewHandover',
+                    },
+                    {
+                        title: 'Bookings',
+                        href: bookingsIndex(),
+                        icon: BookOpen,
+                        permission: 'viewBookings',
+                    },
+                    {
+                        title: 'Requisitions',
+                        href: requisitionsIndex(),
+                        icon: FileText,
+                        permission: 'viewRequisitions',
+                    }
+                ], perms)
+            },
+            {
+                group: 'Monitoring',
+                items: filterByPermission([
+                    {
+                        title: 'Audit Logs',
+                        href: auditLogsIndex(),
+                        icon: History,
+                        permission: 'viewAuditLogs',
+                    }
+                ], perms)
+            },
+            {
+                group: 'System',
+                items: [
+                    {
+                        title: 'Settings',
+                        href: '/settings/profile',
+                        icon: Settings,
+                    }
+                ]
+            }
+        ].filter(g => g.items.length > 0);
+    });
+
     return {
         footerNavItems: footerNavigationItems,
         mainNavItems,
+        groupedNavItems,
         permissions,
         searchItems,
     };

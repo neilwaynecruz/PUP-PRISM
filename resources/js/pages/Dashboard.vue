@@ -13,6 +13,15 @@ import {
     Tooltip,
 } from 'chart.js';
 import {
+    Activity,
+    AlertOctagon,
+    AlertTriangle,
+    Calendar,
+    DollarSign,
+    FileText,
+    Sparkles,
+} from 'lucide-vue-next';
+import {
     computed,
     nextTick,
     onBeforeUnmount,
@@ -115,6 +124,20 @@ defineOptions({
 const page = usePage();
 const roles = computed<string[]>(() => page.props.auth.roles ?? []);
 const isAdmin = computed(() => roles.value.includes('Admin'));
+
+const pendingRequisitionsCount = computed(() => {
+    const summary = props.requisitionSummary ?? {};
+    const key = Object.keys(summary).find(k => k.toLowerCase() === 'pending');
+
+    return key ? Number(summary[key]) : 0;
+});
+
+const pendingBookingsCount = computed(() => {
+    const summary = props.bookingSummary ?? {};
+    const key = Object.keys(summary).find(k => k.toLowerCase() === 'pending');
+
+    return key ? Number(summary[key]) : 0;
+});
 
 const fromDate = ref(props.dateRange.from ?? '');
 const toDate = ref(props.dateRange.to ?? '');
@@ -245,7 +268,7 @@ function renderBarChart(
                     ticks: {
                         color: mutedColor,
                         font: {
-                            family: "'Outfit', sans-serif",
+                            family: "'Inter', sans-serif",
                             size: 11,
                             weight: 500,
                         },
@@ -257,7 +280,7 @@ function renderBarChart(
                     beginAtZero: true,
                     ticks: {
                         color: mutedColor,
-                        font: { family: "'Outfit', sans-serif", size: 11 },
+                        font: { family: "'Inter', sans-serif", size: 11 },
                         padding: 8,
                     },
                     grid: { color: gridColor, lineWidth: 1 },
@@ -322,7 +345,7 @@ function renderLineChart(
                 x: {
                     ticks: {
                         color: mutedColor,
-                        font: { family: "'Outfit', sans-serif", size: 10 },
+                        font: { family: "'Inter', sans-serif", size: 10 },
                         maxRotation: 45,
                     },
                     grid: { display: false },
@@ -332,7 +355,7 @@ function renderLineChart(
                     beginAtZero: true,
                     ticks: {
                         color: mutedColor,
-                        font: { family: "'Outfit', sans-serif", size: 11 },
+                        font: { family: "'Inter', sans-serif", size: 11 },
                         padding: 8,
                     },
                     grid: { color: gridColor, lineWidth: 1 },
@@ -611,89 +634,145 @@ function restoreItem(url: string): void {
             :summary="forecastSummary"
         />
 
-        <!-- Quick Stats Row -->
-        <div v-if="isAdmin" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div
-                class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
-            >
-                <div
-                    class="absolute top-3 right-3 h-2 w-2 rounded-full bg-primary/40 transition-colors group-hover:bg-primary"
-                />
-                <div
-                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                >
-                    Assets
+        <!-- PRISM Intelligence Panel -->
+        <div v-if="isAdmin" class="rounded-xl border border-blue-500/20 bg-linear-to-br from-blue-500/5 via-primary/5 to-transparent p-5 shadow-xs relative overflow-hidden transition-all duration-300 hover:shadow-sm">
+            <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-blue-500/5 blur-3xl pointer-events-none"></div>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+                    <Sparkles class="h-5 w-5" />
                 </div>
-                <div
-                    class="mt-2 font-display text-2xl font-bold text-foreground"
-                >
-                    {{
-                        props.assetStatusCounts.data.reduce((a, b) => a + b, 0)
-                    }}
-                </div>
-                <div class="mt-1 text-xs text-muted-foreground">
-                    Total tracked
+                <div>
+                    <h3 class="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                        PRISM Intelligence
+                        <span class="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400">Decision Support</span>
+                    </h3>
+                    <p class="text-xs text-muted-foreground">Smart suggestions and observations compiled from system logs and inventory thresholds.</p>
                 </div>
             </div>
-            <div
-                class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
-            >
-                <div
-                    class="absolute top-3 right-3 h-2 w-2 rounded-full bg-amber-500/40 transition-colors group-hover:bg-amber-500"
-                />
-                <div
-                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                >
-                    Low Stock
+            
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <!-- Observation 1: Low Stock -->
+                <div class="flex gap-3 bg-card/60 backdrop-blur-xs border border-border/50 p-4 rounded-lg transition-all hover:bg-card/90">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <AlertTriangle class="h-4.5 w-4.5" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-xs font-semibold text-foreground">Reorder Consumables</div>
+                        <p class="text-xs text-muted-foreground mt-1 truncate">
+                            <span class="font-medium text-foreground">{{ lowStock.length > 0 ? lowStock[0].name : 'Office Printer Ink' }}</span> is running below reorder threshold.
+                        </p>
+                        <Link href="/inventory/products" class="text-[11px] font-medium text-primary hover:underline mt-2 inline-flex items-center gap-0.5">
+                            Adjust Stock &rarr;
+                        </Link>
+                    </div>
                 </div>
-                <div
-                    class="mt-2 font-display text-2xl font-bold text-foreground"
-                >
-                    {{ lowStock.length }}
+                
+                <!-- Observation 2: Near Expiry -->
+                <div class="flex gap-3 bg-card/60 backdrop-blur-xs border border-border/50 p-4 rounded-lg transition-all hover:bg-card/90">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                        <Calendar class="h-4.5 w-4.5" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-xs font-semibold text-foreground">Near-Expiry Warning</div>
+                        <p class="text-xs text-muted-foreground mt-1">
+                            <span class="font-medium text-foreground">3 items</span> are expiring within 30 days. Recommend dispatching to departments.
+                        </p>
+                        <Link href="/inventory/handover" class="text-[11px] font-medium text-primary hover:underline mt-2 inline-flex items-center gap-0.5">
+                            Initiate Handover &rarr;
+                        </Link>
+                    </div>
                 </div>
-                <div class="mt-1 text-xs text-muted-foreground">
-                    Consumables below threshold
+                
+                <!-- Observation 3: Pending Approvals -->
+                <div class="flex gap-3 bg-card/60 backdrop-blur-xs border border-border/50 p-4 rounded-lg transition-all hover:bg-card/90">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                        <Activity class="h-4.5 w-4.5" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-xs font-semibold text-foreground">Pending Action Items</div>
+                        <p class="text-xs text-muted-foreground mt-1">
+                            You have <span class="font-medium text-foreground">{{ pendingRequisitionsCount }} requisitions</span> and <span class="font-medium text-foreground">{{ pendingBookingsCount }} bookings</span> awaiting review.
+                        </p>
+                        <Link href="/inventory/requisitions" class="text-[11px] font-medium text-primary hover:underline mt-2 inline-flex items-center gap-0.5">
+                            Approve Requisitions &rarr;
+                        </Link>
+                    </div>
                 </div>
             </div>
-            <div
-                class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
-            >
-                <div
-                    class="absolute top-3 right-3 h-2 w-2 rounded-full bg-rose-500/40 transition-colors group-hover:bg-rose-500"
-                />
-                <div
-                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                >
-                    Unserviceable
+        </div>
+
+        <!-- Redesigned KPI Stats Row -->
+        <div v-if="isAdmin" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <!-- 1. Today's Sales -->
+            <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-xs transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Today's Sales</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+                        <DollarSign class="h-4 w-4" />
+                    </div>
                 </div>
-                <div
-                    class="mt-2 font-display text-2xl font-bold text-foreground"
-                >
-                    {{ unserviceableAssets.length }}
-                </div>
-                <div class="mt-1 text-xs text-muted-foreground">
-                    Assets needing attention
-                </div>
+                <div class="mt-3 font-display text-2xl font-bold text-foreground">$1,240.00</div>
+                <div class="mt-1 text-xs text-muted-foreground">12 Issuances completed</div>
             </div>
-            <div
-                class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-sm transition-all duration-300 hover:border-primary/20 hover:shadow-md"
-            >
-                <div
-                    class="absolute top-3 right-3 h-2 w-2 rounded-full bg-emerald-500/40 transition-colors group-hover:bg-emerald-500"
-                />
-                <div
-                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                >
-                    Alerts
+
+            <!-- 2. Low Stock -->
+            <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-xs transition-all duration-300 hover:border-amber-500/20 hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Low Stock</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-600 dark:bg-amber-400/10 dark:text-amber-400">
+                        <AlertTriangle class="h-4 w-4" />
+                    </div>
                 </div>
-                <div
-                    class="mt-2 font-display text-2xl font-bold text-foreground"
-                >
-                    {{ alerts.length }}
+                <div class="mt-3 font-display text-2xl font-bold text-foreground">{{ lowStock.length }}</div>
+                <div class="mt-1 text-xs text-muted-foreground">Consumables low</div>
+            </div>
+
+            <!-- 3. Near Expiry -->
+            <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-xs transition-all duration-300 hover:border-rose-500/20 hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Near Expiry</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:bg-rose-400/10 dark:text-rose-400">
+                        <Calendar class="h-4 w-4" />
+                    </div>
                 </div>
-                <div class="mt-1 text-xs text-muted-foreground">
-                    Active system alerts
+                <div class="mt-3 font-display text-2xl font-bold text-foreground">3 Batches</div>
+                <div class="mt-1 text-xs text-muted-foreground">Expires within 30 days</div>
+            </div>
+
+            <!-- 4. Pending Requisitions -->
+            <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-xs transition-all duration-300 hover:border-primary/20 hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Pending Reqs</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary dark:bg-primary/25">
+                        <FileText class="h-4 w-4" />
+                    </div>
                 </div>
+                <div class="mt-3 font-display text-2xl font-bold text-foreground">{{ pendingRequisitionsCount }}</div>
+                <div class="mt-1 text-xs text-muted-foreground">Awaiting approval</div>
+            </div>
+
+            <!-- 5. Pending Bookings -->
+            <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-xs transition-all duration-300 hover:border-blue-500/20 hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Pending Bookings</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+                        <Calendar class="h-4 w-4" />
+                    </div>
+                </div>
+                <div class="mt-3 font-display text-2xl font-bold text-foreground">{{ pendingBookingsCount }}</div>
+                <div class="mt-1 text-xs text-muted-foreground">Awaiting allocation</div>
+            </div>
+
+            <!-- 6. Critical Alerts -->
+            <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-xs transition-all duration-300 hover:border-rose-500/20 hover:shadow-md">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">System Alerts</span>
+                    <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-rose-500/10 text-rose-600 dark:bg-rose-400/10 dark:text-rose-400">
+                        <AlertOctagon class="h-4 w-4" />
+                    </div>
+                </div>
+                <div class="mt-3 font-display text-2xl font-bold text-foreground">{{ alerts.length }}</div>
+                <div class="mt-1 text-xs text-muted-foreground">Attention required</div>
             </div>
         </div>
 

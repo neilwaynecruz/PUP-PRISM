@@ -2,7 +2,6 @@
 import { Link } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
-import NavFooter from '@/components/NavFooter.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
 import {
@@ -15,11 +14,11 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useAppNavigation } from '@/composables/useAppNavigation';
-import { toUrl } from '@/lib/utils';
 import { useInventoryNavigation } from '@/lib/inventoryNavigation';
+import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 
-const { footerNavItems, mainNavItems } = useInventoryNavigation();
+const { groupedNavItems } = useInventoryNavigation();
 const { navigateTo, pendingPath } = useAppNavigation();
 </script>
 
@@ -50,7 +49,7 @@ const { navigateTo, pendingPath } = useAppNavigation();
                             <span
                                 class="font-display text-lg font-semibold tracking-tight"
                                 >PRISM</span
-                            >
+                              >
                             <LoaderCircle
                                 v-if="pendingPath === toUrl(dashboard())"
                                 class="h-4 w-4 animate-spin text-primary"
@@ -61,12 +60,16 @@ const { navigateTo, pendingPath } = useAppNavigation();
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent class="px-2">
-            <NavMain :items="mainNavItems" />
+        <SidebarContent class="px-2 py-3 space-y-4">
+            <NavMain
+                v-for="group in groupedNavItems"
+                :key="group.group"
+                :title="group.group"
+                :items="group.items"
+            />
         </SidebarContent>
 
         <SidebarFooter class="px-2 pb-4">
-            <NavFooter :items="footerNavItems" />
             <NavUser />
         </SidebarFooter>
     </Sidebar>
