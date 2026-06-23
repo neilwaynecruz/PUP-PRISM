@@ -17,12 +17,16 @@ use App\Http\Controllers\Inventory\StockMovementController;
 use App\Http\Controllers\Inventory\SupplierController;
 use App\Http\Controllers\Inventory\TrashController;
 use App\Http\Controllers\NotificationController;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use Laravel\Fortify\Features;
 
-Route::inertia('/', 'Welcome', [
-    'canRegister' => Features::enabled(Features::registration()),
-])->name('home');
+Route::get('/', function (Request $request) {
+    if ($request->user() !== null) {
+        return redirect()->route('dashboard');
+    }
+
+    return redirect()->route('login');
+})->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
