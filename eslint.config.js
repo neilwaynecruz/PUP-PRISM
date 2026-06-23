@@ -77,6 +77,7 @@ export default defineConfigWithVueTs(
     },
     {
         ignores: [
+            '.agents/**',
             '.codex',
             '.cursor',
             'vendor',
