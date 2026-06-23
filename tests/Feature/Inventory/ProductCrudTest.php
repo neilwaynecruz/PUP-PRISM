@@ -4,6 +4,7 @@ use App\Enums\ProductType;
 use App\Models\Category;
 use App\Models\Origin;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
@@ -77,6 +78,7 @@ test('supply head can create a product', function () {
 
     $category = Category::factory()->create();
     $origin = Origin::factory()->create();
+    $supplier = Supplier::factory()->create();
 
     $payload = [
         '_token' => $csrfToken,
@@ -85,7 +87,10 @@ test('supply head can create a product', function () {
         'type' => ProductType::Consumable->value,
         'category_id' => $category->id,
         'origin_id' => $origin->id,
+        'supplier_id' => $supplier->id,
         'reorder_threshold' => 10,
+        'lead_time_days' => 6,
+        'unit_price' => 199.5,
         'is_active' => true,
     ];
 
@@ -94,7 +99,12 @@ test('supply head can create a product', function () {
         ->post(route('inventory.products.store', absolute: false), $payload)
         ->assertRedirect(route('inventory.products.index', absolute: false));
 
-    expect(Product::query()->where('sku', 'SKU-TEST-0001')->exists())->toBeTrue();
+    $product = Product::query()->where('sku', 'SKU-TEST-0001')->first();
+
+    expect($product)->not->toBeNull()
+        ->and($product?->supplier_id)->toBe($supplier->id)
+        ->and($product?->lead_time_days)->toBe(6)
+        ->and((float) $product?->unit_price)->toBe(199.5);
 });
 
 test('property custodian cannot store, update or destroy products', function () {
@@ -127,6 +137,7 @@ test('supply head can update but cannot destroy products', function () {
 
     $category = Category::factory()->create();
     $origin = Origin::factory()->create();
+    $supplier = Supplier::factory()->create();
     $product = Product::factory()->create();
 
     $this->actingAs($user)
@@ -138,12 +149,20 @@ test('supply head can update but cannot destroy products', function () {
             'type' => ProductType::Consumable->value,
             'category_id' => $category->id,
             'origin_id' => $origin->id,
+            'supplier_id' => $supplier->id,
             'reorder_threshold' => 5,
+            'lead_time_days' => 3,
+            'unit_price' => 245.25,
             'is_active' => true,
         ])
         ->assertRedirect(route('inventory.products.edit', $product, absolute: false));
 
-    expect(Product::query()->where('sku', 'SKU-UPDATED-0001')->exists())->toBeTrue();
+    $product->refresh();
+
+    expect(Product::query()->where('sku', 'SKU-UPDATED-0001')->exists())->toBeTrue()
+        ->and($product->supplier_id)->toBe($supplier->id)
+        ->and($product->lead_time_days)->toBe(3)
+        ->and((float) $product->unit_price)->toBe(245.25);
 
     $this->actingAs($user)
         ->withSession(['_token' => $csrfToken])

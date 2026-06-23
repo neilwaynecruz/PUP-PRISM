@@ -20,14 +20,17 @@ class StockMovementFactory extends Factory
     public function definition(): array
     {
         $performedAt = fake()->dateTimeBetween('-30 days', 'now');
+        $qtyDelta = fake()->numberBetween(1, 50);
 
         return [
-            'movement_type' => 'adjust',
+            'movement_type' => 'receive',
             'product_id' => Product::factory()->consumable(),
             'stock_lot_id' => null,
             'asset_id' => null,
             'requisition_id' => null,
-            'qty_delta' => fake()->numberBetween(-50, 50),
+            'qty_delta' => $qtyDelta,
+            'qty_before' => 0,
+            'qty_after' => $qtyDelta,
             'performed_by' => User::factory(),
             'accountable_position_id' => null,
             'ip_address' => fake()->ipv4(),

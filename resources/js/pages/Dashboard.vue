@@ -76,6 +76,13 @@ type RecentlyDeleted = {
     deleted_by: string;
     restore_url: string;
 };
+type SupplierPerformanceRow = {
+    id: number;
+    name: string;
+    total_pos: number;
+    open_pos: number;
+    avg_lead_time_days: number | null;
+};
 
 const props = defineProps<{
     canViewForecasting: boolean;
@@ -101,6 +108,8 @@ const props = defineProps<{
     issuingTrends: TrendData;
     requisitionSummary: SummaryData;
     bookingSummary: SummaryData;
+    purchaseOrderSummary: SummaryData;
+    supplierPerformance: SupplierPerformanceRow[];
     assetConditionSummary: SummaryData;
     recentlyDeleted: RecentlyDeleted[];
     exportUrls: {
@@ -124,6 +133,9 @@ defineOptions({
 const page = usePage();
 const roles = computed<string[]>(() => page.props.auth.roles ?? []);
 const isAdmin = computed(() => roles.value.includes('Admin'));
+const canViewProcurement = computed(() =>
+    roles.value.some((role) => ['Admin', 'Supply Head'].includes(role)),
+);
 
 const pendingRequisitionsCount = computed(() => {
     const summary = props.requisitionSummary ?? {};
@@ -137,6 +149,15 @@ const pendingBookingsCount = computed(() => {
     const key = Object.keys(summary).find(k => k.toLowerCase() === 'pending');
 
     return key ? Number(summary[key]) : 0;
+});
+
+const openPurchaseOrdersCount = computed(() => {
+    const summary = props.purchaseOrderSummary ?? {};
+
+    return ['draft', 'sent', 'partial'].reduce(
+        (total, key) => total + Number(summary[key] ?? 0),
+        0,
+    );
 });
 
 const fromDate = ref(props.dateRange.from ?? '');
@@ -918,6 +939,92 @@ function restoreItem(url: string): void {
                         }}</span>
                     </li>
                 </ul>
+            </div>
+        </div>
+
+        <div
+            v-if="canViewProcurement"
+            class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]"
+        >
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
+                <div class="mb-4 flex items-center justify-between">
+                    <div class="text-sm font-semibold tracking-tight">
+                        Purchase order status
+                    </div>
+                    <div class="h-1.5 w-1.5 rounded-full bg-primary/60" />
+                </div>
+                <div class="mb-4 rounded-lg border border-border/40 p-4">
+                    <div class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                        Open purchase orders
+                    </div>
+                    <div class="mt-2 font-display text-3xl font-bold text-foreground">
+                        {{ openPurchaseOrdersCount }}
+                    </div>
+                </div>
+                <ul
+                    v-if="summaryEntries(purchaseOrderSummary).length > 0"
+                    class="space-y-2 text-sm"
+                >
+                    <li
+                        v-for="entry in summaryEntries(purchaseOrderSummary)"
+                        :key="entry.key"
+                        class="flex items-center justify-between rounded-lg border border-border/40 p-2"
+                    >
+                        <span class="text-muted-foreground capitalize">
+                            {{ entry.key }}
+                        </span>
+                        <span class="font-mono text-xs font-semibold">
+                            {{ entry.value }}
+                        </span>
+                    </li>
+                </ul>
+                <div v-else class="text-sm text-muted-foreground">
+                    No purchase order activity for the selected range.
+                </div>
+            </div>
+
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
+                <div class="mb-4 flex items-center justify-between">
+                    <div class="text-sm font-semibold tracking-tight">
+                        Supplier performance
+                    </div>
+                    <div class="h-1.5 w-1.5 rounded-full bg-emerald-500/60" />
+                </div>
+                <div
+                    v-if="supplierPerformance.length === 0"
+                    class="text-sm text-muted-foreground"
+                >
+                    No supplier procurement history yet.
+                </div>
+                <div v-else class="grid gap-3">
+                    <div
+                        v-for="supplier in supplierPerformance"
+                        :key="supplier.id"
+                        class="rounded-lg border border-border/40 p-4"
+                    >
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="font-medium">{{ supplier.name }}</div>
+                            <div class="text-xs text-muted-foreground">
+                                {{ supplier.total_pos }} PO(s)
+                            </div>
+                        </div>
+                        <div class="mt-2 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                            <div>Open: {{ supplier.open_pos }}</div>
+                            <div>
+                                Avg lead time:
+                                {{
+                                    supplier.avg_lead_time_days !== null
+                                        ? `${supplier.avg_lead_time_days} day(s)`
+                                        : '—'
+                                }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

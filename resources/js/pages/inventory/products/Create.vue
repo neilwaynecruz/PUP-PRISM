@@ -16,9 +16,11 @@ type Option = { id: number; name: string };
 defineProps<{
     categories: Option[];
     origins: Option[];
+    suppliers: Option[];
 }>();
 
 defineOptions({
+    name: 'InventoryProductCreatePage',
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: productsIndex() },
@@ -134,6 +136,52 @@ defineOptions({
                     </select>
                     <InputError :message="errors.origin_id" />
                 </div>
+            </div>
+
+            <div class="grid gap-2 md:grid-cols-3">
+                <div class="grid gap-2 md:col-span-2">
+                    <Label for="supplier_id">Preferred supplier</Label>
+                    <select
+                        id="supplier_id"
+                        name="supplier_id"
+                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                    >
+                        <option value="">None</option>
+                        <option
+                            v-for="supplier in suppliers"
+                            :key="supplier.id"
+                            :value="supplier.id"
+                        >
+                            {{ supplier.name }}
+                        </option>
+                    </select>
+                    <InputError :message="errors.supplier_id" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="lead_time_days">Lead time (days)</Label>
+                    <Input
+                        id="lead_time_days"
+                        name="lead_time_days"
+                        type="number"
+                        min="0"
+                        placeholder="e.g. 5"
+                    />
+                    <InputError :message="errors.lead_time_days" />
+                </div>
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="unit_price">Default unit price</Label>
+                <Input
+                    id="unit_price"
+                    name="unit_price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="e.g. 125.50"
+                />
+                <InputError :message="errors.unit_price" />
             </div>
 
             <div class="grid gap-2">

@@ -1,10 +1,13 @@
 <?php
 
 use App\Enums\AssetStatus;
+use App\Enums\PurchaseOrderStatus;
 use App\Models\Asset;
 use App\Models\InventoryAlert;
 use App\Models\Product;
 use App\Models\ProductStock;
+use App\Models\PurchaseOrder;
+use App\Models\Supplier;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
@@ -107,4 +110,25 @@ test('admin users see dashboard alerts, low stock, and asset details', function 
             ->where('unserviceableAssets.0.tag_code', 'AST-00000001')
             ->where('assetStatusCounts.labels', ['Unserviceable', 'Condemned'])
             ->where('assetStatusCounts.data', [1, 0]));
+});
+
+test('supply head dashboard includes supplier performance and purchase order summary', function () {
+    Role::findOrCreate('Supply Head');
+
+    $supplyHead = User::factory()->create(['email_verified_at' => now()]);
+    $supplyHead->assignRole('Supply Head');
+
+    $supplier = Supplier::factory()->create(['name' => 'Acme Supply']);
+    PurchaseOrder::factory()->count(2)->create([
+        'supplier_id' => $supplier->id,
+        'status' => PurchaseOrderStatus::Sent,
+    ]);
+
+    $this->actingAs($supplyHead)
+        ->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('Dashboard')
+            ->where('purchaseOrderSummary.sent', 2)
+            ->where('supplierPerformance.0.name', 'Acme Supply'));
 });

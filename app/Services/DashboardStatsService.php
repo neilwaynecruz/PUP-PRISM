@@ -5,14 +5,17 @@ namespace App\Services;
 use App\Enums\AssetStatus;
 use App\Enums\BookingStatus;
 use App\Enums\ProductType;
+use App\Enums\PurchaseOrderStatus;
 use App\Enums\RequisitionStatus;
 use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\ForecastSnapshot;
 use App\Models\InventoryAlert;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\Requisition;
 use App\Models\StockMovement;
+use App\Models\Supplier;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -37,8 +40,27 @@ class DashboardStatsService
             'issuingTrends' => $this->movementTrends('issue', $from, $to),
             'requisitionSummary' => $this->requisitionSummary($from, $to),
             'bookingSummary' => $this->bookingSummary($from, $to),
+            'purchaseOrderSummary' => $this->purchaseOrderSummary($from, $to),
+            'supplierPerformance' => $this->supplierPerformance(),
             'assetConditionSummary' => $this->assetConditionSummary(),
             'recentlyDeleted' => $this->recentlyDeleted(),
+        ];
+    }
+
+    /**
+     * @param  array{from: string|null, to: string|null}  $range
+     * @return array<string, mixed>
+     */
+    public function getProcurementStats(array $range): array
+    {
+        $from = isset($range['from']) ? CarbonImmutable::parse($range['from'])->startOfDay() : CarbonImmutable::now()->startOfMonth();
+        $to = isset($range['to']) ? CarbonImmutable::parse($range['to'])->endOfDay() : CarbonImmutable::now()->endOfDay();
+
+        return [
+            'forecastSummary' => $this->getForecastSummary(),
+            'lowStock' => $this->lowStockProducts(),
+            'purchaseOrderSummary' => $this->purchaseOrderSummary($from, $to),
+            'supplierPerformance' => $this->supplierPerformance(),
         ];
     }
 
@@ -288,6 +310,75 @@ class DashboardStatsService
         }
 
         return $summary;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function purchaseOrderSummary(CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $counts = PurchaseOrder::query()
+            ->whereBetween('created_at', [$from, $to])
+            ->select('status', DB::raw('CAST(COUNT(*) AS INTEGER) as count'))
+            ->groupBy('status')
+            ->pluck('count', 'status')
+            ->toArray();
+
+        $summary = [];
+
+        foreach (PurchaseOrderStatus::cases() as $case) {
+            $summary[$case->value] = (int) ($counts[$case->value] ?? 0);
+        }
+
+        return $summary;
+    }
+
+    /**
+     * @return list<array{id: int, name: string, total_pos: int, open_pos: int, avg_lead_time_days: float|null}>
+     */
+    public function supplierPerformance(): array
+    {
+        return Supplier::query()
+            ->with([
+                'purchaseOrders' => fn ($query) => $query
+                    ->select(['id', 'supplier_id', 'status', 'created_at', 'received_at']),
+            ])
+            ->orderBy('name')
+            ->get()
+            ->map(fn (Supplier $supplier) => [
+                'id' => (int) $supplier->id,
+                'name' => $supplier->name,
+                'total_pos' => $supplier->purchaseOrders->count(),
+                'open_pos' => $supplier->purchaseOrders
+                    ->whereIn('status', [
+                        PurchaseOrderStatus::Draft,
+                        PurchaseOrderStatus::Sent,
+                        PurchaseOrderStatus::Partial,
+                    ])
+                    ->count(),
+                'avg_lead_time_days' => $supplier->purchaseOrders
+                    ->filter(fn (PurchaseOrder $purchaseOrder) => $purchaseOrder->received_at !== null)
+                    ->pipe(function ($purchaseOrders): ?float {
+                        $durations = $purchaseOrders->map(function (PurchaseOrder $purchaseOrder): float {
+                            /** @var CarbonImmutable $createdAt */
+                            $createdAt = CarbonImmutable::parse($purchaseOrder->created_at);
+                            /** @var CarbonImmutable $receivedAt */
+                            $receivedAt = CarbonImmutable::parse($purchaseOrder->received_at);
+
+                            return (float) $createdAt->diffInDays($receivedAt);
+                        });
+
+                        if ($durations->isEmpty()) {
+                            return null;
+                        }
+
+                        return round((float) $durations->avg(), 2);
+                    }),
+            ])
+            ->sortByDesc('total_pos')
+            ->take(10)
+            ->values()
+            ->all();
     }
 
     /**

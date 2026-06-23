@@ -5,15 +5,19 @@ namespace App\Providers;
 use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\Requisition;
 use App\Models\RequisitionTemplate;
 use App\Models\StockMovement;
+use App\Models\Supplier;
 use App\Policies\AssetPolicy;
 use App\Policies\BookingPolicy;
 use App\Policies\ProductPolicy;
+use App\Policies\PurchaseOrderPolicy;
 use App\Policies\RequisitionPolicy;
 use App\Policies\RequisitionTemplatePolicy;
 use App\Policies\StockMovementPolicy;
+use App\Policies\SupplierPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -38,5 +42,7 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(RequisitionTemplate::class, RequisitionTemplatePolicy::class);
         Gate::policy(Asset::class, AssetPolicy::class);
         Gate::policy(StockMovement::class, StockMovementPolicy::class);
+        Gate::policy(Supplier::class, SupplierPolicy::class);
+        Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
     }
 }

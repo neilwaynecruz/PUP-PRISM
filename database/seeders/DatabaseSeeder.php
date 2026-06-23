@@ -12,7 +12,9 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             UatOrganizationSeeder::class,
             UatInventorySeeder::class,
+            UatProcurementSeeder::class,
             UatWorkflowSeeder::class,
+            UatMonitoringSeeder::class,
         ]);
     }
 }

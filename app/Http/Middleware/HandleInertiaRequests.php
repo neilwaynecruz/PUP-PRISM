@@ -5,8 +5,10 @@ namespace App\Http\Middleware;
 use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\Requisition;
 use App\Models\StockMovement;
+use App\Models\Supplier;
 use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
@@ -97,6 +99,10 @@ class HandleInertiaRequests extends Middleware
                 'viewBookings' => false,
                 'viewRequisitions' => false,
                 'viewReceiving' => false,
+                'viewSuppliers' => false,
+                'createSuppliers' => false,
+                'viewPurchaseOrders' => false,
+                'createPurchaseOrders' => false,
                 'viewMovements' => false,
                 'viewAuditLogs' => false,
             ];
@@ -109,6 +115,10 @@ class HandleInertiaRequests extends Middleware
             'viewBookings' => $user->can('viewAny', Booking::class),
             'viewRequisitions' => $user->can('viewAny', Requisition::class),
             'viewReceiving' => $user->hasAnyRole(['Admin', 'Supply Head']),
+            'viewSuppliers' => $user->can('viewAny', Supplier::class),
+            'createSuppliers' => $user->can('create', Supplier::class),
+            'viewPurchaseOrders' => $user->can('viewAny', PurchaseOrder::class),
+            'createPurchaseOrders' => $user->can('create', PurchaseOrder::class),
             'viewMovements' => $user->can('viewAny', StockMovement::class),
             'viewAuditLogs' => $user->can('viewAny', AuditLog::class),
         ];

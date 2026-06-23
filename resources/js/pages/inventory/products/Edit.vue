@@ -30,8 +30,11 @@ type Product = {
     name: string;
     category_id: number | null;
     origin_id: number | null;
+    supplier_id: number | null;
     type: 'asset' | 'consumable';
     reorder_threshold: number;
+    lead_time_days: number | null;
+    unit_price: number | null;
     is_active: boolean;
 };
 
@@ -39,12 +42,14 @@ const props = defineProps<{
     product: Product;
     categories: Option[];
     origins: Option[];
+    suppliers: Option[];
     can: {
         delete: boolean;
     };
 }>();
 
 defineOptions({
+    name: 'InventoryProductEditPage',
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: productsIndex() },
@@ -169,6 +174,61 @@ function confirmDelete(): void {
                     </select>
                     <InputError :message="errors.origin_id" />
                 </div>
+            </div>
+
+            <div class="grid gap-2 md:grid-cols-3">
+                <div class="grid gap-2 md:col-span-2">
+                    <Label for="supplier_id">Preferred supplier</Label>
+                    <select
+                        id="supplier_id"
+                        name="supplier_id"
+                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                        :defaultValue="product.supplier_id ?? ''"
+                    >
+                        <option value="">None</option>
+                        <option
+                            v-for="supplier in suppliers"
+                            :key="supplier.id"
+                            :value="supplier.id"
+                        >
+                            {{ supplier.name }}
+                        </option>
+                    </select>
+                    <InputError :message="errors.supplier_id" />
+                </div>
+
+                <div class="grid gap-2">
+                    <Label for="lead_time_days">Lead time (days)</Label>
+                    <Input
+                        id="lead_time_days"
+                        name="lead_time_days"
+                        type="number"
+                        min="0"
+                        :default-value="
+                            product.lead_time_days !== null
+                                ? String(product.lead_time_days)
+                                : ''
+                        "
+                    />
+                    <InputError :message="errors.lead_time_days" />
+                </div>
+            </div>
+
+            <div class="grid gap-2">
+                <Label for="unit_price">Default unit price</Label>
+                <Input
+                    id="unit_price"
+                    name="unit_price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    :default-value="
+                        product.unit_price !== null
+                            ? String(product.unit_price)
+                            : ''
+                    "
+                />
+                <InputError :message="errors.unit_price" />
             </div>
 
             <div class="grid gap-2">

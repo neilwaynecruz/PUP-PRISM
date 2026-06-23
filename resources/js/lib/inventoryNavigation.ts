@@ -7,7 +7,9 @@ import {
     History,
     LayoutGrid,
     Package,
+    ReceiptText,
     Settings,
+    ShieldCheck,
     Truck,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
@@ -20,8 +22,16 @@ import {
     create as productsCreate,
     index as productsIndex,
 } from '@/routes/inventory/products';
+import {
+    create as purchaseOrdersCreate,
+    index as purchaseOrdersIndex,
+} from '@/routes/inventory/purchase-orders';
 import { index as receivingIndex } from '@/routes/inventory/receiving';
 import { index as requisitionsIndex } from '@/routes/inventory/requisitions';
+import {
+    create as suppliersCreate,
+    index as suppliersIndex,
+} from '@/routes/inventory/suppliers';
 import type { Auth, AuthPermissions, NavItem } from '@/types';
 
 type InventoryNavItem = NavItem & {
@@ -40,6 +50,10 @@ const defaultPermissions: AuthPermissions = {
     viewBookings: false,
     viewRequisitions: false,
     viewReceiving: false,
+    viewSuppliers: false,
+    createSuppliers: false,
+    viewPurchaseOrders: false,
+    createPurchaseOrders: false,
     viewMovements: false,
     viewAuditLogs: false,
 };
@@ -73,6 +87,18 @@ const mainNavigationItems: InventoryNavItem[] = [
         href: requisitionsIndex(),
         icon: FileText,
         permission: 'viewRequisitions',
+    },
+    {
+        title: 'Suppliers',
+        href: suppliersIndex(),
+        icon: ShieldCheck,
+        permission: 'viewSuppliers',
+    },
+    {
+        title: 'Purchase orders',
+        href: purchaseOrdersIndex(),
+        icon: ReceiptText,
+        permission: 'viewPurchaseOrders',
     },
     {
         title: 'Receiving',
@@ -149,6 +175,38 @@ const searchNavigationItems: InventorySearchItem[] = [
         description: 'Submit and process issuance requests',
         keywords: ['requisitions', 'issue', 'requests'],
         permission: 'viewRequisitions',
+    },
+    {
+        title: 'Suppliers',
+        href: suppliersIndex(),
+        icon: ShieldCheck,
+        description: 'Manage accredited suppliers and vendor details',
+        keywords: ['suppliers', 'vendors', 'contacts', 'procurement'],
+        permission: 'viewSuppliers',
+    },
+    {
+        title: 'New Supplier',
+        href: suppliersCreate(),
+        icon: ShieldCheck,
+        description: 'Create a new supplier profile',
+        keywords: ['new', 'create', 'supplier', 'vendor'],
+        permission: 'createSuppliers',
+    },
+    {
+        title: 'Purchase Orders',
+        href: purchaseOrdersIndex(),
+        icon: ReceiptText,
+        description: 'Create, send, and receive supplier purchase orders',
+        keywords: ['purchase orders', 'po', 'procurement', 'receiving'],
+        permission: 'viewPurchaseOrders',
+    },
+    {
+        title: 'New Purchase Order',
+        href: purchaseOrdersCreate(),
+        icon: ReceiptText,
+        description: 'Create a supplier purchase order draft',
+        keywords: ['new', 'create', 'purchase order', 'po'],
+        permission: 'createPurchaseOrders',
     },
     {
         title: 'Receiving',
@@ -235,6 +293,18 @@ export function useInventoryNavigation() {
                         href: productsIndex(),
                         icon: Package,
                         permission: 'viewProducts',
+                    },
+                    {
+                        title: 'Suppliers',
+                        href: suppliersIndex(),
+                        icon: ShieldCheck,
+                        permission: 'viewSuppliers',
+                    },
+                    {
+                        title: 'Purchase Orders',
+                        href: purchaseOrdersIndex(),
+                        icon: ReceiptText,
+                        permission: 'viewPurchaseOrders',
                     },
                     {
                         title: 'Receiving',

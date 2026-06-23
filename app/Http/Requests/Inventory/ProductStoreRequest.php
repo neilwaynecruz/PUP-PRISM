@@ -30,8 +30,11 @@ class ProductStoreRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'category_id' => ['nullable', 'integer', 'exists:categories,id'],
             'origin_id' => ['nullable', 'integer', 'exists:origins,id'],
+            'supplier_id' => ['nullable', 'integer', 'exists:suppliers,id'],
             'type' => ['required', Rule::enum(ProductType::class)],
             'reorder_threshold' => ['nullable', 'integer', 'min:0'],
+            'lead_time_days' => ['nullable', 'integer', 'min:0', 'max:365'],
+            'unit_price' => ['nullable', 'numeric', 'min:0', 'max:99999999.99'],
             'is_active' => ['required', 'boolean'],
         ];
     }

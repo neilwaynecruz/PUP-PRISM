@@ -5,6 +5,8 @@ import RequisitionTemplateController from './RequisitionTemplateController'
 import InventoryReportController from './InventoryReportController'
 import ProductLabelController from './ProductLabelController'
 import ReceivingController from './ReceivingController'
+import SupplierController from './SupplierController'
+import PurchaseOrderController from './PurchaseOrderController'
 import TrashController from './TrashController'
 import StockMovementController from './StockMovementController'
 import ProductController from './ProductController'
@@ -19,6 +21,8 @@ RequisitionTemplateController: Object.assign(RequisitionTemplateController, Requ
 InventoryReportController: Object.assign(InventoryReportController, InventoryReportController),
 ProductLabelController: Object.assign(ProductLabelController, ProductLabelController),
 ReceivingController: Object.assign(ReceivingController, ReceivingController),
+SupplierController: Object.assign(SupplierController, SupplierController),
+PurchaseOrderController: Object.assign(PurchaseOrderController, PurchaseOrderController),
 TrashController: Object.assign(TrashController, TrashController),
 StockMovementController: Object.assign(StockMovementController, StockMovementController),
 ProductController: Object.assign(ProductController, ProductController),

@@ -46,6 +46,9 @@ type ProductRow = {
     reorder_threshold: number;
     category: string | null;
     origin: string | null;
+    supplier: string | null;
+    lead_time_days: number | null;
+    unit_price: number | null;
     on_hand_qty: number | null;
     assets_count: number;
     can_delete: boolean;
@@ -68,11 +71,13 @@ const props = defineProps<{
         type: string;
         category_id: number | null;
         origin_id: number | null;
+        supplier_id: number | null;
         active: boolean | null;
     };
     products: Paginated<ProductRow>;
     categories: Option[];
     origins: Option[];
+    suppliers: Option[];
     exportUrls: { csv: string; pdf: string };
     can: { create: boolean; bulkUpdate: boolean };
 }>();
@@ -218,6 +223,7 @@ function confirmBulkAction(): void {
 }
 
 defineOptions({
+    name: 'InventoryProductIndexPage',
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: productsIndex() },
@@ -234,6 +240,9 @@ const categoryId = ref<string>(
 const originId = ref<string>(
     props.filters.origin_id ? String(props.filters.origin_id) : '',
 );
+const supplierId = ref<string>(
+    props.filters.supplier_id ? String(props.filters.supplier_id) : '',
+);
 const active = ref<string>(
     props.filters.active === null ? '' : props.filters.active ? '1' : '0',
 );
@@ -243,11 +252,12 @@ const query = computed(() => ({
     type: type.value || undefined,
     category_id: categoryId.value || undefined,
     origin_id: originId.value || undefined,
+    supplier_id: supplierId.value || undefined,
     active: active.value === '' ? undefined : active.value === '1',
 }));
 
 let searchTimer: number | undefined;
-watch([search, type, categoryId, originId, active], () => {
+watch([search, type, categoryId, originId, supplierId, active], () => {
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => {
         router.get(productsIndex().url, query.value, {
@@ -334,7 +344,7 @@ onBeforeUnmount(() => {
 
         <div class="flex flex-col gap-3">
             <div
-                class="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5"
+                class="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
             >
                 <Input
                     v-model="search"
@@ -378,6 +388,20 @@ onBeforeUnmount(() => {
                         :value="String(s.id)"
                     >
                         {{ s.name }}
+                    </option>
+                </select>
+
+                <select
+                    v-model="supplierId"
+                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
+                >
+                    <option value="">All suppliers</option>
+                    <option
+                        v-for="supplier in suppliers"
+                        :key="supplier.id"
+                        :value="String(supplier.id)"
+                    >
+                        {{ supplier.name }}
                     </option>
                 </select>
 
@@ -521,6 +545,14 @@ onBeforeUnmount(() => {
                                 class="flex items-center justify-between gap-3"
                             >
                                 <span class="text-muted-foreground"
+                                    >Supplier</span
+                                >
+                                <span>{{ p.supplier ?? '—' }}</span>
+                            </div>
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <span class="text-muted-foreground"
                                     >On hand</span
                                 >
                                 <span>{{
@@ -592,6 +624,7 @@ onBeforeUnmount(() => {
                                 <th>Name</th>
                                 <th>Type</th>
                                 <th>Category</th>
+                                <th>Supplier</th>
                                 <th>Origin</th>
                                 <th class="text-right">On hand</th>
                                 <th class="text-right">Assets</th>
@@ -603,7 +636,7 @@ onBeforeUnmount(() => {
                             <tr v-if="products.data.length === 0">
                                 <td
                                     class="px-4 py-8 text-center text-sm text-muted-foreground"
-                                    :colspan="props.can.bulkUpdate ? 10 : 9"
+                                    :colspan="props.can.bulkUpdate ? 11 : 10"
                                 >
                                     No products found.
                                 </td>
@@ -645,6 +678,9 @@ onBeforeUnmount(() => {
                                 </td>
                                 <td class="text-muted-foreground">
                                     {{ p.category ?? '—' }}
+                                </td>
+                                <td class="text-muted-foreground">
+                                    {{ p.supplier ?? '—' }}
                                 </td>
                                 <td class="text-muted-foreground">
                                     {{ p.origin ?? '—' }}

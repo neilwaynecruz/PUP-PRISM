@@ -3,6 +3,7 @@ import { Head, Link } from '@inertiajs/vue3';
 import Heading from '@/components/Heading.vue';
 import ProductForecastPanel from '@/components/inventory/ProductForecastPanel.vue';
 import { Button } from '@/components/ui/button';
+import { formatPhilippinePeso } from '@/lib/utils';
 import {
     edit as productsEdit,
     index as productsIndex,
@@ -20,6 +21,10 @@ type Product = {
     category: string | null;
     origin_id: number | null;
     origin: string | null;
+    supplier_id: number | null;
+    supplier: string | null;
+    lead_time_days: number | null;
+    unit_price: number | null;
     on_hand_qty: number | null;
     assets_count: number;
 };
@@ -175,6 +180,15 @@ defineOptions({
             <div
                 class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
             >
+                <div class="text-sm text-muted-foreground">Supplier</div>
+                <div class="mt-1 font-medium">
+                    {{ product.supplier ?? '—' }}
+                </div>
+            </div>
+
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Origin</div>
                 <div class="mt-1 font-medium">{{ product.origin ?? '—' }}</div>
             </div>
@@ -190,6 +204,34 @@ defineOptions({
                     data-testid="product-reorder-threshold-value"
                 >
                     {{ product.reorder_threshold ?? 0 }}
+                </div>
+            </div>
+
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
+                <div class="text-sm text-muted-foreground">Lead time</div>
+                <div class="mt-1 font-medium">
+                    {{
+                        product.lead_time_days !== null
+                            ? `${product.lead_time_days} day(s)`
+                            : '—'
+                    }}
+                </div>
+            </div>
+
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
+                <div class="text-sm text-muted-foreground">
+                    Default unit price
+                </div>
+                <div class="mt-1 font-medium">
+                    {{
+                        product.unit_price !== null
+                            ? formatPhilippinePeso(product.unit_price)
+                            : '—'
+                    }}
                 </div>
             </div>
 

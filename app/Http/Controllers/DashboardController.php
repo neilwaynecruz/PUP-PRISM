@@ -20,6 +20,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
         $canViewForecasting = $user?->hasAnyRole(['Admin', 'Supply Head']) ?? false;
+        $canViewProcurement = $user?->hasAnyRole(['Admin', 'Supply Head']) ?? false;
 
         $validated = Validator::make($request->all(), [
             'from' => ['nullable', 'date'],
@@ -38,7 +39,7 @@ class DashboardController extends Controller
 
         $stats = $user->hasRole('Admin')
             ? $this->statsService->getAdminStats($range)
-            : [];
+            : ($canViewProcurement ? $this->statsService->getProcurementStats($range) : []);
 
         return Inertia::render('Dashboard', [
             'canViewForecasting' => $canViewForecasting,
@@ -60,6 +61,8 @@ class DashboardController extends Controller
             'issuingTrends' => $stats['issuingTrends'] ?? ['labels' => [], 'data' => []],
             'requisitionSummary' => $stats['requisitionSummary'] ?? [],
             'bookingSummary' => $stats['bookingSummary'] ?? [],
+            'purchaseOrderSummary' => $stats['purchaseOrderSummary'] ?? [],
+            'supplierPerformance' => $stats['supplierPerformance'] ?? [],
             'assetConditionSummary' => $stats['assetConditionSummary'] ?? [],
             'recentlyDeleted' => $stats['recentlyDeleted'] ?? [],
             'exportUrls' => $user->hasRole('Admin') ? [

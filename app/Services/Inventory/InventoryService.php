@@ -8,6 +8,8 @@ use App\Enums\RequisitionStatus;
 use App\Models\Asset;
 use App\Models\Product;
 use App\Models\ProductStock;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderLine;
 use App\Models\Requisition;
 use App\Models\RequisitionLine;
 use App\Models\StockLot;
@@ -28,28 +30,14 @@ class InventoryService
 
     public function receive(User $user, Product $product, array $payload, ?string $ipAddress = null): void
     {
-        if ($product->type === ProductType::Consumable) {
-            $this->receiveConsumable(
-                user: $user,
-                product: $product,
-                qty: (int) $payload['qty'],
-                referenceNo: $payload['reference_no'] ?? null,
-                receivedAt: $payload['received_at'] ?? null,
-                expiresAt: $payload['expires_at'] ?? null,
-                notes: $payload['notes'] ?? null,
-                ipAddress: $ipAddress,
-            );
-
-            return;
-        }
-
-        $this->receiveAssets(
+        $result = DB::transaction(fn (): array => $this->performReceipt(
             user: $user,
             product: $product,
-            tagCodes: $payload['tag_codes'],
-            notes: $payload['notes'] ?? null,
+            payload: $payload,
             ipAddress: $ipAddress,
-        );
+        ));
+
+        $this->dispatchReceiptRealtime($result);
     }
 
     public function receiveConsumable(
@@ -62,18 +50,21 @@ class InventoryService
         ?string $notes = null,
         ?string $ipAddress = null,
     ): void {
-        $result = DB::transaction(fn (): array => $this->performConsumableReceipt(
+        $result = DB::transaction(fn (): array => $this->performReceipt(
             user: $user,
             product: $product,
-            qty: $qty,
-            referenceNo: $referenceNo,
-            receivedAt: $receivedAt,
-            expiresAt: $expiresAt,
-            notes: $notes,
+            payload: [
+                'qty' => $qty,
+                'reference_no' => $referenceNo,
+                'received_at' => $receivedAt,
+                'expires_at' => $expiresAt,
+                'notes' => $notes,
+                'tag_codes' => null,
+            ],
             ipAddress: $ipAddress,
         ));
 
-        $this->realtime->stockReceived($result['product'], $result['on_hand_qty'], $qty);
+        $this->dispatchReceiptRealtime($result);
     }
 
     /**
@@ -81,15 +72,71 @@ class InventoryService
      */
     public function receiveAssets(User $user, Product $product, array $tagCodes, ?string $notes = null, ?string $ipAddress = null): void
     {
-        $result = DB::transaction(fn (): array => $this->performAssetReceipt(
+        $result = DB::transaction(fn (): array => $this->performReceipt(
             user: $user,
             product: $product,
-            tagCodes: $tagCodes,
-            notes: $notes,
+            payload: [
+                'qty' => null,
+                'reference_no' => null,
+                'received_at' => null,
+                'expires_at' => null,
+                'notes' => $notes,
+                'tag_codes' => $tagCodes,
+            ],
             ipAddress: $ipAddress,
         ));
 
-        $this->realtime->stockReceived($result['product'], null, $result['delta']);
+        $this->dispatchReceiptRealtime($result);
+    }
+
+    public function receiveAgainstPurchaseOrderLine(
+        User $user,
+        PurchaseOrderLine $purchaseOrderLine,
+        array $payload,
+        ?string $ipAddress = null,
+    ): void {
+        $result = DB::transaction(function () use ($user, $purchaseOrderLine, $payload, $ipAddress): array {
+            $line = PurchaseOrderLine::query()
+                ->with(['product:id,sku,name,type', 'purchaseOrder'])
+                ->lockForUpdate()
+                ->findOrFail($purchaseOrderLine->id);
+
+            /** @var PurchaseOrder $purchaseOrder */
+            $purchaseOrder = PurchaseOrder::query()
+                ->lockForUpdate()
+                ->findOrFail($line->purchase_order_id);
+
+            if (! $purchaseOrder->canReceive()) {
+                throw new \RuntimeException('Only sent or partially received purchase orders can accept receipts.');
+            }
+
+            $receivedQuantity = $this->resolveReceivedQuantity($line, $payload);
+
+            if ($receivedQuantity > $line->remainingQty()) {
+                throw new \RuntimeException("Receipt exceeds remaining quantity for product {$line->product?->sku}.");
+            }
+
+            $result = $this->performReceipt(
+                user: $user,
+                product: $line->product ?? Product::query()->findOrFail($line->product_id),
+                payload: [
+                    ...$payload,
+                    'reference_no' => $payload['reference_no'] ?? $purchaseOrder->po_number,
+                    'notes' => $payload['notes'] ?? "Received against {$purchaseOrder->po_number}.",
+                ],
+                ipAddress: $ipAddress,
+            );
+
+            $line->forceFill([
+                'qty_received' => $line->qty_received + $receivedQuantity,
+            ])->save();
+
+            $purchaseOrder->refreshReceiptStatus();
+
+            return $result;
+        });
+
+        $this->dispatchReceiptRealtime($result);
     }
 
     /**
@@ -104,37 +151,19 @@ class InventoryService
             foreach ($lines as $line) {
                 $product = Product::query()->where('sku', $line['sku'])->firstOrFail();
 
-                if ($line['tag_codes'] !== null) {
-                    $result = $this->performAssetReceipt(
-                        user: $user,
-                        product: $product,
-                        tagCodes: $line['tag_codes'],
-                        notes: $line['notes'] ?? null,
-                        ipAddress: $ipAddress,
-                    );
-
-                    $changes[] = $result;
-                } else {
-                    $result = $this->performConsumableReceipt(
-                        user: $user,
-                        product: $product,
-                        qty: $line['qty'],
-                        referenceNo: $line['reference_no'] ?? null,
-                        receivedAt: $line['received_at'] ?? null,
-                        expiresAt: $line['expires_at'] ?? null,
-                        notes: $line['notes'] ?? null,
-                        ipAddress: $ipAddress,
-                    );
-
-                    $changes[] = $result;
-                }
+                $changes[] = $this->performReceipt(
+                    user: $user,
+                    product: $product,
+                    payload: $line,
+                    ipAddress: $ipAddress,
+                );
             }
 
             return $changes;
         });
 
         foreach ($stockChanges as $change) {
-            $this->realtime->stockReceived($change['product'], $change['on_hand_qty'], $change['delta']);
+            $this->dispatchReceiptRealtime($change);
         }
     }
 
@@ -282,6 +311,41 @@ class InventoryService
     /**
      * @return array{product: Product, on_hand_qty: int, delta: int}
      */
+    private function performReceipt(
+        User $user,
+        Product $product,
+        array $payload,
+        ?string $ipAddress = null,
+    ): array {
+        if ($product->type === ProductType::Consumable) {
+            return $this->performConsumableReceipt(
+                user: $user,
+                product: $product,
+                qty: (int) ($payload['qty'] ?? $payload['qty_received'] ?? 0),
+                referenceNo: $payload['reference_no'] ?? null,
+                receivedAt: $payload['received_at'] ?? null,
+                expiresAt: $payload['expires_at'] ?? null,
+                notes: $payload['notes'] ?? null,
+                ipAddress: $ipAddress,
+            );
+        }
+
+        /** @var array<int, string> $tagCodes */
+        $tagCodes = $payload['tag_codes'] ?? [];
+
+        return $this->performAssetReceipt(
+            user: $user,
+            product: $product,
+            tagCodes: $tagCodes,
+            receivedAt: $payload['received_at'] ?? null,
+            notes: $payload['notes'] ?? null,
+            ipAddress: $ipAddress,
+        );
+    }
+
+    /**
+     * @return array{product: Product, on_hand_qty: int, delta: int}
+     */
     private function performConsumableReceipt(
         User $user,
         Product $product,
@@ -324,7 +388,7 @@ class InventoryService
             'performed_by' => $user->id,
             'accountable_position_id' => null,
             'ip_address' => $ipAddress,
-            'performed_at' => CarbonImmutable::now(),
+            'performed_at' => $receivedAt ?? CarbonImmutable::now(),
             'notes' => $notes,
         ]);
 
@@ -343,6 +407,7 @@ class InventoryService
         User $user,
         Product $product,
         array $tagCodes,
+        ?CarbonImmutable $receivedAt = null,
         ?string $notes = null,
         ?string $ipAddress = null,
     ): array {
@@ -368,7 +433,7 @@ class InventoryService
                 'performed_by' => $user->id,
                 'accountable_position_id' => null,
                 'ip_address' => $ipAddress,
-                'performed_at' => CarbonImmutable::now(),
+                'performed_at' => $receivedAt ?? CarbonImmutable::now(),
                 'notes' => $notes,
             ]);
         }
@@ -378,5 +443,32 @@ class InventoryService
             'on_hand_qty' => null,
             'delta' => count($tagCodes),
         ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function resolveReceivedQuantity(PurchaseOrderLine $purchaseOrderLine, array $payload): int
+    {
+        if ($purchaseOrderLine->product?->type === ProductType::Consumable) {
+            return (int) ($payload['qty_received'] ?? 0);
+        }
+
+        /** @var array<int, string> $tagCodes */
+        $tagCodes = $payload['tag_codes'] ?? [];
+
+        return count($tagCodes);
+    }
+
+    /**
+     * @param  array{product: Product, on_hand_qty: int|null, delta: int}  $result
+     */
+    private function dispatchReceiptRealtime(array $result): void
+    {
+        $this->realtime->stockReceived(
+            $result['product'],
+            $result['on_hand_qty'],
+            $result['delta'],
+        );
     }
 }

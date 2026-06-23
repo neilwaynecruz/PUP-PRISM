@@ -17,8 +17,11 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'name',
     'category_id',
     'origin_id',
+    'supplier_id',
     'type',
     'reorder_threshold',
+    'lead_time_days',
+    'unit_price',
     'is_active',
 ])]
 class Product extends Model
@@ -36,6 +39,8 @@ class Product extends Model
         return [
             'type' => ProductType::class,
             'reorder_threshold' => 'integer',
+            'lead_time_days' => 'integer',
+            'unit_price' => 'float',
             'is_active' => 'boolean',
         ];
     }
@@ -54,6 +59,14 @@ class Product extends Model
     public function origin(): BelongsTo
     {
         return $this->belongsTo(Origin::class);
+    }
+
+    /**
+     * @return BelongsTo<Supplier, $this>
+     */
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     /**
@@ -94,6 +107,14 @@ class Product extends Model
     public function assets(): HasMany
     {
         return $this->hasMany(Asset::class);
+    }
+
+    /**
+     * @return HasMany<PurchaseOrderLine, $this>
+     */
+    public function purchaseOrderLines(): HasMany
+    {
+        return $this->hasMany(PurchaseOrderLine::class);
     }
 
     /**

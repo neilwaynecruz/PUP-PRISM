@@ -14,6 +14,7 @@ use App\Models\Origin;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\StockMovement;
+use App\Models\Supplier;
 use App\Services\AuditLogService;
 use App\Services\Forecasting\Data\ForecastResult;
 use App\Services\Forecasting\DemandForecaster;
@@ -37,12 +38,14 @@ class ProductController extends Controller
         $type = $request->string('type')->trim()->toString();
         $categoryId = $request->integer('category_id') ?: null;
         $originId = $request->integer('origin_id') ?: null;
+        $supplierId = $request->integer('supplier_id') ?: null;
         $active = $request->has('active') ? $request->boolean('active') : null;
 
         $products = Product::query()
             ->with([
                 'category:id,name',
                 'origin:id,name',
+                'supplier:id,name',
                 'stock:id,product_id,on_hand_qty',
             ])
             ->withCount('assets')
@@ -55,6 +58,7 @@ class ProductController extends Controller
             ->when($type !== '', fn ($query) => $query->where('type', $type))
             ->when($categoryId !== null, fn ($query) => $query->where('category_id', $categoryId))
             ->when($originId !== null, fn ($query) => $query->where('origin_id', $originId))
+            ->when($supplierId !== null, fn ($query) => $query->where('supplier_id', $supplierId))
             ->when($active !== null, fn ($query) => $query->where('is_active', $active))
             ->orderBy('name')
             ->paginate(15)
@@ -66,19 +70,21 @@ class ProductController extends Controller
                 'type' => $type,
                 'category_id' => $categoryId,
                 'origin_id' => $originId,
+                'supplier_id' => $supplierId,
                 'active' => $active,
             ],
             'products' => (new ProductCollection($products))->toArray($request),
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
+            'suppliers' => $this->supplierOptions(),
             'exportUrls' => [
                 'csv' => route('inventory.reports.products', [
                     'format' => 'csv',
-                    ...$request->only(['search', 'type', 'category_id', 'origin_id', 'active']),
+                    ...$request->only(['search', 'type', 'category_id', 'origin_id', 'supplier_id', 'active']),
                 ], absolute: false),
                 'pdf' => route('inventory.reports.products', [
                     'format' => 'pdf',
-                    ...$request->only(['search', 'type', 'category_id', 'origin_id', 'active']),
+                    ...$request->only(['search', 'type', 'category_id', 'origin_id', 'supplier_id', 'active']),
                 ], absolute: false),
             ],
             'can' => [
@@ -95,6 +101,7 @@ class ProductController extends Controller
         return Inertia::render('inventory/products/Create', [
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
+            'suppliers' => $this->supplierOptions(),
         ]);
     }
 
@@ -110,8 +117,11 @@ class ProductController extends Controller
                 'name' => $validated['name'],
                 'category_id' => $validated['category_id'] ?? null,
                 'origin_id' => $validated['origin_id'] ?? null,
+                'supplier_id' => $validated['supplier_id'] ?? null,
                 'type' => $validated['type'],
                 'reorder_threshold' => $validated['reorder_threshold'] ?? 0,
+                'lead_time_days' => $validated['lead_time_days'] ?? null,
+                'unit_price' => $validated['unit_price'] ?? null,
                 'is_active' => $validated['is_active'],
             ]);
 
@@ -138,6 +148,7 @@ class ProductController extends Controller
             ->with([
                 'category:id,name',
                 'origin:id,name',
+                'supplier:id,name',
                 'stock:id,product_id,on_hand_qty',
                 'forecastProfile:id,product_id,method,lookback_days,forecast_horizon_days,lead_time_days,safety_stock_days,smoothing_factor,trend_factor,is_active',
             ])
@@ -235,6 +246,7 @@ class ProductController extends Controller
             ->with([
                 'category:id,name',
                 'origin:id,name',
+                'supplier:id,name',
                 'stock:id,product_id,on_hand_qty',
             ])
             ->find($product);
@@ -257,6 +269,7 @@ class ProductController extends Controller
             'product' => (new ProductResource($product))->resolve(),
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
+            'suppliers' => $this->supplierOptions(),
             'can' => [
                 'delete' => $request->user()?->can('delete', $product) ?? false,
             ],
@@ -627,6 +640,26 @@ class ProductController extends Controller
                 ->map(fn (Origin $origin) => [
                     'id' => $origin->id,
                     'name' => $origin->name,
+                ])
+                ->values()
+                ->all(),
+        );
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function supplierOptions(): array
+    {
+        return $this->rememberOptionList(
+            'inventory.suppliers.options',
+            fn () => Supplier::query()
+                ->where('is_active', true)
+                ->orderBy('name')
+                ->get(['id', 'name'])
+                ->map(fn (Supplier $supplier) => [
+                    'id' => $supplier->id,
+                    'name' => $supplier->name,
                 ])
                 ->values()
                 ->all(),

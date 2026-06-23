@@ -40,6 +40,8 @@ test('property custodian cannot access restricted inventory modules', function (
         ->assertForbidden();
 })->with([
     'receiving' => 'inventory.receiving.index',
+    'suppliers' => 'inventory.suppliers.index',
+    'purchase orders' => 'inventory.purchase-orders.index',
     'stock movements' => 'inventory.movements.index',
     'audit logs' => 'inventory.audit-logs.index',
 ]);
@@ -59,6 +61,8 @@ test('plain authenticated users cannot access inventory modules', function (
     'bookings' => 'inventory.bookings.index',
     'requisitions' => 'inventory.requisitions.index',
     'receiving' => 'inventory.receiving.index',
+    'suppliers' => 'inventory.suppliers.index',
+    'purchase orders' => 'inventory.purchase-orders.index',
     'stock movements' => 'inventory.movements.index',
     'audit logs' => 'inventory.audit-logs.index',
 ]);

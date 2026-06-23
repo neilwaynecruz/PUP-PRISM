@@ -134,7 +134,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::storeBatch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:49
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:67
  * @route '/inventory/receiving/batch'
  */
 export const storeBatch = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -149,7 +149,7 @@ storeBatch.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::storeBatch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:49
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:67
  * @route '/inventory/receiving/batch'
  */
 storeBatch.url = (options?: RouteQueryOptions) => {
@@ -158,7 +158,7 @@ storeBatch.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::storeBatch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:49
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:67
  * @route '/inventory/receiving/batch'
  */
 storeBatch.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -168,7 +168,7 @@ storeBatch.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::storeBatch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:49
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:67
  * @route '/inventory/receiving/batch'
  */
     const storeBatchForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -178,7 +178,7 @@ storeBatch.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::storeBatch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:49
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:67
  * @route '/inventory/receiving/batch'
  */
         storeBatchForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

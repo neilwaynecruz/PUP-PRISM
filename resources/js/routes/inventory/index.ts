@@ -6,6 +6,8 @@ import requisitionTemplates from './requisition-templates'
 import reports from './reports'
 import products from './products'
 import receiving from './receiving'
+import suppliers from './suppliers'
+import purchaseOrders from './purchase-orders'
 import movements from './movements'
 import auditLogs from './audit-logs'
 /**
@@ -94,6 +96,8 @@ requisitionTemplates: Object.assign(requisitionTemplates, requisitionTemplates),
 reports: Object.assign(reports, reports),
 products: Object.assign(products, products),
 receiving: Object.assign(receiving, receiving),
+suppliers: Object.assign(suppliers, suppliers),
+purchaseOrders: Object.assign(purchaseOrders, purchaseOrders),
 trash: Object.assign(trash, trash),
 movements: Object.assign(movements, movements),
 auditLogs: Object.assign(auditLogs, auditLogs),

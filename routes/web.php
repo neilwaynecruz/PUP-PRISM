@@ -9,10 +9,12 @@ use App\Http\Controllers\Inventory\HandoverVerificationController;
 use App\Http\Controllers\Inventory\InventoryReportController;
 use App\Http\Controllers\Inventory\ProductController;
 use App\Http\Controllers\Inventory\ProductLabelController;
+use App\Http\Controllers\Inventory\PurchaseOrderController;
 use App\Http\Controllers\Inventory\ReceivingController;
 use App\Http\Controllers\Inventory\RequisitionController;
 use App\Http\Controllers\Inventory\RequisitionTemplateController;
 use App\Http\Controllers\Inventory\StockMovementController;
+use App\Http\Controllers\Inventory\SupplierController;
 use App\Http\Controllers\Inventory\TrashController;
 use App\Http\Controllers\NotificationController;
 use Illuminate\Support\Facades\Route;
@@ -164,6 +166,51 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::post('receiving/batch', [ReceivingController::class, 'storeBatch'])
                 ->name('receiving.batch');
+
+            Route::get('suppliers', [SupplierController::class, 'index'])
+                ->name('suppliers.index');
+
+            Route::get('suppliers/create', [SupplierController::class, 'create'])
+                ->name('suppliers.create');
+
+            Route::post('suppliers', [SupplierController::class, 'store'])
+                ->name('suppliers.store');
+
+            Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])
+                ->name('suppliers.show');
+
+            Route::get('suppliers/{supplier}/edit', [SupplierController::class, 'edit'])
+                ->name('suppliers.edit');
+
+            Route::put('suppliers/{supplier}', [SupplierController::class, 'update'])
+                ->name('suppliers.update');
+
+            Route::delete('suppliers/{supplier}', [SupplierController::class, 'destroy'])
+                ->name('suppliers.destroy');
+
+            Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])
+                ->name('purchase-orders.index');
+
+            Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])
+                ->name('purchase-orders.create');
+
+            Route::post('purchase-orders', [PurchaseOrderController::class, 'store'])
+                ->name('purchase-orders.store');
+
+            Route::post('purchase-orders/generate', [PurchaseOrderController::class, 'generate'])
+                ->name('purchase-orders.generate');
+
+            Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])
+                ->name('purchase-orders.show');
+
+            Route::put('purchase-orders/{purchaseOrder}/send', [PurchaseOrderController::class, 'send'])
+                ->name('purchase-orders.send');
+
+            Route::post('purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])
+                ->name('purchase-orders.receive');
+
+            Route::put('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])
+                ->name('purchase-orders.cancel');
         });
 
         Route::middleware('role:Admin')->group(function () {

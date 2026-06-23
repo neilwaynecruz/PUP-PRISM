@@ -16,6 +16,10 @@ export type AuthPermissions = {
     viewBookings: boolean;
     viewRequisitions: boolean;
     viewReceiving: boolean;
+    viewSuppliers: boolean;
+    createSuppliers: boolean;
+    viewPurchaseOrders: boolean;
+    createPurchaseOrders: boolean;
     viewMovements: boolean;
     viewAuditLogs: boolean;
 };
