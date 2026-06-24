@@ -6,7 +6,7 @@ beforeEach(function () {
 
 test('valid appearance cookie is rendered safely and applied', function () {
     $this->withUnencryptedCookie('appearance', 'dark')
-        ->get('/')
+        ->get(route('login'))
         ->assertOk()
         ->assertSee("const appearance = 'dark';", false)
         ->assertSee('class="dark"', false);
@@ -16,7 +16,7 @@ test('malicious appearance cookie falls back to system and is not reflected', fu
     $payload = "';alert(1);//";
 
     $response = $this->withUnencryptedCookie('appearance', $payload)
-        ->get('/')
+        ->get(route('login'))
         ->assertOk();
 
     $response->assertSee("const appearance = 'system';", false);
@@ -25,7 +25,7 @@ test('malicious appearance cookie falls back to system and is not reflected', fu
 
 test('unknown appearance cookie value falls back to system', function () {
     $this->withUnencryptedCookie('appearance', 'neon')
-        ->get('/')
+        ->get(route('login'))
         ->assertOk()
         ->assertSee("const appearance = 'system';", false);
 });
