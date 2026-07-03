@@ -7,6 +7,7 @@ import {
     History,
     LayoutGrid,
     Package,
+    Radar,
     ReceiptText,
     Settings,
     ShieldCheck,
@@ -16,6 +17,7 @@ import { computed } from 'vue';
 import { dashboard } from '@/routes';
 import { index as auditLogsIndex } from '@/routes/inventory/audit-logs';
 import { index as bookingsIndex } from '@/routes/inventory/bookings';
+import { index as forecastingIndex } from '@/routes/inventory/forecasting';
 import { index as handoverIndex } from '@/routes/inventory/handover';
 import { index as movementsIndex } from '@/routes/inventory/movements';
 import {
@@ -58,6 +60,7 @@ const defaultPermissions: AuthPermissions = {
     viewMovements: false,
     viewAuditLogs: false,
     viewUsers: false,
+    viewForecasting: false,
 };
 
 const mainNavigationItems: InventoryNavItem[] = [
@@ -113,6 +116,12 @@ const mainNavigationItems: InventoryNavItem[] = [
         href: movementsIndex(),
         icon: BarChart3,
         permission: 'viewMovements',
+    },
+    {
+        title: 'Forecasting',
+        href: forecastingIndex(),
+        icon: Radar,
+        permission: 'viewForecasting',
     },
     {
         title: 'Audit logs',
@@ -233,6 +242,14 @@ const searchNavigationItems: InventorySearchItem[] = [
         permission: 'viewMovements',
     },
     {
+        title: 'Forecasting',
+        href: forecastingIndex(),
+        icon: Radar,
+        description: 'Review demand forecasts and tune replenishment models',
+        keywords: ['forecasting', 'demand', 'stockout', 'reorder', 'predictive'],
+        permission: 'viewForecasting',
+    },
+    {
         title: 'Audit logs',
         href: auditLogsIndex(),
         icon: History,
@@ -333,6 +350,12 @@ export function useInventoryNavigation() {
                         href: movementsIndex(),
                         icon: BarChart3,
                         permission: 'viewMovements',
+                    },
+                    {
+                        title: 'Forecasting',
+                        href: forecastingIndex(),
+                        icon: Radar,
+                        permission: 'viewForecasting',
                     }
                 ], perms)
             },

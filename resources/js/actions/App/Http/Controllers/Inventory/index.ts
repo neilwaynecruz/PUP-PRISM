@@ -7,6 +7,7 @@ import ProductLabelController from './ProductLabelController'
 import ReceivingController from './ReceivingController'
 import SupplierController from './SupplierController'
 import PurchaseOrderController from './PurchaseOrderController'
+import ForecastController from './ForecastController'
 import TrashController from './TrashController'
 import StockMovementController from './StockMovementController'
 import ProductController from './ProductController'
@@ -23,6 +24,7 @@ ProductLabelController: Object.assign(ProductLabelController, ProductLabelContro
 ReceivingController: Object.assign(ReceivingController, ReceivingController),
 SupplierController: Object.assign(SupplierController, SupplierController),
 PurchaseOrderController: Object.assign(PurchaseOrderController, PurchaseOrderController),
+ForecastController: Object.assign(ForecastController, ForecastController),
 TrashController: Object.assign(TrashController, TrashController),
 StockMovementController: Object.assign(StockMovementController, StockMovementController),
 ProductController: Object.assign(ProductController, ProductController),

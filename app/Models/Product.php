@@ -102,6 +102,17 @@ class Product extends Model
     }
 
     /**
+     * @return HasOne<ForecastSnapshot, $this>
+     */
+    public function latestForecastSnapshot(): HasOne
+    {
+        return $this->hasOne(ForecastSnapshot::class)->ofMany([
+            'forecast_date' => 'max',
+            'generated_at' => 'max',
+        ]);
+    }
+
+    /**
      * @return HasMany<Asset, $this>
      */
     public function assets(): HasMany

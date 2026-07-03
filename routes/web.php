@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Inventory\AuditLogController;
 use App\Http\Controllers\Inventory\BookingController;
+use App\Http\Controllers\Inventory\ForecastController;
 use App\Http\Controllers\Inventory\HandoverController;
 use App\Http\Controllers\Inventory\HandoverReceiptController;
 use App\Http\Controllers\Inventory\HandoverVerificationController;
@@ -215,6 +216,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])
                 ->name('purchase-orders.index');
+
+            Route::get('forecasting', [ForecastController::class, 'index'])
+                ->name('forecasting.index');
+
+            Route::get('forecasting/{product}', [ForecastController::class, 'show'])
+                ->name('forecasting.show');
+
+            Route::put('forecasting/{product}/profile', [ForecastController::class, 'updateProfile'])
+                ->name('forecasting.profile.update');
 
             Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])
                 ->name('purchase-orders.create');

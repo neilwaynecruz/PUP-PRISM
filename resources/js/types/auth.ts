@@ -23,6 +23,7 @@ export type AuthPermissions = {
     viewMovements: boolean;
     viewAuditLogs: boolean;
     viewUsers: boolean;
+    viewForecasting: boolean;
 };
 
 export type Auth = {

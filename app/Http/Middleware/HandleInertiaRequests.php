@@ -106,6 +106,7 @@ class HandleInertiaRequests extends Middleware
                 'viewMovements' => false,
                 'viewAuditLogs' => false,
                 'viewUsers' => false,
+                'viewForecasting' => false,
             ];
         }
 
@@ -123,6 +124,7 @@ class HandleInertiaRequests extends Middleware
             'viewMovements' => $user->can('viewAny', StockMovement::class),
             'viewAuditLogs' => $user->can('viewAny', AuditLog::class),
             'viewUsers' => $user->can('viewAny', User::class),
+            'viewForecasting' => $user->hasAnyRole(['Admin', 'Supply Head']),
         ];
     }
 

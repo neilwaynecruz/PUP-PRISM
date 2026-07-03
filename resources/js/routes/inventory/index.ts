@@ -8,6 +8,7 @@ import products from './products'
 import receiving from './receiving'
 import suppliers from './suppliers'
 import purchaseOrders from './purchase-orders'
+import forecasting from './forecasting'
 import movements from './movements'
 import auditLogs from './audit-logs'
 /**
@@ -98,6 +99,7 @@ products: Object.assign(products, products),
 receiving: Object.assign(receiving, receiving),
 suppliers: Object.assign(suppliers, suppliers),
 purchaseOrders: Object.assign(purchaseOrders, purchaseOrders),
+forecasting: Object.assign(forecasting, forecasting),
 trash: Object.assign(trash, trash),
 movements: Object.assign(movements, movements),
 auditLogs: Object.assign(auditLogs, auditLogs),
