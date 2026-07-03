@@ -305,6 +305,29 @@ class PurchaseOrderController extends Controller
         return to_route('inventory.purchase-orders.index');
     }
 
+    public function generateFromForecasts(Request $request, PurchaseOrderGenerator $generator): RedirectResponse
+    {
+        $this->authorize('create', PurchaseOrder::class);
+
+        $generatedPurchaseOrders = $generator->generateFromForecastAlerts($request->user());
+
+        if ($generatedPurchaseOrders->isEmpty()) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('No draft purchase orders were generated from forecast alerts.'),
+            ]);
+
+            return back();
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Generated :count draft purchase order(s) from forecast alerts.', ['count' => $generatedPurchaseOrders->count()]),
+        ]);
+
+        return to_route('inventory.purchase-orders.index');
+    }
+
     /**
      * @return array<int, array{id: int, name: string}>
      */

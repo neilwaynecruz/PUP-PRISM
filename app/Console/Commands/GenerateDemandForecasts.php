@@ -5,8 +5,10 @@ namespace App\Console\Commands;
 use App\Models\ForecastProfile;
 use App\Models\ForecastSnapshot;
 use App\Models\InventoryAlert;
+use App\Models\Product;
 use App\Services\Forecasting\Data\ForecastResult;
 use App\Services\Forecasting\DemandForecaster;
+use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -16,7 +18,7 @@ use Illuminate\Console\Command;
 #[Description('Generate demand forecasts for active consumable products')]
 class GenerateDemandForecasts extends Command
 {
-    public function handle(DemandForecaster $forecaster): int
+    public function handle(DemandForecaster $forecaster, NotificationService $notificationService): int
     {
         $productId = $this->option('product') !== null
             ? (int) $this->option('product')
@@ -31,7 +33,7 @@ class GenerateDemandForecasts extends Command
 
         $this->persistProfiles($results);
         $this->persistSnapshots($results);
-        $this->syncForecastAlerts($results, $asOf, $productId);
+        $this->syncForecastAlerts($results, $asOf, $productId, $notificationService);
 
         $this->components->info(sprintf('Generated %d demand forecast snapshot(s).', count($results)));
 
@@ -79,8 +81,12 @@ class GenerateDemandForecasts extends Command
     /**
      * @param  array<int, ForecastResult>  $results
      */
-    private function syncForecastAlerts(array $results, CarbonImmutable $generatedAt, ?int $productId = null): void
-    {
+    private function syncForecastAlerts(
+        array $results,
+        CarbonImmutable $generatedAt,
+        ?int $productId,
+        NotificationService $notificationService,
+    ): void {
         $atRiskProductIds = [];
 
         foreach ($results as $result) {
@@ -94,7 +100,7 @@ class GenerateDemandForecasts extends Command
 
             $atRiskProductIds[] = $result->productId;
 
-            InventoryAlert::query()->updateOrCreate(
+            $alert = InventoryAlert::query()->updateOrCreate(
                 [
                     'type' => 'forecast_stockout',
                     'product_id' => $result->productId,
@@ -111,6 +117,18 @@ class GenerateDemandForecasts extends Command
                     'detected_at' => $generatedAt,
                 ],
             );
+
+            if ($alert->wasRecentlyCreated) {
+                $product = Product::query()->find($result->productId);
+
+                if ($product instanceof Product) {
+                    $notificationService->procurementRecommendation(
+                        $product,
+                        $result->predictedDaysUntilStockout,
+                        $result->recommendedReorderQty,
+                    );
+                }
+            }
         }
 
         $staleAlerts = InventoryAlert::query()

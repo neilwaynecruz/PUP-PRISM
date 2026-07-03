@@ -111,6 +111,10 @@ function generateDrafts(): void {
     router.post(PurchaseOrderController.generate().url);
 }
 
+function generateFromForecasts(): void {
+    router.post(PurchaseOrderController.generateFromForecasts().url);
+}
+
 function formatDate(iso: string | null): string {
     if (!iso) {
         return '—';
@@ -138,6 +142,14 @@ function formatDate(iso: string | null): string {
             />
 
             <div class="flex flex-wrap gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="rounded-lg"
+                    @click="generateFromForecasts"
+                >
+                    Generate from forecasts
+                </Button>
                 <Button
                     variant="outline"
                     size="sm"

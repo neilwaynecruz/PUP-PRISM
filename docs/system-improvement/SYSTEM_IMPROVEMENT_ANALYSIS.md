@@ -464,10 +464,11 @@ Forecast-Driven Procurement Extension
 - `PurchaseOrderGenerator::resolveRecommendedQuantity()` uses `ForecastSnapshot` data when generating PO line quantities
 - `PurchaseOrderController::generate()` calls `generateFromAlerts()` for one-click draft PO creation
 
-**Still missing:**
-- `generateFromAlerts()` only includes products where `on_hand_qty <= reorder_threshold` — forecast-urgent products **above** threshold are excluded from auto PO drafts even when `forecast_stockout` alerts exist
-- No `ProcurementRecommendationNotification` when forecast alerts are created
-- No forecasting UI surfacing "Generate Draft PO" for forecast-urgent items (depends on Feature 6)
+**Still missing (at original review):** *(implemented 2026-07-04 — see Post-Implementation Updates)*
+- ~~`generateFromAlerts()` only includes products where `on_hand_qty <= reorder_threshold`~~ — addressed by `generateFromForecastAlerts()` for above-threshold forecast-urgent products
+- ~~No `ProcurementRecommendationNotification` when forecast alerts are created~~ — hooked in `GenerateDemandForecasts::syncForecastAlerts()`
+- ~~No forecasting UI button to generate POs from forecast-urgent items~~ — "Generate from forecasts" on purchase orders Index
+- Redundant to add a separate `app:procurement-scan-forecasts` command *(not added)*
 
 #### 3. Why This Feature Matters
 
@@ -763,7 +764,7 @@ See [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) for the **live** 
 | Production Security Headers & Handover Signature Validation | High | Low-Medium | Low | ✅ DONE |
 | Queued Notifications & Async Broadcasting | High | Medium | Medium | ✅ DONE |
 | Forecasting Management Module (Dedicated UI) | High | Medium | Low | ✅ DONE |
-| Forecast-Driven Procurement Extension (revised) | Medium | Low–Medium | Low | NOT STARTED |
+| Forecast-Driven Procurement Extension (revised) | Medium | Low–Medium | Low | ✅ DONE |
 | Notification Preferences & Smart Digests | Medium | Medium | Low | NOT STARTED |
 | Dashboard Performance Caching Layer | Medium | Low-Medium | Low | NOT STARTED |
 | Observability, Scheduler Health & E2E in CI | Medium | Medium | Low | NOT STARTED |
@@ -775,11 +776,11 @@ See [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) for the **live** 
 | Metric | Value |
 | ------ | ----- |
 | Total features suggested | 10 |
-| Total features implemented | 6 |
-| Total features not started | 4 |
+| Total features implemented | 7 |
+| Total features not started | 3 |
 | Total features in progress | 0 |
 | Total features blocked | 0 |
-| Overall completion percentage | 60% |
+| Overall completion percentage | 70% |
 
 ## Final Project Status
 

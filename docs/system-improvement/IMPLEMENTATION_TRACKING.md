@@ -21,7 +21,7 @@
 | Production Security Headers & Handover Signature Validation | High | Low-Medium | Low | ✅ DONE |
 | Queued Notifications & Async Broadcasting | High | Medium | Medium | ✅ DONE |
 | Forecasting Management Module (Dedicated UI) | High | Medium | Low | ✅ DONE |
-| Forecast-Driven Procurement Extension | Medium | Low-Medium | Low | ⬜ NOT STARTED |
+| Forecast-Driven Procurement Extension | Medium | Low-Medium | Low | ✅ DONE |
 | Notification Preferences & Smart Digests | Medium | Medium | Low | ⬜ NOT STARTED |
 | Dashboard Performance Caching Layer | Medium | Low-Medium | Low | ⬜ NOT STARTED |
 | Observability, Scheduler Health & E2E in CI | Medium | Medium | Low | ⬜ NOT STARTED |
@@ -43,11 +43,11 @@
 | Metric | Count |
 | ------ | ----- |
 | Total features suggested | 10 |
-| Total features implemented | 6 |
-| Total features not started | 4 |
+| Total features implemented | 7 |
+| Total features not started | 3 |
 | Total features in progress | 0 |
 | Total features blocked | 0 |
-| Overall completion percentage | 60% |
+| Overall completion percentage | 70% |
 
 ## Feature Completion Log
 
@@ -55,6 +55,7 @@
 
 | Date | Feature | Status | Tests | Notes |
 | ---- | ------- | ------ | ----- | ----- |
+| 2026-07-04 | Forecast-Driven Procurement Extension | ✅ DONE | `php artisan test --compact tests/Feature/Inventory/ForecastDrivenProcurementTest.php`; `php artisan test --compact tests/Feature/Notifications/WorkflowNotificationsTest.php`; `php artisan wayfinder:generate`; `vendor/bin/pint --dirty --format agent` | Added `generateFromForecastAlerts()` for above-threshold `forecast_stockout` alerts, `ProcurementRecommendationNotification` on new alert creation, purchase-order generate-from-forecasts route/action/button, and focused regression tests. |
 | 2026-07-03 | Forecasting Management Module (Dedicated UI) | ✅ DONE | `php artisan test --compact --filter=Forecasting`; `npm run build`; `vendor/bin/pint --dirty --format agent` | Added ForecastController with index/show/profile update, forecasting Index and Show Vue pages, nav permission, ForecastPresenter extraction, and forecasting page regression tests. |
 | 2026-07-03 | Queued Notifications & Async Broadcasting | ✅ DONE | `php artisan test --compact tests/Feature/Notifications/`; `php artisan test --compact tests/Feature/Realtime/InventoryRealtimeTest.php`; `vendor/bin/pint --dirty --format agent` | All 7 notifications implement `ShouldQueue` on the `notifications` queue with 3 retries; `InventoryRealtimeMessage` now uses async `ShouldBroadcast`; README/composer dev document queue worker requirements (P1.7). |
 | 2026-07-03 | Production Security Headers & Handover Signature Validation | ✅ DONE | `php artisan test --compact tests/Feature/Inventory/HandoverVerificationTest.php`; `vendor/bin/pint --dirty --format agent` | Added web security headers middleware, PNG signature validation for handover verification, session-backed token handling with clean verify URLs, and expanded handover verification/security regression tests. |

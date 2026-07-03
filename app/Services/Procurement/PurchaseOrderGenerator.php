@@ -5,6 +5,7 @@ namespace App\Services\Procurement;
 use App\Enums\ProductType;
 use App\Enums\PurchaseOrderStatus;
 use App\Models\ForecastSnapshot;
+use App\Models\InventoryAlert;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\User;
@@ -48,8 +49,58 @@ class PurchaseOrderGenerator
         return $created;
     }
 
-    private function createDraftPurchaseOrder(User $requestedBy, Collection $products): ?PurchaseOrder
+    /**
+     * @return Collection<int, PurchaseOrder>
+     */
+    public function generateFromForecastAlerts(User $requestedBy): Collection
     {
+        $forecastProductIds = InventoryAlert::query()
+            ->where('type', 'forecast_stockout')
+            ->whereNull('resolved_at')
+            ->pluck('product_id')
+            ->unique()
+            ->values();
+
+        if ($forecastProductIds->isEmpty()) {
+            return new Collection;
+        }
+
+        $products = Product::query()
+            ->whereIn('id', $forecastProductIds)
+            ->where('type', ProductType::Consumable)
+            ->where('is_active', true)
+            ->whereNotNull('supplier_id')
+            ->whereHas('stock', fn ($query) => $query->whereColumn('on_hand_qty', '>', 'products.reorder_threshold'))
+            ->with([
+                'stock:id,product_id,on_hand_qty',
+                'supplier:id,name,lead_time_days,is_active',
+            ])
+            ->get()
+            ->filter(fn (Product $product) => $product->supplier?->is_active)
+            ->groupBy('supplier_id');
+
+        $created = new Collection;
+
+        foreach ($products as $supplierProducts) {
+            $purchaseOrder = DB::transaction(fn (): ?PurchaseOrder => $this->createDraftPurchaseOrder(
+                $requestedBy,
+                new Collection($supplierProducts->all()),
+                'Auto-generated from forecast stockout alerts.',
+            ));
+
+            if ($purchaseOrder instanceof PurchaseOrder) {
+                $created->push($purchaseOrder);
+            }
+        }
+
+        return $created;
+    }
+
+    private function createDraftPurchaseOrder(
+        User $requestedBy,
+        Collection $products,
+        string $notes = 'Auto-generated from low-stock and forecast signals.',
+    ): ?PurchaseOrder {
         /** @var Product|null $firstProduct */
         $firstProduct = $products->first();
 
@@ -99,7 +150,7 @@ class PurchaseOrderGenerator
             'requested_by' => $requestedBy->id,
             'approved_by' => null,
             'expected_delivery_at' => $expectedDeliveryAt,
-            'notes' => 'Auto-generated from low-stock and forecast signals.',
+            'notes' => $notes,
         ]);
 
         foreach ($lines as $line) {

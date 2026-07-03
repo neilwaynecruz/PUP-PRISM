@@ -44,6 +44,7 @@ The following review findings were correct when this document was written, but t
 - Security headers middleware is registered on the web stack, handover signatures are validated as PNG data URIs, and verification tokens are session-backed after the initial email-link redirect.
 - All application notifications are queued on the `notifications` queue with 3 retries; `InventoryRealtimeMessage` broadcasts asynchronously via `ShouldBroadcast`. Production requires a persistent queue worker (README deployment + P1.7).
 - Dedicated forecasting management UI is available at `/inventory/forecasting` for Admin and Supply Head users, with profile tuning and consumable forecast detail views.
+- Forecast-driven procurement closes the loop from `forecast_stockout` alerts: `PurchaseOrderGenerator::generateFromForecastAlerts()` drafts POs for above-threshold forecast-urgent products; `ProcurementRecommendationNotification` notifies Supply Head on new alert creation; purchase orders Index exposes "Generate from forecasts".
 
 ---
 
@@ -58,13 +59,13 @@ The following review findings were correct when this document was written, but t
 - Creates `forecast_stockout` `InventoryAlert` rows via `syncForecastAlerts()` in `GenerateDemandForecasts.php`
 - Is tested in `DemandForecastingTest.php` and `InventoryAlertsTest.php`
 
-**What is still missing (revised scope):**
-- `PurchaseOrderGenerator::generateFromAlerts()` only includes products where `on_hand_qty <= reorder_threshold` — forecast-urgent products **above** threshold are excluded from auto PO drafts
-- No `ProcurementRecommendationNotification` when forecast alerts are created
-- No forecasting UI button to generate POs from forecast-urgent items
-- Redundant to add a separate `app:procurement-scan-forecasts` command
+**What was still missing at review time (now implemented 2026-07-04):**
+- ~~`PurchaseOrderGenerator::generateFromAlerts()` only includes products where `on_hand_qty <= reorder_threshold`~~ — `generateFromForecastAlerts()` targets active `forecast_stockout` alerts with stock above threshold
+- ~~No `ProcurementRecommendationNotification` when forecast alerts are created~~ — dispatched via `NotificationService::procurementRecommendation()` in `syncForecastAlerts()`
+- ~~No UI to generate POs from forecast-urgent items~~ — purchase orders Index "Generate from forecasts" button and `generateFromForecasts` controller action
+- Redundant to add a separate `app:procurement-scan-forecasts` command *(intentionally not added)*
 
-**Revised priority:** Medium (was High)
+**Revised priority:** Medium (was High) — **implemented**
 
 ---
 

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Notifications\BookingStatusChangedNotification;
 use App\Notifications\BookingSubmittedNotification;
 use App\Notifications\LowStockAlertNotification;
+use App\Notifications\ProcurementRecommendationNotification;
 use App\Notifications\RequisitionStatusChangedNotification;
 use App\Notifications\RequisitionSubmittedNotification;
 use Illuminate\Support\Collection;
@@ -108,6 +109,30 @@ class NotificationService
         Notification::send(
             $recipients,
             new LowStockAlertNotification($product, $currentStock),
+        );
+    }
+
+    /**
+     * Notify Supply Head users when a forecast stockout alert is created for a product.
+     */
+    public function procurementRecommendation(
+        Product $product,
+        int $predictedDaysUntilStockout,
+        int $recommendedReorderQty,
+    ): void {
+        $recipients = $this->usersWithRole('Supply Head');
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        Notification::send(
+            $recipients,
+            new ProcurementRecommendationNotification(
+                $product,
+                $predictedDaysUntilStockout,
+                $recommendedReorderQty,
+            ),
         );
     }
 

@@ -235,6 +235,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::post('purchase-orders/generate', [PurchaseOrderController::class, 'generate'])
                 ->name('purchase-orders.generate');
 
+            Route::post('purchase-orders/generate-from-forecasts', [PurchaseOrderController::class, 'generateFromForecasts'])
+                ->name('purchase-orders.generate-from-forecasts');
+
             Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])
                 ->name('purchase-orders.show');
 

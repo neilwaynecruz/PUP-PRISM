@@ -14,6 +14,7 @@ use App\Notifications\BookingStatusChangedNotification;
 use App\Notifications\BookingSubmittedNotification;
 use App\Notifications\HandoverVerificationNotification;
 use App\Notifications\LowStockAlertNotification;
+use App\Notifications\ProcurementRecommendationNotification;
 use App\Notifications\RequisitionStatusChangedNotification;
 use App\Notifications\RequisitionSubmittedNotification;
 use Database\Seeders\RoleSeeder;
@@ -255,6 +256,7 @@ describe('Queued notification delivery', function () {
         'booking submitted' => [fn () => new BookingSubmittedNotification(Booking::factory()->make())],
         'booking status changed' => [fn () => new BookingStatusChangedNotification(Booking::factory()->make(), 'approved')],
         'low stock alert' => [fn () => new LowStockAlertNotification(Product::factory()->make(), 4)],
+        'procurement recommendation' => [fn () => new ProcurementRecommendationNotification(Product::factory()->make(), 5, 12)],
         'handover verification' => [fn () => new HandoverVerificationNotification(10, 'verification-token')],
     ]);
 });

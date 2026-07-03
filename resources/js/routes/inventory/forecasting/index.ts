@@ -2,7 +2,7 @@ import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFo
 import profile from './profile'
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::index
- * @see app/Http/Controllers/Inventory/ForecastController.php:28
+ * @see app/Http/Controllers/Inventory/ForecastController.php:27
  * @route '/inventory/forecasting'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -17,7 +17,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::index
- * @see app/Http/Controllers/Inventory/ForecastController.php:28
+ * @see app/Http/Controllers/Inventory/ForecastController.php:27
  * @route '/inventory/forecasting'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -26,7 +26,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::index
- * @see app/Http/Controllers/Inventory/ForecastController.php:28
+ * @see app/Http/Controllers/Inventory/ForecastController.php:27
  * @route '/inventory/forecasting'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::index
- * @see app/Http/Controllers/Inventory/ForecastController.php:28
+ * @see app/Http/Controllers/Inventory/ForecastController.php:27
  * @route '/inventory/forecasting'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -45,7 +45,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\ForecastController::index
- * @see app/Http/Controllers/Inventory/ForecastController.php:28
+ * @see app/Http/Controllers/Inventory/ForecastController.php:27
  * @route '/inventory/forecasting'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -55,7 +55,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\ForecastController::index
- * @see app/Http/Controllers/Inventory/ForecastController.php:28
+ * @see app/Http/Controllers/Inventory/ForecastController.php:27
  * @route '/inventory/forecasting'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -64,7 +64,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Inventory\ForecastController::index
- * @see app/Http/Controllers/Inventory/ForecastController.php:28
+ * @see app/Http/Controllers/Inventory/ForecastController.php:27
  * @route '/inventory/forecasting'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -80,7 +80,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::show
- * @see app/Http/Controllers/Inventory/ForecastController.php:91
+ * @see app/Http/Controllers/Inventory/ForecastController.php:90
  * @route '/inventory/forecasting/{product}'
  */
 export const show = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -95,7 +95,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::show
- * @see app/Http/Controllers/Inventory/ForecastController.php:91
+ * @see app/Http/Controllers/Inventory/ForecastController.php:90
  * @route '/inventory/forecasting/{product}'
  */
 show.url = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -128,7 +128,7 @@ show.url = (args: { product: number | { id: number } } | [product: number | { id
 
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::show
- * @see app/Http/Controllers/Inventory/ForecastController.php:91
+ * @see app/Http/Controllers/Inventory/ForecastController.php:90
  * @route '/inventory/forecasting/{product}'
  */
 show.get = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -137,7 +137,7 @@ show.get = (args: { product: number | { id: number } } | [product: number | { id
 })
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::show
- * @see app/Http/Controllers/Inventory/ForecastController.php:91
+ * @see app/Http/Controllers/Inventory/ForecastController.php:90
  * @route '/inventory/forecasting/{product}'
  */
 show.head = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -147,7 +147,7 @@ show.head = (args: { product: number | { id: number } } | [product: number | { i
 
     /**
 * @see \App\Http\Controllers\Inventory\ForecastController::show
- * @see app/Http/Controllers/Inventory/ForecastController.php:91
+ * @see app/Http/Controllers/Inventory/ForecastController.php:90
  * @route '/inventory/forecasting/{product}'
  */
     const showForm = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ show.head = (args: { product: number | { id: number } } | [product: number | { i
 
             /**
 * @see \App\Http\Controllers\Inventory\ForecastController::show
- * @see app/Http/Controllers/Inventory/ForecastController.php:91
+ * @see app/Http/Controllers/Inventory/ForecastController.php:90
  * @route '/inventory/forecasting/{product}'
  */
         showForm.get = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -166,7 +166,7 @@ show.head = (args: { product: number | { id: number } } | [product: number | { i
         })
             /**
 * @see \App\Http\Controllers\Inventory\ForecastController::show
- * @see app/Http/Controllers/Inventory/ForecastController.php:91
+ * @see app/Http/Controllers/Inventory/ForecastController.php:90
  * @route '/inventory/forecasting/{product}'
  */
         showForm.head = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
