@@ -43,6 +43,14 @@ jobs:
       - name: Install Dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
+      - name: Composer Security Audit
+        run: composer audit --no-interaction
+        continue-on-error: true
+
+      - name: NPM Security Audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
       - name: Copy Environment File
         run: cp .env.example .env
 

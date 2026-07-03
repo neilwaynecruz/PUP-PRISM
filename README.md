@@ -58,8 +58,12 @@ Policies and route middleware enforce access for inventory operations, requisiti
 
 ## Observability & Operations
 - Optional [Sentry](https://sentry.io) error tracking: set `SENTRY_LARAVEL_DSN` in production `.env` (leave empty locally to disable). Unhandled exceptions are reported only when the DSN is configured.
-- Admin health JSON: `GET /admin/health` (Admin role) returns `failed_jobs_count`, `queue_connection`, and `scheduler_last_runs` for scheduled commands.
-- Scheduled commands (`app:generate-demand-forecasts`, `app:inventory-generate-alerts`, `trash:cleanup`) record last-success timestamps in cache for health checks.
+- Admin health JSON: `GET /admin/health` (Admin role) returns `failed_jobs_count`, `queue_connection`, `scheduler_last_runs`, and `queue_operations` (pending/reserved/stuck job metrics, recent failures).
+- Admin operations health UI: `GET /admin/operations/health` (Admin role) surfaces the same operational metrics in a dashboard page.
+- Inventory alerts inbox: `GET /admin/alerts` (Admin / Supply Head) with acknowledge, assign, and resolve workflows.
+- Notification history: `GET /notifications` with pagination and filters (all authenticated users).
+- Scheduled commands (`app:generate-demand-forecasts`, `app:inventory-generate-alerts`, `app:send-notification-digests`, `trash:cleanup`, `app:prune-operational-data`) record last-success timestamps in cache for health checks.
+- Production runbooks: [docs/operations/](docs/operations/) — backup/DR, queue ops, Redis migration, logging, and data retention.
 
 ## Testing
 - Unit/Feature: `php artisan test --compact`
@@ -80,7 +84,7 @@ Policies and route middleware enforce access for inventory operations, requisiti
 - The Playwright config starts `php artisan serve --env=e2e` automatically. Browser tests use seeded E2E users plus targeted Artisan helpers for email verification and deterministic handover verification tokens.
 
 ### CI (GitHub Actions)
-- Pest feature/unit tests: `.github/workflows/tests.yml`
+- Pest feature/unit tests: `.github/workflows/tests.yml` (includes `composer audit` and `npm audit --audit-level=high`)
 - Playwright browser E2E: `.github/workflows/e2e.yml` (PHP 8.4, `npm ci`, `npm run build`, `php artisan e2e:setup --fresh`, Chromium via Playwright)
 
 ## Deployment Checklist (Production)

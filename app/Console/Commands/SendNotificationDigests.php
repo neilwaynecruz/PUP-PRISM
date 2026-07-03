@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\NotificationPreference;
 use App\Models\User;
 use App\Notifications\DailyNotificationDigest;
+use App\Support\SchedulerHeartbeat;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -41,6 +42,8 @@ class SendNotificationDigests extends Command
             });
 
         $this->components->info(sprintf('Sent %d notification digest email(s).', $sentCount));
+
+        SchedulerHeartbeat::record(SchedulerHeartbeat::COMMAND_SEND_NOTIFICATION_DIGESTS);
 
         return self::SUCCESS;
     }

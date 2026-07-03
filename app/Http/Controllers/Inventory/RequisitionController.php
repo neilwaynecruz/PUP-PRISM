@@ -214,7 +214,17 @@ class RequisitionController extends Controller
         );
 
         $requisition->refresh();
-        AuditLogService::logCustom('issue', "Requisition #{$requisition->id} issued.", $requisition);
+        AuditLogService::logCustom(
+            'issue',
+            "Requisition #{$requisition->id} issued.",
+            $requisition,
+            null,
+            [
+                'status' => $requisition->status->value ?? (string) $requisition->status,
+                'issued_at' => $requisition->issued_at?->toIso8601String(),
+                'line_count' => $requisition->lines()->count(),
+            ],
+        );
         $this->notifications->requisitionStatusChanged($requisition, 'issued');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition issued.')]);

@@ -20,6 +20,10 @@ Each item includes:
 - **Effort:** Estimated time for a developer familiar with the codebase.
 - **Verified:** Whether the claim has been checked against the actual source code.
 
+### Operational runbooks (post-readiness)
+
+Server/runtime items in **P1** below are complemented by detailed runbooks in [`docs/operations/`](docs/operations/README.md): backup and disaster recovery, queue operations, Redis migration, production logging, and automated data retention (`app:prune-operational-data`). Use those documents for recovery drills and platform hardening without duplicating infrastructure steps here.
+
 ---
 
 ## Completed / Implemented Improvements

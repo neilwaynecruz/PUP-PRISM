@@ -12,6 +12,10 @@ class SchedulerHeartbeat
 
     public const COMMAND_TRASH_CLEANUP = 'trash:cleanup';
 
+    public const COMMAND_SEND_NOTIFICATION_DIGESTS = 'app:send-notification-digests';
+
+    public const COMMAND_PRUNE_OPERATIONAL_DATA = 'app:prune-operational-data';
+
     /**
      * @return array<int, string>
      */
@@ -20,7 +24,9 @@ class SchedulerHeartbeat
         return [
             self::COMMAND_GENERATE_DEMAND_FORECASTS,
             self::COMMAND_INVENTORY_GENERATE_ALERTS,
+            self::COMMAND_SEND_NOTIFICATION_DIGESTS,
             self::COMMAND_TRASH_CLEANUP,
+            self::COMMAND_PRUNE_OPERATIONAL_DATA,
         ];
     }
 

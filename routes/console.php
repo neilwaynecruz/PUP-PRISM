@@ -17,3 +17,7 @@ Schedule::command('app:send-notification-digests')
 Schedule::command('trash:cleanup', ['--days' => 30])
     ->daily()
     ->withoutOverlapping();
+
+Schedule::command('app:prune-operational-data')
+    ->weeklyOn(0, '03:30')
+    ->withoutOverlapping();

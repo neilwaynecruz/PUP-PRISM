@@ -12,6 +12,7 @@ use App\Models\HandoverLog;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Notifications\HandoverVerificationNotification;
+use App\Services\AuditLogService;
 use App\Services\Inventory\HandoverSignatureValidator;
 use App\Services\InventoryRealtimeService;
 use Carbon\CarbonImmutable;
@@ -100,6 +101,21 @@ class HandoverController extends Controller
         ));
         $this->realtime->handoverInitiated($handover);
 
+        AuditLogService::logCustom(
+            'handover_initiate',
+            __('Handover initiated for asset :tag to :recipient.', [
+                'tag' => $asset->tag_code,
+                'recipient' => $toUser->name,
+            ]),
+            $handover,
+            null,
+            [
+                'asset_id' => $asset->id,
+                'asset_tag_code' => $asset->tag_code,
+                'to_user_id' => $toUser->id,
+            ],
+        );
+
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Verification link sent to recipient.')]);
 
         return back();
@@ -184,6 +200,17 @@ class HandoverController extends Controller
             ]);
         });
         $this->realtime->handoverVerified($handoverLog->fresh() ?? $handoverLog);
+
+        AuditLogService::logCustom(
+            'handover_verify',
+            __('Handover #:id verified by recipient.', ['id' => $handoverLog->id]),
+            $handoverLog->fresh() ?? $handoverLog,
+            null,
+            [
+                'asset_id' => $handoverLog->asset_id,
+                'verified_by' => $user->id,
+            ],
+        );
 
         $request->session()->forget("handover_verify_token.{$handoverLog->id}");
 

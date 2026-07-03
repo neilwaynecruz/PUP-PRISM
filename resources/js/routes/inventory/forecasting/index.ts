@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 import profile from './profile'
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::index
@@ -43,41 +43,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ForecastController::index
- * @see app/Http/Controllers/Inventory/ForecastController.php:27
- * @route '/inventory/forecasting'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ForecastController::index
- * @see app/Http/Controllers/Inventory/ForecastController.php:27
- * @route '/inventory/forecasting'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\ForecastController::index
- * @see app/Http/Controllers/Inventory/ForecastController.php:27
- * @route '/inventory/forecasting'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::show
  * @see app/Http/Controllers/Inventory/ForecastController.php:90
@@ -144,42 +109,6 @@ show.head = (args: { product: number | { id: number } } | [product: number | { i
     url: show.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\ForecastController::show
- * @see app/Http/Controllers/Inventory/ForecastController.php:90
- * @route '/inventory/forecasting/{product}'
- */
-    const showForm = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: show.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ForecastController::show
- * @see app/Http/Controllers/Inventory/ForecastController.php:90
- * @route '/inventory/forecasting/{product}'
- */
-        showForm.get = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\ForecastController::show
- * @see app/Http/Controllers/Inventory/ForecastController.php:90
- * @route '/inventory/forecasting/{product}'
- */
-        showForm.head = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    show.form = showForm
 const forecasting = {
     index: Object.assign(index, index),
 show: Object.assign(show, show),

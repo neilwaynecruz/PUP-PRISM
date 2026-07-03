@@ -275,8 +275,8 @@ See [`NEXT_PHASE_TRACKING.md`](./NEXT_PHASE_TRACKING.md) for the live status tab
 | Epic | Priority | Complexity | Risk | Status |
 | ---- | -------- | ---------- | ---- | ------ |
 | Access Lifecycle and Privileged Security | Critical | Medium | Medium | ✅ DONE |
-| Resilience, Recovery, and Platform Operations | Critical-High | High | Medium | ⬜ NOT STARTED |
-| Audit, Alerts, and Operations Control Center | High | Medium-High | Low-Medium | ⬜ NOT STARTED |
+| Resilience, Recovery, and Platform Operations | Critical-High | High | Medium | ✅ DONE |
+| Audit, Alerts, and Operations Control Center | High | Medium-High | Low-Medium | ✅ DONE |
 | Inventory Integrity, Adjustments, and Fulfillment | High | High | Medium | ⬜ NOT STARTED |
 | Master Data and Administrative Governance | High | Medium | Low-Medium | ⬜ NOT STARTED |
 | Search, Dashboards, Reporting, and API Experience | High | Medium-High | Low-Medium | ⬜ NOT STARTED |
@@ -285,11 +285,11 @@ See [`NEXT_PHASE_TRACKING.md`](./NEXT_PHASE_TRACKING.md) for the live status tab
 ## Final Summary
 
 - **Total next-phase epics suggested:** 7
-- **Total completed:** 1
-- **Total not started:** 6
+- **Total completed:** 3
+- **Total not started:** 4
 - **Total in progress:** 0
 - **Total blocked:** 0
-- **Overall completion percentage:** 14%
+- **Overall completion percentage:** 43%
 
 ## Final Status
 

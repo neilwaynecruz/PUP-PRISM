@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\UpdateNotificationPreferencesRequest;
 use App\Models\NotificationPreference;
 use App\Models\User;
+use App\Services\AuditLogService;
 use App\Services\NotificationPreferenceDefaults;
 use App\Support\NotificationPreferenceData;
 use Illuminate\Http\RedirectResponse;
@@ -70,6 +71,14 @@ class NotificationPreferenceController extends Controller
                 'digest_frequency' => $preference['digest_frequency'],
             ])->save();
         }
+
+        AuditLogService::logCustom(
+            'notification_preferences_update',
+            __('Notification preferences updated.'),
+            $user,
+            null,
+            ['preference_count' => count($request->validated('preferences'))],
+        );
 
         Inertia::flash('toast', [
             'type' => 'success',

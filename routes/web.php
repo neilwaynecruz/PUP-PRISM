@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Admin\AlertsController;
 use App\Http\Controllers\Admin\HealthController;
+use App\Http\Controllers\Admin\OperationsHealthController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Inventory\AuditLogController;
@@ -36,6 +38,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('session/keep-alive', fn () => response()->noContent()->header('Cache-Control', 'no-store'))
         ->name('session.keep-alive');
     Route::prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/', [NotificationController::class, 'index'])
+            ->name('index');
+
         Route::put('{notification}/read', [NotificationController::class, 'markAsRead'])
             ->name('read');
 
@@ -48,6 +53,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('admin.health');
 
     Route::prefix('admin')->name('admin.')->middleware('role:Admin')->group(function () {
+        Route::get('operations/health', OperationsHealthController::class)
+            ->name('operations.health');
+
         Route::get('users', [UserManagementController::class, 'index'])
             ->name('users.index');
 
@@ -65,6 +73,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::patch('users/{managedUser}/deactivate', [UserManagementController::class, 'deactivate'])
             ->name('users.deactivate');
+    });
+
+    Route::prefix('admin/alerts')->name('admin.alerts.')->middleware('role:Admin|Supply Head')->group(function () {
+        Route::get('/', [AlertsController::class, 'index'])
+            ->name('index');
+
+        Route::patch('{alert}/acknowledge', [AlertsController::class, 'acknowledge'])
+            ->name('acknowledge');
+
+        Route::patch('{alert}/assign', [AlertsController::class, 'assign'])
+            ->name('assign');
+
+        Route::patch('{alert}/resolve', [AlertsController::class, 'resolve'])
+            ->name('resolve');
     });
 
     Route::prefix('inventory')->name('inventory.')->group(function () {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\StoreApiTokenRequest;
 use App\Models\User;
+use App\Services\AuditLogService;
 use Carbon\CarbonInterface;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -53,6 +54,14 @@ class ApiTokenController extends Controller
 
         $token = $user->createToken($validated['name'], $validated['abilities']);
 
+        AuditLogService::logCustom(
+            'api_token_create',
+            __('API token :name created.', ['name' => $validated['name']]),
+            $user,
+            null,
+            ['token_name' => $validated['name'], 'abilities' => $validated['abilities']],
+        );
+
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('API token created. Copy it now because it will not be shown again.'),
@@ -74,7 +83,16 @@ class ApiTokenController extends Controller
         abort_unless($user instanceof User, 403);
 
         $personalAccessToken = $user->tokens()->findOrFail($token);
+        $tokenName = $personalAccessToken->name;
         $personalAccessToken->delete();
+
+        AuditLogService::logCustom(
+            'api_token_revoke',
+            __('API token :name revoked.', ['name' => $tokenName]),
+            $user,
+            null,
+            ['token_name' => $tokenName],
+        );
 
         Inertia::flash('toast', [
             'type' => 'success',

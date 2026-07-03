@@ -7,6 +7,7 @@ use App\Http\Requests\Inventory\BatchReceiveStockRequest;
 use App\Http\Requests\Inventory\ReceiveStockRequest;
 use App\Models\Product;
 use App\Models\PurchaseOrderLine;
+use App\Services\AuditLogService;
 use App\Services\Inventory\InventoryService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -48,10 +49,35 @@ class ReceivingController extends Controller
                     ],
                     ipAddress: $request->ip(),
                 );
+
+                $product = $purchaseOrderLine->product;
+                AuditLogService::logCustom(
+                    'receive',
+                    __('Received stock against PO line for :sku.', ['sku' => $product?->sku ?? 'product']),
+                    $product,
+                    null,
+                    [
+                        'purchase_order_line_id' => $purchaseOrderLine->id,
+                        'qty' => $validated['qty'] ?? null,
+                        'reference_no' => $validated['reference_no'] ?? null,
+                    ],
+                );
             } else {
                 $product = Product::query()->where('sku', $validated['sku'])->firstOrFail();
 
                 $inventory->receive($request->user(), $product, $payload, ipAddress: $request->ip());
+
+                AuditLogService::logCustom(
+                    'receive',
+                    __('Received stock for :sku.', ['sku' => $product->sku]),
+                    $product,
+                    null,
+                    [
+                        'qty' => $validated['qty'] ?? null,
+                        'tag_codes' => $validated['tag_codes'] ?? null,
+                        'reference_no' => $validated['reference_no'] ?? null,
+                    ],
+                );
             }
         } catch (RuntimeException $e) {
             Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
@@ -70,6 +96,14 @@ class ReceivingController extends Controller
             $lines = $request->validatedLines();
 
             $inventory->batchReceive($request->user(), $lines, ipAddress: $request->ip());
+
+            AuditLogService::logCustom(
+                'receive_batch',
+                __('Batch received :count stock line(s).', ['count' => count($lines)]),
+                null,
+                null,
+                ['line_count' => count($lines)],
+            );
         } catch (RuntimeException $e) {
             Inertia::flash('toast', ['type' => 'error', 'message' => $e->getMessage()]);
 

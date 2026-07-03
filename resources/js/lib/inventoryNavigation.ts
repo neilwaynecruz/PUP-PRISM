@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/vue3';
 import {
     ArrowLeftRight,
     BarChart3,
+    Bell,
     BookOpen,
     FileText,
     History,
@@ -34,7 +35,10 @@ import {
     create as suppliersCreate,
     index as suppliersIndex,
 } from '@/routes/inventory/suppliers';
+import { index as adminAlertsIndex } from '@/routes/admin/alerts';
+import { health as operationsHealthIndex } from '@/routes/admin/operations';
 import { index as adminUsersIndex } from '@/routes/admin/users';
+import { index as notificationsIndex } from '@/routes/notifications';
 import type { Auth, AuthPermissions, NavItem } from '@/types';
 
 type InventoryNavItem = NavItem & {
@@ -61,6 +65,8 @@ const defaultPermissions: AuthPermissions = {
     viewAuditLogs: false,
     viewUsers: false,
     viewForecasting: false,
+    viewAlerts: false,
+    viewOperationsHealth: false,
 };
 
 const mainNavigationItems: InventoryNavItem[] = [
@@ -134,6 +140,18 @@ const mainNavigationItems: InventoryNavItem[] = [
         href: adminUsersIndex(),
         icon: ShieldCheck,
         permission: 'viewUsers',
+    },
+    {
+        title: 'Alerts',
+        href: adminAlertsIndex(),
+        icon: Radar,
+        permission: 'viewAlerts',
+    },
+    {
+        title: 'Operations health',
+        href: operationsHealthIndex(),
+        icon: BarChart3,
+        permission: 'viewOperationsHealth',
     },
 ];
 
@@ -256,6 +274,13 @@ const searchNavigationItems: InventorySearchItem[] = [
         description: 'Review operational changes and approval history',
         keywords: ['audit', 'logs', 'history', 'changes'],
         permission: 'viewAuditLogs',
+    },
+    {
+        title: 'Notifications',
+        href: notificationsIndex(),
+        icon: Bell,
+        description: 'Full notification history with filters and pagination',
+        keywords: ['notifications', 'history', 'alerts', 'inbox'],
     },
     {
         title: 'Settings',
@@ -390,7 +415,19 @@ export function useInventoryNavigation() {
                         href: auditLogsIndex(),
                         icon: History,
                         permission: 'viewAuditLogs',
-                    }
+                    },
+                    {
+                        title: 'Alerts',
+                        href: adminAlertsIndex(),
+                        icon: Radar,
+                        permission: 'viewAlerts',
+                    },
+                    {
+                        title: 'Operations health',
+                        href: operationsHealthIndex(),
+                        icon: BarChart3,
+                        permission: 'viewOperationsHealth',
+                    },
                 ], perms)
             },
             {

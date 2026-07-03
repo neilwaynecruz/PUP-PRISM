@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Bell, CheckCheck, LoaderCircle, Radio } from 'lucide-vue-next';
+import { Link } from '@inertiajs/vue3';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,6 +11,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useRealtimeNotifications } from '@/composables/useRealtimeNotifications';
+import { index as notificationsIndex } from '@/routes/notifications';
 
 const {
     connectionLabel,
@@ -157,9 +159,15 @@ function formatTimestamp(timestamp: string | null): string {
             <DropdownMenuSeparator />
 
             <div class="flex items-center justify-between px-4 py-2.5 text-[11px] text-muted-foreground">
-                <span>
-                    {{ hasUnread ? `${unreadCount} unread` : 'All caught up' }}
-                </span>
+                <div class="flex items-center gap-3">
+                    <Link
+                        :href="notificationsIndex().url"
+                        class="font-medium text-primary hover:underline"
+                    >
+                        View all
+                    </Link>
+                    <span>{{ hasUnread ? `${unreadCount} unread` : 'All caught up' }}</span>
+                </div>
                 <span class="inline-flex items-center gap-1.5">
                     <LoaderCircle v-if="isSyncing" class="h-3.5 w-3.5 animate-spin" />
                     <span>{{ isSyncing ? 'Syncing' : 'Listening' }}</span>

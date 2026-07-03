@@ -1,7 +1,7 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\Settings\SecurityController::update
- * @see app/Http/Controllers/Settings/SecurityController.php:47
+ * @see app/Http/Controllers/Settings/SecurityController.php:48
  * @route '/settings/password'
  */
 export const update = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -16,7 +16,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Settings\SecurityController::update
- * @see app/Http/Controllers/Settings/SecurityController.php:47
+ * @see app/Http/Controllers/Settings/SecurityController.php:48
  * @route '/settings/password'
  */
 update.url = (options?: RouteQueryOptions) => {
@@ -25,45 +25,13 @@ update.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Settings\SecurityController::update
- * @see app/Http/Controllers/Settings/SecurityController.php:47
+ * @see app/Http/Controllers/Settings/SecurityController.php:48
  * @route '/settings/password'
  */
 update.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: update.url(options),
     method: 'put',
 })
-
-    /**
-* @see \App\Http\Controllers\Settings\SecurityController::update
- * @see app/Http/Controllers/Settings/SecurityController.php:47
- * @route '/settings/password'
- */
-    const updateForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: update.url({
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Settings\SecurityController::update
- * @see app/Http/Controllers/Settings/SecurityController.php:47
- * @route '/settings/password'
- */
-        updateForm.put = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: update.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    update.form = updateForm
 const userPassword = {
     update: Object.assign(update, update),
 }

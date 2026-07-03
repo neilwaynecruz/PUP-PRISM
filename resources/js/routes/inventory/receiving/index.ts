@@ -1,7 +1,7 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::index
- * @see app/Http/Controllers/Inventory/ReceivingController.php:19
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:20
  * @route '/inventory/receiving'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::index
- * @see app/Http/Controllers/Inventory/ReceivingController.php:19
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:20
  * @route '/inventory/receiving'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::index
- * @see app/Http/Controllers/Inventory/ReceivingController.php:19
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:20
  * @route '/inventory/receiving'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::index
- * @see app/Http/Controllers/Inventory/ReceivingController.php:19
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:20
  * @route '/inventory/receiving'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -42,44 +42,9 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ReceivingController::index
- * @see app/Http/Controllers/Inventory/ReceivingController.php:19
- * @route '/inventory/receiving'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ReceivingController::index
- * @see app/Http/Controllers/Inventory/ReceivingController.php:19
- * @route '/inventory/receiving'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\ReceivingController::index
- * @see app/Http/Controllers/Inventory/ReceivingController.php:19
- * @route '/inventory/receiving'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::store
- * @see app/Http/Controllers/Inventory/ReceivingController.php:24
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:25
  * @route '/inventory/receiving'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +59,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::store
- * @see app/Http/Controllers/Inventory/ReceivingController.php:24
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:25
  * @route '/inventory/receiving'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -103,7 +68,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::store
- * @see app/Http/Controllers/Inventory/ReceivingController.php:24
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:25
  * @route '/inventory/receiving'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -111,30 +76,9 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ReceivingController::store
- * @see app/Http/Controllers/Inventory/ReceivingController.php:24
- * @route '/inventory/receiving'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ReceivingController::store
- * @see app/Http/Controllers/Inventory/ReceivingController.php:24
- * @route '/inventory/receiving'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::batch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:67
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:93
  * @route '/inventory/receiving/batch'
  */
 export const batch = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -149,7 +93,7 @@ batch.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::batch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:67
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:93
  * @route '/inventory/receiving/batch'
  */
 batch.url = (options?: RouteQueryOptions) => {
@@ -158,35 +102,13 @@ batch.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::batch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:67
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:93
  * @route '/inventory/receiving/batch'
  */
 batch.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: batch.url(options),
     method: 'post',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\ReceivingController::batch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:67
- * @route '/inventory/receiving/batch'
- */
-    const batchForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: batch.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ReceivingController::batch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:67
- * @route '/inventory/receiving/batch'
- */
-        batchForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: batch.url(options),
-            method: 'post',
-        })
-    
-    batch.form = batchForm
 const receiving = {
     index: Object.assign(index, index),
 store: Object.assign(store, store),
