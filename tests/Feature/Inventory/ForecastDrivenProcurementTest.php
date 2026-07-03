@@ -21,9 +21,16 @@ beforeEach(function () {
     $this->withoutVite();
 });
 
-test('generate from forecast alerts includes above-threshold forecast-urgent product', function () {
-    $user = User::factory()->create();
+function procurementSupplyHead(): User
+{
+    $user = User::factory()->withTwoFactor()->create();
     $user->assignRole('Supply Head');
+
+    return $user;
+}
+
+test('generate from forecast alerts includes above-threshold forecast-urgent product', function () {
+    $user = procurementSupplyHead();
 
     $supplier = Supplier::factory()->create();
     $product = Product::factory()->consumable()->create([
@@ -71,8 +78,7 @@ test('generate from forecast alerts includes above-threshold forecast-urgent pro
 });
 
 test('generate from forecast alerts skips product without supplier', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user = procurementSupplyHead();
 
     $product = Product::factory()->consumable()->create([
         'supplier_id' => null,
@@ -108,8 +114,7 @@ test('generate from forecast alerts skips product without supplier', function ()
 test('procurement recommendation notification is sent when a new forecast stockout alert is created', function () {
     Notification::fake();
 
-    $supplyHead = User::factory()->create();
-    $supplyHead->assignRole('Supply Head');
+    $supplyHead = procurementSupplyHead();
 
     $product = Product::factory()->consumable()->create([
         'sku' => 'SKU-FORECAST-NOTIFY',
@@ -147,8 +152,7 @@ test('procurement recommendation notification is sent when a new forecast stocko
 });
 
 test('supply head can generate draft purchase orders from forecast alerts via controller', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user = procurementSupplyHead();
     $csrfToken = 'purchase-order-forecast-generate-token';
 
     $supplier = Supplier::factory()->create();

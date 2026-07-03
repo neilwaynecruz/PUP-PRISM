@@ -14,7 +14,7 @@ beforeEach(function () {
 });
 
 test('inventory clerk can view product label screen', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withTwoFactor()->create();
     $user->assignRole('Supply Head');
 
     $product = Product::factory()->create([

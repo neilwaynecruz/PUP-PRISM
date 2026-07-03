@@ -21,6 +21,20 @@ beforeEach(function () {
     $this->withoutVite();
 });
 
+function reportExportUser(string $role, array $attributes = []): User
+{
+    $factory = User::factory();
+
+    if ($role === 'Admin') {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create($attributes);
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('property custodian can export filtered product inventory as csv', function () {
     $user = User::factory()->create();
     $user->assignRole('Property Custodian');
@@ -58,8 +72,7 @@ test('property custodian can export filtered product inventory as csv', function
 });
 
 test('admin can export filtered stock movement audit log as csv', function () {
-    $admin = User::factory()->create(['name' => 'Audit Admin']);
-    $admin->assignRole('Admin');
+    $admin = reportExportUser('Admin', ['name' => 'Audit Admin']);
 
     $product = Product::factory()->consumable()->create([
         'sku' => 'AUDIT-SKU-001',
@@ -99,8 +112,7 @@ test('admin can export filtered stock movement audit log as csv', function () {
 });
 
 test('admin can export asset condition reports as csv', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = reportExportUser('Admin');
 
     $position = Position::factory()->create();
 
@@ -221,12 +233,12 @@ dataset('pdf report routes', [
         'route_parameters' => ['format' => 'pdf'],
     ],
     'movements' => fn () => [
-        'user' => tap(User::factory()->create(), fn (User $user) => $user->assignRole('Admin')),
+        'user' => reportExportUser('Admin'),
         'route_name' => 'inventory.reports.movements',
         'route_parameters' => ['format' => 'pdf'],
     ],
     'asset conditions' => fn () => [
-        'user' => tap(User::factory()->create(), fn (User $user) => $user->assignRole('Admin')),
+        'user' => reportExportUser('Admin'),
         'route_name' => 'inventory.reports.asset-conditions',
         'route_parameters' => ['format' => 'pdf'],
     ],
@@ -261,12 +273,12 @@ dataset('forbidden report routes', [
         'route_parameters' => ['format' => 'csv'],
     ],
     'movements export for supply head' => fn () => [
-        'user' => tap(User::factory()->create(), fn (User $user) => $user->assignRole('Supply Head')),
+        'user' => tap(User::factory()->withTwoFactor()->create(), fn (User $user) => $user->assignRole('Supply Head')),
         'route_name' => 'inventory.reports.movements',
         'route_parameters' => ['format' => 'csv'],
     ],
     'asset condition export for supply head' => fn () => [
-        'user' => tap(User::factory()->create(), fn (User $user) => $user->assignRole('Supply Head')),
+        'user' => tap(User::factory()->withTwoFactor()->create(), fn (User $user) => $user->assignRole('Supply Head')),
         'route_name' => 'inventory.reports.asset-conditions',
         'route_parameters' => ['format' => 'csv'],
     ],

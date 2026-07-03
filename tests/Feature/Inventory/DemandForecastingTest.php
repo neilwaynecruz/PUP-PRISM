@@ -17,6 +17,14 @@ beforeEach(function () {
     Role::findOrCreate('Supply Head');
 });
 
+function forecastingSupplyHead(array $attributes = []): User
+{
+    $user = User::factory()->withTwoFactor()->create($attributes);
+    $user->assignRole('Supply Head');
+
+    return $user;
+}
+
 test('demand forecasting command stores snapshots and forecast alerts', function () {
     $product = Product::factory()->consumable()->create([
         'sku' => 'SKU-FORECAST-001',
@@ -62,8 +70,7 @@ test('demand forecasting command stores snapshots and forecast alerts', function
 });
 
 test('supply head dashboard exposes forecasting summary cards', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user = forecastingSupplyHead();
 
     $product = Product::factory()->consumable()->create([
         'sku' => 'SKU-FORECAST-002',

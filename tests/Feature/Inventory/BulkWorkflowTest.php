@@ -21,6 +21,20 @@ beforeEach(function () {
     Role::findOrCreate('Property Custodian');
 });
 
+function bulkWorkflowUser(string $role, Position $position): User
+{
+    $factory = User::factory()->assignedPosition($position);
+
+    if ($role === 'Supply Head') {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create();
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('supply head can bulk approve submitted requisitions', function () {
     $requesterPosition = Position::factory()->create();
     $reviewerPosition = Position::factory()->create();
@@ -29,8 +43,7 @@ test('supply head can bulk approve submitted requisitions', function () {
     $requester = User::factory()->assignedPosition($requesterPosition)->create();
     $requester->assignRole('Property Custodian');
 
-    $reviewer = User::factory()->assignedPosition($reviewerPosition)->create();
-    $reviewer->assignRole('Supply Head');
+    $reviewer = bulkWorkflowUser('Supply Head', $reviewerPosition);
 
     $firstRequisition = Requisition::factory()->create([
         'requester_id' => $requester->id,
@@ -68,8 +81,7 @@ test('supply head can bulk issue approved requisitions', function () {
     $csrfToken = 'requisition-bulk-issue-token';
 
     $requester = User::factory()->assignedPosition($requesterPosition)->create();
-    $issuer = User::factory()->assignedPosition($issuerPosition)->create();
-    $issuer->assignRole('Supply Head');
+    $issuer = bulkWorkflowUser('Supply Head', $issuerPosition);
 
     $approver = User::factory()->assignedPosition($approverPosition)->create();
 

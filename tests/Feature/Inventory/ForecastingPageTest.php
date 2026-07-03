@@ -15,9 +15,22 @@ beforeEach(function () {
     Role::findOrCreate('Property Custodian');
 });
 
+function forecastingPageUser(string $role): User
+{
+    $factory = User::factory();
+
+    if ($role === 'Supply Head') {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create();
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('property custodians cannot access forecasting pages', function () {
-    $custodian = User::factory()->create();
-    $custodian->assignRole('Property Custodian');
+    $custodian = forecastingPageUser('Property Custodian');
 
     $product = Product::factory()->consumable()->create();
 
@@ -31,8 +44,7 @@ test('property custodians cannot access forecasting pages', function () {
 });
 
 test('supply head can view forecasting index with expected props', function () {
-    $supplyHead = User::factory()->create();
-    $supplyHead->assignRole('Supply Head');
+    $supplyHead = forecastingPageUser('Supply Head');
 
     $expectedSku = 'SKU-FORECAST-PAGE';
 
@@ -66,8 +78,7 @@ test('supply head can view forecasting index with expected props', function () {
 });
 
 test('supply head can view forecasting detail for a consumable product', function () {
-    $supplyHead = User::factory()->create();
-    $supplyHead->assignRole('Supply Head');
+    $supplyHead = forecastingPageUser('Supply Head');
 
     $product = Product::factory()->consumable()->create([
         'sku' => 'SKU-FORECAST-DETAIL',
@@ -96,8 +107,7 @@ test('supply head can view forecasting detail for a consumable product', functio
 });
 
 test('forecast profile updates persist for authorized users', function () {
-    $supplyHead = User::factory()->create();
-    $supplyHead->assignRole('Supply Head');
+    $supplyHead = forecastingPageUser('Supply Head');
 
     $product = Product::factory()->consumable()->create();
 
@@ -122,8 +132,7 @@ test('forecast profile updates persist for authorized users', function () {
 });
 
 test('forecasting index filters by urgency', function () {
-    $supplyHead = User::factory()->create();
-    $supplyHead->assignRole('Supply Head');
+    $supplyHead = forecastingPageUser('Supply Head');
 
     $urgentItemName = 'Urgent Item';
     $urgencyFilter = 'urgent';

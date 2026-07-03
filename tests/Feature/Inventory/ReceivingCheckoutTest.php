@@ -19,9 +19,16 @@ beforeEach(function () {
     Role::findOrCreate('Property Custodian');
 });
 
+function receivingAdmin(): User
+{
+    $user = User::factory()->withTwoFactor()->create();
+    $user->assignRole('Admin');
+
+    return $user;
+}
+
 test('receiving consumables increments stock and creates lot + movement', function () {
-    $clerk = User::factory()->create();
-    $clerk->assignRole('Admin');
+    $clerk = receivingAdmin();
     $csrfToken = 'receiving-store-token';
 
     $product = Product::factory()->consumable()->create(['sku' => 'SKU-REC-001']);
@@ -45,8 +52,7 @@ test('receiving consumables increments stock and creates lot + movement', functi
 });
 
 test('receiving can update a purchase order line when identifiers are provided', function () {
-    $clerk = User::factory()->create();
-    $clerk->assignRole('Admin');
+    $clerk = receivingAdmin();
     $csrfToken = 'receiving-po-token';
 
     $supplier = Supplier::factory()->create();

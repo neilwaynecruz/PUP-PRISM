@@ -18,6 +18,20 @@ beforeEach(function () {
     (new RoleSeeder)->run();
 });
 
+function apiRoleUser(string $role, array $attributes = []): User
+{
+    $factory = User::factory();
+
+    if (in_array($role, ['Admin', 'Supply Head'], true)) {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create($attributes);
+    $user->assignRole($role);
+
+    return $user;
+}
+
 /* --------------------------------------------------------------------------
    Authentication
    -------------------------------------------------------------------------- */
@@ -37,7 +51,7 @@ it('rejects unauthorized users from products api', function () {
 });
 
 it('rejects unverified users from api routes', function () {
-    $user = User::factory()->unverified()->create();
+    $user = User::factory()->unverified()->withTwoFactor()->create();
     $user->assignRole('Admin');
     $token = $user->createToken('test', ['read'])->plainTextToken;
 
@@ -51,8 +65,7 @@ it('rejects unverified users from api routes', function () {
    -------------------------------------------------------------------------- */
 
 it('lists products with pagination for authorized user', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = apiRoleUser('Admin');
     $token = $admin->createToken('test', ['read'])->plainTextToken;
 
     $origin = Origin::factory()->create();
@@ -82,8 +95,7 @@ it('lists products with pagination for authorized user', function () {
 });
 
 it('filters products by type', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = apiRoleUser('Admin');
     $token = $admin->createToken('test')->plainTextToken;
 
     $origin = Origin::factory()->create();
@@ -115,8 +127,7 @@ it('filters products by type', function () {
 });
 
 it('shows a single product', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = apiRoleUser('Admin');
     $token = $admin->createToken('test')->plainTextToken;
 
     $product = Product::factory()->create([
@@ -135,8 +146,7 @@ it('shows a single product', function () {
    -------------------------------------------------------------------------- */
 
 it('lists assets with pagination', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = apiRoleUser('Admin');
     $token = $admin->createToken('test')->plainTextToken;
 
     $product = Product::factory()->create([
@@ -155,8 +165,7 @@ it('lists assets with pagination', function () {
 });
 
 it('filters assets by status', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = apiRoleUser('Admin');
     $token = $admin->createToken('test')->plainTextToken;
 
     $product = Product::factory()->create([
@@ -186,8 +195,7 @@ it('filters assets by status', function () {
    -------------------------------------------------------------------------- */
 
 it('lists stock movements with date filtering', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = apiRoleUser('Admin');
     $token = $admin->createToken('test')->plainTextToken;
 
     $product = Product::factory()->create([
@@ -217,8 +225,7 @@ it('lists stock movements with date filtering', function () {
    -------------------------------------------------------------------------- */
 
 it('lists requisitions', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = apiRoleUser('Admin');
     $token = $admin->createToken('test')->plainTextToken;
 
     Requisition::factory()->count(3)->create(['status' => RequisitionStatus::Submitted]);
@@ -231,8 +238,7 @@ it('lists requisitions', function () {
 });
 
 it('creates a requisition via api', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Admin');
+    $user = apiRoleUser('Admin');
     $token = $user->createToken('test', ['write'])->plainTextToken;
 
     $product = Product::factory()->create([
@@ -265,8 +271,7 @@ it('creates a requisition via api', function () {
 });
 
 it('validates requisition api input', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Admin');
+    $user = apiRoleUser('Admin');
     $token = $user->createToken('test', ['write'])->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$token}")
@@ -300,8 +305,7 @@ it('rejects requisition creation for users without inventory roles', function ()
 });
 
 it('rejects requisition creation for read-only tokens', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Admin');
+    $user = apiRoleUser('Admin');
     $token = $user->createToken('test', ['read'])->plainTextToken;
 
     $product = Product::factory()->create([

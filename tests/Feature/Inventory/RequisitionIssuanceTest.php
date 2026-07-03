@@ -20,6 +20,20 @@ beforeEach(function () {
     Role::findOrCreate('Property Custodian');
 });
 
+function requisitionUser(string $role, Position $position): User
+{
+    $factory = User::factory()->assignedPosition($position);
+
+    if (in_array($role, ['Admin', 'Supply Head'], true)) {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create();
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('requester can submit a requisition and view it in the index and show pages', function () {
     $position = Position::factory()->create();
     $csrfToken = 'requisition-store-token';
@@ -69,8 +83,7 @@ test('requester cannot approve own requisition (separation of duty)', function (
     $position = Position::factory()->create();
     $csrfToken = 'requisition-approve-token';
 
-    $user = User::factory()->assignedPosition($position)->create();
-    $user->assignRole('Supply Head');
+    $user = requisitionUser('Supply Head', $position);
 
     $requisition = Requisition::factory()->create([
         'requester_id' => $user->id,
@@ -92,8 +105,7 @@ test('supply head can reject a submitted requisition with a reason', function ()
     $requester = User::factory()->assignedPosition($requesterPosition)->create();
     $requester->assignRole('Property Custodian');
 
-    $reviewer = User::factory()->assignedPosition($reviewerPosition)->create();
-    $reviewer->assignRole('Supply Head');
+    $reviewer = requisitionUser('Supply Head', $reviewerPosition);
 
     $requisition = Requisition::factory()->create([
         'requester_id' => $requester->id,
@@ -130,8 +142,7 @@ test('supply head can issue an approved requisition and records issue movements 
     $csrfToken = 'requisition-issue-token';
 
     $requester = User::factory()->assignedPosition($requesterPosition)->create();
-    $issuer = User::factory()->assignedPosition($issuerPosition)->create();
-    $issuer->assignRole('Supply Head');
+    $issuer = requisitionUser('Supply Head', $issuerPosition);
 
     $product = Product::factory()->consumable()->create(['sku' => 'SKU-ISSUE-001']);
     ProductStock::factory()->create(['product_id' => $product->id, 'on_hand_qty' => 10]);

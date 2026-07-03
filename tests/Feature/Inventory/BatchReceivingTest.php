@@ -4,16 +4,24 @@ use App\Enums\ProductType;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 
 uses()->group('batch-receiving');
 
 beforeEach(function () {
-    (new \Database\Seeders\RoleSeeder)->run();
+    (new RoleSeeder)->run();
 });
 
-it('receives multiple consumables in a batch', function () {
-    $admin = User::factory()->create();
+function batchReceivingAdmin(): User
+{
+    $admin = User::factory()->withTwoFactor()->create();
     $admin->assignRole('Admin');
+
+    return $admin;
+}
+
+it('receives multiple consumables in a batch', function () {
+    $admin = batchReceivingAdmin();
 
     $productA = Product::factory()->create([
         'sku' => 'SKU-A',
@@ -68,8 +76,7 @@ it('receives multiple consumables in a batch', function () {
 });
 
 it('receives assets in a batch', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = batchReceivingAdmin();
 
     $product = Product::factory()->create([
         'sku' => 'AST-PROD',
@@ -99,8 +106,7 @@ it('receives assets in a batch', function () {
 });
 
 it('validates missing sku in batch line', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = batchReceivingAdmin();
 
     $this->actingAs($admin)
         ->post(route('inventory.receiving.batch'), [
@@ -112,8 +118,7 @@ it('validates missing sku in batch line', function () {
 });
 
 it('validates unknown sku in batch line', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = batchReceivingAdmin();
 
     $this->actingAs($admin)
         ->post(route('inventory.receiving.batch'), [
@@ -125,8 +130,7 @@ it('validates unknown sku in batch line', function () {
 });
 
 it('validates consumable without qty', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = batchReceivingAdmin();
 
     Product::factory()->create([
         'sku' => 'CONS-001',
@@ -143,8 +147,7 @@ it('validates consumable without qty', function () {
 });
 
 it('validates asset without tag codes', function () {
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = batchReceivingAdmin();
 
     Product::factory()->create([
         'sku' => 'AST-001',

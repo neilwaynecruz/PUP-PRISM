@@ -8,19 +8,26 @@ use App\Models\Booking;
 use App\Models\Product;
 use App\Models\Requisition;
 use App\Models\User;
-use Illuminate\Support\Facades\Route;
+use Database\Seeders\RoleSeeder;
 
 uses()->group('soft-deletes');
 
 beforeEach(function () {
     $this->withoutVite();
-    (new \Database\Seeders\RoleSeeder)->run();
+    (new RoleSeeder)->run();
 });
+
+function softDeleteAdmin(): User
+{
+    $admin = User::factory()->withTwoFactor()->create();
+    $admin->assignRole('Admin');
+
+    return $admin;
+}
 
 describe('Product soft deletes', function () {
     it('soft deletes a product instead of hard deleting', function () {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
+        $admin = softDeleteAdmin();
 
         $product = Product::factory()->create([
             'type' => ProductType::Consumable,
@@ -35,8 +42,7 @@ describe('Product soft deletes', function () {
     });
 
     it('restores a soft deleted product', function () {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
+        $admin = softDeleteAdmin();
 
         $product = Product::factory()->create([
             'type' => ProductType::Consumable,
@@ -51,8 +57,7 @@ describe('Product soft deletes', function () {
     });
 
     it('excludes soft deleted products from the index', function () {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
+        $admin = softDeleteAdmin();
 
         $visible = Product::factory()->create(['name' => 'Visible Product']);
         $deleted = Product::factory()->create(['name' => 'Deleted Product']);
@@ -118,8 +123,7 @@ describe('Booking soft deletes', function () {
 
 describe('Requisition soft deletes', function () {
     it('soft deletes a requisition', function () {
-        $user = User::factory()->create();
-        $user->assignRole('Admin');
+        $user = softDeleteAdmin();
 
         $requisition = Requisition::factory()->create([
             'requester_id' => $user->id,
@@ -134,8 +138,7 @@ describe('Requisition soft deletes', function () {
     });
 
     it('restores a soft deleted requisition', function () {
-        $user = User::factory()->create();
-        $user->assignRole('Admin');
+        $user = softDeleteAdmin();
 
         $requisition = Requisition::factory()->create([
             'requester_id' => $user->id,
@@ -153,8 +156,7 @@ describe('Requisition soft deletes', function () {
 
 describe('Deleted by and reason tracking', function () {
     it('tracks who deleted a product and stores the reason', function () {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
+        $admin = softDeleteAdmin();
 
         $product = Product::factory()->create(['type' => ProductType::Consumable]);
 
@@ -200,8 +202,7 @@ describe('Deleted by and reason tracking', function () {
     });
 
     it('tracks who deleted a requisition and stores the reason', function () {
-        $user = User::factory()->create();
-        $user->assignRole('Admin');
+        $user = softDeleteAdmin();
 
         $requisition = Requisition::factory()->create([
             'requester_id' => $user->id,
@@ -224,8 +225,7 @@ describe('Deleted by and reason tracking', function () {
 
 describe('Unified trash viewer', function () {
     it('shows trashed items from all models to admin', function () {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
+        $admin = softDeleteAdmin();
 
         $product = Product::factory()->create(['name' => 'Trash Product']);
         $product->delete();
@@ -242,8 +242,7 @@ describe('Unified trash viewer', function () {
     });
 
     it('filters trashed items by type', function () {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
+        $admin = softDeleteAdmin();
 
         $product = Product::factory()->create(['name' => 'Trash Product']);
         $product->delete();
@@ -265,8 +264,7 @@ describe('Unified trash viewer', function () {
     });
 
     it('searches trashed items by label', function () {
-        $admin = User::factory()->create();
-        $admin->assignRole('Admin');
+        $admin = softDeleteAdmin();
 
         $productA = Product::factory()->create(['name' => 'Alpha Widget', 'sku' => 'WGT-001']);
         $productA->delete();

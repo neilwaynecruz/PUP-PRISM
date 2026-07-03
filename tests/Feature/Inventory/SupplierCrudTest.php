@@ -12,9 +12,22 @@ beforeEach(function () {
     $this->withoutVite();
 });
 
+function supplierCrudUser(string $role): User
+{
+    $factory = User::factory();
+
+    if (in_array($role, ['Admin', 'Supply Head'], true)) {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create();
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('supply head can create a supplier', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user = supplierCrudUser('Supply Head');
     $csrfToken = 'supplier-store-token';
 
     $this->actingAs($user)
@@ -35,8 +48,7 @@ test('supply head can create a supplier', function () {
 });
 
 test('admin can delete an unused supplier', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Admin');
+    $user = supplierCrudUser('Admin');
     $csrfToken = 'supplier-delete-token';
 
     $supplier = Supplier::factory()->create();

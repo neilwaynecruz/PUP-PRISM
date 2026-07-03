@@ -17,6 +17,20 @@ beforeEach(function () {
     $this->withoutVite();
 });
 
+function productCrudUser(string $role): User
+{
+    $factory = User::factory();
+
+    if (in_array($role, ['Admin', 'Supply Head'], true)) {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create();
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('property custodian can view product index but cannot access create screen', function () {
     $user = User::factory()->create();
     $user->assignRole('Property Custodian');
@@ -44,11 +58,9 @@ test('verified users without inventory roles are forbidden from product routes b
 });
 
 test('property custodian can view product show screen and supply head can open edit screen', function () {
-    $viewer = User::factory()->create();
-    $viewer->assignRole('Property Custodian');
+    $viewer = productCrudUser('Property Custodian');
 
-    $editor = User::factory()->create();
-    $editor->assignRole('Supply Head');
+    $editor = productCrudUser('Supply Head');
 
     $product = Product::factory()->create([
         'sku' => 'SKU-SHOW-0001',
@@ -72,8 +84,7 @@ test('property custodian can view product show screen and supply head can open e
 });
 
 test('supply head can create a product', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user = productCrudUser('Supply Head');
     $csrfToken = 'product-test-token';
 
     $category = Category::factory()->create();
@@ -131,8 +142,7 @@ test('property custodian cannot store, update or destroy products', function () 
 });
 
 test('supply head can update but cannot destroy products', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user = productCrudUser('Supply Head');
     $csrfToken = 'product-test-token';
 
     $category = Category::factory()->create();
@@ -171,8 +181,7 @@ test('supply head can update but cannot destroy products', function () {
 });
 
 test('admin can destroy products', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Admin');
+    $user = productCrudUser('Admin');
     $csrfToken = 'product-test-token';
 
     $product = Product::factory()->create();

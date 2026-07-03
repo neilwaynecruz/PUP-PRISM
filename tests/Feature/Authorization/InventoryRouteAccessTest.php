@@ -19,7 +19,13 @@ function inventoryUserWithRole(string $role): User
     $department = Department::factory()->create();
     $position = Position::factory()->create(['department_id' => $department->id]);
 
-    $user = User::factory()->assignedPosition($position)->create();
+    $factory = User::factory()->assignedPosition($position);
+
+    if (in_array($role, ['Admin', 'Supply Head'], true)) {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create();
     $user->assignRole($role);
 
     return $user;

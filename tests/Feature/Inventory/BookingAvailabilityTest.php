@@ -19,6 +19,20 @@ beforeEach(function () {
     Role::findOrCreate('Property Custodian');
 });
 
+function bookingUserWithRole(string $role, Position $position): User
+{
+    $factory = User::factory()->assignedPosition($position);
+
+    if (in_array($role, ['Admin', 'Supply Head'], true)) {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create();
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('approved bookings block overlapping requests', function () {
     $position = Position::factory()->create();
     $csrfToken = 'booking-overlap-token';
@@ -129,8 +143,7 @@ test('booking show page exposes reject for authorized approver', function (strin
     $approverPosition = Position::factory()->create();
     $requesterPosition = Position::factory()->create();
 
-    $approver = User::factory()->assignedPosition($approverPosition)->create();
-    $approver->assignRole($role);
+    $approver = bookingUserWithRole($role, $approverPosition);
 
     $requester = User::factory()->assignedPosition($requesterPosition)->create();
     $requester->assignRole('Property Custodian');
@@ -156,8 +169,7 @@ test('booking show page exposes reject for authorized approver', function (strin
 test('booking show page hides reject for unauthorized viewer', function () {
     $requesterPosition = Position::factory()->create();
 
-    $requester = User::factory()->assignedPosition($requesterPosition)->create();
-    $requester->assignRole('Supply Head');
+    $requester = bookingUserWithRole('Supply Head', $requesterPosition);
 
     $booking = Booking::factory()->create([
         'requester_id' => $requester->id,

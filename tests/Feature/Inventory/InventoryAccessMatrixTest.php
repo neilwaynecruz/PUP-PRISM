@@ -12,12 +12,28 @@ beforeEach(function () {
     Role::findOrCreate('Property Custodian');
 });
 
+function inventoryAccessUser(string $role, Position $position): User
+{
+    $factory = User::factory()->create(['position_id' => $position->id]);
+
+    if (in_array($role, ['Admin', 'Supply Head'], true)) {
+        $factory->forceFill([
+            'two_factor_secret' => encrypt('secret'),
+            'two_factor_recovery_codes' => encrypt(json_encode(['recovery-code-1'])),
+            'two_factor_confirmed_at' => now(),
+        ])->save();
+    }
+
+    $factory->assignRole($role);
+
+    return $factory;
+}
+
 test('supply head cannot access restricted inventory modules', function (
     string $routeName,
 ) {
     $position = Position::factory()->create();
-    $user = User::factory()->create(['position_id' => $position->id]);
-    $user->assignRole('Supply Head');
+    $user = inventoryAccessUser('Supply Head', $position);
 
     $this->actingAs($user)
         ->get(route($routeName, absolute: false))

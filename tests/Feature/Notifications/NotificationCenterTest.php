@@ -11,9 +11,16 @@ beforeEach(function () {
     Role::findOrCreate('Supply Head');
 });
 
-test('users can mark a notification as read', function () {
-    $user = User::factory()->create();
+function notificationUser(): User
+{
+    $user = User::factory()->withTwoFactor()->create();
     $user->assignRole('Supply Head');
+
+    return $user;
+}
+
+test('users can mark a notification as read', function () {
+    $user = notificationUser();
     $product = Product::factory()->create([
         'reorder_threshold' => 10,
     ]);
@@ -30,8 +37,7 @@ test('users can mark a notification as read', function () {
 });
 
 test('users can mark all notifications as read', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user = notificationUser();
     $product = Product::factory()->create([
         'reorder_threshold' => 10,
     ]);

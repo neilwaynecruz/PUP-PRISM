@@ -21,6 +21,14 @@ beforeEach(function () {
     Role::findOrCreate('Property Custodian');
 });
 
+function handoverAdmin(Position $position): User
+{
+    $admin = User::factory()->withTwoFactor()->assignedPosition($position)->create();
+    $admin->assignRole('Admin');
+
+    return $admin;
+}
+
 test('property custodian can initiate handover and recipient can verify (creates transfer movement)', function () {
     Notification::fake();
     $storeToken = 'handover-store-token';
@@ -92,8 +100,7 @@ test('handover index bounds recipients and keeps recent handovers visible', func
     $department = Department::factory()->create(['name' => 'Information Technology']);
     $position = Position::factory()->create(['department_id' => $department->id]);
 
-    $admin = User::factory()->assignedPosition($position)->create();
-    $admin->assignRole('Admin');
+    $admin = handoverAdmin($position);
 
     User::factory()->count(30)->assignedPosition($position)->create();
 
@@ -246,8 +253,8 @@ test('verified recipients can download the handover receipt pdf', function () {
 });
 
 test('web responses include security headers', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Admin');
+    $position = Position::factory()->create();
+    $user = handoverAdmin($position);
 
     $response = $this->actingAs($user)
         ->get(route('inventory.handover.index', absolute: false));

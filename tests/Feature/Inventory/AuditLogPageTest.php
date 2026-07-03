@@ -12,7 +12,7 @@ beforeEach(function () {
 });
 
 test('audit log index shows readable diffs and hides sensitive raw values', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withTwoFactor()->create();
     $user->assignRole('Admin');
 
     AuditLog::query()->create([

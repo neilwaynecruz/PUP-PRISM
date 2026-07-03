@@ -3,6 +3,7 @@
 use App\Models\Product;
 use App\Models\User;
 use App\Notifications\LowStockAlertNotification;
+use Illuminate\Support\Str;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
@@ -26,7 +27,7 @@ test('authenticated inertia pages share session timeout metadata', function () {
 test('authenticated inertia pages share role-aware inventory permissions', function () {
     Role::findOrCreate('Supply Head');
 
-    $user = User::factory()->create();
+    $user = User::factory()->withTwoFactor()->create();
     $user->assignRole('Supply Head');
 
     $this->actingAs($user)
@@ -45,11 +46,19 @@ test('authenticated inertia pages share role-aware inventory permissions', funct
 
 test('authenticated inertia pages share recent notifications and unread counts', function () {
     $user = User::factory()->create();
-    $product = Product::factory()->create([
-        'reorder_threshold' => 10,
-    ]);
+    $product = Product::factory()->create(['reorder_threshold' => 10]);
 
-    $user->notify(new LowStockAlertNotification($product, 4));
+    $user->notifications()->create([
+        'id' => (string) Str::uuid(),
+        'type' => LowStockAlertNotification::class,
+        'data' => [
+            'category' => 'inventory',
+            'severity' => 'warning',
+            'title' => 'Low stock alert',
+            'message' => "{$product->name} is low on stock.",
+        ],
+        'read_at' => null,
+    ]);
 
     $this->actingAs($user)
         ->get(route('dashboard', absolute: false))

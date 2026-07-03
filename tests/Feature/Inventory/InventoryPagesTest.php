@@ -17,9 +17,26 @@ beforeEach(function () {
     Role::findOrCreate('Property Custodian');
 });
 
+function inventoryPagesUser(string $role, ?Position $position = null): User
+{
+    $factory = User::factory();
+
+    if ($position !== null) {
+        $factory = $factory->assignedPosition($position);
+    }
+
+    if (in_array($role, ['Admin', 'Supply Head'], true)) {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create();
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('supply head can open the receiving index', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user = inventoryPagesUser('Supply Head');
 
     $this->actingAs($user)
         ->get(route('inventory.receiving.index', absolute: false))
@@ -31,8 +48,7 @@ test('admin can open the stock movements index with paginated data', function ()
     $department = Department::factory()->create(['name' => 'Logistics']);
     $position = Position::factory()->create(['department_id' => $department->id]);
 
-    $admin = User::factory()->assignedPosition($position)->create();
-    $admin->assignRole('Admin');
+    $admin = inventoryPagesUser('Admin', $position);
 
     $product = Product::factory()->consumable()->create([
         'sku' => 'SKU-MOVE-0001',
@@ -59,8 +75,7 @@ test('admin can open the stock movements index with paginated data', function ()
 test('supply head cannot open another users booking details directly', function () {
     $position = Position::factory()->create();
 
-    $supplyHead = User::factory()->assignedPosition($position)->create();
-    $supplyHead->assignRole('Supply Head');
+    $supplyHead = inventoryPagesUser('Supply Head', $position);
 
     $requester = User::factory()->assignedPosition($position)->create();
 

@@ -6,7 +6,7 @@ use Spatie\Permission\Models\Role;
 test('products index disables client caching for authenticated users', function () {
     Role::findOrCreate('Admin');
 
-    $user = User::factory()->create(['email_verified_at' => now()]);
+    $user = User::factory()->withTwoFactor()->create(['email_verified_at' => now()]);
     $user->assignRole('Admin');
 
     $response = $this->actingAs($user)->get(route('inventory.products.index', absolute: false));

@@ -27,7 +27,7 @@ test('category and origin option caches are invalidated when reference data chan
 });
 
 test('product pages recover from stale non-array option cache payloads', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withTwoFactor()->create();
     $user->assignRole('Supply Head');
 
     Category::factory()->create(['name' => 'Operational Category']);

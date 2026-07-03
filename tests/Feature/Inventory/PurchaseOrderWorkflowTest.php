@@ -18,9 +18,22 @@ beforeEach(function () {
     $this->withoutVite();
 });
 
+function purchaseOrderUser(string $role): User
+{
+    $factory = User::factory();
+
+    if (in_array($role, ['Admin', 'Supply Head'], true)) {
+        $factory = $factory->withTwoFactor();
+    }
+
+    $user = $factory->create();
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('supply head can create a draft purchase order', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user = purchaseOrderUser('Supply Head');
     $csrfToken = 'purchase-order-store-token';
 
     $supplier = Supplier::factory()->create();
@@ -54,8 +67,7 @@ test('supply head can create a draft purchase order', function () {
 });
 
 test('admin can send a draft purchase order', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Admin');
+    $user = purchaseOrderUser('Admin');
     $csrfToken = 'purchase-order-send-token';
 
     $purchaseOrder = PurchaseOrder::factory()->create([
@@ -78,8 +90,7 @@ test('admin can send a draft purchase order', function () {
 });
 
 test('supply head can receive a sent purchase order line', function () {
-    $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user = purchaseOrderUser('Supply Head');
     $csrfToken = 'purchase-order-receive-token';
 
     $supplier = Supplier::factory()->create();
