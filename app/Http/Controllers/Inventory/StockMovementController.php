@@ -2,11 +2,19 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Enums\ProductType;
+use App\Enums\StockMovementReasonCode;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inventory\CycleCountRequest;
+use App\Http\Requests\Inventory\StockAdjustmentRequest;
 use App\Http\Requests\Inventory\StockMovementFilterRequest;
 use App\Http\Resources\StockMovementCollection;
+use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\User;
+use App\Services\AuditLogService;
+use App\Services\Inventory\InventoryService;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -62,6 +70,12 @@ class StockMovementController extends Controller
             ->orderBy('name')
             ->get();
 
+        $products = Product::query()
+            ->where('type', ProductType::Consumable)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'sku', 'name']);
+
         $exportParams = array_filter([
             'type' => $type ?: null,
             'search' => $search ?: null,
@@ -82,6 +96,21 @@ class StockMovementController extends Controller
             ],
             'movements' => (new StockMovementCollection($movements))->toArray($request),
             'users' => $users,
+            'products' => $products,
+            'adjustmentReasonCodes' => collect(StockMovementReasonCode::adjustmentValues())
+                ->map(fn (string $value): array => [
+                    'value' => $value,
+                    'label' => StockMovementReasonCode::from($value)->label(),
+                ])
+                ->values()
+                ->all(),
+            'cycleCountReasonCodes' => collect(StockMovementReasonCode::cycleCountValues())
+                ->map(fn (string $value): array => [
+                    'value' => $value,
+                    'label' => StockMovementReasonCode::from($value)->label(),
+                ])
+                ->values()
+                ->all(),
             'exportUrls' => [
                 'csv' => route('inventory.reports.movements', [
                     'format' => 'csv',
@@ -93,5 +122,65 @@ class StockMovementController extends Controller
                 ], absolute: false),
             ],
         ]);
+    }
+
+    public function adjust(StockAdjustmentRequest $request, InventoryService $inventory): RedirectResponse
+    {
+        $product = Product::query()->findOrFail($request->integer('product_id'));
+
+        try {
+            $inventory->adjustConsumableStock(
+                user: $request->user(),
+                product: $product,
+                qtyDelta: (int) $request->validated('qty_delta'),
+                reasonCode: StockMovementReasonCode::from($request->validated('reason_code')),
+                notes: $request->validated('notes'),
+                ipAddress: $request->ip(),
+            );
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors([
+                'product_id' => $exception->getMessage(),
+            ]);
+        }
+
+        AuditLogService::logCustom(
+            'stock_adjustment',
+            "Stock adjustment recorded for SKU {$product->sku}.",
+            $product,
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Stock adjustment recorded.')]);
+
+        return back();
+    }
+
+    public function cycleCount(CycleCountRequest $request, InventoryService $inventory): RedirectResponse
+    {
+        $product = Product::query()->findOrFail($request->integer('product_id'));
+
+        try {
+            $inventory->recordCycleCount(
+                user: $request->user(),
+                product: $product,
+                countedQuantity: (int) $request->validated('counted_qty'),
+                reasonCode: StockMovementReasonCode::from($request->validated('reason_code')),
+                notes: $request->validated('notes'),
+                ipAddress: $request->ip(),
+            );
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors([
+                'product_id' => $exception->getMessage(),
+            ]);
+        }
+
+        AuditLogService::logCustom(
+            'cycle_count',
+            "Cycle count recorded for SKU {$product->sku}.",
+            $product,
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Cycle count recorded.')]);
+
+        return back();
     }
 }

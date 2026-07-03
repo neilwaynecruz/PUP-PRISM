@@ -84,7 +84,11 @@ class RequisitionPolicy
             return false;
         }
 
-        return $requisition->status === RequisitionStatus::Approved;
+        return in_array($requisition->status, [
+            RequisitionStatus::Approved,
+            RequisitionStatus::PartiallyIssued,
+            RequisitionStatus::Backordered,
+        ], true);
     }
 
     public function trash(User $user): bool

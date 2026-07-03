@@ -206,12 +206,20 @@ class RequisitionController extends Controller
     ): RedirectResponse {
         $this->authorize('issue', $requisition);
 
-        $inventory->issueRequisition(
-            user: $request->user(),
-            requisition: $requisition,
-            notes: $request->validated()['notes'] ?? null,
-            ipAddress: $request->ip(),
-        );
+        try {
+            $inventory->issueRequisition(
+                user: $request->user(),
+                linePayloads: $request->issueLines(),
+                markAsBackordered: $request->shouldMarkAsBackordered(),
+                requisition: $requisition,
+                notes: $request->validated()['notes'] ?? null,
+                ipAddress: $request->ip(),
+            );
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors([
+                'lines' => $exception->getMessage(),
+            ]);
+        }
 
         $requisition->refresh();
         AuditLogService::logCustom(
@@ -227,7 +235,13 @@ class RequisitionController extends Controller
         );
         $this->notifications->requisitionStatusChanged($requisition, 'issued');
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition issued.')]);
+        $message = match ($requisition->status) {
+            RequisitionStatus::Issued => __('Requisition issued.'),
+            RequisitionStatus::Backordered => __('Requisition updated and remaining quantities are backordered.'),
+            default => __('Requisition partially fulfilled.'),
+        };
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => $message]);
 
         return back();
     }
@@ -306,6 +320,8 @@ class RequisitionController extends Controller
                     $inventory->issueRequisition(
                         user: $request->user(),
                         requisition: $requisition,
+                        linePayloads: null,
+                        markAsBackordered: false,
                         notes: null,
                         ipAddress: $request->ip(),
                     );

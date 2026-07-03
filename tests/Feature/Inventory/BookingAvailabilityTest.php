@@ -4,6 +4,7 @@ use App\Enums\AssetStatus;
 use App\Enums\BookingStatus;
 use App\Models\Asset;
 use App\Models\Booking;
+use App\Models\HandoverLog;
 use App\Models\Position;
 use App\Models\Product;
 use App\Models\User;
@@ -321,4 +322,50 @@ test('booking approval rechecks overlaps before approving a pending request', fu
 
     expect($firstBooking->refresh()->status)->toBe(BookingStatus::Approved);
     expect($secondBooking->refresh()->status)->toBe(BookingStatus::Requested);
+});
+
+test('booking approval is blocked while the asset has a pending handover verification', function () {
+    $position = Position::factory()->create();
+    $csrfToken = 'booking-handover-conflict-token';
+
+    $approver = User::factory()->assignedPosition($position)->create();
+    $approver->assignRole('Property Custodian');
+
+    $requester = User::factory()->assignedPosition($position)->create();
+    $requester->assignRole('Property Custodian');
+
+    $recipient = User::factory()->assignedPosition($position)->create();
+
+    $product = Product::factory()->asset()->create();
+    $asset = Asset::factory()->assignedToPosition($position)->create([
+        'product_id' => $product->id,
+        'status' => AssetStatus::Available,
+    ]);
+
+    HandoverLog::factory()->create([
+        'asset_id' => $asset->id,
+        'from_user_id' => $requester->id,
+        'to_user_id' => $recipient->id,
+        'from_position_id' => $position->id,
+        'to_position_id' => $position->id,
+        'verified_at' => null,
+        'verified_by' => null,
+    ]);
+
+    $booking = Booking::factory()->create([
+        'asset_id' => $asset->id,
+        'requester_id' => $requester->id,
+        'requester_position_id' => $position->id,
+        'status' => BookingStatus::Requested,
+    ]);
+
+    $this->actingAs($approver)
+        ->withSession(['_token' => $csrfToken])
+        ->put(route('inventory.bookings.update', $booking, absolute: false), [
+            '_token' => $csrfToken,
+            'action' => 'approve',
+        ])
+        ->assertSessionHasErrors(['asset_id']);
+
+    expect($booking->refresh()->status)->toBe(BookingStatus::Requested);
 });

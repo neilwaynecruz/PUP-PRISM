@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
     'movement_type',
+    'reason_code',
     'product_id',
     'stock_lot_id',
     'asset_id',
@@ -17,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'qty_delta',
     'qty_before',
     'qty_after',
+    'counted_qty',
+    'variance_qty',
     'performed_by',
     'accountable_position_id',
     'ip_address',
@@ -86,6 +89,8 @@ class StockMovement extends Model
             'qty_delta' => 'integer',
             'qty_before' => 'integer',
             'qty_after' => 'integer',
+            'counted_qty' => 'integer',
+            'variance_qty' => 'integer',
         ];
     }
 }

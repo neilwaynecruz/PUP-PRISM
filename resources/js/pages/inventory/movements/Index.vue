@@ -1,17 +1,24 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Form, Head, Link, router } from '@inertiajs/vue3';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import StockMovementController from '@/actions/App/Http/Controllers/Inventory/StockMovementController';
 import Heading from '@/components/Heading.vue';
+import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
 
 type Movement = {
     id: number;
     movement_type: string;
+    reason_code: string | null;
     qty_delta: number | null;
+    qty_before: number | null;
+    qty_after: number | null;
+    counted_qty: number | null;
+    variance_qty: number | null;
     performed_at: string;
     ip_address: string | null;
     notes: string | null;
@@ -27,6 +34,8 @@ type Movement = {
 };
 
 type UserOption = { id: number; name: string; email: string };
+type ProductOption = { id: number; sku: string; name: string };
+type ReasonCodeOption = { value: string; label: string };
 
 type Paginated<T> = { data: T[]; links: PaginationLink[] };
 
@@ -42,6 +51,9 @@ const props = defineProps<{
     };
     movements: Paginated<Movement>;
     users: UserOption[];
+    products: ProductOption[];
+    adjustmentReasonCodes: ReasonCodeOption[];
+    cycleCountReasonCodes: ReasonCodeOption[];
     exportUrls: { csv: string; pdf: string };
 }>();
 
@@ -151,6 +163,8 @@ function movementTypeLabel(mt: string): string {
         transfer: 'Transferred',
         condemn: 'Condemned',
         return: 'Returned',
+        adjustment: 'Adjustment',
+        cycle_count: 'Cycle count',
     };
 
     return labels[mt] ?? mt;
@@ -168,6 +182,10 @@ function movementTypeColor(mt: string): string {
             return 'border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400';
         case 'return':
             return 'border-violet-500/20 bg-violet-500/10 text-violet-600 dark:text-violet-400';
+        case 'adjustment':
+            return 'border-orange-500/20 bg-orange-500/10 text-orange-600 dark:text-orange-400';
+        case 'cycle_count':
+            return 'border-indigo-500/20 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400';
         default:
             return 'border-slate-500/20 bg-slate-500/10 text-slate-600 dark:text-slate-400';
     }
@@ -185,9 +203,24 @@ function movementTypeDot(mt: string): string {
             return 'bg-rose-500';
         case 'return':
             return 'bg-violet-500';
+        case 'adjustment':
+            return 'bg-orange-500';
+        case 'cycle_count':
+            return 'bg-indigo-500';
         default:
             return 'bg-slate-400';
     }
+}
+
+function humanizeReasonCode(value: string | null): string {
+    if (!value) {
+        return '—';
+    }
+
+    return value
+        .split('_')
+        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ');
 }
 </script>
 
@@ -203,6 +236,148 @@ function movementTypeDot(mt: string): string {
             title="Audit trail"
             description="Every inbound and outbound transaction records the actor, accountable position, timestamp, and IP address."
         />
+
+        <div class="grid gap-4 xl:grid-cols-2">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+                <div class="mb-4">
+                    <div class="font-medium">Manual stock adjustment</div>
+                    <div class="text-sm text-muted-foreground">
+                        Record audited inventory increases or decreases with a structured reason code.
+                    </div>
+                </div>
+
+                <Form
+                    v-bind="StockMovementController.adjust.form()"
+                    v-slot="{ errors, processing }"
+                    class="grid gap-3"
+                >
+                    <div class="grid gap-1.5">
+                        <Label for="adjust-product">Product</Label>
+                        <select
+                            id="adjust-product"
+                            name="product_id"
+                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                            required
+                        >
+                            <option value="" disabled selected>Select a product</option>
+                            <option v-for="product in products" :key="product.id" :value="product.id">
+                                {{ product.name }} ({{ product.sku }})
+                            </option>
+                        </select>
+                        <InputError :message="errors.product_id" />
+                    </div>
+
+                    <div class="grid gap-1.5 md:grid-cols-2">
+                        <div class="grid gap-1.5">
+                            <Label for="adjust-qty">Quantity delta</Label>
+                            <Input id="adjust-qty" name="qty_delta" type="number" placeholder="-3 or 5" required />
+                            <InputError :message="errors.qty_delta" />
+                        </div>
+                        <div class="grid gap-1.5">
+                            <Label for="adjust-reason">Reason code</Label>
+                            <select
+                                id="adjust-reason"
+                                name="reason_code"
+                                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                                required
+                            >
+                                <option value="" disabled selected>Select a reason</option>
+                                <option v-for="reason in adjustmentReasonCodes" :key="reason.value" :value="reason.value">
+                                    {{ reason.label }}
+                                </option>
+                            </select>
+                            <InputError :message="errors.reason_code" />
+                        </div>
+                    </div>
+
+                    <div class="grid gap-1.5">
+                        <Label for="adjust-notes">Notes</Label>
+                        <textarea
+                            id="adjust-notes"
+                            name="notes"
+                            rows="3"
+                            class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                            placeholder="Optional audit note"
+                        />
+                        <InputError :message="errors.notes" />
+                    </div>
+
+                    <Button type="submit" :disabled="processing" class="w-full sm:w-auto">
+                        Save adjustment
+                    </Button>
+                </Form>
+            </div>
+
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+                <div class="mb-4">
+                    <div class="font-medium">Cycle count</div>
+                    <div class="text-sm text-muted-foreground">
+                        Capture a physical count and let the system write any resulting variance to stock history.
+                    </div>
+                </div>
+
+                <Form
+                    v-bind="StockMovementController.cycleCount.form()"
+                    v-slot="{ errors, processing }"
+                    class="grid gap-3"
+                >
+                    <div class="grid gap-1.5">
+                        <Label for="count-product">Product</Label>
+                        <select
+                            id="count-product"
+                            name="product_id"
+                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                            required
+                        >
+                            <option value="" disabled selected>Select a product</option>
+                            <option v-for="product in products" :key="product.id" :value="product.id">
+                                {{ product.name }} ({{ product.sku }})
+                            </option>
+                        </select>
+                        <InputError :message="errors.product_id" />
+                    </div>
+
+                    <div class="grid gap-1.5 md:grid-cols-2">
+                        <div class="grid gap-1.5">
+                            <Label for="counted-qty">Counted quantity</Label>
+                            <Input id="counted-qty" name="counted_qty" type="number" min="0" required />
+                            <InputError :message="errors.counted_qty" />
+                        </div>
+                        <div class="grid gap-1.5">
+                            <Label for="count-reason">Reason code</Label>
+                            <select
+                                id="count-reason"
+                                name="reason_code"
+                                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                                required
+                            >
+                                <option value="" disabled selected>Select a reason</option>
+                                <option v-for="reason in cycleCountReasonCodes" :key="reason.value" :value="reason.value">
+                                    {{ reason.label }}
+                                </option>
+                            </select>
+                            <InputError :message="errors.reason_code" />
+                        </div>
+                    </div>
+
+                    <div class="grid gap-1.5">
+                        <Label for="count-notes">Notes</Label>
+                        <textarea
+                            id="count-notes"
+                            name="notes"
+                            rows="3"
+                            class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                            placeholder="Optional counting note"
+                        />
+                        <InputError :message="errors.notes" />
+                    </div>
+
+                    <Button type="submit" :disabled="processing" class="w-full sm:w-auto">
+                        Save cycle count
+                    </Button>
+                </Form>
+            </div>
+        </div>
 
         <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
             <div
@@ -250,6 +425,8 @@ function movementTypeDot(mt: string): string {
                         <option value="transfer">Transferred</option>
                         <option value="condemn">Condemned</option>
                         <option value="return">Returned</option>
+                        <option value="adjustment">Adjustment</option>
+                        <option value="cycle_count">Cycle count</option>
                     </select>
                 </div>
 
@@ -388,6 +565,10 @@ function movementTypeDot(mt: string): string {
                     <div v-if="m.qty_delta !== null">
                         Quantity: {{ m.qty_delta }}
                     </div>
+                    <div>Reason: {{ humanizeReasonCode(m.reason_code) }}</div>
+                    <div v-if="m.counted_qty !== null">
+                        Counted: {{ m.counted_qty }} (variance {{ m.variance_qty ?? 0 }})
+                    </div>
                     <div v-if="m.notes">Notes: {{ m.notes }}</div>
                     <div class="text-xs text-muted-foreground/70">
                         {{ formatDateTime(m.performed_at) }}
@@ -424,6 +605,7 @@ function movementTypeDot(mt: string): string {
                         <th>Product</th>
                         <th>Asset</th>
                         <th class="text-right">Qty</th>
+                        <th>Reason</th>
                         <th
                             class="cursor-pointer select-none"
                             @click="toggleSort('performed_by')"
@@ -439,7 +621,7 @@ function movementTypeDot(mt: string): string {
                     <tr v-if="movements.data.length === 0">
                         <td
                             class="px-4 py-10 text-center text-muted-foreground"
-                            colspan="9"
+                            colspan="10"
                         >
                             No audit entries match the current filters.
                         </td>
@@ -500,6 +682,14 @@ function movementTypeDot(mt: string): string {
                                 m.qty_delta
                             }}</span>
                             <span v-else class="text-muted-foreground">—</span>
+                        </td>
+                        <td>
+                            <div class="font-medium">
+                                {{ humanizeReasonCode(m.reason_code) }}
+                            </div>
+                            <div v-if="m.counted_qty !== null" class="text-xs text-muted-foreground">
+                                Counted {{ m.counted_qty }}, variance {{ m.variance_qty ?? 0 }}
+                            </div>
                         </td>
                         <td>
                             <div class="font-medium">

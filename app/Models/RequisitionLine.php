@@ -29,4 +29,9 @@ class RequisitionLine extends Model
     {
         return $this->belongsTo(Product::class);
     }
+
+    public function remainingQuantity(): int
+    {
+        return max(0, (int) $this->qty_requested - (int) $this->qty_issued);
+    }
 }

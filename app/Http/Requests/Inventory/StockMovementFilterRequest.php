@@ -18,7 +18,7 @@ class StockMovementFilterRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => ['nullable', 'string', 'in:receive,issue,transfer,condemn,return'],
+            'type' => ['nullable', 'string', 'in:receive,issue,transfer,condemn,return,adjustment,cycle_count'],
             'search' => ['nullable', 'string', 'max:200'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date', 'after_or_equal:date_from'],

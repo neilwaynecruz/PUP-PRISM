@@ -201,3 +201,63 @@ test('supply head can issue an approved requisition and records issue movements 
 
     expect($movement->accountable_position_id)->toBe($requesterPosition->id);
 });
+
+test('supply head can partially issue a requisition and mark remaining quantities as backordered', function () {
+    $requesterPosition = Position::factory()->create();
+    $issuerPosition = Position::factory()->create();
+    $approverPosition = Position::factory()->create();
+    $csrfToken = 'requisition-partial-backorder-token';
+
+    $requester = User::factory()->assignedPosition($requesterPosition)->create();
+    $issuer = requisitionUser('Supply Head', $issuerPosition);
+
+    $product = Product::factory()->consumable()->create(['sku' => 'SKU-BACKORDER-001']);
+    ProductStock::factory()->create(['product_id' => $product->id, 'on_hand_qty' => 5]);
+
+    $lot = StockLot::factory()->create([
+        'product_id' => $product->id,
+        'qty_received' => 5,
+        'qty_remaining' => 5,
+        'received_at' => CarbonImmutable::now()->subDay(),
+    ]);
+
+    $requisition = Requisition::factory()->create([
+        'requester_id' => $requester->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => RequisitionStatus::Approved,
+        'approved_at' => CarbonImmutable::now(),
+        'approver_id' => User::factory()->assignedPosition($approverPosition)->create()->id,
+        'approver_position_id' => $approverPosition->id,
+    ]);
+
+    $line = $requisition->lines()->create([
+        'product_id' => $product->id,
+        'qty_requested' => 4,
+        'qty_issued' => 0,
+    ]);
+
+    $this->actingAs($issuer)
+        ->withSession(['_token' => $csrfToken])
+        ->put(route('inventory.requisitions.issue', $requisition, absolute: false), [
+            '_token' => $csrfToken,
+            'mark_as_backordered' => '1',
+            'notes' => 'Partial issue while waiting for the next delivery.',
+            'lines' => [
+                [
+                    'id' => $line->id,
+                    'qty_to_issue' => 2,
+                ],
+            ],
+        ])
+        ->assertRedirect();
+
+    $requisition->refresh();
+    $line->refresh();
+    $lot->refresh();
+
+    expect($requisition->status)->toBe(RequisitionStatus::Backordered);
+    expect($line->qty_issued)->toBe(2);
+    expect($line->remainingQuantity())->toBe(2);
+    expect($lot->qty_remaining)->toBe(3);
+    expect(ProductStock::query()->where('product_id', $product->id)->firstOrFail()->on_hand_qty)->toBe(3);
+});

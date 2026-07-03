@@ -281,6 +281,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('movements', [StockMovementController::class, 'index'])
                 ->name('movements.index');
 
+            Route::post('movements/adjustments', [StockMovementController::class, 'adjust'])
+                ->name('movements.adjust');
+
+            Route::post('movements/cycle-counts', [StockMovementController::class, 'cycleCount'])
+                ->name('movements.cycle-count');
+
             Route::get('reports/movements/{format}', [InventoryReportController::class, 'stockMovements'])
                 ->whereIn('format', ['csv', 'pdf'])
                 ->name('reports.movements');

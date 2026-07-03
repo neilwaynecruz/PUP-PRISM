@@ -5,6 +5,7 @@ namespace App\Services\Inventory;
 use App\Enums\AssetStatus;
 use App\Enums\ProductType;
 use App\Enums\RequisitionStatus;
+use App\Enums\StockMovementReasonCode;
 use App\Models\Asset;
 use App\Models\Product;
 use App\Models\ProductStock;
@@ -167,16 +168,29 @@ class InventoryService
         }
     }
 
-    public function issueRequisition(User $user, Requisition $requisition, ?string $notes = null, ?string $ipAddress = null): void
-    {
+    /**
+     * @param  array<int, array{id: int, qty_to_issue: int}>|null  $linePayloads
+     */
+    public function issueRequisition(
+        User $user,
+        Requisition $requisition,
+        ?array $linePayloads = null,
+        bool $markAsBackordered = false,
+        ?string $notes = null,
+        ?string $ipAddress = null,
+    ): void {
         /** @var array{stock_changes: array<int, array{product: Product, on_hand_qty: int, delta: int, requisition_id: int}>, low_stock_alerts: array<int, array{product: Product, on_hand_qty: int}>} $result */
-        $result = DB::transaction(function () use ($user, $requisition, $notes, $ipAddress): array {
+        $result = DB::transaction(function () use ($user, $requisition, $linePayloads, $markAsBackordered, $notes, $ipAddress): array {
             $requisition = Requisition::query()->whereKey($requisition->id)->lockForUpdate()->firstOrFail();
             $stockChanges = [];
             $lowStockAlerts = [];
 
-            if ($requisition->status !== RequisitionStatus::Approved) {
-                throw new \RuntimeException('Only approved requisitions can be issued.');
+            if (! in_array($requisition->status, [
+                RequisitionStatus::Approved,
+                RequisitionStatus::PartiallyIssued,
+                RequisitionStatus::Backordered,
+            ], true)) {
+                throw new \RuntimeException('Only approved or partially fulfilled requisitions can be issued.');
             }
 
             /** @var Collection<int, RequisitionLine> $lines */
@@ -186,6 +200,13 @@ class InventoryService
                 ->lockForUpdate()
                 ->get();
 
+            /** @var array<int, int> $requestedQuantities */
+            $requestedQuantities = collect($linePayloads ?? [])
+                ->mapWithKeys(fn (array $line): array => [(int) $line['id'] => (int) $line['qty_to_issue']])
+                ->all();
+
+            $issuedAnyQuantity = false;
+
             foreach ($lines as $line) {
                 $product = Product::query()->whereKey($line->product_id)->lockForUpdate()->firstOrFail();
 
@@ -193,7 +214,13 @@ class InventoryService
                     throw new \RuntimeException('Only consumable requisition lines can be issued here.');
                 }
 
-                $qty = (int) $line->qty_requested;
+                $qty = array_key_exists($line->id, $requestedQuantities)
+                    ? $requestedQuantities[$line->id]
+                    : $line->remainingQuantity();
+
+                if ($qty === 0) {
+                    continue;
+                }
 
                 $stock = ProductStock::query()->where('product_id', $product->id)->lockForUpdate()->firstOrFail();
 
@@ -252,8 +279,10 @@ class InventoryService
                 $stock->decrement('on_hand_qty', $qty);
 
                 $line->update([
-                    'qty_issued' => $qty,
+                    'qty_issued' => $line->qty_issued + $qty,
                 ]);
+
+                $issuedAnyQuantity = true;
 
                 $freshStock = $stock->fresh();
                 if ($freshStock !== null) {
@@ -276,12 +305,26 @@ class InventoryService
                 }
             }
 
+            if (! $issuedAnyQuantity && ! $markAsBackordered) {
+                throw new \RuntimeException('No requisition quantities were selected for issuance.');
+            }
+
+            $hasRemainingQuantities = $lines->contains(
+                fn (RequisitionLine $line) => $line->fresh()?->remainingQuantity() > 0,
+            );
+
+            $status = match (true) {
+                ! $hasRemainingQuantities => RequisitionStatus::Issued,
+                $markAsBackordered => RequisitionStatus::Backordered,
+                default => RequisitionStatus::PartiallyIssued,
+            };
+
             $requisition->update([
-                'status' => RequisitionStatus::Issued,
-                'issued_by' => $user->id,
-                'issued_position_id' => $user->position_id,
-                'issued_ip_address' => $ipAddress,
-                'issued_at' => CarbonImmutable::now(),
+                'status' => $status,
+                'issued_by' => $issuedAnyQuantity ? $user->id : $requisition->issued_by,
+                'issued_position_id' => $issuedAnyQuantity ? $user->position_id : $requisition->issued_position_id,
+                'issued_ip_address' => $issuedAnyQuantity ? $ipAddress : $requisition->issued_ip_address,
+                'issued_at' => $issuedAnyQuantity ? CarbonImmutable::now() : $requisition->issued_at,
                 'notes' => $notes ?? $requisition->notes,
             ]);
 
@@ -306,6 +349,61 @@ class InventoryService
                 $lowStockAlert['on_hand_qty'],
             );
         }
+    }
+
+    public function adjustConsumableStock(
+        User $user,
+        Product $product,
+        int $qtyDelta,
+        StockMovementReasonCode $reasonCode,
+        ?string $notes = null,
+        ?string $ipAddress = null,
+    ): void {
+        $result = DB::transaction(fn (): array => $this->applyConsumableVariance(
+            user: $user,
+            product: $product,
+            qtyDelta: $qtyDelta,
+            movementType: 'adjustment',
+            reasonCode: $reasonCode,
+            countedQty: null,
+            notes: $notes,
+            ipAddress: $ipAddress,
+        ));
+
+        $this->dispatchInventoryDeltaRealtime($result);
+    }
+
+    public function recordCycleCount(
+        User $user,
+        Product $product,
+        int $countedQuantity,
+        StockMovementReasonCode $reasonCode,
+        ?string $notes = null,
+        ?string $ipAddress = null,
+    ): void {
+        $result = DB::transaction(function () use ($user, $product, $countedQuantity, $reasonCode, $notes, $ipAddress): array {
+            $lockedProduct = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+            $stock = ProductStock::query()->firstOrCreate(
+                ['product_id' => $lockedProduct->id],
+                ['on_hand_qty' => 0],
+            );
+
+            $stock = ProductStock::query()->whereKey($stock->id)->lockForUpdate()->firstOrFail();
+            $qtyDelta = $countedQuantity - (int) $stock->on_hand_qty;
+
+            return $this->applyConsumableVariance(
+                user: $user,
+                product: $lockedProduct,
+                qtyDelta: $qtyDelta,
+                movementType: 'cycle_count',
+                reasonCode: $reasonCode,
+                countedQty: $countedQuantity,
+                notes: $notes,
+                ipAddress: $ipAddress,
+            );
+        });
+
+        $this->dispatchInventoryDeltaRealtime($result);
     }
 
     /**
@@ -470,5 +568,169 @@ class InventoryService
             $result['on_hand_qty'],
             $result['delta'],
         );
+    }
+
+    /**
+     * @return array{product: Product, on_hand_qty: int, delta: int}
+     */
+    private function applyConsumableVariance(
+        User $user,
+        Product $product,
+        int $qtyDelta,
+        string $movementType,
+        StockMovementReasonCode $reasonCode,
+        ?int $countedQty,
+        ?string $notes,
+        ?string $ipAddress,
+    ): array {
+        $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+
+        if ($product->type !== ProductType::Consumable) {
+            throw new \RuntimeException('Only consumable products support stock adjustments and cycle counts.');
+        }
+
+        $stock = ProductStock::query()->firstOrCreate(
+            ['product_id' => $product->id],
+            ['on_hand_qty' => 0],
+        );
+
+        $stock = ProductStock::query()->whereKey($stock->id)->lockForUpdate()->firstOrFail();
+        $qtyBefore = (int) $stock->on_hand_qty;
+        $qtyAfter = $qtyBefore + $qtyDelta;
+
+        if ($qtyAfter < 0) {
+            throw new \RuntimeException("Adjustment would reduce SKU {$product->sku} below zero.");
+        }
+
+        if ($qtyDelta > 0) {
+            $lot = StockLot::create([
+                'product_id' => $product->id,
+                'reference_no' => strtoupper($movementType).'-'.CarbonImmutable::now()->format('YmdHis'),
+                'received_at' => CarbonImmutable::now(),
+                'expires_at' => null,
+                'qty_received' => $qtyDelta,
+                'qty_remaining' => $qtyDelta,
+            ]);
+
+            $stock->increment('on_hand_qty', $qtyDelta);
+
+            StockMovement::create([
+                'movement_type' => $movementType,
+                'reason_code' => $reasonCode->value,
+                'product_id' => $product->id,
+                'stock_lot_id' => $lot->id,
+                'asset_id' => null,
+                'requisition_id' => null,
+                'qty_delta' => $qtyDelta,
+                'qty_before' => $qtyBefore,
+                'qty_after' => $qtyAfter,
+                'counted_qty' => $countedQty,
+                'variance_qty' => $qtyDelta,
+                'performed_by' => $user->id,
+                'accountable_position_id' => $user->position_id,
+                'ip_address' => $ipAddress,
+                'performed_at' => CarbonImmutable::now(),
+                'notes' => $notes,
+            ]);
+        } elseif ($qtyDelta < 0) {
+            $remaining = abs($qtyDelta);
+            $runningOnHand = $qtyBefore;
+
+            /** @var Collection<int, StockLot> $lots */
+            $lots = StockLot::query()
+                ->where('product_id', $product->id)
+                ->where('qty_remaining', '>', 0)
+                ->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END')
+                ->orderBy('expires_at')
+                ->orderBy('received_at')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($lots as $lot) {
+                if ($remaining <= 0) {
+                    break;
+                }
+
+                $consume = min($remaining, $lot->qty_remaining);
+                $lot->decrement('qty_remaining', $consume);
+
+                StockMovement::create([
+                    'movement_type' => $movementType,
+                    'reason_code' => $reasonCode->value,
+                    'product_id' => $product->id,
+                    'stock_lot_id' => $lot->id,
+                    'asset_id' => null,
+                    'requisition_id' => null,
+                    'qty_delta' => -$consume,
+                    'qty_before' => $runningOnHand,
+                    'qty_after' => $runningOnHand - $consume,
+                    'counted_qty' => $countedQty,
+                    'variance_qty' => $qtyDelta,
+                    'performed_by' => $user->id,
+                    'accountable_position_id' => $user->position_id,
+                    'ip_address' => $ipAddress,
+                    'performed_at' => CarbonImmutable::now(),
+                    'notes' => $notes,
+                ]);
+
+                $runningOnHand -= $consume;
+                $remaining -= $consume;
+            }
+
+            if ($remaining > 0) {
+                throw new \RuntimeException("Unable to allocate stock lots for SKU {$product->sku}.");
+            }
+
+            $stock->decrement('on_hand_qty', abs($qtyDelta));
+        } else {
+            StockMovement::create([
+                'movement_type' => $movementType,
+                'reason_code' => $reasonCode->value,
+                'product_id' => $product->id,
+                'stock_lot_id' => null,
+                'asset_id' => null,
+                'requisition_id' => null,
+                'qty_delta' => 0,
+                'qty_before' => $qtyBefore,
+                'qty_after' => $qtyAfter,
+                'counted_qty' => $countedQty,
+                'variance_qty' => 0,
+                'performed_by' => $user->id,
+                'accountable_position_id' => $user->position_id,
+                'ip_address' => $ipAddress,
+                'performed_at' => CarbonImmutable::now(),
+                'notes' => $notes,
+            ]);
+        }
+
+        return [
+            'product' => $product->fresh() ?? $product,
+            'on_hand_qty' => $qtyAfter,
+            'delta' => $qtyDelta,
+        ];
+    }
+
+    /**
+     * @param  array{product: Product, on_hand_qty: int, delta: int}  $result
+     */
+    private function dispatchInventoryDeltaRealtime(array $result): void
+    {
+        if ($result['delta'] > 0) {
+            $this->realtime->stockReceived(
+                $result['product'],
+                $result['on_hand_qty'],
+                $result['delta'],
+            );
+
+            return;
+        }
+
+        if ($result['delta'] < 0) {
+            $this->realtime->stockIssued(
+                $result['product'],
+                $result['on_hand_qty'],
+                $result['delta'],
+            );
+        }
     }
 }

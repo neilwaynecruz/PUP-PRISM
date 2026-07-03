@@ -16,7 +16,12 @@ class StockMovementResource extends InertiaJsonResource
         return [
             'id' => (int) $this->id,
             'movement_type' => $this->movement_type,
+            'reason_code' => $this->reason_code,
             'qty_delta' => $this->qty_delta,
+            'qty_before' => $this->qty_before,
+            'qty_after' => $this->qty_after,
+            'counted_qty' => $this->counted_qty,
+            'variance_qty' => $this->variance_qty,
             'performed_at' => $this->performed_at?->toIso8601String(),
             'ip_address' => $this->ip_address,
             'notes' => $this->notes,

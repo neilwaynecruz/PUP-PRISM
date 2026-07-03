@@ -15,6 +15,7 @@ use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\Inventory\AssetIntegrityService;
 use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -30,6 +31,7 @@ class BookingController extends Controller
 {
     public function __construct(
         private readonly NotificationService $notifications,
+        private readonly AssetIntegrityService $assetIntegrity,
     ) {}
 
     public function index(Request $request): Response
@@ -476,13 +478,13 @@ class BookingController extends Controller
         $endAt = CarbonImmutable::parse($validated['end_at']);
 
         return DB::transaction(function () use ($request, $validated, $startAt, $endAt): Booking {
-            Asset::query()
+            $asset = Asset::query()
                 ->whereKey($validated['asset_id'])
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $this->ensureAssetWindowIsAvailable(
-                assetId: $validated['asset_id'],
+            $this->assetIntegrity->ensureBookable(
+                asset: $asset,
                 startAt: $startAt,
                 endAt: $endAt,
             );
@@ -518,13 +520,13 @@ class BookingController extends Controller
                 ]);
             }
 
-            Asset::query()
+            $asset = Asset::query()
                 ->whereKey($lockedBooking->asset_id)
                 ->lockForUpdate()
                 ->firstOrFail();
 
-            $this->ensureAssetWindowIsAvailable(
-                assetId: $lockedBooking->asset_id,
+            $this->assetIntegrity->ensureBookable(
+                asset: $asset,
                 startAt: $lockedBooking->start_at,
                 endAt: $lockedBooking->end_at,
                 ignoreBookingId: $lockedBooking->id,
@@ -539,29 +541,5 @@ class BookingController extends Controller
 
             $booking->refresh();
         });
-    }
-
-    private function ensureAssetWindowIsAvailable(
-        int $assetId,
-        \DateTimeInterface $startAt,
-        \DateTimeInterface $endAt,
-        ?int $ignoreBookingId = null,
-    ): void {
-        $conflictExists = Booking::query()
-            ->blocking()
-            ->forAssetWindow(
-                assetId: $assetId,
-                startAt: $startAt,
-                endAt: $endAt,
-                ignoreBookingId: $ignoreBookingId,
-            )
-            ->lockForUpdate()
-            ->exists();
-
-        if ($conflictExists) {
-            throw ValidationException::withMessages([
-                'start_at' => __('This asset is already booked for the selected schedule.'),
-            ]);
-        }
     }
 }

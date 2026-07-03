@@ -1,8 +1,8 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 import verify8ef1b2 from './verify'
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::index
- * @see app/Http/Controllers/Inventory/HandoverController.php:33
+ * @see app/Http/Controllers/Inventory/HandoverController.php:35
  * @route '/inventory/handover'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -17,7 +17,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::index
- * @see app/Http/Controllers/Inventory/HandoverController.php:33
+ * @see app/Http/Controllers/Inventory/HandoverController.php:35
  * @route '/inventory/handover'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -26,7 +26,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::index
- * @see app/Http/Controllers/Inventory/HandoverController.php:33
+ * @see app/Http/Controllers/Inventory/HandoverController.php:35
  * @route '/inventory/handover'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -35,7 +35,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::index
- * @see app/Http/Controllers/Inventory/HandoverController.php:33
+ * @see app/Http/Controllers/Inventory/HandoverController.php:35
  * @route '/inventory/handover'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -43,9 +43,44 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\HandoverController::index
+ * @see app/Http/Controllers/Inventory/HandoverController.php:35
+ * @route '/inventory/handover'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\HandoverController::index
+ * @see app/Http/Controllers/Inventory/HandoverController.php:35
+ * @route '/inventory/handover'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Inventory\HandoverController::index
+ * @see app/Http/Controllers/Inventory/HandoverController.php:35
+ * @route '/inventory/handover'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::store
- * @see app/Http/Controllers/Inventory/HandoverController.php:68
+ * @see app/Http/Controllers/Inventory/HandoverController.php:70
  * @route '/inventory/handover'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -60,7 +95,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::store
- * @see app/Http/Controllers/Inventory/HandoverController.php:68
+ * @see app/Http/Controllers/Inventory/HandoverController.php:70
  * @route '/inventory/handover'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -69,7 +104,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::store
- * @see app/Http/Controllers/Inventory/HandoverController.php:68
+ * @see app/Http/Controllers/Inventory/HandoverController.php:70
  * @route '/inventory/handover'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -77,6 +112,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\HandoverController::store
+ * @see app/Http/Controllers/Inventory/HandoverController.php:70
+ * @route '/inventory/handover'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\HandoverController::store
+ * @see app/Http/Controllers/Inventory/HandoverController.php:70
+ * @route '/inventory/handover'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\HandoverVerificationController::__invoke
  * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:15
@@ -144,6 +200,41 @@ verify.head = (args: { handoverLog: number | { id: number } } | [handoverLog: nu
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\HandoverVerificationController::__invoke
+ * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:15
+ * @route '/inventory/handover/verify/{handoverLog}'
+ */
+    const verifyForm = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: verify.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\HandoverVerificationController::__invoke
+ * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:15
+ * @route '/inventory/handover/verify/{handoverLog}'
+ */
+        verifyForm.get = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: verify.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Inventory\HandoverVerificationController::__invoke
+ * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:15
+ * @route '/inventory/handover/verify/{handoverLog}'
+ */
+        verifyForm.head = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: verify.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    verify.form = verifyForm
 /**
 * @see \App\Http\Controllers\Inventory\HandoverReceiptController::__invoke
  * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
@@ -210,6 +301,42 @@ receipt.head = (args: { handoverLog: number | { id: number } } | [handoverLog: n
     url: receipt.url(args, options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\Inventory\HandoverReceiptController::__invoke
+ * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
+ * @route '/inventory/handover/receipt/{handoverLog}'
+ */
+    const receiptForm = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: receipt.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\HandoverReceiptController::__invoke
+ * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
+ * @route '/inventory/handover/receipt/{handoverLog}'
+ */
+        receiptForm.get = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: receipt.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Inventory\HandoverReceiptController::__invoke
+ * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
+ * @route '/inventory/handover/receipt/{handoverLog}'
+ */
+        receiptForm.head = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: receipt.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    receipt.form = receiptForm
 const handover = {
     index: Object.assign(index, index),
 store: Object.assign(store, store),

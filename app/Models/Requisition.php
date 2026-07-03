@@ -95,6 +95,11 @@ class Requisition extends Model
         return $this->belongsTo(User::class, 'deleted_by');
     }
 
+    public function hasRemainingQuantities(): bool
+    {
+        return $this->lines->contains(fn (RequisitionLine $line) => $line->remainingQuantity() > 0);
+    }
+
     /**
      * @return array<string, string>
      */

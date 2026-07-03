@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Admin\OperationsHealthController::__invoke
  * @see app/Http/Controllers/Admin/OperationsHealthController.php:13
@@ -41,6 +41,42 @@ health.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: health.url(options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\Admin\OperationsHealthController::__invoke
+ * @see app/Http/Controllers/Admin/OperationsHealthController.php:13
+ * @route '/admin/operations/health'
+ */
+    const healthForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: health.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\OperationsHealthController::__invoke
+ * @see app/Http/Controllers/Admin/OperationsHealthController.php:13
+ * @route '/admin/operations/health'
+ */
+        healthForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: health.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\OperationsHealthController::__invoke
+ * @see app/Http/Controllers/Admin/OperationsHealthController.php:13
+ * @route '/admin/operations/health'
+ */
+        healthForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: health.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    health.form = healthForm
 const operations = {
     health: Object.assign(health, health),
 }

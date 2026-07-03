@@ -1,7 +1,9 @@
 <?php
 
 use App\Enums\AssetStatus;
+use App\Enums\BookingStatus;
 use App\Models\Asset;
+use App\Models\Booking;
 use App\Models\Department;
 use App\Models\HandoverLog;
 use App\Models\Position;
@@ -9,6 +11,7 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Notifications\HandoverVerificationNotification;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Notification;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
@@ -263,4 +266,108 @@ test('web responses include security headers', function () {
     expect($response->headers->get('X-Frame-Options'))->toBe('DENY');
     expect($response->headers->get('X-Content-Type-Options'))->toBe('nosniff');
     expect($response->headers->get('Referrer-Policy'))->toBe('strict-origin-when-cross-origin');
+});
+
+test('handover initiation is blocked when the asset already has an approved booking commitment', function () {
+    $storeToken = 'handover-booking-conflict-store-token';
+    $custodianPosition = Position::factory()->create();
+    $recipientPosition = Position::factory()->create();
+
+    $custodian = User::factory()->assignedPosition($custodianPosition)->create();
+    $custodian->assignRole('Property Custodian');
+
+    $recipient = User::factory()->assignedPosition($recipientPosition)->create();
+    $recipient->markEmailAsVerified();
+
+    $product = Product::factory()->asset()->create();
+    $asset = Asset::factory()->assignedToPosition($custodianPosition)->create([
+        'product_id' => $product->id,
+        'status' => AssetStatus::Available,
+        'tag_code' => 'TAG-BOOKED',
+    ]);
+
+    Booking::factory()->create([
+        'asset_id' => $asset->id,
+        'requester_id' => $custodian->id,
+        'requester_position_id' => $custodianPosition->id,
+        'approver_id' => $custodian->id,
+        'approver_position_id' => $custodianPosition->id,
+        'status' => BookingStatus::Approved,
+        'start_at' => CarbonImmutable::now()->addHour(),
+        'end_at' => CarbonImmutable::now()->addHours(3),
+    ]);
+
+    $this->actingAs($custodian)
+        ->withSession(['_token' => $storeToken])
+        ->post(route('inventory.handover.store', absolute: false), [
+            '_token' => $storeToken,
+            'asset_tag_code' => 'TAG-BOOKED',
+            'to_user_id' => $recipient->id,
+        ])
+        ->assertSessionHasErrors(['asset_tag_code']);
+});
+
+test('handover verification is blocked when the asset gains an approved booking before completion', function () {
+    Notification::fake();
+    $storeToken = 'handover-verify-conflict-store-token';
+    $verifyToken = 'handover-verify-conflict-token';
+
+    $custodianPosition = Position::factory()->create();
+    $recipientPosition = Position::factory()->create();
+
+    $custodian = User::factory()->assignedPosition($custodianPosition)->create();
+    $custodian->assignRole('Property Custodian');
+
+    $recipient = User::factory()->assignedPosition($recipientPosition)->create();
+    $recipient->markEmailAsVerified();
+
+    $product = Product::factory()->asset()->create();
+    $asset = Asset::factory()->assignedToPosition($custodianPosition)->create([
+        'product_id' => $product->id,
+        'status' => AssetStatus::Available,
+        'tag_code' => 'TAG-VERIFY-BOOKING',
+    ]);
+
+    $this->actingAs($custodian)
+        ->withSession(['_token' => $storeToken])
+        ->post(route('inventory.handover.store', absolute: false), [
+            '_token' => $storeToken,
+            'asset_tag_code' => 'TAG-VERIFY-BOOKING',
+            'to_user_id' => $recipient->id,
+        ])
+        ->assertRedirect();
+
+    $capturedNotification = null;
+
+    Notification::assertSentTo($recipient, HandoverVerificationNotification::class, function (HandoverVerificationNotification $notification) use (&$capturedNotification): bool {
+        $capturedNotification = $notification;
+
+        return true;
+    });
+
+    assert($capturedNotification instanceof HandoverVerificationNotification);
+
+    Booking::factory()->create([
+        'asset_id' => $asset->id,
+        'requester_id' => $custodian->id,
+        'requester_position_id' => $custodianPosition->id,
+        'approver_id' => $custodian->id,
+        'approver_position_id' => $custodianPosition->id,
+        'status' => BookingStatus::Approved,
+        'start_at' => CarbonImmutable::now()->addHour(),
+        'end_at' => CarbonImmutable::now()->addHours(3),
+    ]);
+
+    $this->actingAs($recipient)
+        ->withSession(['_token' => $verifyToken])
+        ->post(route('inventory.handover.verify.submit', ['handoverLog' => $capturedNotification->handoverLogId], absolute: false), [
+            '_token' => $verifyToken,
+            'token' => $capturedNotification->token,
+            'signature_png' => validHandoverSignaturePng(),
+        ])
+        ->assertSessionHasErrors(['token']);
+
+    $asset->refresh();
+    expect($asset->position_id)->toBe($custodianPosition->id);
+    expect($asset->status)->toBe(AssetStatus::Available);
 });

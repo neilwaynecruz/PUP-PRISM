@@ -26,6 +26,7 @@ type Line = {
     type: string | null;
     qty_requested: number;
     qty_issued: number;
+    qty_remaining: number;
 };
 
 type Person = { id: number; name: string };
@@ -89,14 +90,24 @@ const workflowSteps = computed(() => {
         },
         {
             key: 'issued',
-            title: 'Issued',
+            title:
+                currentStatus === 'Backordered'
+                    ? 'Backordered'
+                    : currentStatus === 'PartiallyIssued'
+                      ? 'Partially issued'
+                      : 'Issued',
             completed: props.requisition.issued_at !== null,
-            current: currentStatus === 'Issued',
+            current:
+                currentStatus === 'Issued' ||
+                currentStatus === 'PartiallyIssued' ||
+                currentStatus === 'Backordered',
             timestamp: props.requisition.issued_at,
             actor:
                 props.requisition.issuer?.name ??
                 (currentStatus === 'Rejected'
                     ? 'Not issued'
+                    : currentStatus === 'Backordered'
+                      ? 'Awaiting remaining stock'
                     : 'Pending issuance'),
             detail: props.requisition.issued_position?.title ?? null,
         },
@@ -382,6 +393,10 @@ defineOptions({
                                 >{{ l.qty_issued }}</span
                             >
                         </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-muted-foreground">Remaining</span>
+                            <span>{{ l.qty_remaining }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -397,6 +412,7 @@ defineOptions({
                             <th class="py-2 pr-3">Type</th>
                             <th class="py-2 pr-3">Requested</th>
                             <th class="py-2 pr-3">Issued</th>
+                            <th class="py-2 pr-3">Remaining</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -419,6 +435,7 @@ defineOptions({
                             >
                                 {{ l.qty_issued }}
                             </td>
+                            <td class="py-2 pr-3">{{ l.qty_remaining }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -500,21 +517,69 @@ defineOptions({
                 v-if="can.issue"
                 v-bind="RequisitionController.issue.form(requisition.id)"
                 v-slot="{ errors, processing }"
-                class="flex flex-1 items-end gap-2"
+                class="grid flex-1 gap-4"
             >
-                <div class="grid flex-1 gap-1">
-                    <label class="text-sm font-medium"
-                        >Issuance notes (optional)</label
+                <div class="grid gap-3 rounded-xl border border-border/60 p-4">
+                    <div class="text-sm font-medium">
+                        Fulfillment quantities
+                    </div>
+                    <div
+                        v-for="(line, index) in requisition.lines"
+                        :key="line.id"
+                        class="grid gap-2 rounded-lg border border-border/40 p-3 md:grid-cols-[1.5fr_120px_120px]"
                     >
-                    <Input name="notes" placeholder="Optional notes" />
-                    <InputError :message="errors.notes" />
+                        <div>
+                            <div class="font-medium">{{ line.name ?? line.sku ?? 'Line item' }}</div>
+                            <div class="text-xs text-muted-foreground">
+                                {{ line.sku ?? '—' }} · Remaining {{ line.qty_remaining }}
+                            </div>
+                        </div>
+                        <input type="hidden" :name="`lines[${index}][id]`" :value="line.id" />
+                        <div class="grid gap-1">
+                            <label class="text-xs font-medium text-muted-foreground">Issue now</label>
+                            <Input
+                                :name="`lines[${index}][qty_to_issue]`"
+                                type="number"
+                                min="0"
+                                :max="line.qty_remaining"
+                                :value="line.qty_remaining"
+                            />
+                        </div>
+                        <div class="text-xs text-muted-foreground md:self-end">
+                            Requested {{ line.qty_requested }}<br />
+                            Issued {{ line.qty_issued }}
+                        </div>
+                    </div>
+                    <InputError :message="errors.lines" />
                 </div>
+
+                <div class="grid gap-3 rounded-xl border border-border/60 p-4">
+                    <label class="flex items-start gap-3">
+                        <input
+                            name="mark_as_backordered"
+                            type="checkbox"
+                            value="1"
+                            class="mt-0.5 h-4 w-4 rounded border border-input"
+                        />
+                        <span class="text-sm text-muted-foreground">
+                            Mark remaining quantities as backordered after this fulfillment step.
+                        </span>
+                    </label>
+
+                    <div class="grid gap-1">
+                        <label class="text-sm font-medium">Issuance notes (optional)</label>
+                        <Input name="notes" placeholder="Optional notes" />
+                        <InputError :message="errors.notes" />
+                    </div>
+                </div>
+
                 <Button
                     type="submit"
                     :disabled="processing"
                     data-test="issue-requisition-button"
                     data-testid="issue-requisition-button"
-                    >Issue</Button
+                    class="w-full md:w-auto"
+                    >Update fulfillment</Button
                 >
             </Form>
         </div>

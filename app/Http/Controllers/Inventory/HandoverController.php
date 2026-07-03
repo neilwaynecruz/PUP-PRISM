@@ -13,6 +13,7 @@ use App\Models\StockMovement;
 use App\Models\User;
 use App\Notifications\HandoverVerificationNotification;
 use App\Services\AuditLogService;
+use App\Services\Inventory\AssetIntegrityService;
 use App\Services\Inventory\HandoverSignatureValidator;
 use App\Services\InventoryRealtimeService;
 use Carbon\CarbonImmutable;
@@ -28,6 +29,7 @@ class HandoverController extends Controller
     public function __construct(
         private readonly InventoryRealtimeService $realtime,
         private readonly HandoverSignatureValidator $signatureValidator,
+        private readonly AssetIntegrityService $assetIntegrity,
     ) {}
 
     public function index(Request $request): Response
@@ -76,6 +78,9 @@ class HandoverController extends Controller
         $rawToken = Str::random(64);
 
         $handover = DB::transaction(function () use ($request, $validated, $asset, $toUser, $rawToken): HandoverLog {
+            $asset = Asset::query()->whereKey($asset->id)->lockForUpdate()->firstOrFail();
+            $this->assetIntegrity->ensureHandOverable($asset);
+
             $fromPositionId = $asset->position_id ?? $request->user()->position_id;
 
             return HandoverLog::create([
@@ -169,6 +174,11 @@ class HandoverController extends Controller
             }
 
             $asset = Asset::query()->whereKey($handoverLog->asset_id)->lockForUpdate()->firstOrFail();
+            $this->assetIntegrity->ensureHandOverable(
+                asset: $asset,
+                errorKey: 'token',
+                ignoreHandoverLogId: $handoverLog->id,
+            );
 
             $handoverLog->update([
                 'verified_at' => CarbonImmutable::now(),

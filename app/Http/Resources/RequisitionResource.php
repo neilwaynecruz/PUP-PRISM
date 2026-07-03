@@ -63,6 +63,7 @@ class RequisitionResource extends InertiaJsonResource
                 'type' => $line->relationLoaded('product') ? $line->product?->type?->value : null,
                 'qty_requested' => (int) $line->qty_requested,
                 'qty_issued' => (int) $line->qty_issued,
+                'qty_remaining' => $line->remainingQuantity(),
             ])
             ->values()
             ->all();
