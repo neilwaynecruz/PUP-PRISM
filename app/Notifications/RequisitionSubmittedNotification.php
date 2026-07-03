@@ -4,17 +4,22 @@ namespace App\Notifications;
 
 use App\Models\Requisition;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class RequisitionSubmittedNotification extends Notification
+class RequisitionSubmittedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    public int $tries = 3;
+
     public function __construct(
         public Requisition $requisition,
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     /**
      * @return array<int, string>

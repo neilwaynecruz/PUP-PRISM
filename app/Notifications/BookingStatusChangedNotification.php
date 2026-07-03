@@ -4,18 +4,23 @@ namespace App\Notifications;
 
 use App\Models\Booking;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class BookingStatusChangedNotification extends Notification
+class BookingStatusChangedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+
+    public int $tries = 3;
 
     public function __construct(
         public Booking $booking,
         public string $action,
-    ) {}
+    ) {
+        $this->onQueue('notifications');
+    }
 
     /**
      * @return array<int, string>

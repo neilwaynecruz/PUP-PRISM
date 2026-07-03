@@ -17,161 +17,246 @@ use App\Notifications\LowStockAlertNotification;
 use App\Notifications\RequisitionStatusChangedNotification;
 use App\Notifications\RequisitionSubmittedNotification;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Notifications\SendQueuedNotifications;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Queue;
 
 uses()->group('notifications');
 
+/**
+ * @return array{supplyHead: User, requester: User}
+ */
+function workflowRequisitionActors(): array
+{
+    Notification::fake();
+
+    (new RoleSeeder)->run();
+
+    $supplyHead = User::factory()->create();
+    $supplyHead->assignRole('Supply Head');
+
+    $requester = User::factory()->create([
+        'position_id' => Position::factory()->create()->id,
+    ]);
+
+    return compact('supplyHead', 'requester');
+}
+
+/**
+ * @return array{custodian: User, requester: User, product: Product, asset: Asset}
+ */
+function workflowBookingActors(): array
+{
+    Notification::fake();
+
+    (new RoleSeeder)->run();
+
+    $custodian = User::factory()->create();
+    $custodian->assignRole('Property Custodian');
+
+    $requester = User::factory()->create([
+        'position_id' => Position::factory()->create()->id,
+    ]);
+
+    $product = Product::factory()->create([
+        'type' => ProductType::Asset,
+        'is_active' => true,
+    ]);
+
+    $asset = Asset::factory()->create([
+        'product_id' => $product->id,
+        'status' => AssetStatus::Available,
+    ]);
+
+    return compact('custodian', 'requester', 'product', 'asset');
+}
+
+/**
+ * @return array{supplyHead: User}
+ */
+function workflowSupplyHeadActor(): array
+{
+    Notification::fake();
+
+    (new RoleSeeder)->run();
+
+    $supplyHead = User::factory()->create();
+    $supplyHead->assignRole('Supply Head');
+
+    return compact('supplyHead');
+}
+
 describe('Requisition workflow notifications', function () {
-    beforeEach(function () {
-        Notification::fake();
-
-        (new RoleSeeder)->run();
-
-        $this->supplyHead = User::factory()->create();
-        $this->supplyHead->assignRole('Supply Head');
-
-        $this->requester = User::factory()->create([
-            'position_id' => Position::factory()->create()->id,
-        ]);
-    });
-
     it('notifies supply head when a requisition is submitted', function () {
+        ['requester' => $requester] = workflowRequisitionActors();
+
         $requisition = Requisition::factory()->create([
-            'requester_id' => $this->requester->id,
+            'requester_id' => $requester->id,
             'status' => RequisitionStatus::Submitted,
         ]);
 
-        $this->requester->notify(new RequisitionSubmittedNotification($requisition));
+        $requester->notify(new RequisitionSubmittedNotification($requisition));
 
-        Notification::assertSentTo($this->requester, RequisitionSubmittedNotification::class);
+        Notification::assertSentTo($requester, RequisitionSubmittedNotification::class);
     });
 
     it('notifies requester when requisition is approved', function () {
+        ['requester' => $requester] = workflowRequisitionActors();
+
         $requisition = Requisition::factory()->create([
-            'requester_id' => $this->requester->id,
+            'requester_id' => $requester->id,
             'status' => RequisitionStatus::Approved,
         ]);
 
-        $this->requester->notify(new RequisitionStatusChangedNotification($requisition, 'approved'));
+        $requester->notify(new RequisitionStatusChangedNotification($requisition, 'approved'));
 
-        Notification::assertSentTo($this->requester, RequisitionStatusChangedNotification::class, function ($notification) {
+        Notification::assertSentTo($requester, RequisitionStatusChangedNotification::class, function ($notification) {
             return $notification->action === 'approved';
         });
     });
 
     it('notifies requester when requisition is rejected', function () {
+        ['requester' => $requester] = workflowRequisitionActors();
+
         $requisition = Requisition::factory()->create([
-            'requester_id' => $this->requester->id,
+            'requester_id' => $requester->id,
             'status' => RequisitionStatus::Rejected,
         ]);
 
-        $this->requester->notify(new RequisitionStatusChangedNotification($requisition, 'rejected'));
+        $requester->notify(new RequisitionStatusChangedNotification($requisition, 'rejected'));
 
-        Notification::assertSentTo($this->requester, RequisitionStatusChangedNotification::class, function ($notification) {
+        Notification::assertSentTo($requester, RequisitionStatusChangedNotification::class, function ($notification) {
             return $notification->action === 'rejected';
         });
     });
 
     it('notifies requester when requisition is issued', function () {
+        ['requester' => $requester] = workflowRequisitionActors();
+
         $requisition = Requisition::factory()->create([
-            'requester_id' => $this->requester->id,
+            'requester_id' => $requester->id,
             'status' => RequisitionStatus::Issued,
         ]);
 
-        $this->requester->notify(new RequisitionStatusChangedNotification($requisition, 'issued'));
+        $requester->notify(new RequisitionStatusChangedNotification($requisition, 'issued'));
 
-        Notification::assertSentTo($this->requester, RequisitionStatusChangedNotification::class, function ($notification) {
+        Notification::assertSentTo($requester, RequisitionStatusChangedNotification::class, function ($notification) {
             return $notification->action === 'issued';
         });
     });
 });
 
 describe('Booking workflow notifications', function () {
-    beforeEach(function () {
-        Notification::fake();
-
-        (new RoleSeeder)->run();
-
-        $this->custodian = User::factory()->create();
-        $this->custodian->assignRole('Property Custodian');
-
-        $this->requester = User::factory()->create([
-            'position_id' => Position::factory()->create()->id,
-        ]);
-
-        $this->product = Product::factory()->create([
-            'type' => ProductType::Asset,
-            'is_active' => true,
-        ]);
-
-        $this->asset = Asset::factory()->create([
-            'product_id' => $this->product->id,
-            'status' => AssetStatus::Available,
-        ]);
-    });
-
     it('notifies property custodians when a booking is requested', function () {
+        ['custodian' => $custodian, 'requester' => $requester, 'asset' => $asset] = workflowBookingActors();
+
         $booking = Booking::factory()->create([
-            'asset_id' => $this->asset->id,
-            'requester_id' => $this->requester->id,
+            'asset_id' => $asset->id,
+            'requester_id' => $requester->id,
             'status' => BookingStatus::Requested,
         ]);
 
-        $this->custodian->notify(new BookingSubmittedNotification($booking));
+        $custodian->notify(new BookingSubmittedNotification($booking));
 
-        Notification::assertSentTo($this->custodian, BookingSubmittedNotification::class);
+        Notification::assertSentTo($custodian, BookingSubmittedNotification::class);
     });
 
     it('notifies requester when booking is approved', function () {
+        ['requester' => $requester, 'asset' => $asset] = workflowBookingActors();
+
         $booking = Booking::factory()->create([
-            'asset_id' => $this->asset->id,
-            'requester_id' => $this->requester->id,
+            'asset_id' => $asset->id,
+            'requester_id' => $requester->id,
             'status' => BookingStatus::Approved,
         ]);
 
-        $this->requester->notify(new BookingStatusChangedNotification($booking, 'approved'));
+        $requester->notify(new BookingStatusChangedNotification($booking, 'approved'));
 
-        Notification::assertSentTo($this->requester, BookingStatusChangedNotification::class, function ($notification) {
+        Notification::assertSentTo($requester, BookingStatusChangedNotification::class, function ($notification) {
             return $notification->action === 'approved';
         });
     });
 
     it('notifies requester when booking is rejected', function () {
+        ['requester' => $requester, 'asset' => $asset] = workflowBookingActors();
+
         $booking = Booking::factory()->create([
-            'asset_id' => $this->asset->id,
-            'requester_id' => $this->requester->id,
+            'asset_id' => $asset->id,
+            'requester_id' => $requester->id,
             'status' => BookingStatus::Rejected,
         ]);
 
-        $this->requester->notify(new BookingStatusChangedNotification($booking, 'rejected'));
+        $requester->notify(new BookingStatusChangedNotification($booking, 'rejected'));
 
-        Notification::assertSentTo($this->requester, BookingStatusChangedNotification::class, function ($notification) {
+        Notification::assertSentTo($requester, BookingStatusChangedNotification::class, function ($notification) {
             return $notification->action === 'rejected';
         });
     });
 });
 
 describe('Low stock alert notification', function () {
-    beforeEach(function () {
-        Notification::fake();
-
-        (new RoleSeeder)->run();
-
-        $this->supplyHead = User::factory()->create();
-        $this->supplyHead->assignRole('Supply Head');
-    });
-
     it('notifies supply head when product stock is low', function () {
+        ['supplyHead' => $supplyHead] = workflowSupplyHeadActor();
+
         $product = Product::factory()->create([
             'reorder_threshold' => 10,
         ]);
 
-        $this->supplyHead->notify(new LowStockAlertNotification($product, 5));
+        $supplyHead->notify(new LowStockAlertNotification($product, 5));
 
-        Notification::assertSentTo($this->supplyHead, LowStockAlertNotification::class, function ($notification) {
+        Notification::assertSentTo($supplyHead, LowStockAlertNotification::class, function ($notification) {
             return $notification->currentStock === 5;
         });
     });
+});
+
+describe('Queued notification delivery', function () {
+    it('queues workflow notifications on the notifications queue', function () {
+        Queue::fake();
+        config(['queue.default' => 'database']);
+
+        $requester = User::factory()->create([
+            'position_id' => Position::factory()->create()->id,
+        ]);
+
+        $requisition = Requisition::factory()->create([
+            'requester_id' => $requester->id,
+            'status' => RequisitionStatus::Submitted,
+        ]);
+
+        $requester->notify(new RequisitionSubmittedNotification($requisition));
+
+        Queue::assertPushedOn('notifications', SendQueuedNotifications::class);
+    });
+
+    it('still delivers database notifications when the queue connection is sync', function () {
+        config(['queue.default' => 'sync']);
+
+        $user = User::factory()->create();
+        $product = Product::factory()->create([
+            'reorder_threshold' => 10,
+        ]);
+
+        $user->notify(new LowStockAlertNotification($product, 3));
+
+        expect($user->notifications()->count())->toBe(1);
+    });
+
+    it('implements ShouldQueue with retry and queue configuration', function (Closure $factory) {
+        $notification = $factory();
+
+        expect($notification)->toBeInstanceOf(ShouldQueue::class)
+            ->and($notification->tries)->toBe(3)
+            ->and($notification->queue)->toBe('notifications');
+    })->with([
+        'requisition submitted' => [fn () => new RequisitionSubmittedNotification(Requisition::factory()->make())],
+        'requisition status changed' => [fn () => new RequisitionStatusChangedNotification(Requisition::factory()->make(), 'approved')],
+        'booking submitted' => [fn () => new BookingSubmittedNotification(Booking::factory()->make())],
+        'booking status changed' => [fn () => new BookingStatusChangedNotification(Booking::factory()->make(), 'approved')],
+        'low stock alert' => [fn () => new LowStockAlertNotification(Product::factory()->make(), 4)],
+        'handover verification' => [fn () => new HandoverVerificationNotification(10, 'verification-token')],
+    ]);
 });
 
 describe('Notification delivery channels', function () {

@@ -19,7 +19,7 @@
 | API & Sanctum Token Hardening | Critical | Medium | Low | ✅ DONE |
 | Authorization & Booking Reject Bug Fix | Critical | Low | Low | ✅ DONE |
 | Production Security Headers & Handover Signature Validation | High | Low-Medium | Low | ✅ DONE |
-| Queued Notifications & Async Broadcasting | High | Medium | Medium | ⬜ NOT STARTED |
+| Queued Notifications & Async Broadcasting | High | Medium | Medium | ✅ DONE |
 | Forecasting Management Module (Dedicated UI) | High | Medium | Low | ⬜ NOT STARTED |
 | Forecast-Driven Procurement Extension | Medium | Low-Medium | Low | ⬜ NOT STARTED |
 | Notification Preferences & Smart Digests | Medium | Medium | Low | ⬜ NOT STARTED |
@@ -43,11 +43,11 @@
 | Metric | Count |
 | ------ | ----- |
 | Total features suggested | 10 |
-| Total features implemented | 4 |
-| Total features not started | 6 |
+| Total features implemented | 5 |
+| Total features not started | 5 |
 | Total features in progress | 0 |
 | Total features blocked | 0 |
-| Overall completion percentage | 40% |
+| Overall completion percentage | 50% |
 
 ## Feature Completion Log
 
@@ -55,6 +55,7 @@
 
 | Date | Feature | Status | Tests | Notes |
 | ---- | ------- | ------ | ----- | ----- |
+| 2026-07-03 | Queued Notifications & Async Broadcasting | ✅ DONE | `php artisan test --compact tests/Feature/Notifications/`; `php artisan test --compact tests/Feature/Realtime/InventoryRealtimeTest.php`; `vendor/bin/pint --dirty --format agent` | All 7 notifications implement `ShouldQueue` on the `notifications` queue with 3 retries; `InventoryRealtimeMessage` now uses async `ShouldBroadcast`; README/composer dev document queue worker requirements (P1.7). |
 | 2026-07-03 | Production Security Headers & Handover Signature Validation | ✅ DONE | `php artisan test --compact tests/Feature/Inventory/HandoverVerificationTest.php`; `vendor/bin/pint --dirty --format agent` | Added web security headers middleware, PNG signature validation for handover verification, session-backed token handling with clean verify URLs, and expanded handover verification/security regression tests. |
 | 2026-07-03 | Authorization & Booking Reject Bug Fix | ✅ DONE | `php artisan test --compact tests/Feature/Inventory/BookingAvailabilityTest.php`; `vendor/bin/pint --dirty --format agent` | Added `BookingPolicy::reject()`, branched `update()` authorization by action, added create authorize on booking/requisition store, registered `AuditLogPolicy`, and restored Show-page reject visibility plus bulk reject coverage. |
 | 2026-07-03 | API & Sanctum Token Hardening | ✅ DONE | `php artisan test --compact --filter=Api`; `php artisan test --compact tests/Feature/Settings/ApiTokenTest.php`; `npm run build` | Added env-driven Sanctum token expiration, ability-scoped API middleware, stricter create policies, an Admin/Supply Head API token settings UI, and focused API/settings regression coverage. |

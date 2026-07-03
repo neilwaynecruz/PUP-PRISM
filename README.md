@@ -28,7 +28,7 @@ A Laravel + Inertia (Vue 3) system for Property and Resource Inventory, Stock Re
    - `npm install`
    - `npm run dev`
 5. Optional background workers during dev:
-   - Queue: `php artisan queue:listen --tries=1`
+   - Queue: `php artisan queue:listen --queue=default,notifications,broadcast --tries=3`
    - Scheduler (cron alternative): keep a system cron in production (see Deployment)
 
 ## Default UAT Accounts (seeded)
@@ -89,8 +89,10 @@ Policies and route middleware enforce access for inventory operations, requisiti
    - `php artisan storage:link`
 5. Database migrations
    - `php artisan migrate --force`
-6. Queue worker (systemd, supervisor, or equivalent)
-   - `php artisan queue:work --queue=default --sleep=1 --tries=3 --max-time=3600`
+6. Queue worker (systemd, supervisor, or equivalent) — see [PRODUCTION_READINESS_PLAN.md](PRODUCTION_READINESS_PLAN.md) **P1.7**
+   - Notifications and realtime broadcasts are queued (`notifications` queue + broadcast jobs); a persistent worker is required in production.
+   - `php artisan queue:work --queue=default,notifications,broadcast --sleep=1 --tries=3 --max-time=3600`
+   - Local dev: `composer run dev` already runs `queue:listen`; ensure it processes the same queues when testing mail or WebSocket updates.
 7. Scheduler (cron)
    - `* * * * * php /path/to/artisan schedule:run >> /dev/null 2>&1`
    - Includes `app:inventory-generate-alerts`

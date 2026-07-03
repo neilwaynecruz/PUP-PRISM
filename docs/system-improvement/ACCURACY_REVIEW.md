@@ -22,8 +22,8 @@ The analysis is **directionally correct** and the prioritization is sound, but s
 | `BookingPolicy` has no `reject()` method | `app/Policies/BookingPolicy.php` — fixed 2026-07-03; `reject()` now mirrors `approve()` |
 | `bulkReject` calls `authorize('reject')` | `BookingController.php` line 282 |
 | No `ForecastController` / forecasting pages | Glob search returns 0 files |
-| Notifications use `Queueable` but not `ShouldQueue` | All 7 files in `app/Notifications/` |
-| `InventoryRealtimeMessage` uses `ShouldBroadcastNow` | `app/Events/InventoryRealtimeMessage.php` line 7 |
+| Notifications use `Queueable` but not `ShouldQueue` | All 7 files in `app/Notifications/` — fixed 2026-07-03; all implement `ShouldQueue` on the `notifications` queue |
+| `InventoryRealtimeMessage` uses `ShouldBroadcastNow` | `app/Events/InventoryRealtimeMessage.php` — fixed 2026-07-03; now implements `ShouldBroadcast` |
 | `DashboardStatsService` has no `Cache::` usage | Grep returns no matches |
 | Playwright E2E not in CI | `.github/workflows/tests.yml` — Pest only |
 | `PurchaseOrderGenerator` uses forecast snapshots for qty | `PurchaseOrderGenerator.php` `resolveRecommendedQuantity()` |
@@ -42,6 +42,7 @@ The following review findings were correct when this document was written, but t
 - `BookingPolicy` now defines `reject()`; the booking Show-page reject dialog and `bulkReject` workflow are functional again for Admin and Property Custodian approvers on requested bookings.
 - Web `BookingController::store()` and `RequisitionController::store()` now call `authorize('create', ...)`; `AuditLogPolicy` is explicitly registered in `AuthServiceProvider`.
 - Security headers middleware is registered on the web stack, handover signatures are validated as PNG data URIs, and verification tokens are session-backed after the initial email-link redirect.
+- All application notifications are queued on the `notifications` queue with 3 retries; `InventoryRealtimeMessage` broadcasts asynchronously via `ShouldBroadcast`. Production requires a persistent queue worker (README deployment + P1.7).
 
 ---
 
