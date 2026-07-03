@@ -71,3 +71,38 @@
 ✅ **FEATURE ROADMAP: COMPLETE** (10/10)
 
 All recommended features are implemented and tested. P1 deployment configuration tasks (mailer, queue worker, cron, etc.) remain separate — see table above.
+
+## Post-Roadmap Backlog Candidates
+
+> These are **next-phase recommendations** after the completed 10-feature roadmap. They are not counted in the summary above until explicitly adopted into a new implementation cycle.
+
+See [`NEXT_PHASE_RECOMMENDATIONS.md`](./NEXT_PHASE_RECOMMENDATIONS.md) for full details.
+For a grouped execution plan and copy-paste prompts, use:
+- [`NEXT_PHASE_IMPLEMENTATION_PLAN.md`](./NEXT_PHASE_IMPLEMENTATION_PLAN.md)
+- [`NEXT_PHASE_IMPLEMENTATION_PROMPTS.md`](./NEXT_PHASE_IMPLEMENTATION_PROMPTS.md)
+- [`NEXT_PHASE_TRACKING.md`](./NEXT_PHASE_TRACKING.md)
+
+- Critical:
+  - Token and session revocation on user deactivation
+  - Backup, restore, and disaster recovery runbook
+- High:
+  - Unified audit coverage for receiving, issuance, handover, and security-sensitive actions
+  - Asset integrity rules across booking and handover
+  - Mandatory 2FA for privileged roles
+  - Alerts management module
+  - Organization and reference-data Admin CRUD
+  - Stock adjustment and cycle count workflow
+  - Partial requisition fulfillment and backorders
+  - Real role-based dashboards with live metrics
+  - Requisitions and bookings filters
+  - Cross-entity global search
+- Medium:
+  - Admin operations health UI
+  - Notification history page
+  - Mobile-first operations screens
+  - PWA and continuous QR scanning
+  - Data retention and archival policy
+  - Queue operations dashboard and broader job layer
+  - Reporting expansion
+  - API guardrails and expansion
+  - Redis, centralized logging, and CI supply-chain security

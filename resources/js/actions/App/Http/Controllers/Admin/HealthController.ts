@@ -1,16 +1,15 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
-import users from './users'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Admin\HealthController::__invoke
  * @see app/Http/Controllers/Admin/HealthController.php:12
  * @route '/admin/health'
  */
-export const health = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: health.url(options),
+const HealthController = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: HealthController.url(options),
     method: 'get',
 })
 
-health.definition = {
+HealthController.definition = {
     methods: ["get","head"],
     url: '/admin/health',
 } satisfies RouteDefinition<["get","head"]>
@@ -20,8 +19,8 @@ health.definition = {
  * @see app/Http/Controllers/Admin/HealthController.php:12
  * @route '/admin/health'
  */
-health.url = (options?: RouteQueryOptions) => {
-    return health.definition.url + queryParams(options)
+HealthController.url = (options?: RouteQueryOptions) => {
+    return HealthController.definition.url + queryParams(options)
 }
 
 /**
@@ -29,8 +28,8 @@ health.url = (options?: RouteQueryOptions) => {
  * @see app/Http/Controllers/Admin/HealthController.php:12
  * @route '/admin/health'
  */
-health.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: health.url(options),
+HealthController.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: HealthController.url(options),
     method: 'get',
 })
 /**
@@ -38,8 +37,8 @@ health.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
  * @see app/Http/Controllers/Admin/HealthController.php:12
  * @route '/admin/health'
  */
-health.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: health.url(options),
+HealthController.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: HealthController.url(options),
     method: 'head',
 })
 
@@ -48,8 +47,8 @@ health.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
  * @see app/Http/Controllers/Admin/HealthController.php:12
  * @route '/admin/health'
  */
-    const healthForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: health.url(options),
+    const HealthControllerForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: HealthController.url(options),
         method: 'get',
     })
 
@@ -58,8 +57,8 @@ health.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
  * @see app/Http/Controllers/Admin/HealthController.php:12
  * @route '/admin/health'
  */
-        healthForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: health.url(options),
+        HealthControllerForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: HealthController.url(options),
             method: 'get',
         })
             /**
@@ -67,8 +66,8 @@ health.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
  * @see app/Http/Controllers/Admin/HealthController.php:12
  * @route '/admin/health'
  */
-        healthForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: health.url({
+        HealthControllerForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: HealthController.url({
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
                             ...(options?.query ?? options?.mergeQuery ?? {}),
@@ -77,10 +76,5 @@ health.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
     
-    health.form = healthForm
-const admin = {
-    health: Object.assign(health, health),
-users: Object.assign(users, users),
-}
-
-export default admin
+    HealthController.form = HealthControllerForm
+export default HealthController

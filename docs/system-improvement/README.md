@@ -11,13 +11,19 @@
 | [AI_IMPLEMENTATION_PROMPTS.md](./AI_IMPLEMENTATION_PROMPTS.md) | Copy-paste ready AI agent prompts for each recommended feature |
 | [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) | Live tracking checklist — update status as features are implemented |
 | [ACCURACY_REVIEW.md](./ACCURACY_REVIEW.md) | Critical re-evaluation of analysis accuracy (2026-07-03) |
+| [NEXT_PHASE_RECOMMENDATIONS.md](./NEXT_PHASE_RECOMMENDATIONS.md) | Post-roadmap backlog of additional high-value recommendations after the original 10 features |
+| [NEXT_PHASE_IMPLEMENTATION_PLAN.md](./NEXT_PHASE_IMPLEMENTATION_PLAN.md) | Grouped post-roadmap implementation plan built from the next-phase backlog |
+| [NEXT_PHASE_IMPLEMENTATION_PROMPTS.md](./NEXT_PHASE_IMPLEMENTATION_PROMPTS.md) | Copy-paste AI prompts for the grouped next-phase implementation epics |
+| [NEXT_PHASE_TRACKING.md](./NEXT_PHASE_TRACKING.md) | Tracking file for the next implementation cycle after the original roadmap |
 
 ## Quick Start
 
 1. Read the **Executive Summary** in `SYSTEM_IMPROVEMENT_ANALYSIS.md`
-2. Review **Phase 1** items in the Priority Roadmap (security first)
-3. Copy a prompt from `AI_IMPLEMENTATION_PROMPTS.md` into Cursor or your AI coding agent
-4. After implementation, the agent must update `IMPLEMENTATION_TRACKING.md` and sync `SYSTEM_IMPROVEMENT_ANALYSIS.md` (status: DONE / IN PROGRESS / NOT STARTED / BLOCKED)
+2. Check `IMPLEMENTATION_TRACKING.md` for completed roadmap status and remaining deployment tasks
+3. Review `NEXT_PHASE_RECOMMENDATIONS.md` for the next backlog after the original 10 features
+4. For structured next-step execution, use `NEXT_PHASE_IMPLEMENTATION_PLAN.md` and `NEXT_PHASE_IMPLEMENTATION_PROMPTS.md`
+5. If implementing an original roadmap feature, use `AI_IMPLEMENTATION_PROMPTS.md`
+6. After implementation, update the matching tracking files (`IMPLEMENTATION_TRACKING.md` or `NEXT_PHASE_TRACKING.md`) and sync the related plan doc
 
 ## Related Plans
 
