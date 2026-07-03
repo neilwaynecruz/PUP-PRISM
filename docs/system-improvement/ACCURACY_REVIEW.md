@@ -45,6 +45,7 @@ The following review findings were correct when this document was written, but t
 - All application notifications are queued on the `notifications` queue with 3 retries; `InventoryRealtimeMessage` broadcasts asynchronously via `ShouldBroadcast`. Production requires a persistent queue worker (README deployment + P1.7).
 - Dedicated forecasting management UI is available at `/inventory/forecasting` for Admin and Supply Head users, with profile tuning and consumable forecast detail views.
 - Forecast-driven procurement closes the loop from `forecast_stockout` alerts: `PurchaseOrderGenerator::generateFromForecastAlerts()` drafts POs for above-threshold forecast-urgent products; `ProcurementRecommendationNotification` notifies Supply Head on new alert creation; purchase orders Index exposes "Generate from forecasts".
+- Notification preferences and daily digests are implemented: users manage mail/in-app/realtime channels per event type in Settings; `NotificationService` and notification `via()` respect stored or role-based defaults; `app:send-notification-digests` batches daily email summaries.
 
 ---
 

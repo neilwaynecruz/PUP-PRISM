@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::index
  * @see app/Http/Controllers/Inventory/RequisitionController.php:37
@@ -42,41 +42,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::index
- * @see app/Http/Controllers/Inventory/RequisitionController.php:37
- * @route '/inventory/requisitions'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::index
- * @see app/Http/Controllers/Inventory/RequisitionController.php:37
- * @route '/inventory/requisitions'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::index
- * @see app/Http/Controllers/Inventory/RequisitionController.php:37
- * @route '/inventory/requisitions'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::store
  * @see app/Http/Controllers/Inventory/RequisitionController.php:111
@@ -111,27 +76,6 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::store
- * @see app/Http/Controllers/Inventory/RequisitionController.php:111
- * @route '/inventory/requisitions'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::store
- * @see app/Http/Controllers/Inventory/RequisitionController.php:111
- * @route '/inventory/requisitions'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::trash
  * @see app/Http/Controllers/Inventory/RequisitionController.php:348
@@ -175,41 +119,6 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::trash
- * @see app/Http/Controllers/Inventory/RequisitionController.php:348
- * @route '/inventory/requisitions/trash'
- */
-    const trashForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: trash.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::trash
- * @see app/Http/Controllers/Inventory/RequisitionController.php:348
- * @route '/inventory/requisitions/trash'
- */
-        trashForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: trash.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::trash
- * @see app/Http/Controllers/Inventory/RequisitionController.php:348
- * @route '/inventory/requisitions/trash'
- */
-        trashForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: trash.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    trash.form = trashForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::show
  * @see app/Http/Controllers/Inventory/RequisitionController.php:66
@@ -272,41 +181,6 @@ show.head = (args: { requisition: string | number } | [requisition: string | num
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::show
- * @see app/Http/Controllers/Inventory/RequisitionController.php:66
- * @route '/inventory/requisitions/{requisition}'
- */
-    const showForm = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: show.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::show
- * @see app/Http/Controllers/Inventory/RequisitionController.php:66
- * @route '/inventory/requisitions/{requisition}'
- */
-        showForm.get = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::show
- * @see app/Http/Controllers/Inventory/RequisitionController.php:66
- * @route '/inventory/requisitions/{requisition}'
- */
-        showForm.head = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    show.form = showForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::destroy
  * @see app/Http/Controllers/Inventory/RequisitionController.php:332
@@ -365,37 +239,6 @@ destroy.delete = (args: { requisition: number | { id: number } } | [requisition:
     method: 'delete',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::destroy
- * @see app/Http/Controllers/Inventory/RequisitionController.php:332
- * @route '/inventory/requisitions/{requisition}'
- */
-    const destroyForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: destroy.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::destroy
- * @see app/Http/Controllers/Inventory/RequisitionController.php:332
- * @route '/inventory/requisitions/{requisition}'
- */
-        destroyForm.delete = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: destroy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::restore
  * @see app/Http/Controllers/Inventory/RequisitionController.php:398
@@ -449,37 +292,6 @@ restore.put = (args: { requisition: string | number } | [requisition: string | n
     method: 'put',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::restore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:398
- * @route '/inventory/requisitions/{requisition}/restore'
- */
-    const restoreForm = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: restore.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::restore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:398
- * @route '/inventory/requisitions/{requisition}/restore'
- */
-        restoreForm.put = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: restore.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    restore.form = restoreForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::forceDelete
  * @see app/Http/Controllers/Inventory/RequisitionController.php:414
@@ -533,37 +345,6 @@ forceDelete.delete = (args: { requisition: string | number } | [requisition: str
     method: 'delete',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::forceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:414
- * @route '/inventory/requisitions/{requisition}/force'
- */
-    const forceDeleteForm = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: forceDelete.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::forceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:414
- * @route '/inventory/requisitions/{requisition}/force'
- */
-        forceDeleteForm.delete = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: forceDelete.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    forceDelete.form = forceDeleteForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkRestore
  * @see app/Http/Controllers/Inventory/RequisitionController.php:429
@@ -598,27 +379,6 @@ bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::bulkRestore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:429
- * @route '/inventory/requisitions/bulk-restore'
- */
-    const bulkRestoreForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: bulkRestore.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::bulkRestore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:429
- * @route '/inventory/requisitions/bulk-restore'
- */
-        bulkRestoreForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: bulkRestore.url(options),
-            method: 'post',
-        })
-    
-    bulkRestore.form = bulkRestoreForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkForceDelete
  * @see app/Http/Controllers/Inventory/RequisitionController.php:457
@@ -653,27 +413,6 @@ bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:457
- * @route '/inventory/requisitions/bulk-force-delete'
- */
-    const bulkForceDeleteForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: bulkForceDelete.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:457
- * @route '/inventory/requisitions/bulk-force-delete'
- */
-        bulkForceDeleteForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: bulkForceDelete.url(options),
-            method: 'post',
-        })
-    
-    bulkForceDelete.form = bulkForceDeleteForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkApprove
  * @see app/Http/Controllers/Inventory/RequisitionController.php:225
@@ -708,27 +447,6 @@ bulkApprove.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::bulkApprove
- * @see app/Http/Controllers/Inventory/RequisitionController.php:225
- * @route '/inventory/requisitions/bulk-approve'
- */
-    const bulkApproveForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: bulkApprove.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::bulkApprove
- * @see app/Http/Controllers/Inventory/RequisitionController.php:225
- * @route '/inventory/requisitions/bulk-approve'
- */
-        bulkApproveForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: bulkApprove.url(options),
-            method: 'post',
-        })
-    
-    bulkApprove.form = bulkApproveForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkIssue
  * @see app/Http/Controllers/Inventory/RequisitionController.php:273
@@ -763,27 +481,6 @@ bulkIssue.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::bulkIssue
- * @see app/Http/Controllers/Inventory/RequisitionController.php:273
- * @route '/inventory/requisitions/bulk-issue'
- */
-    const bulkIssueForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: bulkIssue.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::bulkIssue
- * @see app/Http/Controllers/Inventory/RequisitionController.php:273
- * @route '/inventory/requisitions/bulk-issue'
- */
-        bulkIssueForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: bulkIssue.url(options),
-            method: 'post',
-        })
-    
-    bulkIssue.form = bulkIssueForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::approve
  * @see app/Http/Controllers/Inventory/RequisitionController.php:157
@@ -842,37 +539,6 @@ approve.put = (args: { requisition: number | { id: number } } | [requisition: nu
     method: 'put',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::approve
- * @see app/Http/Controllers/Inventory/RequisitionController.php:157
- * @route '/inventory/requisitions/{requisition}/approve'
- */
-    const approveForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: approve.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::approve
- * @see app/Http/Controllers/Inventory/RequisitionController.php:157
- * @route '/inventory/requisitions/{requisition}/approve'
- */
-        approveForm.put = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: approve.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    approve.form = approveForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::reject
  * @see app/Http/Controllers/Inventory/RequisitionController.php:179
@@ -931,37 +597,6 @@ reject.put = (args: { requisition: number | { id: number } } | [requisition: num
     method: 'put',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::reject
- * @see app/Http/Controllers/Inventory/RequisitionController.php:179
- * @route '/inventory/requisitions/{requisition}/reject'
- */
-    const rejectForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: reject.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::reject
- * @see app/Http/Controllers/Inventory/RequisitionController.php:179
- * @route '/inventory/requisitions/{requisition}/reject'
- */
-        rejectForm.put = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: reject.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    reject.form = rejectForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::issue
  * @see app/Http/Controllers/Inventory/RequisitionController.php:202
@@ -1019,38 +654,6 @@ issue.put = (args: { requisition: number | { id: number } } | [requisition: numb
     url: issue.url(args, options),
     method: 'put',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::issue
- * @see app/Http/Controllers/Inventory/RequisitionController.php:202
- * @route '/inventory/requisitions/{requisition}/issue'
- */
-    const issueForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: issue.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionController::issue
- * @see app/Http/Controllers/Inventory/RequisitionController.php:202
- * @route '/inventory/requisitions/{requisition}/issue'
- */
-        issueForm.put = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: issue.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    issue.form = issueForm
 const RequisitionController = { index, store, trash, show, destroy, restore, forceDelete, bulkRestore, bulkForceDelete, bulkApprove, bulkIssue, approve, reject, issue }
 
 export default RequisitionController

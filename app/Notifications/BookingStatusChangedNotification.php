@@ -2,7 +2,9 @@
 
 namespace App\Notifications;
 
+use App\Enums\NotificationEventType;
 use App\Models\Booking;
+use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
@@ -12,6 +14,7 @@ use Illuminate\Notifications\Notification;
 class BookingStatusChangedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use ResolvesViaNotificationPreferences;
 
     public int $tries = 3;
 
@@ -22,12 +25,9 @@ class BookingStatusChangedNotification extends Notification implements ShouldQue
         $this->onQueue('notifications');
     }
 
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
+    public function notificationEventType(): string
     {
-        return ['mail', 'database', 'broadcast'];
+        return NotificationEventType::BookingStatusChanged->value;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -76,6 +76,7 @@ class BookingStatusChangedNotification extends Notification implements ShouldQue
         $url = route('inventory.bookings.show', $this->booking->id, absolute: false);
 
         return [
+            'event_type' => $this->notificationEventType(),
             'type' => 'booking.status-changed',
             'category' => 'booking',
             'severity' => $this->action === 'rejected' ? 'warning' : 'success',

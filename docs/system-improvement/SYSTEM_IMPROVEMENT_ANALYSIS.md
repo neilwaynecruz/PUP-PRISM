@@ -531,7 +531,7 @@ Notification Preferences & Smart Digests
 
 #### 2. Current Problem or Limitation
 
-An in-app notification center **already exists** (`AppNotificationMenu.vue`, `NotificationController`, Reverb + polling fallback, mark read/all). What is missing is **per-user channel and frequency control**. `NotificationService` delivers all events without preference filtering. Supply Heads receive low-stock, booking, requisition, and handover notifications simultaneously — alert fatigue risk. No email digest option.
+An in-app notification center **already exists** (`AppNotificationMenu.vue`, `NotificationController`, Reverb + polling fallback, mark read/all). Per-user channel and frequency control is now available at **Settings → Notifications** via `notification_preferences`, preference-aware `via()` resolution, and the `app:send-notification-digests` command (scheduled daily at 08:00).
 
 #### 3. Why This Feature Matters
 
@@ -765,7 +765,7 @@ See [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) for the **live** 
 | Queued Notifications & Async Broadcasting | High | Medium | Medium | ✅ DONE |
 | Forecasting Management Module (Dedicated UI) | High | Medium | Low | ✅ DONE |
 | Forecast-Driven Procurement Extension (revised) | Medium | Low–Medium | Low | ✅ DONE |
-| Notification Preferences & Smart Digests | Medium | Medium | Low | NOT STARTED |
+| Notification Preferences & Smart Digests | Medium | Medium | Low | ✅ DONE |
 | Dashboard Performance Caching Layer | Medium | Low-Medium | Low | NOT STARTED |
 | Observability, Scheduler Health & E2E in CI | Medium | Medium | Low | NOT STARTED |
 
@@ -776,11 +776,11 @@ See [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) for the **live** 
 | Metric | Value |
 | ------ | ----- |
 | Total features suggested | 10 |
-| Total features implemented | 7 |
-| Total features not started | 3 |
+| Total features implemented | 8 |
+| Total features not started | 2 |
 | Total features in progress | 0 |
 | Total features blocked | 0 |
-| Overall completion percentage | 70% |
+| Overall completion percentage | 80% |
 
 ## Final Project Status
 

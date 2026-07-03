@@ -2,7 +2,9 @@
 
 namespace App\Notifications;
 
+use App\Enums\NotificationEventType;
 use App\Models\Requisition;
+use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
@@ -12,6 +14,7 @@ use Illuminate\Notifications\Notification;
 class RequisitionStatusChangedNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use ResolvesViaNotificationPreferences;
 
     public int $tries = 3;
 
@@ -22,12 +25,9 @@ class RequisitionStatusChangedNotification extends Notification implements Shoul
         $this->onQueue('notifications');
     }
 
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
+    public function notificationEventType(): string
     {
-        return ['mail', 'database', 'broadcast'];
+        return NotificationEventType::RequisitionStatusChanged->value;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -78,6 +78,7 @@ class RequisitionStatusChangedNotification extends Notification implements Shoul
         };
 
         return [
+            'event_type' => $this->notificationEventType(),
             'type' => 'requisition.status-changed',
             'category' => 'requisition',
             'severity' => $severity,

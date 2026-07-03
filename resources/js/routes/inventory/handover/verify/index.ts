@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::submit
  * @see app/Http/Controllers/Inventory/HandoverController.php:108
@@ -56,28 +56,6 @@ submit.post = (args: { handoverLog: number | { id: number } } | [handoverLog: nu
     url: submit.url(args, options),
     method: 'post',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\HandoverController::submit
- * @see app/Http/Controllers/Inventory/HandoverController.php:108
- * @route '/inventory/handover/verify/{handoverLog}'
- */
-    const submitForm = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: submit.url(args, options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\HandoverController::submit
- * @see app/Http/Controllers/Inventory/HandoverController.php:108
- * @route '/inventory/handover/verify/{handoverLog}'
- */
-        submitForm.post = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: submit.url(args, options),
-            method: 'post',
-        })
-    
-    submit.form = submitForm
 const verify = {
     submit: Object.assign(submit, submit),
 }

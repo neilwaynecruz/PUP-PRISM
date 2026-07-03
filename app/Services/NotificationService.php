@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\NotificationEventType;
 use App\Models\Booking;
 use App\Models\Product;
 use App\Models\Requisition;
@@ -12,13 +13,15 @@ use App\Notifications\LowStockAlertNotification;
 use App\Notifications\ProcurementRecommendationNotification;
 use App\Notifications\RequisitionStatusChangedNotification;
 use App\Notifications\RequisitionSubmittedNotification;
+use Illuminate\Notifications\Notification;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Notification as NotificationFacade;
 
 class NotificationService
 {
     public function __construct(
         private readonly InventoryRealtimeService $realtime,
+        private readonly NotificationPreferenceResolver $preferenceResolver,
     ) {}
 
     /**
@@ -32,9 +35,10 @@ class NotificationService
             return;
         }
 
-        Notification::send(
+        $this->notifyUsers(
             $recipients,
             new RequisitionSubmittedNotification($requisition),
+            NotificationEventType::RequisitionSubmitted->value,
         );
 
         $this->realtime->requisitionSubmitted($requisition);
@@ -51,8 +55,10 @@ class NotificationService
             return;
         }
 
-        $requester->notify(
+        $this->notifyUser(
+            $requester,
             new RequisitionStatusChangedNotification($requisition, $action),
+            NotificationEventType::RequisitionStatusChanged->value,
         );
 
         $this->realtime->requisitionStatusChanged($requisition, $action);
@@ -69,9 +75,10 @@ class NotificationService
             return;
         }
 
-        Notification::send(
+        $this->notifyUsers(
             $recipients,
             new BookingSubmittedNotification($booking),
+            NotificationEventType::BookingSubmitted->value,
         );
 
         $this->realtime->bookingSubmitted($booking);
@@ -88,8 +95,10 @@ class NotificationService
             return;
         }
 
-        $requester->notify(
+        $this->notifyUser(
+            $requester,
             new BookingStatusChangedNotification($booking, $action),
+            NotificationEventType::BookingStatusChanged->value,
         );
 
         $this->realtime->bookingStatusChanged($booking, $action);
@@ -106,9 +115,10 @@ class NotificationService
             return;
         }
 
-        Notification::send(
+        $this->notifyUsers(
             $recipients,
             new LowStockAlertNotification($product, $currentStock),
+            NotificationEventType::LowStock->value,
         );
     }
 
@@ -126,14 +136,43 @@ class NotificationService
             return;
         }
 
-        Notification::send(
+        $this->notifyUsers(
             $recipients,
             new ProcurementRecommendationNotification(
                 $product,
                 $predictedDaysUntilStockout,
                 $recommendedReorderQty,
             ),
+            NotificationEventType::ProcurementRecommendation->value,
         );
+    }
+
+    /**
+     * @param  Collection<int, User>  $users
+     */
+    private function notifyUsers(Collection $users, Notification $notification, string $eventType): void
+    {
+        foreach ($users as $user) {
+            $this->notifyUser($user, $notification, $eventType);
+        }
+    }
+
+    private function notifyUser(User $user, Notification $notification, string $eventType): void
+    {
+        if (! $this->shouldDeliverToUser($user, $eventType)) {
+            return;
+        }
+
+        NotificationFacade::send($user, $notification);
+    }
+
+    private function shouldDeliverToUser(User $user, string $eventType): bool
+    {
+        if ($this->preferenceResolver->instantChannels($user, $eventType) !== []) {
+            return true;
+        }
+
+        return $this->preferenceResolver->usesDailyDigest($user, $eventType);
     }
 
     /**

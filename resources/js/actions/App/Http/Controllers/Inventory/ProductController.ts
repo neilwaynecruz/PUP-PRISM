@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::index
  * @see app/Http/Controllers/Inventory/ProductController.php:33
@@ -42,41 +42,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::index
- * @see app/Http/Controllers/Inventory/ProductController.php:33
- * @route '/inventory/products'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::index
- * @see app/Http/Controllers/Inventory/ProductController.php:33
- * @route '/inventory/products'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::index
- * @see app/Http/Controllers/Inventory/ProductController.php:33
- * @route '/inventory/products'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::create
  * @see app/Http/Controllers/Inventory/ProductController.php:96
@@ -120,41 +85,6 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::create
- * @see app/Http/Controllers/Inventory/ProductController.php:96
- * @route '/inventory/products/create'
- */
-    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: create.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::create
- * @see app/Http/Controllers/Inventory/ProductController.php:96
- * @route '/inventory/products/create'
- */
-        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::create
- * @see app/Http/Controllers/Inventory/ProductController.php:96
- * @route '/inventory/products/create'
- */
-        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    create.form = createForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::store
  * @see app/Http/Controllers/Inventory/ProductController.php:107
@@ -189,27 +119,6 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::store
- * @see app/Http/Controllers/Inventory/ProductController.php:107
- * @route '/inventory/products'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::store
- * @see app/Http/Controllers/Inventory/ProductController.php:107
- * @route '/inventory/products'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::trash
  * @see app/Http/Controllers/Inventory/ProductController.php:319
@@ -253,41 +162,6 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::trash
- * @see app/Http/Controllers/Inventory/ProductController.php:319
- * @route '/inventory/products/trash'
- */
-    const trashForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: trash.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::trash
- * @see app/Http/Controllers/Inventory/ProductController.php:319
- * @route '/inventory/products/trash'
- */
-        trashForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: trash.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::trash
- * @see app/Http/Controllers/Inventory/ProductController.php:319
- * @route '/inventory/products/trash'
- */
-        trashForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: trash.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    trash.form = trashForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::show
  * @see app/Http/Controllers/Inventory/ProductController.php:144
@@ -350,41 +224,6 @@ show.head = (args: { product: string | number } | [product: string | number ] | 
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::show
- * @see app/Http/Controllers/Inventory/ProductController.php:144
- * @route '/inventory/products/{product}'
- */
-    const showForm = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: show.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::show
- * @see app/Http/Controllers/Inventory/ProductController.php:144
- * @route '/inventory/products/{product}'
- */
-        showForm.get = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::show
- * @see app/Http/Controllers/Inventory/ProductController.php:144
- * @route '/inventory/products/{product}'
- */
-        showForm.head = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    show.form = showForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::edit
  * @see app/Http/Controllers/Inventory/ProductController.php:242
@@ -447,41 +286,6 @@ edit.head = (args: { product: string | number } | [product: string | number ] | 
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::edit
- * @see app/Http/Controllers/Inventory/ProductController.php:242
- * @route '/inventory/products/{product}/edit'
- */
-    const editForm = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: edit.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::edit
- * @see app/Http/Controllers/Inventory/ProductController.php:242
- * @route '/inventory/products/{product}/edit'
- */
-        editForm.get = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: edit.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::edit
- * @see app/Http/Controllers/Inventory/ProductController.php:242
- * @route '/inventory/products/{product}/edit'
- */
-        editForm.head = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: edit.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    edit.form = editForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::update
  * @see app/Http/Controllers/Inventory/ProductController.php:278
@@ -540,37 +344,6 @@ update.put = (args: { product: number | { id: number } } | [product: number | { 
     method: 'put',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::update
- * @see app/Http/Controllers/Inventory/ProductController.php:278
- * @route '/inventory/products/{product}'
- */
-    const updateForm = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: update.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::update
- * @see app/Http/Controllers/Inventory/ProductController.php:278
- * @route '/inventory/products/{product}'
- */
-        updateForm.put = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: update.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    update.form = updateForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::destroy
  * @see app/Http/Controllers/Inventory/ProductController.php:292
@@ -629,37 +402,6 @@ destroy.delete = (args: { product: number | { id: number } } | [product: number 
     method: 'delete',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::destroy
- * @see app/Http/Controllers/Inventory/ProductController.php:292
- * @route '/inventory/products/{product}'
- */
-    const destroyForm = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: destroy.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::destroy
- * @see app/Http/Controllers/Inventory/ProductController.php:292
- * @route '/inventory/products/{product}'
- */
-        destroyForm.delete = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: destroy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::restore
  * @see app/Http/Controllers/Inventory/ProductController.php:370
@@ -713,37 +455,6 @@ restore.put = (args: { product: string | number } | [product: string | number ] 
     method: 'put',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::restore
- * @see app/Http/Controllers/Inventory/ProductController.php:370
- * @route '/inventory/products/{product}/restore'
- */
-    const restoreForm = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: restore.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::restore
- * @see app/Http/Controllers/Inventory/ProductController.php:370
- * @route '/inventory/products/{product}/restore'
- */
-        restoreForm.put = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: restore.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    restore.form = restoreForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::forceDelete
  * @see app/Http/Controllers/Inventory/ProductController.php:386
@@ -797,37 +508,6 @@ forceDelete.delete = (args: { product: string | number } | [product: string | nu
     method: 'delete',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::forceDelete
- * @see app/Http/Controllers/Inventory/ProductController.php:386
- * @route '/inventory/products/{product}/force'
- */
-    const forceDeleteForm = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: forceDelete.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::forceDelete
- * @see app/Http/Controllers/Inventory/ProductController.php:386
- * @route '/inventory/products/{product}/force'
- */
-        forceDeleteForm.delete = (args: { product: string | number } | [product: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: forceDelete.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    forceDelete.form = forceDeleteForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkRestore
  * @see app/Http/Controllers/Inventory/ProductController.php:410
@@ -862,27 +542,6 @@ bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::bulkRestore
- * @see app/Http/Controllers/Inventory/ProductController.php:410
- * @route '/inventory/products/bulk-restore'
- */
-    const bulkRestoreForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: bulkRestore.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::bulkRestore
- * @see app/Http/Controllers/Inventory/ProductController.php:410
- * @route '/inventory/products/bulk-restore'
- */
-        bulkRestoreForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: bulkRestore.url(options),
-            method: 'post',
-        })
-    
-    bulkRestore.form = bulkRestoreForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkForceDelete
  * @see app/Http/Controllers/Inventory/ProductController.php:438
@@ -917,27 +576,6 @@ bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/ProductController.php:438
- * @route '/inventory/products/bulk-force-delete'
- */
-    const bulkForceDeleteForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: bulkForceDelete.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/ProductController.php:438
- * @route '/inventory/products/bulk-force-delete'
- */
-        bulkForceDeleteForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: bulkForceDelete.url(options),
-            method: 'post',
-        })
-    
-    bulkForceDelete.form = bulkForceDeleteForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkActivate
  * @see app/Http/Controllers/Inventory/ProductController.php:478
@@ -972,27 +610,6 @@ bulkActivate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::bulkActivate
- * @see app/Http/Controllers/Inventory/ProductController.php:478
- * @route '/inventory/products/bulk-activate'
- */
-    const bulkActivateForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: bulkActivate.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::bulkActivate
- * @see app/Http/Controllers/Inventory/ProductController.php:478
- * @route '/inventory/products/bulk-activate'
- */
-        bulkActivateForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: bulkActivate.url(options),
-            method: 'post',
-        })
-    
-    bulkActivate.form = bulkActivateForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkDeactivate
  * @see app/Http/Controllers/Inventory/ProductController.php:521
@@ -1027,27 +644,6 @@ bulkDeactivate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::bulkDeactivate
- * @see app/Http/Controllers/Inventory/ProductController.php:521
- * @route '/inventory/products/bulk-deactivate'
- */
-    const bulkDeactivateForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: bulkDeactivate.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::bulkDeactivate
- * @see app/Http/Controllers/Inventory/ProductController.php:521
- * @route '/inventory/products/bulk-deactivate'
- */
-        bulkDeactivateForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: bulkDeactivate.url(options),
-            method: 'post',
-        })
-    
-    bulkDeactivate.form = bulkDeactivateForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkChangeCategory
  * @see app/Http/Controllers/Inventory/ProductController.php:564
@@ -1081,28 +677,6 @@ bulkChangeCategory.post = (options?: RouteQueryOptions): RouteDefinition<'post'>
     url: bulkChangeCategory.url(options),
     method: 'post',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\ProductController::bulkChangeCategory
- * @see app/Http/Controllers/Inventory/ProductController.php:564
- * @route '/inventory/products/bulk-change-category'
- */
-    const bulkChangeCategoryForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: bulkChangeCategory.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductController::bulkChangeCategory
- * @see app/Http/Controllers/Inventory/ProductController.php:564
- * @route '/inventory/products/bulk-change-category'
- */
-        bulkChangeCategoryForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: bulkChangeCategory.url(options),
-            method: 'post',
-        })
-    
-    bulkChangeCategory.form = bulkChangeCategoryForm
 const ProductController = { index, create, store, trash, show, edit, update, destroy, restore, forceDelete, bulkRestore, bulkForceDelete, bulkActivate, bulkDeactivate, bulkChangeCategory }
 
 export default ProductController

@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\UpdateUserRequest;
 use App\Models\Position;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\NotificationPreferenceSeeder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -69,13 +70,13 @@ class UserManagementController extends Controller
         ]);
     }
 
-    public function store(StoreUserRequest $request): RedirectResponse
+    public function store(StoreUserRequest $request, NotificationPreferenceSeeder $preferenceSeeder): RedirectResponse
     {
         $this->authorize('create', User::class);
 
         $validated = $request->validated();
 
-        $managedUser = DB::transaction(function () use ($validated): User {
+        $managedUser = DB::transaction(function () use ($validated, $preferenceSeeder): User {
             $managedUser = User::query()->create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -88,6 +89,8 @@ class UserManagementController extends Controller
 
             $managedUser->syncRoles([$validated['role']]);
             $managedUser->load(['roles:id,name', 'position.department:id,name']);
+
+            $preferenceSeeder->seedForUser($managedUser);
 
             AuditLogService::log(
                 'create',

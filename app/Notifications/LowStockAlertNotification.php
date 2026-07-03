@@ -2,7 +2,9 @@
 
 namespace App\Notifications;
 
+use App\Enums\NotificationEventType;
 use App\Models\Product;
+use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
@@ -12,6 +14,7 @@ use Illuminate\Notifications\Notification;
 class LowStockAlertNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use ResolvesViaNotificationPreferences;
 
     public int $tries = 3;
 
@@ -22,12 +25,9 @@ class LowStockAlertNotification extends Notification implements ShouldQueue
         $this->onQueue('notifications');
     }
 
-    /**
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
+    public function notificationEventType(): string
     {
-        return ['mail', 'database', 'broadcast'];
+        return NotificationEventType::LowStock->value;
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -57,6 +57,7 @@ class LowStockAlertNotification extends Notification implements ShouldQueue
         $url = route('inventory.products.show', $this->product, absolute: false);
 
         return [
+            'event_type' => $this->notificationEventType(),
             'type' => 'inventory.low-stock',
             'category' => 'inventory',
             'severity' => 'warning',

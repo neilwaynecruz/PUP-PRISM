@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::index
  * @see app/Http/Controllers/Inventory/SupplierController.php:22
@@ -42,41 +42,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\SupplierController::index
- * @see app/Http/Controllers/Inventory/SupplierController.php:22
- * @route '/inventory/suppliers'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::index
- * @see app/Http/Controllers/Inventory/SupplierController.php:22
- * @route '/inventory/suppliers'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::index
- * @see app/Http/Controllers/Inventory/SupplierController.php:22
- * @route '/inventory/suppliers'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::create
  * @see app/Http/Controllers/Inventory/SupplierController.php:57
@@ -120,41 +85,6 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\SupplierController::create
- * @see app/Http/Controllers/Inventory/SupplierController.php:57
- * @route '/inventory/suppliers/create'
- */
-    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: create.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::create
- * @see app/Http/Controllers/Inventory/SupplierController.php:57
- * @route '/inventory/suppliers/create'
- */
-        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::create
- * @see app/Http/Controllers/Inventory/SupplierController.php:57
- * @route '/inventory/suppliers/create'
- */
-        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: create.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    create.form = createForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::store
  * @see app/Http/Controllers/Inventory/SupplierController.php:64
@@ -189,27 +119,6 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\SupplierController::store
- * @see app/Http/Controllers/Inventory/SupplierController.php:64
- * @route '/inventory/suppliers'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::store
- * @see app/Http/Controllers/Inventory/SupplierController.php:64
- * @route '/inventory/suppliers'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::show
  * @see app/Http/Controllers/Inventory/SupplierController.php:77
@@ -277,41 +186,6 @@ show.head = (args: { supplier: number | { id: number } } | [supplier: number | {
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\SupplierController::show
- * @see app/Http/Controllers/Inventory/SupplierController.php:77
- * @route '/inventory/suppliers/{supplier}'
- */
-    const showForm = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: show.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::show
- * @see app/Http/Controllers/Inventory/SupplierController.php:77
- * @route '/inventory/suppliers/{supplier}'
- */
-        showForm.get = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::show
- * @see app/Http/Controllers/Inventory/SupplierController.php:77
- * @route '/inventory/suppliers/{supplier}'
- */
-        showForm.head = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    show.form = showForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::edit
  * @see app/Http/Controllers/Inventory/SupplierController.php:122
@@ -379,41 +253,6 @@ edit.head = (args: { supplier: number | { id: number } } | [supplier: number | {
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\SupplierController::edit
- * @see app/Http/Controllers/Inventory/SupplierController.php:122
- * @route '/inventory/suppliers/{supplier}/edit'
- */
-    const editForm = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: edit.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::edit
- * @see app/Http/Controllers/Inventory/SupplierController.php:122
- * @route '/inventory/suppliers/{supplier}/edit'
- */
-        editForm.get = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: edit.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::edit
- * @see app/Http/Controllers/Inventory/SupplierController.php:122
- * @route '/inventory/suppliers/{supplier}/edit'
- */
-        editForm.head = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: edit.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    edit.form = editForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::update
  * @see app/Http/Controllers/Inventory/SupplierController.php:134
@@ -472,37 +311,6 @@ update.put = (args: { supplier: number | { id: number } } | [supplier: number | 
     method: 'put',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\SupplierController::update
- * @see app/Http/Controllers/Inventory/SupplierController.php:134
- * @route '/inventory/suppliers/{supplier}'
- */
-    const updateForm = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: update.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::update
- * @see app/Http/Controllers/Inventory/SupplierController.php:134
- * @route '/inventory/suppliers/{supplier}'
- */
-        updateForm.put = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: update.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    update.form = updateForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::destroy
  * @see app/Http/Controllers/Inventory/SupplierController.php:148
@@ -560,38 +368,6 @@ destroy.delete = (args: { supplier: number | { id: number } } | [supplier: numbe
     url: destroy.url(args, options),
     method: 'delete',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\SupplierController::destroy
- * @see app/Http/Controllers/Inventory/SupplierController.php:148
- * @route '/inventory/suppliers/{supplier}'
- */
-    const destroyForm = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: destroy.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\SupplierController::destroy
- * @see app/Http/Controllers/Inventory/SupplierController.php:148
- * @route '/inventory/suppliers/{supplier}'
- */
-        destroyForm.delete = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: destroy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    destroy.form = destroyForm
 const suppliers = {
     index: Object.assign(index, index),
 create: Object.assign(create, create),

@@ -2,6 +2,8 @@
 
 namespace App\Notifications;
 
+use App\Enums\NotificationEventType;
+use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
@@ -11,6 +13,7 @@ use Illuminate\Notifications\Notification;
 class HandoverVerificationNotification extends Notification implements ShouldQueue
 {
     use Queueable;
+    use ResolvesViaNotificationPreferences;
 
     public int $tries = 3;
 
@@ -21,14 +24,9 @@ class HandoverVerificationNotification extends Notification implements ShouldQue
         $this->onQueue('notifications');
     }
 
-    /**
-     * Get the notification's delivery channels.
-     *
-     * @return array<int, string>
-     */
-    public function via(object $notifiable): array
+    public function notificationEventType(): string
     {
-        return ['mail', 'database', 'broadcast'];
+        return NotificationEventType::HandoverVerification->value;
     }
 
     /**
@@ -64,6 +62,7 @@ class HandoverVerificationNotification extends Notification implements ShouldQue
         ], absolute: false);
 
         return [
+            'event_type' => $this->notificationEventType(),
             'type' => 'handover.verification-required',
             'category' => 'handover',
             'severity' => 'info',

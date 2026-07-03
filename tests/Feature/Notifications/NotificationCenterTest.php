@@ -3,11 +3,17 @@
 use App\Models\Product;
 use App\Models\User;
 use App\Notifications\LowStockAlertNotification;
+use Spatie\Permission\Models\Role;
 
 uses()->group('notifications');
 
+beforeEach(function () {
+    Role::findOrCreate('Supply Head');
+});
+
 test('users can mark a notification as read', function () {
     $user = User::factory()->create();
+    $user->assignRole('Supply Head');
     $product = Product::factory()->create([
         'reorder_threshold' => 10,
     ]);
@@ -25,6 +31,7 @@ test('users can mark a notification as read', function () {
 
 test('users can mark all notifications as read', function () {
     $user = User::factory()->create();
+    $user->assignRole('Supply Head');
     $product = Product::factory()->create([
         'reorder_threshold' => 10,
     ]);

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\StockMovementController::index
  * @see app/Http/Controllers/Api/StockMovementController.php:14
@@ -41,42 +41,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: index.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Api\StockMovementController::index
- * @see app/Http/Controllers/Api/StockMovementController.php:14
- * @route '/api/stock-movements'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\StockMovementController::index
- * @see app/Http/Controllers/Api/StockMovementController.php:14
- * @route '/api/stock-movements'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Api\StockMovementController::index
- * @see app/Http/Controllers/Api/StockMovementController.php:14
- * @route '/api/stock-movements'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 const StockMovementController = { index }
 
 export default StockMovementController

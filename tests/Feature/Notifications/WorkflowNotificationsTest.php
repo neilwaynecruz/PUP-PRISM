@@ -90,16 +90,16 @@ function workflowSupplyHeadActor(): array
 
 describe('Requisition workflow notifications', function () {
     it('notifies supply head when a requisition is submitted', function () {
-        ['requester' => $requester] = workflowRequisitionActors();
+        ['supplyHead' => $supplyHead, 'requester' => $requester] = workflowRequisitionActors();
 
         $requisition = Requisition::factory()->create([
             'requester_id' => $requester->id,
             'status' => RequisitionStatus::Submitted,
         ]);
 
-        $requester->notify(new RequisitionSubmittedNotification($requisition));
+        $supplyHead->notify(new RequisitionSubmittedNotification($requisition));
 
-        Notification::assertSentTo($requester, RequisitionSubmittedNotification::class);
+        Notification::assertSentTo($supplyHead, RequisitionSubmittedNotification::class);
     });
 
     it('notifies requester when requisition is approved', function () {
@@ -217,16 +217,23 @@ describe('Queued notification delivery', function () {
         Queue::fake();
         config(['queue.default' => 'database']);
 
+        (new RoleSeeder)->run();
+
         $requester = User::factory()->create([
             'position_id' => Position::factory()->create()->id,
         ]);
+
+        $supplyHead = User::factory()->create([
+            'position_id' => Position::factory()->create()->id,
+        ]);
+        $supplyHead->assignRole('Supply Head');
 
         $requisition = Requisition::factory()->create([
             'requester_id' => $requester->id,
             'status' => RequisitionStatus::Submitted,
         ]);
 
-        $requester->notify(new RequisitionSubmittedNotification($requisition));
+        $supplyHead->notify(new RequisitionSubmittedNotification($requisition));
 
         Queue::assertPushedOn('notifications', SendQueuedNotifications::class);
     });
@@ -234,7 +241,10 @@ describe('Queued notification delivery', function () {
     it('still delivers database notifications when the queue connection is sync', function () {
         config(['queue.default' => 'sync']);
 
+        (new RoleSeeder)->run();
+
         $user = User::factory()->create();
+        $user->assignRole('Supply Head');
         $product = Product::factory()->create([
             'reorder_threshold' => 10,
         ]);
@@ -263,6 +273,13 @@ describe('Queued notification delivery', function () {
 
 describe('Notification delivery channels', function () {
     it('adds database and broadcast delivery to requisition notifications', function () {
+        (new RoleSeeder)->run();
+
+        $supplyHead = User::factory()->create([
+            'position_id' => Position::factory()->create()->id,
+        ]);
+        $supplyHead->assignRole('Supply Head');
+
         $requester = User::factory()->create([
             'position_id' => Position::factory()->create()->id,
         ]);
@@ -274,7 +291,7 @@ describe('Notification delivery channels', function () {
         $submitted = new RequisitionSubmittedNotification($requisition);
         $statusChanged = new RequisitionStatusChangedNotification($requisition, 'approved');
 
-        expect($submitted->via($requester))->toBe(['mail', 'database', 'broadcast']);
+        expect($submitted->via($supplyHead))->toBe(['mail', 'database', 'broadcast']);
         expect($statusChanged->via($requester))->toBe(['mail', 'database', 'broadcast']);
         expect($submitted->toArray($requester))->toMatchArray([
             'category' => 'requisition',
@@ -283,9 +300,16 @@ describe('Notification delivery channels', function () {
     });
 
     it('adds database and broadcast delivery to booking notifications', function () {
+        (new RoleSeeder)->run();
+
         $requester = User::factory()->create([
             'position_id' => Position::factory()->create()->id,
         ]);
+
+        $custodian = User::factory()->create([
+            'position_id' => Position::factory()->create()->id,
+        ]);
+        $custodian->assignRole('Property Custodian');
 
         $product = Product::factory()->create([
             'type' => ProductType::Asset,
@@ -305,7 +329,7 @@ describe('Notification delivery channels', function () {
         $submitted = new BookingSubmittedNotification($booking);
         $statusChanged = new BookingStatusChangedNotification($booking, 'approved');
 
-        expect($submitted->via($requester))->toBe(['mail', 'database', 'broadcast']);
+        expect($submitted->via($custodian))->toBe(['mail', 'database', 'broadcast']);
         expect($statusChanged->via($requester))->toBe(['mail', 'database', 'broadcast']);
         expect($statusChanged->toArray($requester))->toMatchArray([
             'category' => 'booking',
@@ -314,7 +338,12 @@ describe('Notification delivery channels', function () {
     });
 
     it('adds database and broadcast delivery to alert and handover notifications', function () {
+        (new RoleSeeder)->run();
+
         $user = User::factory()->create();
+        $supplyHead = User::factory()->create();
+        $supplyHead->assignRole('Supply Head');
+
         $product = Product::factory()->create([
             'reorder_threshold' => 10,
         ]);
@@ -322,7 +351,7 @@ describe('Notification delivery channels', function () {
         $lowStock = new LowStockAlertNotification($product, 4);
         $handover = new HandoverVerificationNotification(10, 'verification-token');
 
-        expect($lowStock->via($user))->toBe(['mail', 'database', 'broadcast']);
+        expect($lowStock->via($supplyHead))->toBe(['mail', 'database', 'broadcast']);
         expect($handover->via($user))->toBe(['mail', 'database', 'broadcast']);
         expect($handover->toArray($user))->toMatchArray([
             'category' => 'handover',
