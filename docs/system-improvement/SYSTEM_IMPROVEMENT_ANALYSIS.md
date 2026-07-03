@@ -13,9 +13,9 @@ PUP PRISM is a mature, university-focused inventory and procurement platform for
 
 **What is already strong:** Pest coverage across authentication, inventory, API, and settings flows (expanded 2026-07-03), Playwright E2E suites, role-based access at routes/policies/frontend, soft deletes with unified trash, email notifications for 7 workflow events, statistical demand forecasting with `forecast_stockout` alerts, forecast-aware PO quantity resolution, in-app notification center with Reverb, and real-time updates.
 
-**Where improvement is needed:** **booking reject workflow bug**, surfacing existing intelligence (no dedicated forecasting UI), async infrastructure (synchronous mail/broadcast), dashboard query performance, production observability, and closing the forecast-to-PO loop for pre-threshold products.
+**Where improvement is needed:** surfacing existing intelligence (no dedicated forecasting UI), async infrastructure (synchronous mail/broadcast), dashboard query performance, production observability, and closing the forecast-to-PO loop for pre-threshold products.
 
-**Strategic approach:** Recent work already closed the highest-risk auth gaps with invite-only registration, verified/scoped API access, and expiring Sanctum tokens. Next, prioritize the broken booking reject workflow, then expose and automate existing forecasting intelligence, and finally optimize performance and operations. Avoid feature bloat — each recommendation solves a verified gap in the current codebase.
+**Strategic approach:** Recent work already closed the highest-risk auth gaps with invite-only registration, verified/scoped API access, expiring Sanctum tokens, and the booking reject workflow fix. Next, expose and automate existing forecasting intelligence, then optimize performance and operations. Avoid feature bloat — each recommendation solves a verified gap in the current codebase.
 
 ```mermaid
 flowchart TB
@@ -192,6 +192,8 @@ Scoped read-only tokens for kiosk displays or external dashboards — integratio
 #### 1. Feature Name
 
 Authorization Consistency & Policy Bug Fixes (Booking Reject Critical Bug)
+
+**Implementation status:** ✅ Completed on 2026-07-03. `BookingPolicy::reject()` now mirrors `approve()`, the Show page exposes `can.reject` for authorized approvers, bulk reject succeeds, and booking/requisition web `store()` calls now authorize `create`.
 
 #### 2. Current Problem or Limitation
 
@@ -755,7 +757,7 @@ See [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) for the **live** 
 | ------- | -------- | ---------- | ---- | ------ |
 | Secure Registration & Admin User Provisioning | Critical | Medium | Medium | ✅ DONE |
 | API & Sanctum Token Hardening | Critical | Medium | Low | ✅ DONE |
-| Authorization & Booking Reject Bug Fix | Critical | Low | Low | NOT STARTED |
+| Authorization & Booking Reject Bug Fix | Critical | Low | Low | ✅ DONE |
 | Production Security Headers & Handover Signature Validation | High | Low-Medium | Low | NOT STARTED |
 | Queued Notifications & Async Broadcasting | High | Medium | Medium | NOT STARTED |
 | Forecasting Management Module | High | Medium | Low | NOT STARTED |
@@ -771,11 +773,11 @@ See [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) for the **live** 
 | Metric | Value |
 | ------ | ----- |
 | Total features suggested | 10 |
-| Total features implemented | 2 |
-| Total features not started | 8 |
+| Total features implemented | 3 |
+| Total features not started | 7 |
 | Total features in progress | 0 |
 | Total features blocked | 0 |
-| Overall completion percentage | 20% |
+| Overall completion percentage | 30% |
 
 ## Final Project Status
 

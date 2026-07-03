@@ -19,7 +19,7 @@ The analysis is **directionally correct** and the prioritization is sound, but s
 | Sanctum `expiration => null` | `config/sanctum.php` line 53 |
 | API lacks `verified` middleware | `routes/api.php` line 19 |
 | `RequisitionPolicy::create()` returns `true` | `app/Policies/RequisitionPolicy.php` line 32 |
-| `BookingPolicy` has no `reject()` method | `app/Policies/BookingPolicy.php` — no `reject` |
+| `BookingPolicy` has no `reject()` method | `app/Policies/BookingPolicy.php` — fixed 2026-07-03; `reject()` now mirrors `approve()` |
 | `bulkReject` calls `authorize('reject')` | `BookingController.php` line 282 |
 | No `ForecastController` / forecasting pages | Glob search returns 0 files |
 | Notifications use `Queueable` but not `ShouldQueue` | All 7 files in `app/Notifications/` |
@@ -39,6 +39,8 @@ The following review findings were correct when this document was written, but t
 - `routes/api.php` no longer lacks `verified` middleware; the protected API group keeps `verified` and now also splits read/write routes behind Sanctum ability middleware.
 - `RequisitionPolicy::create()` and `BookingPolicy::create()` no longer return `true` for every authenticated user; they now require `Admin`, `Supply Head`, or `Property Custodian`.
 - API token management is no longer test-only; Admin and Supply Head users now have a Settings-based token creation and revocation UI with one-time plaintext exposure.
+- `BookingPolicy` now defines `reject()`; the booking Show-page reject dialog and `bulkReject` workflow are functional again for Admin and Property Custodian approvers on requested bookings.
+- Web `BookingController::store()` and `RequisitionController::store()` now call `authorize('create', ...)`; `AuditLogPolicy` is explicitly registered in `AuthServiceProvider`.
 
 ---
 
@@ -134,7 +136,7 @@ Feature 9 (application-level cache) remains valid and is the right layer to opti
 
 ### 8. API `authorize('create')` on store — Clarification
 
-`Api\RequisitionController::store()` **does** call `$this->authorize('create', Requisition::class)` (line 55). The vulnerability is the **policy returning `true`**, not a missing authorize call. Web `RequisitionController::store()` lacks explicit authorize but is protected by route role middleware.
+`Api\RequisitionController::store()` **does** call `$this->authorize('create', Requisition::class)` (line 55). Web `RequisitionController::store()` now also authorizes `create` explicitly (2026-07-03); route role middleware remains the outer compensating control.
 
 ---
 

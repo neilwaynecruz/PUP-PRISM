@@ -17,7 +17,7 @@
 | ------- | -------- | ---------- | ---- | ------ |
 | Secure Registration & Admin User Provisioning | Critical | Medium | Medium | ✅ DONE |
 | API & Sanctum Token Hardening | Critical | Medium | Low | ✅ DONE |
-| Authorization & Booking Reject Bug Fix | Critical | Low | Low | ⬜ NOT STARTED |
+| Authorization & Booking Reject Bug Fix | Critical | Low | Low | ✅ DONE |
 | Production Security Headers & Handover Signature Validation | High | Low-Medium | Low | ⬜ NOT STARTED |
 | Queued Notifications & Async Broadcasting | High | Medium | Medium | ⬜ NOT STARTED |
 | Forecasting Management Module (Dedicated UI) | High | Medium | Low | ⬜ NOT STARTED |
@@ -43,11 +43,11 @@
 | Metric | Count |
 | ------ | ----- |
 | Total features suggested | 10 |
-| Total features implemented | 2 |
-| Total features not started | 8 |
+| Total features implemented | 3 |
+| Total features not started | 7 |
 | Total features in progress | 0 |
 | Total features blocked | 0 |
-| Overall completion percentage | 20% |
+| Overall completion percentage | 30% |
 
 ## Feature Completion Log
 
@@ -55,6 +55,7 @@
 
 | Date | Feature | Status | Tests | Notes |
 | ---- | ------- | ------ | ----- | ----- |
+| 2026-07-03 | Authorization & Booking Reject Bug Fix | ✅ DONE | `php artisan test --compact tests/Feature/Inventory/BookingAvailabilityTest.php`; `vendor/bin/pint --dirty --format agent` | Added `BookingPolicy::reject()`, branched `update()` authorization by action, added create authorize on booking/requisition store, registered `AuditLogPolicy`, and restored Show-page reject visibility plus bulk reject coverage. |
 | 2026-07-03 | API & Sanctum Token Hardening | ✅ DONE | `php artisan test --compact --filter=Api`; `php artisan test --compact tests/Feature/Settings/ApiTokenTest.php`; `npm run build` | Added env-driven Sanctum token expiration, ability-scoped API middleware, stricter create policies, an Admin/Supply Head API token settings UI, and focused API/settings regression coverage. |
 | 2026-07-03 | Secure Registration & Admin User Provisioning | ✅ DONE | `php artisan test --compact tests/Feature/Admin/UserManagementTest.php tests/Feature/Auth/RegistrationTest.php tests/Feature/Auth/AuthenticationTest.php tests/Feature/Api/ApiIntegrationTest.php`; `npm run build` | Disabled public registration behind `REGISTRATION_ENABLED`, added Admin user provisioning UI and backend, blocked inactive logins, added API `verified` middleware, and synced audit/test coverage. |
 

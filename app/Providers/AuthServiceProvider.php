@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Asset;
+use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
@@ -12,6 +13,7 @@ use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Policies\AssetPolicy;
+use App\Policies\AuditLogPolicy;
 use App\Policies\BookingPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\PurchaseOrderPolicy;
@@ -39,6 +41,7 @@ class AuthServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Product::class, ProductPolicy::class);
+        Gate::policy(AuditLog::class, AuditLogPolicy::class);
         Gate::policy(Booking::class, BookingPolicy::class);
         Gate::policy(Requisition::class, RequisitionPolicy::class);
         Gate::policy(RequisitionTemplate::class, RequisitionTemplatePolicy::class);

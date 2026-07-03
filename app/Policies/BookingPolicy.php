@@ -57,6 +57,11 @@ class BookingPolicy
         return $user->hasAnyRole(['Admin', 'Property Custodian']) && $booking->status === BookingStatus::Requested;
     }
 
+    public function reject(User $user, Booking $booking): bool
+    {
+        return $user->hasAnyRole(['Admin', 'Property Custodian']) && $booking->status === BookingStatus::Requested;
+    }
+
     public function trash(User $user): bool
     {
         return $user->hasAnyRole(['Admin', 'Property Custodian']);

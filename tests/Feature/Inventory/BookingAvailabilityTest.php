@@ -125,6 +125,95 @@ test('property custodian can reject a pending booking request', function () {
     expect($booking->approved_ip_address)->not->toBeNull();
 });
 
+test('booking show page exposes reject for authorized approver', function (string $role) {
+    $approverPosition = Position::factory()->create();
+    $requesterPosition = Position::factory()->create();
+
+    $approver = User::factory()->assignedPosition($approverPosition)->create();
+    $approver->assignRole($role);
+
+    $requester = User::factory()->assignedPosition($requesterPosition)->create();
+    $requester->assignRole('Property Custodian');
+
+    $booking = Booking::factory()->create([
+        'requester_id' => $requester->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => BookingStatus::Requested,
+    ]);
+
+    $this->actingAs($approver)
+        ->get(route('inventory.bookings.show', $booking, absolute: false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('inventory/bookings/Show')
+            ->where('can.reject', true)
+            ->where('can.approve', true));
+})->with([
+    'admin' => 'Admin',
+    'property custodian' => 'Property Custodian',
+]);
+
+test('booking show page hides reject for unauthorized viewer', function () {
+    $requesterPosition = Position::factory()->create();
+
+    $requester = User::factory()->assignedPosition($requesterPosition)->create();
+    $requester->assignRole('Supply Head');
+
+    $booking = Booking::factory()->create([
+        'requester_id' => $requester->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => BookingStatus::Requested,
+    ]);
+
+    $this->actingAs($requester)
+        ->get(route('inventory.bookings.show', $booking, absolute: false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('inventory/bookings/Show')
+            ->where('can.reject', false)
+            ->where('can.approve', false));
+});
+
+test('property custodian can bulk reject pending booking requests', function () {
+    $approverPosition = Position::factory()->create();
+    $requesterPosition = Position::factory()->create();
+    $csrfToken = 'booking-bulk-reject-token';
+
+    $approver = User::factory()->assignedPosition($approverPosition)->create();
+    $approver->assignRole('Property Custodian');
+
+    $requester = User::factory()->assignedPosition($requesterPosition)->create();
+    $requester->assignRole('Property Custodian');
+
+    $firstBooking = Booking::factory()->create([
+        'requester_id' => $requester->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => BookingStatus::Requested,
+    ]);
+
+    $secondBooking = Booking::factory()->create([
+        'requester_id' => $requester->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => BookingStatus::Requested,
+    ]);
+
+    $this->actingAs($approver)
+        ->withSession(['_token' => $csrfToken])
+        ->post(route('inventory.bookings.bulk-reject', absolute: false), [
+            '_token' => $csrfToken,
+            'ids' => [$firstBooking->id, $secondBooking->id],
+        ])
+        ->assertRedirect();
+
+    $firstBooking->refresh();
+    $secondBooking->refresh();
+
+    expect($firstBooking->status)->toBe(BookingStatus::Rejected);
+    expect($secondBooking->status)->toBe(BookingStatus::Rejected);
+    expect($firstBooking->approver_id)->toBe($approver->id);
+    expect($secondBooking->approver_id)->toBe($approver->id);
+});
+
 test('back-to-back bookings do not conflict when one starts exactly as another ends', function () {
     $position = Position::factory()->create();
     $csrfToken = 'booking-adjacent-token';

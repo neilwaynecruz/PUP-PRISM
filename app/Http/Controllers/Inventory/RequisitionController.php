@@ -110,6 +110,8 @@ class RequisitionController extends Controller
 
     public function store(RequisitionStoreRequest $request): RedirectResponse
     {
+        $this->authorize('create', Requisition::class);
+
         $validated = $request->validated();
 
         $requisition = DB::transaction(function () use ($request, $validated): Requisition {

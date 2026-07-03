@@ -153,6 +153,8 @@ class BookingController extends Controller
 
     public function store(BookingStoreRequest $request): RedirectResponse
     {
+        $this->authorize('create', Booking::class);
+
         $validated = $request->validated();
 
         try {
@@ -174,9 +176,9 @@ class BookingController extends Controller
 
     public function update(BookingApproveRequest $request, Booking $booking): RedirectResponse
     {
-        $this->authorize('approve', $booking);
-
         $action = $request->string('action')->toString();
+
+        $this->authorize($action === 'reject' ? 'reject' : 'approve', $booking);
 
         if ($action === 'approve') {
             try {
