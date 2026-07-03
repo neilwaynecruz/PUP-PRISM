@@ -4,6 +4,7 @@ use App\Models\AuditLog;
 use App\Models\Position;
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -14,7 +15,7 @@ beforeEach(function () {
 
 function createAdminUser(): User
 {
-    $user = User::factory()->create(['name' => 'Admin User']);
+    $user = User::factory()->withTwoFactor()->create(['name' => 'Admin User']);
     $user->assignRole('Admin');
 
     return $user;
@@ -22,7 +23,7 @@ function createAdminUser(): User
 
 test('non-admin users cannot access user management', function () {
     $user = User::factory()->create();
-    $user->assignRole('Supply Head');
+    $user->assignRole('Property Custodian');
 
     $this->actingAs($user)
         ->get(route('admin.users.index', absolute: false))
@@ -122,6 +123,61 @@ test('admin can deactivate another user', function () {
 
     $this->assertDatabaseHas('audit_logs', [
         'action' => 'deactivate',
+        'model_type' => 'User',
+        'model_id' => $managedUser->id,
+    ]);
+});
+
+test('deactivating a user revokes their tokens and active sessions', function () {
+    $admin = createAdminUser();
+    $managedUser = User::factory()->create([
+        'invited_at' => now(),
+    ]);
+    $managedUser->assignRole('Supply Head');
+
+    $token = $managedUser->createToken('Inventory sync', ['read'])->accessToken;
+
+    DB::table((string) config('session.table', 'sessions'))->insert([
+        [
+            'id' => 'managed-user-session-1',
+            'user_id' => $managedUser->id,
+            'ip_address' => '127.0.0.1',
+            'user_agent' => 'Pest',
+            'payload' => 'session-one',
+            'last_activity' => now()->timestamp,
+        ],
+        [
+            'id' => 'managed-user-session-2',
+            'user_id' => $managedUser->id,
+            'ip_address' => '127.0.0.2',
+            'user_agent' => 'Pest',
+            'payload' => 'session-two',
+            'last_activity' => now()->timestamp,
+        ],
+    ]);
+
+    $this->actingAs($admin)
+        ->patch(route('admin.users.deactivate', ['managedUser' => $managedUser], absolute: false))
+        ->assertRedirect(route('admin.users.index', absolute: false));
+
+    $this->assertDatabaseMissing('personal_access_tokens', [
+        'id' => $token->id,
+    ]);
+
+    expect(
+        DB::table((string) config('session.table', 'sessions'))
+            ->where('user_id', $managedUser->id)
+            ->count()
+    )->toBe(0);
+
+    $this->assertDatabaseHas('audit_logs', [
+        'action' => 'revoke_tokens',
+        'model_type' => 'User',
+        'model_id' => $managedUser->id,
+    ]);
+
+    $this->assertDatabaseHas('audit_logs', [
+        'action' => 'revoke_sessions',
         'model_type' => 'User',
         'model_id' => $managedUser->id,
     ]);

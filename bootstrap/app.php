@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureActiveUser;
+use App\Http\Middleware\EnsurePrivilegedTwoFactorIsConfirmed;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\SecurityHeadersMiddleware;
@@ -26,18 +28,27 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->alias([
+            'active' => EnsureActiveUser::class,
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
+            'privileged_2fa' => EnsurePrivilegedTwoFactorIsConfirmed::class,
             'role' => RoleMiddleware::class,
             'permission' => PermissionMiddleware::class,
             'role_or_permission' => RoleOrPermissionMiddleware::class,
         ]);
 
         $middleware->web(append: [
+            EnsureActiveUser::class,
+            EnsurePrivilegedTwoFactorIsConfirmed::class,
             SecurityHeadersMiddleware::class,
             HandleAppearance::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
+        ]);
+
+        $middleware->api(append: [
+            EnsureActiveUser::class,
+            EnsurePrivilegedTwoFactorIsConfirmed::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

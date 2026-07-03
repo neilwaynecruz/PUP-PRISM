@@ -53,4 +53,14 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(NotificationPreference::class);
     }
+
+    public function requiresPrivilegedTwoFactorConfirmation(): bool
+    {
+        return $this->hasAnyRole(['Admin', 'Supply Head']);
+    }
+
+    public function hasConfirmedTwoFactorAuthentication(): bool
+    {
+        return $this->hasEnabledTwoFactorAuthentication() && $this->two_factor_confirmed_at !== null;
+    }
 }

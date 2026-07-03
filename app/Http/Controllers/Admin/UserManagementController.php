@@ -9,6 +9,7 @@ use App\Models\Position;
 use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\NotificationPreferenceSeeder;
+use App\Services\Security\AccessLifecycleService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -169,8 +170,11 @@ class UserManagementController extends Controller
         return to_route('admin.users.edit', ['managedUser' => $managedUser]);
     }
 
-    public function deactivate(Request $request, User $managedUser): RedirectResponse
-    {
+    public function deactivate(
+        Request $request,
+        User $managedUser,
+        AccessLifecycleService $accessLifecycleService,
+    ): RedirectResponse {
         $this->authorize('deactivate', $managedUser);
 
         if (! $request->user() instanceof User) {
@@ -204,7 +208,7 @@ class UserManagementController extends Controller
             return back();
         }
 
-        DB::transaction(function () use ($managedUser): void {
+        DB::transaction(function () use ($managedUser, $accessLifecycleService): void {
             $managedUser->load(['roles:id,name', 'position.department:id,name']);
 
             $oldValues = $this->auditPayload($managedUser);
@@ -212,6 +216,8 @@ class UserManagementController extends Controller
             $managedUser->forceFill([
                 'is_active' => false,
             ])->save();
+
+            $revocationSummary = $accessLifecycleService->revokeUserAccess($managedUser);
 
             $managedUser->load(['roles:id,name', 'position.department:id,name']);
 
@@ -221,6 +227,22 @@ class UserManagementController extends Controller
                 $managedUser,
                 $oldValues,
                 $this->auditPayload($managedUser),
+            );
+
+            AuditLogService::log(
+                'revoke_tokens',
+                "Revoked {$revocationSummary['token_count']} API tokens for {$managedUser->name}.",
+                $managedUser,
+                ['token_count' => $revocationSummary['token_count']],
+                ['token_count' => 0],
+            );
+
+            AuditLogService::log(
+                'revoke_sessions',
+                "Revoked {$revocationSummary['session_count']} active sessions for {$managedUser->name}.",
+                $managedUser,
+                ['session_count' => $revocationSummary['session_count']],
+                ['session_count' => 0],
             );
         });
 

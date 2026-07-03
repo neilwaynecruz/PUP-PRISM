@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { Form, Head } from '@inertiajs/vue3';
-import { ShieldCheck } from 'lucide-vue-next';
-import { onUnmounted, ref } from 'vue';
+import { ShieldAlert, ShieldCheck } from 'lucide-vue-next';
+import { computed, onUnmounted, ref } from 'vue';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TwoFactorRecoveryCodes from '@/components/TwoFactorRecoveryCodes.vue';
 import TwoFactorSetupModal from '@/components/TwoFactorSetupModal.vue';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -27,12 +28,16 @@ import { disable, enable } from '@/routes/two-factor';
 type Props = {
     canManageTwoFactor?: boolean;
     requiresConfirmation?: boolean;
+    requiresPrivilegedTwoFactor?: boolean;
+    twoFactorConfirmed?: boolean;
     twoFactorEnabled?: boolean;
 };
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
     canManageTwoFactor: false,
     requiresConfirmation: false,
+    requiresPrivilegedTwoFactor: false,
+    twoFactorConfirmed: false,
     twoFactorEnabled: false,
 });
 
@@ -49,6 +54,9 @@ defineOptions({
 
 const { hasSetupData, clearTwoFactorAuthData } = useTwoFactorAuth();
 const showSetupModal = ref<boolean>(false);
+const shouldShowMandatoryTwoFactorNotice = computed<boolean>(
+    () => props.requiresPrivilegedTwoFactor && !props.twoFactorConfirmed,
+);
 
 onUnmounted(() => clearTwoFactorAuthData());
 </script>
@@ -127,6 +135,19 @@ onUnmounted(() => clearTwoFactorAuthData());
     </div>
 
     <div v-if="canManageTwoFactor" class="space-y-6">
+        <Alert
+            v-if="shouldShowMandatoryTwoFactorNotice"
+            class="border-amber-500/40 bg-amber-50/60 text-amber-950 dark:bg-amber-950/20 dark:text-amber-100"
+        >
+            <ShieldAlert class="size-4" />
+            <AlertTitle>Two-factor authentication required</AlertTitle>
+            <AlertDescription>
+                Admin and Supply Head accounts must confirm two-factor
+                authentication before they can access protected areas. Finish
+                setup here to restore full access.
+            </AlertDescription>
+        </Alert>
+
         <Heading
             variant="small"
             title="Two-factor authentication"

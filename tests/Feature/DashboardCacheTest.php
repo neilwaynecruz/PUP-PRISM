@@ -19,9 +19,16 @@ beforeEach(function () {
     Role::findOrCreate('Admin');
 });
 
+function confirmedPrivilegedUser(string $role): User
+{
+    $user = User::factory()->withTwoFactor()->create(['email_verified_at' => now()]);
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('second dashboard request uses cached admin stats', function () {
-    $admin = User::factory()->create(['email_verified_at' => now()]);
-    $admin->assignRole('Admin');
+    $admin = confirmedPrivilegedUser('Admin');
 
     $range = ['from' => null, 'to' => null];
     $cache = app(DashboardStatsCache::class);
@@ -43,8 +50,7 @@ test('second dashboard request uses cached admin stats', function () {
 });
 
 test('stock movement creation invalidates dashboard cache', function () {
-    $admin = User::factory()->create(['email_verified_at' => now()]);
-    $admin->assignRole('Admin');
+    $admin = confirmedPrivilegedUser('Admin');
 
     $range = ['from' => null, 'to' => null];
     $cache = app(DashboardStatsCache::class);
@@ -72,8 +78,7 @@ test('stock movement creation invalidates dashboard cache', function () {
 test('dashboard cache can be disabled via configuration', function () {
     config(['dashboard.cache.enabled' => false]);
 
-    $admin = User::factory()->create(['email_verified_at' => now()]);
-    $admin->assignRole('Admin');
+    $admin = confirmedPrivilegedUser('Admin');
 
     $cache = app(DashboardStatsCache::class);
     $cacheKey = $cache->key('admin', ['from' => null, 'to' => null]);
@@ -88,11 +93,8 @@ test('dashboard cache can be disabled via configuration', function () {
 test('supply head dashboard stats are cached separately from admin stats', function () {
     Role::findOrCreate('Supply Head');
 
-    $admin = User::factory()->create(['email_verified_at' => now()]);
-    $admin->assignRole('Admin');
-
-    $supplyHead = User::factory()->create(['email_verified_at' => now()]);
-    $supplyHead->assignRole('Supply Head');
+    $admin = confirmedPrivilegedUser('Admin');
+    $supplyHead = confirmedPrivilegedUser('Supply Head');
 
     $range = ['from' => null, 'to' => null];
     $cache = app(DashboardStatsCache::class);

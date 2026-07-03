@@ -15,7 +15,7 @@ test('admin health endpoint returns queue and scheduler metadata', function () {
         now()->toIso8601String(),
     );
 
-    $admin = User::factory()->create(['email_verified_at' => now()]);
+    $admin = User::factory()->withTwoFactor()->create(['email_verified_at' => now()]);
     $admin->assignRole('Admin');
 
     $this->actingAs($admin)

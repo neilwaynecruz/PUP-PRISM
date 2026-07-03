@@ -33,7 +33,9 @@ class SecurityController extends Controller
             $request->ensureStateIsValid();
 
             $props['twoFactorEnabled'] = $request->user()->hasEnabledTwoFactorAuthentication();
+            $props['twoFactorConfirmed'] = $request->user()->hasConfirmedTwoFactorAuthentication();
             $props['requiresConfirmation'] = Features::optionEnabled(Features::twoFactorAuthentication(), 'confirm');
+            $props['requiresPrivilegedTwoFactor'] = $request->user()->requiresPrivilegedTwoFactorConfirmation();
         }
 
         return Inertia::render('settings/Security', $props);

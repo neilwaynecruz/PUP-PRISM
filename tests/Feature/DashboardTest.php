@@ -12,6 +12,14 @@ use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
+function privilegedDashboardUser(string $role): User
+{
+    $user = User::factory()->withTwoFactor()->create(['email_verified_at' => now()]);
+    $user->assignRole($role);
+
+    return $user;
+}
+
 test('guests are redirected to the login page', function () {
     $response = $this->get(route('dashboard'));
     $response->assertRedirect(route('login'));
@@ -27,8 +35,7 @@ test('authenticated users can visit the dashboard', function () {
 
 test('dashboard responses disable client caching for authenticated users', function () {
     Role::findOrCreate('Admin');
-    $admin = User::factory()->create(['email_verified_at' => now()]);
-    $admin->assignRole('Admin');
+    $admin = privilegedDashboardUser('Admin');
 
     $response = $this->actingAs($admin)->get(route('dashboard'));
 
@@ -43,8 +50,7 @@ test('dashboard responses disable client caching for authenticated users', funct
 
 test('admin dashboard aggregates unserviceable and condemned asset counts', function () {
     Role::findOrCreate('Admin');
-    $admin = User::factory()->create();
-    $admin->assignRole('Admin');
+    $admin = privilegedDashboardUser('Admin');
 
     $product = Product::factory()->asset()->create();
 
@@ -63,8 +69,7 @@ test('admin dashboard aggregates unserviceable and condemned asset counts', func
 
 test('admin users see dashboard alerts, low stock, and asset details', function () {
     Role::findOrCreate('Admin');
-    $admin = User::factory()->create(['email_verified_at' => now()]);
-    $admin->assignRole('Admin');
+    $admin = privilegedDashboardUser('Admin');
 
     $lowStockProduct = Product::factory()->consumable()->create([
         'name' => 'Bond Paper',
@@ -115,8 +120,7 @@ test('admin users see dashboard alerts, low stock, and asset details', function 
 test('supply head dashboard includes supplier performance and purchase order summary', function () {
     Role::findOrCreate('Supply Head');
 
-    $supplyHead = User::factory()->create(['email_verified_at' => now()]);
-    $supplyHead->assignRole('Supply Head');
+    $supplyHead = privilegedDashboardUser('Supply Head');
 
     $supplier = Supplier::factory()->create(['name' => 'Acme Supply']);
     PurchaseOrder::factory()->count(2)->create([
@@ -130,5 +134,5 @@ test('supply head dashboard includes supplier performance and purchase order sum
         ->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard')
             ->where('purchaseOrderSummary.sent', 2)
-            ->where('supplierPerformance.0.name', 'Acme Supply'));
+            ->where('supplierPerformance.0.name', 'Acme' . ' Supply'));
 });

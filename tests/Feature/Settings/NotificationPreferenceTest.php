@@ -47,7 +47,7 @@ test('disabled mail channel prevents mail notification delivery', function () {
 });
 
 test('user can view and update notification preferences', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->withTwoFactor()->create();
     $user->assignRole('Supply Head');
     $csrfToken = 'notification-preferences-token';
 

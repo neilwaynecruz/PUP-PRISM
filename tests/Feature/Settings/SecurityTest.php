@@ -1,9 +1,15 @@
 <?php
 
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
+use Laravel\Fortify\Contracts\TwoFactorAuthenticationProvider;
 use Laravel\Fortify\Features;
+
+beforeEach(function () {
+    (new RoleSeeder)->run();
+});
 
 test('security page is displayed', function () {
     $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
@@ -21,7 +27,30 @@ test('security page is displayed', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('settings/Security')
             ->where('canManageTwoFactor', true)
-            ->where('twoFactorEnabled', false),
+            ->where('twoFactorEnabled', false)
+            ->where('twoFactorConfirmed', false)
+            ->where('requiresPrivilegedTwoFactor', false),
+        );
+});
+
+test('security page flags privileged users that must complete two factor authentication', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $user = User::factory()->create();
+    $user->assignRole('Admin');
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->get(route('security.edit'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('settings/Security')
+            ->where('requiresPrivilegedTwoFactor', true)
+            ->where('twoFactorConfirmed', false),
         );
 });
 
@@ -94,6 +123,52 @@ test('password can be updated', function () {
         ->assertRedirect(route('security.edit'));
 
     expect(Hash::check('new-password', $user->refresh()->password))->toBeTrue();
+});
+
+test('two factor confirmation is audited when enabled', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    $user = User::factory()->create();
+
+    $this->mock(TwoFactorAuthenticationProvider::class, function ($mock) {
+        $mock->shouldReceive('generateSecretKey')->once()->andReturn('ABCDEFGHIJKLMNOP');
+        $mock->shouldReceive('verify')->once()->andReturnTrue();
+    });
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post('/user/two-factor-authentication')
+        ->assertRedirect();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post('/user/confirmed-two-factor-authentication', [
+            'code' => '123456',
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('audit_logs', [
+        'action' => 'two_factor_enabled',
+        'model_type' => 'User',
+        'model_id' => $user->id,
+    ]);
+});
+
+test('two factor disable is audited', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    $user = User::factory()->withTwoFactor()->create();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->delete('/user/two-factor-authentication')
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('audit_logs', [
+        'action' => 'two_factor_disabled',
+        'model_type' => 'User',
+        'model_id' => $user->id,
+    ]);
 });
 
 test('correct password must be provided to update password', function () {

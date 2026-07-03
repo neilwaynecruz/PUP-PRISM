@@ -21,7 +21,7 @@ test('verified users without role cannot access role-protected route', function 
 
 test('verified users with Admin role can access role-protected route', function () {
     Role::findOrCreate('Admin');
-    $user = User::factory()->create();
+    $user = User::factory()->withTwoFactor()->create();
     $user->assignRole('Admin');
 
     $this->actingAs($user)

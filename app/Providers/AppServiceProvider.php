@@ -6,10 +6,12 @@ use App\Models\Booking;
 use App\Models\PurchaseOrder;
 use App\Models\Requisition;
 use App\Models\StockMovement;
+use App\Models\User;
 use App\Observers\BookingObserver;
 use App\Observers\PurchaseOrderObserver;
 use App\Observers\RequisitionObserver;
 use App\Observers\StockMovementObserver;
+use App\Observers\UserObserver;
 use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Date;
@@ -40,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         PurchaseOrder::observe(PurchaseOrderObserver::class);
         Requisition::observe(RequisitionObserver::class);
         StockMovement::observe(StockMovementObserver::class);
+        User::observe(UserObserver::class);
 
         if (app()->isProduction()) {
             URL::forceScheme('https');
