@@ -126,12 +126,10 @@ class DashboardStatsService
             ];
         }
 
-        $latestForecastDate = $snapshots->first()?->forecast_date?->toDateString()
-            ?? CarbonImmutable::parse((string) $snapshots->first()?->forecast_date)->toDateString();
+        $latestForecastDate = CarbonImmutable::parse((string) $snapshots->first()?->forecast_date)->toDateString();
         $latestSnapshots = $snapshots
             ->filter(fn (ForecastSnapshot $snapshot) => (
-                $snapshot->forecast_date?->toDateString()
-                ?? CarbonImmutable::parse((string) $snapshot->forecast_date)->toDateString()
+                CarbonImmutable::parse((string) $snapshot->forecast_date)->toDateString()
             ) === $latestForecastDate)
             ->values();
         $items = $latestSnapshots
