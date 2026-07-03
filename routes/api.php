@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->group(function () {
     Route::get('products', [ProductController::class, 'index'])->name('api.products.index');
     Route::get('products/{product}', [ProductController::class, 'show'])->name('api.products.show');
 

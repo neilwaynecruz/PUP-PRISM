@@ -10,6 +10,7 @@ use App\Models\Requisition;
 use App\Models\RequisitionTemplate;
 use App\Models\StockMovement;
 use App\Models\Supplier;
+use App\Models\User;
 use App\Policies\AssetPolicy;
 use App\Policies\BookingPolicy;
 use App\Policies\ProductPolicy;
@@ -18,6 +19,7 @@ use App\Policies\RequisitionPolicy;
 use App\Policies\RequisitionTemplatePolicy;
 use App\Policies\StockMovementPolicy;
 use App\Policies\SupplierPolicy;
+use App\Policies\UserPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
@@ -44,5 +46,6 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(StockMovement::class, StockMovementPolicy::class);
         Gate::policy(Supplier::class, SupplierPolicy::class);
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
+        Gate::policy(User::class, UserPolicy::class);
     }
 }

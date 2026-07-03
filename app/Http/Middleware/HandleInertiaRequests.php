@@ -105,6 +105,7 @@ class HandleInertiaRequests extends Middleware
                 'createPurchaseOrders' => false,
                 'viewMovements' => false,
                 'viewAuditLogs' => false,
+                'viewUsers' => false,
             ];
         }
 
@@ -121,6 +122,7 @@ class HandleInertiaRequests extends Middleware
             'createPurchaseOrders' => $user->can('create', PurchaseOrder::class),
             'viewMovements' => $user->can('viewAny', StockMovement::class),
             'viewAuditLogs' => $user->can('viewAny', AuditLog::class),
+            'viewUsers' => $user->can('viewAny', User::class),
         ];
     }
 

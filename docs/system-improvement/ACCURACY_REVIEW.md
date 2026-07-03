@@ -1,0 +1,171 @@
+# Accuracy Review — System Improvement Analysis
+
+> **Review date:** 2026-07-03  
+> **Method:** Line-by-line verification against the live codebase (`app/`, `routes/`, `tests/`, `config/`).
+
+## Overall Verdict
+
+The analysis is **directionally correct** and the prioritization is sound, but several claims were **overstated**, **understated**, or **outdated**. The 10-feature roadmap remains valid after corrections — with Feature 7 significantly narrowed and Feature 3 elevated in severity.
+
+**Confidence after review:** ~85% accurate as-is; ~95% accurate with the corrections below applied.
+
+---
+
+## Verified Correct Claims
+
+| Claim | Evidence |
+| ----- | -------- |
+| Open Fortify registration, no role on create | `config/fortify.php` line 147; `CreateNewUser.php` lines 27–31 |
+| Sanctum `expiration => null` | `config/sanctum.php` line 53 |
+| API lacks `verified` middleware | `routes/api.php` line 19 |
+| `RequisitionPolicy::create()` returns `true` | `app/Policies/RequisitionPolicy.php` line 32 |
+| `BookingPolicy` has no `reject()` method | `app/Policies/BookingPolicy.php` — no `reject` |
+| `bulkReject` calls `authorize('reject')` | `BookingController.php` line 282 |
+| No `ForecastController` / forecasting pages | Glob search returns 0 files |
+| Notifications use `Queueable` but not `ShouldQueue` | All 7 files in `app/Notifications/` |
+| `InventoryRealtimeMessage` uses `ShouldBroadcastNow` | `app/Events/InventoryRealtimeMessage.php` line 7 |
+| `DashboardStatsService` has no `Cache::` usage | Grep returns no matches |
+| Playwright E2E not in CI | `.github/workflows/tests.yml` — Pest only |
+| `PurchaseOrderGenerator` uses forecast snapshots for qty | `PurchaseOrderGenerator.php` `resolveRecommendedQuantity()` |
+| PO `generate` action exists on controller | `PurchaseOrderController::generate()` line 285 |
+
+---
+
+## Corrections Required
+
+### 1. Feature 7 (Proactive Procurement) — OVERSTATED
+
+**Original claim:** Forecast snapshots do not drive proactive alerts; procurement is fully reactive.
+
+**Actual state:** `app:generate-demand-forecasts` already:
+- Persists `ForecastSnapshot` records
+- Creates `forecast_stockout` `InventoryAlert` rows via `syncForecastAlerts()` in `GenerateDemandForecasts.php`
+- Is tested in `DemandForecastingTest.php` and `InventoryAlertsTest.php`
+
+**What is still missing (revised scope):**
+- `PurchaseOrderGenerator::generateFromAlerts()` only includes products where `on_hand_qty <= reorder_threshold` — forecast-urgent products **above** threshold are excluded from auto PO drafts
+- No `ProcurementRecommendationNotification` when forecast alerts are created
+- No forecasting UI button to generate POs from forecast-urgent items
+- Redundant to add a separate `app:procurement-scan-forecasts` command
+
+**Revised priority:** Medium (was High)
+
+---
+
+### 2. Feature 3 (Booking Reject) — UNDERSTATED
+
+**Original claim:** `bulkReject` may fail due to missing `reject()` policy.
+
+**Actual state — worse than documented:**
+- `bookings/Show.vue` gates the reject button on `can.reject` (line 132), which calls `$user->can('reject', $booking)` — returns **false** when policy method is missing
+- **Single reject UI is also broken** — reject dialog never appears for authorized users
+- `update()` uses `authorize('approve')` for both approve and reject actions, but the reject form is hidden behind `can.reject`
+- `bulkReject` will 403 on every iteration
+
+**Revised priority:** High → **Critical** (user-facing workflow broken)
+
+---
+
+### 3. Feature 1 (Open Registration) — Needs nuance
+
+**Original claim:** Any user can register and access the system.
+
+**Nuance:**
+- Web inventory routes require `role:Admin|Supply Head|Property Custodian` middleware — roleless users **cannot** use inventory via the web UI
+- Real exposure: account sprawl, `/dashboard` access, and **API** access (`POST /api/requisitions` with a self-issued Sanctum token)
+- No token management UI exists today, but tokens can be created programmatically
+
+Risk remains **Critical** for production, but the attack path should be described as API + account sprawl, not full inventory access via web.
+
+---
+
+### 4. Feature 8 (Notification Preferences) — Duplicate framing
+
+**Original claim:** Implied building a notification center.
+
+**Actual state:** In-app notification center **already exists**:
+- `AppNotificationMenu.vue` with real-time Reverb + 60s polling fallback
+- `NotificationController` (mark read / read all)
+- `NotificationCenterTest.php`, `WorkflowNotificationsTest.php`
+
+**Revised scope:** Preferences and digests only — not a notification center.
+
+---
+
+### 5. Test count — OUTDATED
+
+**Original claim:** "149+ Pest tests"
+
+**Actual (2026-07-03):** `195 passed` (1 skipped), 1040 assertions — `php artisan test --compact`
+
+---
+
+### 6. AuditLogPolicy registration — Lower severity
+
+**Original claim:** `AuditLogPolicy` not registered is a gap.
+
+**Actual state:** `AuditLogController` calls `authorize('viewAny', AuditLog::class)` and tests pass. Laravel policy auto-discovery resolves `AuditLog` → `AuditLogPolicy` by naming convention. Explicit registration in `AuthServiceProvider` is **hygiene**, not a functional bug.
+
+---
+
+### 7. Dashboard HTTP caching — Clarification
+
+**Original claim:** Dashboard has no caching.
+
+**Actual state:**
+- No **application-level** cache in `DashboardStatsService` — **correct**
+- `HandleInertiaRequests` sets `Cache-Control: private, no-store` for **all** authenticated GETs — no 30s whitelist (despite `PRODUCTION_READINESS_PLAN.md` P3.7 changelog mentioning one; current code does not implement it)
+- `InertiaCacheHeadersTest.php` asserts `no-store`, not `max-age`
+
+Feature 9 (application-level cache) remains valid and is the right layer to optimize.
+
+---
+
+### 8. API `authorize('create')` on store — Clarification
+
+`Api\RequisitionController::store()` **does** call `$this->authorize('create', Requisition::class)` (line 55). The vulnerability is the **policy returning `true`**, not a missing authorize call. Web `RequisitionController::store()` lacks explicit authorize but is protected by route role middleware.
+
+---
+
+### 9. Model count
+
+**Original claim:** 22 Eloquent models  
+**Actual:** 21 model files in `app/Models/`
+
+Minor; does not affect recommendations.
+
+---
+
+## Gaps Not Covered in Original 10 Features
+
+These are real but were omitted (consider Phase 4 or add as Feature 11+):
+
+| Gap | Severity | Notes |
+| --- | -------- | ----- |
+| Booking reject UI broken (Show + bulk) | Critical | Covered by revised Feature 3 |
+| Spatie **permissions** tables unused (roles only) | Low | Over-provisioned RBAC infra |
+| `SESSION_ENCRYPT=false` default | Medium | Production hardening |
+| Handover verify routes lack `verified` middleware | Low | Documented in security audit |
+| No registration rate limit beyond Fortify login limits | Low | Separate from login throttle |
+| `trash:cleanup` command untested | Low | Covered in Feature 10 |
+| Bulk approve/reject/issue routes untested | Medium | Covered in Feature 10 |
+| `PurchaseOrderSentNotification` untested | Low | Minor test gap |
+| Unused frontend composables (`useOptimisticState`, etc.) | Low | Maintenance debt, not user-facing |
+
+---
+
+## Revised Priority Order
+
+1. **Critical:** Fix `BookingPolicy::reject()` (broken reject UI + bulk reject)
+2. **Critical:** Secure registration + API policy tightening
+3. **High:** Sanctum hardening, security headers, queued notifications
+4. **High:** Forecasting management UI (Feature 6)
+5. **Medium:** Forecast-driven PO extension (narrowed Feature 7), notification preferences, dashboard cache, observability
+
+---
+
+## Files Updated After This Review
+
+- `SYSTEM_IMPROVEMENT_ANALYSIS.md` — corrected Features 1, 3, 7, 8; test count; executive summary
+- `AI_IMPLEMENTATION_PROMPTS.md` — corrected Prompts 3 and 7
+- `IMPLEMENTATION_TRACKING.md` — updated priorities and added review note

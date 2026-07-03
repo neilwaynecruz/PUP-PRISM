@@ -1,25 +1,32 @@
 <?php
 
-use Laravel\Fortify\Features;
-
 beforeEach(function () {
-    $this->skipUnlessFortifyHas(Features::registration());
+    putenv('REGISTRATION_ENABLED=false');
+    $_ENV['REGISTRATION_ENABLED'] = 'false';
+    $_SERVER['REGISTRATION_ENABLED'] = 'false';
+
+    $this->refreshApplication();
+    $this->withoutVite();
 });
 
-test('registration screen can be rendered', function () {
-    $response = $this->get(route('register'));
+test('registration routes are unavailable when registration is disabled', function () {
+    $this->get('/register')->assertNotFound();
 
-    $response->assertOk();
-});
-
-test('new users can register', function () {
-    $response = $this->post(route('register.store'), [
-        'name' => 'Test User',
-        'email' => 'test@example.com',
+    $this->post('/register', [
+        'name' => 'Disabled Registration User',
+        'email' => 'disabled@example.test',
         'password' => 'password',
         'password_confirmation' => 'password',
-    ]);
+    ])->assertNotFound();
+});
 
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+test('registration screen can be rendered when registration is enabled', function () {
+    putenv('REGISTRATION_ENABLED=true');
+    $_ENV['REGISTRATION_ENABLED'] = 'true';
+    $_SERVER['REGISTRATION_ENABLED'] = 'true';
+
+    $this->refreshApplication();
+    $this->withoutVite();
+
+    $this->get('/register')->assertOk();
 });

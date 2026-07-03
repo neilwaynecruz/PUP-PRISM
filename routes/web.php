@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Inventory\AuditLogController;
 use App\Http\Controllers\Inventory\BookingController;
@@ -43,6 +44,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('admin/health', fn () => response()->noContent())
         ->middleware('role:Admin')
         ->name('admin.health');
+
+    Route::prefix('admin')->name('admin.')->middleware('role:Admin')->group(function () {
+        Route::get('users', [UserManagementController::class, 'index'])
+            ->name('users.index');
+
+        Route::get('users/create', [UserManagementController::class, 'create'])
+            ->name('users.create');
+
+        Route::post('users', [UserManagementController::class, 'store'])
+            ->name('users.store');
+
+        Route::get('users/{managedUser}/edit', [UserManagementController::class, 'edit'])
+            ->name('users.edit');
+
+        Route::put('users/{managedUser}', [UserManagementController::class, 'update'])
+            ->name('users.update');
+
+        Route::patch('users/{managedUser}/deactivate', [UserManagementController::class, 'deactivate'])
+            ->name('users.deactivate');
+    });
 
     Route::prefix('inventory')->name('inventory.')->group(function () {
         Route::middleware('role:Admin|Property Custodian')->group(function () {

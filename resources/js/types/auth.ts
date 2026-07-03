@@ -22,6 +22,7 @@ export type AuthPermissions = {
     createPurchaseOrders: boolean;
     viewMovements: boolean;
     viewAuditLogs: boolean;
+    viewUsers: boolean;
 };
 
 export type Auth = {

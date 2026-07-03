@@ -32,6 +32,7 @@ import {
     create as suppliersCreate,
     index as suppliersIndex,
 } from '@/routes/inventory/suppliers';
+import { index as adminUsersIndex } from '@/routes/admin/users';
 import type { Auth, AuthPermissions, NavItem } from '@/types';
 
 type InventoryNavItem = NavItem & {
@@ -56,6 +57,7 @@ const defaultPermissions: AuthPermissions = {
     createPurchaseOrders: false,
     viewMovements: false,
     viewAuditLogs: false,
+    viewUsers: false,
 };
 
 const mainNavigationItems: InventoryNavItem[] = [
@@ -117,6 +119,12 @@ const mainNavigationItems: InventoryNavItem[] = [
         href: auditLogsIndex(),
         icon: History,
         permission: 'viewAuditLogs',
+    },
+    {
+        title: 'Users',
+        href: adminUsersIndex(),
+        icon: ShieldCheck,
+        permission: 'viewUsers',
     },
 ];
 
@@ -239,6 +247,14 @@ const searchNavigationItems: InventorySearchItem[] = [
         description: 'Profile, appearance, and account settings',
         keywords: ['settings', 'profile', 'security', 'appearance'],
     },
+    {
+        title: 'Users',
+        href: adminUsersIndex(),
+        icon: ShieldCheck,
+        description: 'Provision and manage internal user accounts',
+        keywords: ['users', 'accounts', 'admin', 'roles'],
+        permission: 'viewUsers',
+    },
 ];
 
 function filterByPermission<T extends { permission?: keyof AuthPermissions }>(
@@ -356,13 +372,19 @@ export function useInventoryNavigation() {
             },
             {
                 group: 'System',
-                items: [
+                items: filterByPermission([
+                    {
+                        title: 'Users',
+                        href: adminUsersIndex(),
+                        icon: ShieldCheck,
+                        permission: 'viewUsers',
+                    },
                     {
                         title: 'Settings',
                         href: '/settings/profile',
                         icon: Settings,
                     }
-                ]
+                ], perms)
             }
         ].filter(g => g.items.length > 0);
     });

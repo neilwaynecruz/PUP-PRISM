@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
-import { register } from '@/routes';
 import { store } from '@/routes/login';
 import { request } from '@/routes/password';
 
@@ -143,7 +142,7 @@ defineProps<{
         >
             Do not have an account?
             <TextLink
-                :href="register()"
+                href="/register"
                 class="font-semibold text-blue-700 underline-offset-4 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                 :tabindex="6"
             >
