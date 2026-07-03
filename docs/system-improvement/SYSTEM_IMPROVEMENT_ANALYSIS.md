@@ -11,11 +11,11 @@
 
 PUP PRISM is a mature, university-focused inventory and procurement platform for PUP's Supply and Property Management Office (SPMO). The system covers the full operational lifecycle: product catalog, stock receiving (including batch and QR), requisitions with approval/issue workflows, asset bookings, accountable handovers with signature verification, supplier and purchase order management, demand forecasting, audit trails, CSV/PDF reports, real-time notifications, and a Sanctum REST API.
 
-**What is already strong:** 195 Pest tests (verified 2026-07-03), Playwright E2E suites, role-based access at routes/policies/frontend, soft deletes with unified trash, email notifications for 7 workflow events, statistical demand forecasting with `forecast_stockout` alerts, forecast-aware PO quantity resolution, in-app notification center with Reverb, and real-time updates.
+**What is already strong:** Pest coverage across authentication, inventory, API, and settings flows (expanded 2026-07-03), Playwright E2E suites, role-based access at routes/policies/frontend, soft deletes with unified trash, email notifications for 7 workflow events, statistical demand forecasting with `forecast_stockout` alerts, forecast-aware PO quantity resolution, in-app notification center with Reverb, and real-time updates.
 
-**Where improvement is needed:** Security hardening (open registration, permissive API policies, non-expiring tokens), **booking reject workflow bug**, surfacing existing intelligence (no dedicated forecasting UI), async infrastructure (synchronous mail/broadcast), dashboard query performance, production observability, and closing the forecast-to-PO loop for pre-threshold products.
+**Where improvement is needed:** **booking reject workflow bug**, surfacing existing intelligence (no dedicated forecasting UI), async infrastructure (synchronous mail/broadcast), dashboard query performance, production observability, and closing the forecast-to-PO loop for pre-threshold products.
 
-**Strategic approach:** Prioritize security and authorization fixes first, then expose and automate existing forecasting intelligence, then optimize performance and operations. Avoid feature bloat — each recommendation solves a verified gap in the current codebase.
+**Strategic approach:** Recent work already closed the highest-risk auth gaps with invite-only registration, verified/scoped API access, and expiring Sanctum tokens. Next, prioritize the broken booking reject workflow, then expose and automate existing forecasting intelligence, and finally optimize performance and operations. Avoid feature bloat — each recommendation solves a verified gap in the current codebase.
 
 ```mermaid
 flowchart TB
@@ -123,6 +123,8 @@ Admin provisioning wizard with role-based defaults (e.g., Property Custodian aut
 #### 1. Feature Name
 
 API & Sanctum Token Hardening
+
+**Implementation status:** ✅ Completed on 2026-07-03. Sanctum tokens now expire via `SANCTUM_TOKEN_EXPIRATION`, API routes enforce `verified` plus read/write ability middleware, requisition/booking create policies require inventory roles, and Admin/Supply Head users can self-manage scoped tokens from Settings.
 
 #### 2. Current Problem or Limitation
 
@@ -752,7 +754,7 @@ See [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) for the **live** 
 | Feature | Priority | Complexity | Risk | Status |
 | ------- | -------- | ---------- | ---- | ------ |
 | Secure Registration & Admin User Provisioning | Critical | Medium | Medium | ✅ DONE |
-| API & Sanctum Token Hardening | Critical | Medium | Low | NOT STARTED |
+| API & Sanctum Token Hardening | Critical | Medium | Low | ✅ DONE |
 | Authorization & Booking Reject Bug Fix | Critical | Low | Low | NOT STARTED |
 | Production Security Headers & Handover Signature Validation | High | Low-Medium | Low | NOT STARTED |
 | Queued Notifications & Async Broadcasting | High | Medium | Medium | NOT STARTED |
@@ -769,11 +771,11 @@ See [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) for the **live** 
 | Metric | Value |
 | ------ | ----- |
 | Total features suggested | 10 |
-| Total features implemented | 1 |
-| Total features not started | 9 |
+| Total features implemented | 2 |
+| Total features not started | 8 |
 | Total features in progress | 0 |
 | Total features blocked | 0 |
-| Overall completion percentage | 10% |
+| Overall completion percentage | 20% |
 
 ## Final Project Status
 

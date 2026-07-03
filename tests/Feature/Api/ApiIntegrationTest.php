@@ -10,11 +10,12 @@ use App\Models\Product;
 use App\Models\Requisition;
 use App\Models\StockMovement;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
 
 uses()->group('api-integration');
 
 beforeEach(function () {
-    (new \Database\Seeders\RoleSeeder)->run();
+    (new RoleSeeder)->run();
 });
 
 /* --------------------------------------------------------------------------
@@ -28,7 +29,17 @@ it('rejects unauthenticated api requests', function () {
 
 it('rejects unauthorized users from products api', function () {
     $user = User::factory()->create();
-    $token = $user->createToken('test')->plainTextToken;
+    $token = $user->createToken('test', ['read'])->plainTextToken;
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->getJson('/api/products')
+        ->assertForbidden();
+});
+
+it('rejects unverified users from api routes', function () {
+    $user = User::factory()->unverified()->create();
+    $user->assignRole('Admin');
+    $token = $user->createToken('test', ['read'])->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$token}")
         ->getJson('/api/products')
@@ -42,7 +53,7 @@ it('rejects unauthorized users from products api', function () {
 it('lists products with pagination for authorized user', function () {
     $admin = User::factory()->create();
     $admin->assignRole('Admin');
-    $token = $admin->createToken('test')->plainTextToken;
+    $token = $admin->createToken('test', ['read'])->plainTextToken;
 
     $origin = Origin::factory()->create();
     $category = Category::factory()->create();
@@ -52,7 +63,7 @@ it('lists products with pagination for authorized user', function () {
             'type' => ProductType::Consumable,
             'origin_id' => $origin->id,
             'category_id' => $category->id,
-            'sku' => 'SKU-LIST-' . $i,
+            'sku' => 'SKU-LIST-'.$i,
         ]);
     }
 
@@ -83,7 +94,7 @@ it('filters products by type', function () {
             'type' => ProductType::Consumable,
             'origin_id' => $origin->id,
             'category_id' => $category->id,
-            'sku' => 'CONS-' . $i,
+            'sku' => 'CONS-'.$i,
         ]);
     }
 
@@ -92,7 +103,7 @@ it('filters products by type', function () {
             'type' => ProductType::Asset,
             'origin_id' => $origin->id,
             'category_id' => $category->id,
-            'sku' => 'AST-' . $i,
+            'sku' => 'AST-'.$i,
         ]);
     }
 
@@ -164,7 +175,7 @@ it('filters assets by status', function () {
     ]);
 
     $response = $this->withHeader('Authorization', "Bearer {$token}")
-        ->getJson('/api/assets?status=' . AssetStatus::CheckedOut->value)
+        ->getJson('/api/assets?status='.AssetStatus::CheckedOut->value)
         ->assertOk();
 
     expect($response->json('meta.total'))->toBe(2);
@@ -195,7 +206,7 @@ it('lists stock movements with date filtering', function () {
     ]);
 
     $response = $this->withHeader('Authorization', "Bearer {$token}")
-        ->getJson('/api/stock-movements?from=' . now()->subDays(5)->toDateString())
+        ->getJson('/api/stock-movements?from='.now()->subDays(5)->toDateString())
         ->assertOk();
 
     expect($response->json('meta.total'))->toBe(3);
@@ -222,7 +233,7 @@ it('lists requisitions', function () {
 it('creates a requisition via api', function () {
     $user = User::factory()->create();
     $user->assignRole('Admin');
-    $token = $user->createToken('test')->plainTextToken;
+    $token = $user->createToken('test', ['write'])->plainTextToken;
 
     $product = Product::factory()->create([
         'type' => ProductType::Consumable,
@@ -256,7 +267,7 @@ it('creates a requisition via api', function () {
 it('validates requisition api input', function () {
     $user = User::factory()->create();
     $user->assignRole('Admin');
-    $token = $user->createToken('test')->plainTextToken;
+    $token = $user->createToken('test', ['write'])->plainTextToken;
 
     $this->withHeader('Authorization', "Bearer {$token}")
         ->postJson('/api/requisitions', [
@@ -266,4 +277,45 @@ it('validates requisition api input', function () {
         ])
         ->assertUnprocessable()
         ->assertJsonValidationErrors(['lines.0.product_id', 'lines.0.qty_requested']);
+});
+
+it('rejects requisition creation for users without inventory roles', function () {
+    $user = User::factory()->create();
+    $token = $user->createToken('test', ['write'])->plainTextToken;
+
+    $product = Product::factory()->create([
+        'type' => ProductType::Consumable,
+        'origin_id' => Origin::factory()->create()->id,
+        'category_id' => Category::factory()->create()->id,
+    ]);
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/requisitions', [
+            'notes' => 'Blocked requisition',
+            'lines' => [
+                ['product_id' => $product->id, 'qty_requested' => 1],
+            ],
+        ])
+        ->assertForbidden();
+});
+
+it('rejects requisition creation for read-only tokens', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Admin');
+    $token = $user->createToken('test', ['read'])->plainTextToken;
+
+    $product = Product::factory()->create([
+        'type' => ProductType::Consumable,
+        'origin_id' => Origin::factory()->create()->id,
+        'category_id' => Category::factory()->create()->id,
+    ]);
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->postJson('/api/requisitions', [
+            'notes' => 'Read-only requisition',
+            'lines' => [
+                ['product_id' => $product->id, 'qty_requested' => 1],
+            ],
+        ])
+        ->assertForbidden();
 });

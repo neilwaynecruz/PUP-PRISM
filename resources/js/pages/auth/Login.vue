@@ -118,7 +118,7 @@ defineProps<{
                     id="remember"
                     name="remember"
                     :tabindex="3"
-                    class="size-[1.125rem] rounded-[0.3rem] border-slate-400 data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600"
+                    class="size-4.5 rounded-[0.3rem] border-slate-400 data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600"
                 />
                 <span>Remember me on this device</span>
             </Label>

@@ -29,7 +29,7 @@ class RequisitionPolicy
      */
     public function create(User $user): bool
     {
-        return true;
+        return $user->hasAnyRole(['Admin', 'Supply Head', 'Property Custodian']);
     }
 
     /**

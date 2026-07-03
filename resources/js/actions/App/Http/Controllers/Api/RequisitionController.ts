@@ -1,60 +1,5 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
-* @see \App\Http\Controllers\Api\RequisitionController::store
- * @see app/Http/Controllers/Api/RequisitionController.php:53
- * @route '/api/requisitions'
- */
-export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(options),
-    method: 'post',
-})
-
-store.definition = {
-    methods: ["post"],
-    url: '/api/requisitions',
-} satisfies RouteDefinition<["post"]>
-
-/**
-* @see \App\Http\Controllers\Api\RequisitionController::store
- * @see app/Http/Controllers/Api/RequisitionController.php:53
- * @route '/api/requisitions'
- */
-store.url = (options?: RouteQueryOptions) => {
-    return store.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\Api\RequisitionController::store
- * @see app/Http/Controllers/Api/RequisitionController.php:53
- * @route '/api/requisitions'
- */
-store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(options),
-    method: 'post',
-})
-
-    /**
-* @see \App\Http\Controllers\Api\RequisitionController::store
- * @see app/Http/Controllers/Api/RequisitionController.php:53
- * @route '/api/requisitions'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Api\RequisitionController::store
- * @see app/Http/Controllers/Api/RequisitionController.php:53
- * @route '/api/requisitions'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
-/**
 * @see \App\Http\Controllers\Api\RequisitionController::index
  * @see app/Http/Controllers/Api/RequisitionController.php:16
  * @route '/api/requisitions'
@@ -234,6 +179,61 @@ show.head = (args: { requisition: number | { id: number } } | [requisition: numb
         })
     
     show.form = showForm
-const RequisitionController = { store, index, show }
+/**
+* @see \App\Http\Controllers\Api\RequisitionController::store
+ * @see app/Http/Controllers/Api/RequisitionController.php:53
+ * @route '/api/requisitions'
+ */
+export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(options),
+    method: 'post',
+})
+
+store.definition = {
+    methods: ["post"],
+    url: '/api/requisitions',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\Api\RequisitionController::store
+ * @see app/Http/Controllers/Api/RequisitionController.php:53
+ * @route '/api/requisitions'
+ */
+store.url = (options?: RouteQueryOptions) => {
+    return store.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Api\RequisitionController::store
+ * @see app/Http/Controllers/Api/RequisitionController.php:53
+ * @route '/api/requisitions'
+ */
+store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\Api\RequisitionController::store
+ * @see app/Http/Controllers/Api/RequisitionController.php:53
+ * @route '/api/requisitions'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\RequisitionController::store
+ * @see app/Http/Controllers/Api/RequisitionController.php:53
+ * @route '/api/requisitions'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
+const RequisitionController = { index, show, store }
 
 export default RequisitionController

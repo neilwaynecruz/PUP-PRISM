@@ -11,7 +11,7 @@ The analysis is **directionally correct** and the prioritization is sound, but s
 
 ---
 
-## Verified Correct Claims
+## Verified Correct Claims At Review Time
 
 | Claim | Evidence |
 | ----- | -------- |
@@ -28,6 +28,17 @@ The analysis is **directionally correct** and the prioritization is sound, but s
 | Playwright E2E not in CI | `.github/workflows/tests.yml` — Pest only |
 | `PurchaseOrderGenerator` uses forecast snapshots for qty | `PurchaseOrderGenerator.php` `resolveRecommendedQuantity()` |
 | PO `generate` action exists on controller | `PurchaseOrderController::generate()` line 285 |
+
+---
+
+## Post-Implementation Updates
+
+The following review findings were correct when this document was written, but they are **no longer current** after the completed security work on 2026-07-03:
+
+- `config/sanctum.php` no longer uses `expiration => null`; it now reads `SANCTUM_TOKEN_EXPIRATION` with a 90-day default.
+- `routes/api.php` no longer lacks `verified` middleware; the protected API group keeps `verified` and now also splits read/write routes behind Sanctum ability middleware.
+- `RequisitionPolicy::create()` and `BookingPolicy::create()` no longer return `true` for every authenticated user; they now require `Admin`, `Supply Head`, or `Property Custodian`.
+- API token management is no longer test-only; Admin and Supply Head users now have a Settings-based token creation and revocation UI with one-time plaintext exposure.
 
 ---
 
