@@ -56,6 +56,11 @@ Policies and route middleware enforce access for inventory operations, requisiti
 - Background: Database queue, scheduled command `app:inventory-generate-alerts`
 - Typed routes/actions: Wayfinder plugin generates `@/routes` and `@/actions` at build time
 
+## Observability & Operations
+- Optional [Sentry](https://sentry.io) error tracking: set `SENTRY_LARAVEL_DSN` in production `.env` (leave empty locally to disable). Unhandled exceptions are reported only when the DSN is configured.
+- Admin health JSON: `GET /admin/health` (Admin role) returns `failed_jobs_count`, `queue_connection`, and `scheduler_last_runs` for scheduled commands.
+- Scheduled commands (`app:generate-demand-forecasts`, `app:inventory-generate-alerts`, `trash:cleanup`) record last-success timestamps in cache for health checks.
+
 ## Testing
 - Unit/Feature: `php artisan test --compact`
 - Fast checks (lint, prettier, TS): `npm run lint:check && npm run format:check && npm run types:check`
@@ -73,6 +78,10 @@ Policies and route middleware enforce access for inventory operations, requisiti
   - `npm run e2e:ui`
   - `npm run e2e:report`
 - The Playwright config starts `php artisan serve --env=e2e` automatically. Browser tests use seeded E2E users plus targeted Artisan helpers for email verification and deterministic handover verification tokens.
+
+### CI (GitHub Actions)
+- Pest feature/unit tests: `.github/workflows/tests.yml`
+- Playwright browser E2E: `.github/workflows/e2e.yml` (PHP 8.4, `npm ci`, `npm run build`, `php artisan e2e:setup --fresh`, Chromium via Playwright)
 
 ## Deployment Checklist (Production)
 1. Environment

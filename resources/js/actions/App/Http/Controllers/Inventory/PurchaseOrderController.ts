@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::index
  * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:31
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::index
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:31
+ * @route '/inventory/purchase-orders'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::index
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:31
+ * @route '/inventory/purchase-orders'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::index
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:31
+ * @route '/inventory/purchase-orders'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::create
  * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:82
@@ -85,6 +120,41 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::create
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:82
+ * @route '/inventory/purchase-orders/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::create
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:82
+ * @route '/inventory/purchase-orders/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::create
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:82
+ * @route '/inventory/purchase-orders/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::store
  * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:92
@@ -119,6 +189,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::store
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:92
+ * @route '/inventory/purchase-orders'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::store
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:92
+ * @route '/inventory/purchase-orders'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generate
  * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:285
@@ -153,6 +244,27 @@ generate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::generate
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:285
+ * @route '/inventory/purchase-orders/generate'
+ */
+    const generateForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: generate.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::generate
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:285
+ * @route '/inventory/purchase-orders/generate'
+ */
+        generateForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: generate.url(options),
+            method: 'post',
+        })
+    
+    generate.form = generateForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
  * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:308
@@ -187,6 +299,27 @@ generateFromForecasts.post = (options?: RouteQueryOptions): RouteDefinition<'pos
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:308
+ * @route '/inventory/purchase-orders/generate-from-forecasts'
+ */
+    const generateFromForecastsForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: generateFromForecasts.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:308
+ * @route '/inventory/purchase-orders/generate-from-forecasts'
+ */
+        generateFromForecastsForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: generateFromForecasts.url(options),
+            method: 'post',
+        })
+    
+    generateFromForecasts.form = generateFromForecastsForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::show
  * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:140
@@ -254,6 +387,41 @@ show.head = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: 
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::show
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:140
+ * @route '/inventory/purchase-orders/{purchaseOrder}'
+ */
+    const showForm = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::show
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:140
+ * @route '/inventory/purchase-orders/{purchaseOrder}'
+ */
+        showForm.get = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::show
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:140
+ * @route '/inventory/purchase-orders/{purchaseOrder}'
+ */
+        showForm.head = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::send
  * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:161
@@ -312,6 +480,37 @@ send.put = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: n
     method: 'put',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::send
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:161
+ * @route '/inventory/purchase-orders/{purchaseOrder}/send'
+ */
+    const sendForm = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: send.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::send
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:161
+ * @route '/inventory/purchase-orders/{purchaseOrder}/send'
+ */
+        sendForm.put = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: send.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    send.form = sendForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::receive
  * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:205
@@ -370,6 +569,27 @@ receive.post = (args: { purchaseOrder: number | { id: number } } | [purchaseOrde
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::receive
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:205
+ * @route '/inventory/purchase-orders/{purchaseOrder}/receive'
+ */
+    const receiveForm = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: receive.url(args, options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::receive
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:205
+ * @route '/inventory/purchase-orders/{purchaseOrder}/receive'
+ */
+        receiveForm.post = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: receive.url(args, options),
+            method: 'post',
+        })
+    
+    receive.form = receiveForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::cancel
  * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:252
@@ -427,6 +647,38 @@ cancel.put = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder:
     url: cancel.url(args, options),
     method: 'put',
 })
+
+    /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::cancel
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:252
+ * @route '/inventory/purchase-orders/{purchaseOrder}/cancel'
+ */
+    const cancelForm = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: cancel.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\PurchaseOrderController::cancel
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:252
+ * @route '/inventory/purchase-orders/{purchaseOrder}/cancel'
+ */
+        cancelForm.put = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: cancel.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    cancel.form = cancelForm
 const PurchaseOrderController = { index, create, store, generate, generateFromForecasts, show, send, receive, cancel }
 
 export default PurchaseOrderController

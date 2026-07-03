@@ -24,7 +24,7 @@
 | Forecast-Driven Procurement Extension | Medium | Low-Medium | Low | ✅ DONE |
 | Notification Preferences & Smart Digests | Medium | Medium | Low | ✅ DONE |
 | Dashboard Performance Caching Layer | Medium | Low-Medium | Low | ✅ DONE |
-| Observability, Scheduler Health & E2E in CI | Medium | Medium | Low | ⬜ NOT STARTED |
+| Observability, Scheduler Health & E2E in CI | Medium | Medium | Low | ✅ DONE |
 
 ## P1 Deployment Tasks (Separate — from PRODUCTION_READINESS_PLAN.md)
 
@@ -43,11 +43,11 @@
 | Metric | Count |
 | ------ | ----- |
 | Total features suggested | 10 |
-| Total features implemented | 9 |
-| Total features not started | 1 |
+| Total features implemented | 10 |
+| Total features not started | 0 |
 | Total features in progress | 0 |
 | Total features blocked | 0 |
-| Overall completion percentage | 90% |
+| Overall completion percentage | 100% |
 
 ## Feature Completion Log
 
@@ -55,6 +55,7 @@
 
 | Date | Feature | Status | Tests | Notes |
 | ---- | ------- | ------ | ----- | ----- |
+| 2026-07-04 | Observability, Scheduler Health & E2E in CI | ✅ DONE | `php artisan test --compact tests/Feature/Admin/AdminHealthTest.php tests/Feature/Console/CleanupTrashTest.php tests/Feature/Inventory/BulkWorkflowTest.php tests/Feature/Authorization/RbacAccessTest.php`; `vendor/bin/pint --dirty --format agent` | Optional `sentry/sentry-laravel` (DSN-gated in `bootstrap/app.php`); `HealthController` exposes `failed_jobs_count`, `queue_connection`, `scheduler_last_runs`; `SchedulerHeartbeat` on scheduled commands; `CleanupTrashTest` and bulk workflow Pest tests; `.github/workflows/e2e.yml` runs Playwright on push/PR. |
 | 2026-07-04 | Dashboard Performance Caching Layer | ✅ DONE | `php artisan test --compact --filter=Dashboard`; `vendor/bin/pint --dirty --format agent` | Added configurable dashboard stats cache with version-based invalidation, observers for stock movements/requisitions/bookings/purchase orders, and dashboard cache regression tests. |
 | 2026-07-04 | Notification Preferences & Smart Digests | ✅ DONE | `php artisan test --compact tests/Feature/Settings/NotificationPreferenceTest.php`; `php artisan test --compact tests/Feature/Notifications/WorkflowNotificationsTest.php`; `php artisan wayfinder:generate`; `vendor/bin/pint --dirty --format agent` | Added `notification_preferences` storage, role-based defaults, settings UI toggle grid, preference-aware notification channels, `app:send-notification-digests` scheduled at 08:00, and user provisioning seeding. |
 | 2026-07-04 | Forecast-Driven Procurement Extension | ✅ DONE | `php artisan test --compact tests/Feature/Inventory/ForecastDrivenProcurementTest.php`; `php artisan test --compact tests/Feature/Notifications/WorkflowNotificationsTest.php`; `php artisan wayfinder:generate`; `vendor/bin/pint --dirty --format agent` | Added `generateFromForecastAlerts()` for above-threshold `forecast_stockout` alerts, `ProcurementRecommendationNotification` on new alert creation, purchase-order generate-from-forecasts route/action/button, and focused regression tests. |
@@ -67,6 +68,6 @@
 
 ## Final Project Status
 
-🚧 **PROJECT STATUS: IN PROGRESS**
+✅ **FEATURE ROADMAP: COMPLETE** (10/10)
 
-Any feature not started, incomplete, or blocked keeps the project in IN PROGRESS status.
+All recommended features are implemented and tested. P1 deployment configuration tasks (mailer, queue worker, cron, etc.) remain separate — see table above.

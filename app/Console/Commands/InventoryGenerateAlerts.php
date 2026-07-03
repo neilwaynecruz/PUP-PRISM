@@ -6,6 +6,7 @@ use App\Enums\ProductType;
 use App\Models\InventoryAlert;
 use App\Models\Product;
 use App\Models\StockLot;
+use App\Support\SchedulerHeartbeat;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -98,6 +99,8 @@ class InventoryGenerateAlerts extends Command
         $staleExpiringAlerts->update(['resolved_at' => $now]);
 
         $this->info('Inventory alerts generated.');
+
+        SchedulerHeartbeat::record(SchedulerHeartbeat::COMMAND_INVENTORY_GENERATE_ALERTS);
 
         return self::SUCCESS;
     }

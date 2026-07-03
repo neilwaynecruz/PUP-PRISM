@@ -25,7 +25,7 @@ The analysis is **directionally correct** and the prioritization is sound, but s
 | Notifications use `Queueable` but not `ShouldQueue` | All 7 files in `app/Notifications/` — fixed 2026-07-03; all implement `ShouldQueue` on the `notifications` queue |
 | `InventoryRealtimeMessage` uses `ShouldBroadcastNow` | `app/Events/InventoryRealtimeMessage.php` — fixed 2026-07-03; now implements `ShouldBroadcast` |
 | `DashboardStatsService` has no `Cache::` usage | Grep returns no matches — fixed 2026-07-04; `getAdminStats()` and `getProcurementStats()` use `DashboardStatsCache` |
-| Playwright E2E not in CI | `.github/workflows/tests.yml` — Pest only |
+| Playwright E2E not in CI | Fixed 2026-07-04 — `.github/workflows/e2e.yml` runs Playwright on push/PR; Pest remains in `tests.yml` |
 | `PurchaseOrderGenerator` uses forecast snapshots for qty | `PurchaseOrderGenerator.php` `resolveRecommendedQuantity()` |
 | PO `generate` action exists on controller | `PurchaseOrderController::generate()` line 285 |
 
@@ -47,6 +47,7 @@ The following review findings were correct when this document was written, but t
 - Forecast-driven procurement closes the loop from `forecast_stockout` alerts: `PurchaseOrderGenerator::generateFromForecastAlerts()` drafts POs for above-threshold forecast-urgent products; `ProcurementRecommendationNotification` notifies Supply Head on new alert creation; purchase orders Index exposes "Generate from forecasts".
 - Notification preferences and daily digests are implemented: users manage mail/in-app/realtime channels per event type in Settings; `NotificationService` and notification `via()` respect stored or role-based defaults; `app:send-notification-digests` batches daily email summaries.
 - Dashboard aggregate stats are cached via `DashboardStatsCache` (`DASHBOARD_CACHE_ENABLED`, `DASHBOARD_CACHE_TTL`) with version-based invalidation on stock movements, requisition/booking status changes, and purchase order updates. User-specific notifications in shared Inertia props remain uncached.
+- Observability and CI E2E are implemented: optional `sentry/sentry-laravel` (env-gated via `SENTRY_LARAVEL_DSN`); `admin/health` returns `failed_jobs_count`, `queue_connection`, and `scheduler_last_runs`; scheduled commands record heartbeats via `SchedulerHeartbeat`; `CleanupTrashTest` and `BulkWorkflowTest` cover prior gaps; Playwright runs in `.github/workflows/e2e.yml`.
 
 ---
 
@@ -166,8 +167,8 @@ These are real but were omitted (consider Phase 4 or add as Feature 11+):
 | `SESSION_ENCRYPT=false` default | Medium | Production hardening |
 | Handover verify routes lack `verified` middleware | Low | Documented in security audit |
 | No registration rate limit beyond Fortify login limits | Low | Separate from login throttle |
-| `trash:cleanup` command untested | Low | Covered in Feature 10 |
-| Bulk approve/reject/issue routes untested | Medium | Covered in Feature 10 |
+| `trash:cleanup` command untested | Low | Fixed 2026-07-04 — `CleanupTrashTest.php` |
+| Bulk approve/reject/issue routes untested | Medium | Fixed 2026-07-04 — `BulkWorkflowTest.php` (requisitions: bulk-approve, bulk-issue; bookings: bulk-reject) |
 | `PurchaseOrderSentNotification` untested | Low | Minor test gap |
 | Unused frontend composables (`useOptimisticState`, etc.) | Low | Maintenance debt, not user-facing |
 

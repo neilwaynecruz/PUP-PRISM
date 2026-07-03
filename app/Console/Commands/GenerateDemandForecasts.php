@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Services\Forecasting\Data\ForecastResult;
 use App\Services\Forecasting\DemandForecaster;
 use App\Services\NotificationService;
+use App\Support\SchedulerHeartbeat;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -36,6 +37,8 @@ class GenerateDemandForecasts extends Command
         $this->syncForecastAlerts($results, $asOf, $productId, $notificationService);
 
         $this->components->info(sprintf('Generated %d demand forecast snapshot(s).', count($results)));
+
+        SchedulerHeartbeat::record(SchedulerHeartbeat::COMMAND_GENERATE_DEMAND_FORECASTS);
 
         return self::SUCCESS;
     }

@@ -25,6 +25,7 @@ test('verified users with Admin role can access role-protected route', function 
     $user->assignRole('Admin');
 
     $this->actingAs($user)
-        ->get(route('admin.health', absolute: false))
-        ->assertNoContent();
+        ->getJson(route('admin.health', absolute: false))
+        ->assertOk()
+        ->assertJsonPath('status', 'ok');
 });

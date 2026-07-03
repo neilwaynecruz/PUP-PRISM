@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\NotificationController::markAsRead
  * @see app/Http/Controllers/NotificationController.php:11
@@ -52,6 +52,37 @@ markAsRead.put = (args: { notification: string | number } | [notification: strin
     method: 'put',
 })
 
+    /**
+* @see \App\Http\Controllers\NotificationController::markAsRead
+ * @see app/Http/Controllers/NotificationController.php:11
+ * @route '/notifications/{notification}/read'
+ */
+    const markAsReadForm = (args: { notification: string | number } | [notification: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: markAsRead.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificationController::markAsRead
+ * @see app/Http/Controllers/NotificationController.php:11
+ * @route '/notifications/{notification}/read'
+ */
+        markAsReadForm.put = (args: { notification: string | number } | [notification: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: markAsRead.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    markAsRead.form = markAsReadForm
 /**
 * @see \App\Http\Controllers\NotificationController::markAllAsRead
  * @see app/Http/Controllers/NotificationController.php:26
@@ -85,6 +116,38 @@ markAllAsRead.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: markAllAsRead.url(options),
     method: 'put',
 })
+
+    /**
+* @see \App\Http\Controllers\NotificationController::markAllAsRead
+ * @see app/Http/Controllers/NotificationController.php:26
+ * @route '/notifications/read-all'
+ */
+    const markAllAsReadForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: markAllAsRead.url({
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificationController::markAllAsRead
+ * @see app/Http/Controllers/NotificationController.php:26
+ * @route '/notifications/read-all'
+ */
+        markAllAsReadForm.put = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: markAllAsRead.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    markAllAsRead.form = markAllAsReadForm
 const NotificationController = { markAsRead, markAllAsRead }
 
 export default NotificationController

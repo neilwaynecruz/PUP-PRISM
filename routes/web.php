@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\HealthController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Inventory\AuditLogController;
@@ -42,7 +43,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('read-all');
     });
 
-    Route::get('admin/health', fn () => response()->noContent())
+    Route::get('admin/health', HealthController::class)
         ->middleware('role:Admin')
         ->name('admin.health');
 

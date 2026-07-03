@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Booking;
 use App\Models\Product;
 use App\Models\Requisition;
+use App\Support\SchedulerHeartbeat;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 
@@ -92,6 +93,7 @@ class CleanupTrash extends Command
             $this->warn("Would have deleted {$total} item(s) in total");
         } else {
             $this->info("✓ Cleanup complete. Deleted {$total} item(s) in total");
+            SchedulerHeartbeat::record(SchedulerHeartbeat::COMMAND_TRASH_CLEANUP);
         }
 
         return self::SUCCESS;
