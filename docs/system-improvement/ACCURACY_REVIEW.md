@@ -41,6 +41,7 @@ The following review findings were correct when this document was written, but t
 - API token management is no longer test-only; Admin and Supply Head users now have a Settings-based token creation and revocation UI with one-time plaintext exposure.
 - `BookingPolicy` now defines `reject()`; the booking Show-page reject dialog and `bulkReject` workflow are functional again for Admin and Property Custodian approvers on requested bookings.
 - Web `BookingController::store()` and `RequisitionController::store()` now call `authorize('create', ...)`; `AuditLogPolicy` is explicitly registered in `AuthServiceProvider`.
+- Security headers middleware is registered on the web stack, handover signatures are validated as PNG data URIs, and verification tokens are session-backed after the initial email-link redirect.
 
 ---
 

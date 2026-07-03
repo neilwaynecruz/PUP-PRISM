@@ -51,22 +51,22 @@ test('property custodian can initiate handover and recipient can verify (creates
         ])
         ->assertRedirect();
 
-    $handoverLogId = null;
-    $token = null;
+    $capturedNotification = null;
 
-    Notification::assertSentTo($recipient, HandoverVerificationNotification::class, function (HandoverVerificationNotification $notification) use (&$handoverLogId, &$token) {
-        $handoverLogId = $notification->handoverLogId;
-        $token = $notification->token;
+    Notification::assertSentTo($recipient, HandoverVerificationNotification::class, function (HandoverVerificationNotification $notification) use (&$capturedNotification): bool {
+        $capturedNotification = $notification;
 
         return $notification->handoverLogId > 0 && $notification->token !== '';
     });
 
+    assert($capturedNotification instanceof HandoverVerificationNotification);
+
     $this->actingAs($recipient)
         ->withSession(['_token' => $verifyToken])
-        ->post(route('inventory.handover.verify.submit', ['handoverLog' => $handoverLogId], absolute: false), [
+        ->post(route('inventory.handover.verify.submit', ['handoverLog' => $capturedNotification->handoverLogId], absolute: false), [
             '_token' => $verifyToken,
-            'token' => $token,
-            'signature_png' => 'data:image/png;base64,AAAA',
+            'token' => $capturedNotification->token,
+            'signature_png' => validHandoverSignaturePng(),
         ])
         ->assertRedirect(route('inventory.handover.index', absolute: false));
 
@@ -74,7 +74,7 @@ test('property custodian can initiate handover and recipient can verify (creates
     expect($asset->status)->toBe(AssetStatus::CheckedOut);
     expect($asset->position_id)->toBe($recipientPosition->id);
 
-    $handover = HandoverLog::query()->findOrFail($handoverLogId);
+    $handover = HandoverLog::query()->findOrFail($capturedNotification->handoverLogId);
     expect($handover->from_position_id)->toBe($custodianPosition->id);
     expect($handover->to_position_id)->toBe($recipientPosition->id);
     expect($handover->verified_by)->toBe($recipient->id);
@@ -116,17 +116,83 @@ test('recipient can open the verification page for a pending handover', function
         'to_position_id' => $recipientPosition->id,
     ]);
 
+    $previewToken = 'preview-token';
+
     $this->actingAs($recipient)
-        ->get(route('inventory.handover.verify', ['handoverLog' => $handover, 'token' => 'preview-token'], absolute: false))
+        ->get(route('inventory.handover.verify', ['handoverLog' => $handover, 'token' => $previewToken], absolute: false))
+        ->assertRedirect(route('inventory.handover.verify', $handover, absolute: false));
+
+    $this->actingAs($recipient)
+        ->get(route('inventory.handover.verify', $handover, absolute: false))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('inventory/handover/Verify')
             ->where('handover.id', $handover->id)
-            ->where('handover.token', 'preview-token')
+            ->where('handover.token', $previewToken)
             ->where('email_verified', true));
 });
 
-test('oversized handover signatures are rejected before verification completes', function () {
+test('invalid handover signature formats are rejected', function (string $signature) {
+    $recipientPosition = Position::factory()->create();
+    $csrfToken = 'handover-invalid-signature-token';
+    $recipient = User::factory()->assignedPosition($recipientPosition)->create();
+    $recipient->markEmailAsVerified();
+
+    $plainToken = 'handover-invalid-signature-plain-token';
+    $handover = HandoverLog::factory()->create([
+        'to_user_id' => $recipient->id,
+        'to_position_id' => $recipientPosition->id,
+        'verification_token_hash' => hash('sha256', $plainToken),
+    ]);
+
+    $this->actingAs($recipient)
+        ->withSession(['_token' => $csrfToken])
+        ->post(route('inventory.handover.verify.submit', $handover, absolute: false), [
+            '_token' => $csrfToken,
+            'token' => $plainToken,
+            'signature_png' => $signature,
+        ])
+        ->assertSessionHasErrors(['signature_png']);
+
+    $handover->refresh();
+
+    expect($handover->verified_at)->toBeNull();
+    expect($handover->signature_png)->toBeNull();
+})->with([
+    'non data uri' => 'not-a-signature',
+    'jpeg data uri' => 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD',
+    'invalid png magic bytes' => 'data:image/png;base64,AAAA',
+]);
+
+test('valid png data uri signatures are accepted', function () {
+    $recipientPosition = Position::factory()->create();
+    $csrfToken = 'handover-valid-signature-token';
+    $recipient = User::factory()->assignedPosition($recipientPosition)->create();
+    $recipient->markEmailAsVerified();
+
+    $plainToken = 'handover-valid-signature-plain-token';
+    $handover = HandoverLog::factory()->create([
+        'to_user_id' => $recipient->id,
+        'to_position_id' => $recipientPosition->id,
+        'verification_token_hash' => hash('sha256', $plainToken),
+    ]);
+
+    $this->actingAs($recipient)
+        ->withSession(['_token' => $csrfToken])
+        ->post(route('inventory.handover.verify.submit', $handover, absolute: false), [
+            '_token' => $csrfToken,
+            'token' => $plainToken,
+            'signature_png' => validHandoverSignaturePng(),
+        ])
+        ->assertRedirect(route('inventory.handover.index', absolute: false));
+
+    $handover->refresh();
+
+    expect($handover->verified_at)->not->toBeNull();
+    expect($handover->signature_png)->toBe(validHandoverSignaturePng());
+});
+
+test('oversized decoded handover signatures are rejected before verification completes', function () {
     $recipientPosition = Position::factory()->create();
     $csrfToken = 'handover-oversize-token';
     $recipient = User::factory()->assignedPosition($recipientPosition)->create();
@@ -139,7 +205,8 @@ test('oversized handover signatures are rejected before verification completes',
         'verification_token_hash' => hash('sha256', $plainToken),
     ]);
 
-    $oversizedSignature = 'data:image/png;base64,'.str_repeat('A', 300001);
+    $oversizedDecoded = "\x89PNG".str_repeat("\x00", 512001 - 4);
+    $oversizedSignature = 'data:image/png;base64,'.base64_encode($oversizedDecoded);
 
     $this->actingAs($recipient)
         ->withSession(['_token' => $csrfToken])
@@ -176,4 +243,17 @@ test('verified recipients can download the handover receipt pdf', function () {
 
     expect((string) $response->headers->get('content-type'))->toContain('application/pdf');
     expect((string) $response->headers->get('content-disposition'))->toContain('.pdf');
+});
+
+test('web responses include security headers', function () {
+    $user = User::factory()->create();
+    $user->assignRole('Admin');
+
+    $response = $this->actingAs($user)
+        ->get(route('inventory.handover.index', absolute: false));
+
+    $response->assertOk();
+    expect($response->headers->get('X-Frame-Options'))->toBe('DENY');
+    expect($response->headers->get('X-Content-Type-Options'))->toBe('nosniff');
+    expect($response->headers->get('Referrer-Policy'))->toBe('strict-origin-when-cross-origin');
 });

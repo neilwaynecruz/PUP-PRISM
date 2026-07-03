@@ -37,7 +37,7 @@ const signaturePad = ref<SignaturePadInstance | null>(null);
 const signaturePng = ref<string>('');
 const signatureSizeError = ref<string>('');
 const signaturePngInput = ref<HTMLInputElement | null>(null);
-const maxSignatureBytes = 300000;
+const maxSignatureBytes = 682700;
 
 function captureSignature(event?: Event): void {
     const pad = signaturePad.value;

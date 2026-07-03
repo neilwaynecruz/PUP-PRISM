@@ -12,6 +12,7 @@ use App\Models\HandoverLog;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Notifications\HandoverVerificationNotification;
+use App\Services\Inventory\HandoverSignatureValidator;
 use App\Services\InventoryRealtimeService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
@@ -25,6 +26,7 @@ class HandoverController extends Controller
 {
     public function __construct(
         private readonly InventoryRealtimeService $realtime,
+        private readonly HandoverSignatureValidator $signatureValidator,
     ) {}
 
     public function index(Request $request): Response
@@ -130,8 +132,12 @@ class HandoverController extends Controller
         }
 
         $request->validate([
-            'signature_png' => ['required', 'string', 'max:300000'],
+            'signature_png' => ['required', 'string'],
         ]);
+
+        $signaturePng = $this->signatureValidator->validate(
+            $request->string('signature_png')->toString(),
+        );
 
         $token = $request->string('token')->toString();
 
@@ -139,7 +145,7 @@ class HandoverController extends Controller
             abort(403);
         }
 
-        DB::transaction(function () use ($request, $handoverLog, $user): void {
+        DB::transaction(function () use ($request, $handoverLog, $user, $signaturePng): void {
             $handoverLog = HandoverLog::query()->whereKey($handoverLog->id)->lockForUpdate()->firstOrFail();
 
             if ($handoverLog->verified_at !== null) {
@@ -153,7 +159,7 @@ class HandoverController extends Controller
                 'verified_by' => $user->id,
                 'verified_ip_address' => $request->ip(),
                 'verification_token_hash' => null,
-                'signature_png' => $request->string('signature_png')->toString() ?: null,
+                'signature_png' => $signaturePng,
             ]);
 
             $asset->update([
@@ -178,6 +184,8 @@ class HandoverController extends Controller
             ]);
         });
         $this->realtime->handoverVerified($handoverLog->fresh() ?? $handoverLog);
+
+        $request->session()->forget("handover_verify_token.{$handoverLog->id}");
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Handover verified.')]);
 
