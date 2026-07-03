@@ -21,11 +21,33 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardStatsService
 {
+    public function __construct(
+        private readonly DashboardStatsCache $cache,
+    ) {}
+
     /**
      * @param  array{from: string|null, to: string|null}  $range
      * @return array<string, mixed>
      */
     public function getAdminStats(array $range): array
+    {
+        return $this->cache->remember('admin', $range, fn (): array => $this->buildAdminStats($range));
+    }
+
+    /**
+     * @param  array{from: string|null, to: string|null}  $range
+     * @return array<string, mixed>
+     */
+    public function getProcurementStats(array $range): array
+    {
+        return $this->cache->remember('procurement', $range, fn (): array => $this->buildProcurementStats($range));
+    }
+
+    /**
+     * @param  array{from: string|null, to: string|null}  $range
+     * @return array<string, mixed>
+     */
+    private function buildAdminStats(array $range): array
     {
         $from = isset($range['from']) ? CarbonImmutable::parse($range['from'])->startOfDay() : CarbonImmutable::now()->startOfMonth();
         $to = isset($range['to']) ? CarbonImmutable::parse($range['to'])->endOfDay() : CarbonImmutable::now()->endOfDay();
@@ -51,7 +73,7 @@ class DashboardStatsService
      * @param  array{from: string|null, to: string|null}  $range
      * @return array<string, mixed>
      */
-    public function getProcurementStats(array $range): array
+    private function buildProcurementStats(array $range): array
     {
         $from = isset($range['from']) ? CarbonImmutable::parse($range['from'])->startOfDay() : CarbonImmutable::now()->startOfMonth();
         $to = isset($range['to']) ? CarbonImmutable::parse($range['to'])->endOfDay() : CarbonImmutable::now()->endOfDay();
@@ -132,7 +154,9 @@ class DashboardStatsService
                 'reorder_point_qty' => $snapshot->reorder_point_qty,
                 'predicted_daily_consumption' => round($snapshot->predicted_daily_consumption, 2),
                 'predicted_days_until_stockout' => $snapshot->predicted_days_until_stockout,
-                'predicted_stockout_date' => $snapshot->predicted_stockout_date?->toDateString(),
+                'predicted_stockout_date' => $snapshot->predicted_stockout_date !== null
+                    ? CarbonImmutable::parse((string) $snapshot->predicted_stockout_date)->toDateString()
+                    : null,
                 'recommended_reorder_qty' => $snapshot->recommended_reorder_qty,
                 'confidence_score' => $snapshot->confidence_score !== null
                     ? round($snapshot->confidence_score, 2)

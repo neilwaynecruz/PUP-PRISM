@@ -602,7 +602,7 @@ Dashboard Performance Caching Layer
 
 #### 2. Current Problem or Limitation
 
-`DashboardStatsService` executes 15+ aggregate queries per dashboard load (`getAdminStats`, `getProcurementStats`) with no application-level cache. Only product reference options (categories, origins) are cached in `ProductController`. Under concurrent users, dashboard becomes a DB hotspot.
+`DashboardStatsService` executes 15+ aggregate queries per dashboard load (`getAdminStats`, `getProcurementStats`). **Implemented 2026-07-04:** `DashboardStatsCache` wraps role-specific outputs in `Cache::remember` (default 90s TTL, configurable via `DASHBOARD_CACHE_ENABLED` / `DASHBOARD_CACHE_TTL`). Invalidation runs on stock movements, requisition/booking status changes, and purchase order saves. User-specific notifications in `HandleInertiaRequests` are not cached.
 
 #### 3. Why This Feature Matters
 
@@ -766,7 +766,7 @@ See [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) for the **live** 
 | Forecasting Management Module (Dedicated UI) | High | Medium | Low | ✅ DONE |
 | Forecast-Driven Procurement Extension (revised) | Medium | Low–Medium | Low | ✅ DONE |
 | Notification Preferences & Smart Digests | Medium | Medium | Low | ✅ DONE |
-| Dashboard Performance Caching Layer | Medium | Low-Medium | Low | NOT STARTED |
+| Dashboard Performance Caching Layer | Medium | Low-Medium | Low | ✅ DONE |
 | Observability, Scheduler Health & E2E in CI | Medium | Medium | Low | NOT STARTED |
 
 ---
@@ -776,11 +776,11 @@ See [IMPLEMENTATION_TRACKING.md](./IMPLEMENTATION_TRACKING.md) for the **live** 
 | Metric | Value |
 | ------ | ----- |
 | Total features suggested | 10 |
-| Total features implemented | 8 |
-| Total features not started | 2 |
+| Total features implemented | 9 |
+| Total features not started | 1 |
 | Total features in progress | 0 |
 | Total features blocked | 0 |
-| Overall completion percentage | 80% |
+| Overall completion percentage | 90% |
 
 ## Final Project Status
 

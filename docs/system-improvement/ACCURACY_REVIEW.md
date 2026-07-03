@@ -24,7 +24,7 @@ The analysis is **directionally correct** and the prioritization is sound, but s
 | No `ForecastController` / forecasting pages | Glob search returns 0 files — fixed 2026-07-03; `ForecastController` plus `inventory/forecasting/Index.vue` and `Show.vue` added |
 | Notifications use `Queueable` but not `ShouldQueue` | All 7 files in `app/Notifications/` — fixed 2026-07-03; all implement `ShouldQueue` on the `notifications` queue |
 | `InventoryRealtimeMessage` uses `ShouldBroadcastNow` | `app/Events/InventoryRealtimeMessage.php` — fixed 2026-07-03; now implements `ShouldBroadcast` |
-| `DashboardStatsService` has no `Cache::` usage | Grep returns no matches |
+| `DashboardStatsService` has no `Cache::` usage | Grep returns no matches — fixed 2026-07-04; `getAdminStats()` and `getProcurementStats()` use `DashboardStatsCache` |
 | Playwright E2E not in CI | `.github/workflows/tests.yml` — Pest only |
 | `PurchaseOrderGenerator` uses forecast snapshots for qty | `PurchaseOrderGenerator.php` `resolveRecommendedQuantity()` |
 | PO `generate` action exists on controller | `PurchaseOrderController::generate()` line 285 |
@@ -46,6 +46,7 @@ The following review findings were correct when this document was written, but t
 - Dedicated forecasting management UI is available at `/inventory/forecasting` for Admin and Supply Head users, with profile tuning and consumable forecast detail views.
 - Forecast-driven procurement closes the loop from `forecast_stockout` alerts: `PurchaseOrderGenerator::generateFromForecastAlerts()` drafts POs for above-threshold forecast-urgent products; `ProcurementRecommendationNotification` notifies Supply Head on new alert creation; purchase orders Index exposes "Generate from forecasts".
 - Notification preferences and daily digests are implemented: users manage mail/in-app/realtime channels per event type in Settings; `NotificationService` and notification `via()` respect stored or role-based defaults; `app:send-notification-digests` batches daily email summaries.
+- Dashboard aggregate stats are cached via `DashboardStatsCache` (`DASHBOARD_CACHE_ENABLED`, `DASHBOARD_CACHE_TTL`) with version-based invalidation on stock movements, requisition/booking status changes, and purchase order updates. User-specific notifications in shared Inertia props remain uncached.
 
 ---
 
@@ -130,12 +131,12 @@ Risk remains **Critical** for production, but the attack path should be describe
 
 **Original claim:** Dashboard has no caching.
 
-**Actual state:**
-- No **application-level** cache in `DashboardStatsService` — **correct**
-- `HandleInertiaRequests` sets `Cache-Control: private, no-store` for **all** authenticated GETs — no 30s whitelist (despite `PRODUCTION_READINESS_PLAN.md` P3.7 changelog mentioning one; current code does not implement it)
+**Actual state (updated 2026-07-04):**
+- `DashboardStatsService` now caches `getAdminStats()` and `getProcurementStats()` via `DashboardStatsCache` (`DASHBOARD_CACHE_ENABLED`, default 90s TTL)
+- `HandleInertiaRequests` sets `Cache-Control: private, no-store` for **all** authenticated GETs — browser HTTP caching remains disabled; application-level aggregate caching is separate
 - `InertiaCacheHeadersTest.php` asserts `no-store`, not `max-age`
 
-Feature 9 (application-level cache) remains valid and is the right layer to optimize.
+Feature 9 (application-level cache) is implemented.
 
 ---
 

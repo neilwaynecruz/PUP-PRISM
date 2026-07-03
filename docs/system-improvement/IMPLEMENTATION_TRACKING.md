@@ -23,7 +23,7 @@
 | Forecasting Management Module (Dedicated UI) | High | Medium | Low | ✅ DONE |
 | Forecast-Driven Procurement Extension | Medium | Low-Medium | Low | ✅ DONE |
 | Notification Preferences & Smart Digests | Medium | Medium | Low | ✅ DONE |
-| Dashboard Performance Caching Layer | Medium | Low-Medium | Low | ⬜ NOT STARTED |
+| Dashboard Performance Caching Layer | Medium | Low-Medium | Low | ✅ DONE |
 | Observability, Scheduler Health & E2E in CI | Medium | Medium | Low | ⬜ NOT STARTED |
 
 ## P1 Deployment Tasks (Separate — from PRODUCTION_READINESS_PLAN.md)
@@ -43,11 +43,11 @@
 | Metric | Count |
 | ------ | ----- |
 | Total features suggested | 10 |
-| Total features implemented | 8 |
-| Total features not started | 2 |
+| Total features implemented | 9 |
+| Total features not started | 1 |
 | Total features in progress | 0 |
 | Total features blocked | 0 |
-| Overall completion percentage | 80% |
+| Overall completion percentage | 90% |
 
 ## Feature Completion Log
 
@@ -55,6 +55,7 @@
 
 | Date | Feature | Status | Tests | Notes |
 | ---- | ------- | ------ | ----- | ----- |
+| 2026-07-04 | Dashboard Performance Caching Layer | ✅ DONE | `php artisan test --compact --filter=Dashboard`; `vendor/bin/pint --dirty --format agent` | Added configurable dashboard stats cache with version-based invalidation, observers for stock movements/requisitions/bookings/purchase orders, and dashboard cache regression tests. |
 | 2026-07-04 | Notification Preferences & Smart Digests | ✅ DONE | `php artisan test --compact tests/Feature/Settings/NotificationPreferenceTest.php`; `php artisan test --compact tests/Feature/Notifications/WorkflowNotificationsTest.php`; `php artisan wayfinder:generate`; `vendor/bin/pint --dirty --format agent` | Added `notification_preferences` storage, role-based defaults, settings UI toggle grid, preference-aware notification channels, `app:send-notification-digests` scheduled at 08:00, and user provisioning seeding. |
 | 2026-07-04 | Forecast-Driven Procurement Extension | ✅ DONE | `php artisan test --compact tests/Feature/Inventory/ForecastDrivenProcurementTest.php`; `php artisan test --compact tests/Feature/Notifications/WorkflowNotificationsTest.php`; `php artisan wayfinder:generate`; `vendor/bin/pint --dirty --format agent` | Added `generateFromForecastAlerts()` for above-threshold `forecast_stockout` alerts, `ProcurementRecommendationNotification` on new alert creation, purchase-order generate-from-forecasts route/action/button, and focused regression tests. |
 | 2026-07-03 | Forecasting Management Module (Dedicated UI) | ✅ DONE | `php artisan test --compact --filter=Forecasting`; `npm run build`; `vendor/bin/pint --dirty --format agent` | Added ForecastController with index/show/profile update, forecasting Index and Show Vue pages, nav permission, ForecastPresenter extraction, and forecasting page regression tests. |
