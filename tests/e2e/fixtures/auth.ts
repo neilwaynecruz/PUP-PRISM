@@ -1,12 +1,20 @@
 import type { Page } from '@playwright/test';
 import { confirmTwoFactor, verifyEmail } from '../helpers/db';
 
+type LoginOptions = {
+    skipPrivilegedTwoFactorAutoconfirm?: boolean;
+};
+
 export async function loginAs(
     page: Page,
     email: string,
     password: string = 'password',
+    options: LoginOptions = {},
 ): Promise<void> {
-    if (['admin@e2e.test', 'supply@e2e.test'].includes(email)) {
+    if (
+        !options.skipPrivilegedTwoFactorAutoconfirm &&
+        ['admin@e2e.test', 'supply@e2e.test'].includes(email)
+    ) {
         confirmTwoFactor(email);
     }
 

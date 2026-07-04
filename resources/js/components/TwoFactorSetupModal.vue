@@ -26,7 +26,7 @@ import type { TwoFactorConfigContent } from '@/types';
 
 type Props = {
     requiresConfirmation: boolean;
-    twoFactorEnabled: boolean;
+    twoFactorConfirmed: boolean;
 };
 
 const { resolvedAppearance } = useAppearance();
@@ -35,8 +35,14 @@ const props = defineProps<Props>();
 const isOpen = defineModel<boolean>('isOpen');
 
 const { copy, copied } = useClipboard();
-const { qrCodeSvg, manualSetupKey, clearSetupData, fetchSetupData, errors } =
-    useTwoFactorAuth();
+const {
+    qrCodeSvg,
+    manualSetupKey,
+    clearSetupData,
+    fetchSetupData,
+    errors,
+    hasSetupData,
+} = useTwoFactorAuth();
 
 const showVerificationStep = ref(false);
 const code = ref<string>('');
@@ -44,7 +50,7 @@ const code = ref<string>('');
 const pinInputContainerRef = useTemplateRef('pinInputContainerRef');
 
 const modalConfig = computed<TwoFactorConfigContent>(() => {
-    if (props.twoFactorEnabled) {
+    if (props.twoFactorConfirmed) {
         return {
             title: 'Two-factor authentication enabled',
             description:
@@ -70,7 +76,7 @@ const modalConfig = computed<TwoFactorConfigContent>(() => {
 });
 
 const handleModalNextStep = () => {
-    if (props.requiresConfirmation) {
+    if (!props.twoFactorConfirmed && props.requiresConfirmation) {
         showVerificationStep.value = true;
 
         nextTick(() => {
@@ -85,7 +91,7 @@ const handleModalNextStep = () => {
 };
 
 const resetModalState = () => {
-    if (props.twoFactorEnabled) {
+    if (props.twoFactorConfirmed) {
         clearSetupData();
     }
 
@@ -102,7 +108,7 @@ watch(
             return;
         }
 
-        if (!qrCodeSvg.value) {
+        if (!props.twoFactorConfirmed && !hasSetupData.value) {
             await fetchSetupData();
         }
     },
@@ -152,8 +158,10 @@ watch(
                 class="relative flex w-auto flex-col items-center justify-center space-y-5"
             >
                 <template v-if="!showVerificationStep">
-                    <AlertError v-if="errors?.length" :errors="errors" />
-                    <template v-else>
+                    <div v-if="errors?.length" class="w-full">
+                        <AlertError :errors="errors" />
+                    </div>
+                    <template>
                         <div
                             class="relative mx-auto flex max-w-md items-center overflow-hidden"
                         >
@@ -209,9 +217,12 @@ watch(
                             >
                                 <div
                                     v-if="!manualSetupKey"
-                                    class="flex h-full w-full items-center justify-center bg-muted p-3"
+                                    class="flex h-full w-full items-center justify-center bg-muted p-3 text-center text-sm text-muted-foreground"
                                 >
-                                    <Spinner />
+                                    <Spinner v-if="!errors?.length" />
+                                    <span v-else>
+                                        Setup key unavailable right now.
+                                    </span>
                                 </div>
                                 <template v-else>
                                     <input

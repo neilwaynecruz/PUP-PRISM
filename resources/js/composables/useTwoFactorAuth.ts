@@ -1,19 +1,22 @@
+import { HttpResponseError } from '@inertiajs/core';
 import { useHttp } from '@inertiajs/vue3';
 import type { ComputedRef, Ref } from 'vue';
 import { computed, ref } from 'vue';
-import { qrCode, recoveryCodes, secretKey } from '@/routes/two-factor';
+import {
+    setupData as securitySetupData,
+} from '@/actions/App/Http/Controllers/Settings/SecurityController';
+import { recoveryCodes } from '@/routes/two-factor';
 
 export type UseTwoFactorAuthReturn = {
     qrCodeSvg: Ref<string | null>;
     manualSetupKey: Ref<string | null>;
     recoveryCodesList: Ref<string[]>;
     errors: Ref<string[]>;
+    isLoadingSetupData: Ref<boolean>;
     hasSetupData: ComputedRef<boolean>;
     clearSetupData: () => void;
     clearErrors: () => void;
     clearTwoFactorAuthData: () => void;
-    fetchQrCode: () => Promise<void>;
-    fetchSetupKey: () => Promise<void>;
     fetchSetupData: () => Promise<void>;
     fetchRecoveryCodes: () => Promise<void>;
 };
@@ -22,44 +25,33 @@ const errors = ref<string[]>([]);
 const manualSetupKey = ref<string | null>(null);
 const qrCodeSvg = ref<string | null>(null);
 const recoveryCodesList = ref<string[]>([]);
+const isLoadingSetupData = ref<boolean>(false);
 
 const hasSetupData = computed<boolean>(
     () => qrCodeSvg.value !== null && manualSetupKey.value !== null,
 );
 
+const resolveErrorMessage = (
+    error: unknown,
+    fallbackMessage: string,
+): string => {
+    if (
+        error instanceof HttpResponseError &&
+        error.response.status === 423
+    ) {
+        return 'Password confirmation expired. Please confirm your password again and retry two-factor setup.';
+    }
+
+    return fallbackMessage;
+};
+
 export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
     const http = useHttp();
-
-    const fetchQrCode = async (): Promise<void> => {
-        try {
-            const { svg } = (await http.submit(qrCode())) as {
-                svg: string;
-                url: string;
-            };
-
-            qrCodeSvg.value = svg;
-        } catch {
-            errors.value.push('Failed to fetch QR code');
-            qrCodeSvg.value = null;
-        }
-    };
-
-    const fetchSetupKey = async (): Promise<void> => {
-        try {
-            const { secretKey: key } = (await http.submit(secretKey())) as {
-                secretKey: string;
-            };
-
-            manualSetupKey.value = key;
-        } catch {
-            errors.value.push('Failed to fetch a setup key');
-            manualSetupKey.value = null;
-        }
-    };
 
     const clearSetupData = (): void => {
         manualSetupKey.value = null;
         qrCodeSvg.value = null;
+        isLoadingSetupData.value = false;
         clearErrors();
     };
 
@@ -79,8 +71,10 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
             recoveryCodesList.value = (await http.submit(
                 recoveryCodes(),
             )) as string[];
-        } catch {
-            errors.value.push('Failed to fetch recovery codes');
+        } catch (error: unknown) {
+            errors.value.push(
+                resolveErrorMessage(error, 'Failed to fetch recovery codes'),
+            );
             recoveryCodesList.value = [];
         }
     };
@@ -88,10 +82,24 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
     const fetchSetupData = async (): Promise<void> => {
         try {
             clearErrors();
-            await Promise.all([fetchQrCode(), fetchSetupKey()]);
-        } catch {
+            isLoadingSetupData.value = true;
+
+            const response = (await http.submit(securitySetupData())) as {
+                svg: string;
+                secretKey: string;
+                url: string;
+            };
+
+            qrCodeSvg.value = response.svg;
+            manualSetupKey.value = response.secretKey;
+        } catch (error: unknown) {
+            errors.value.push(
+                resolveErrorMessage(error, 'Failed to load two-factor setup data'),
+            );
             qrCodeSvg.value = null;
             manualSetupKey.value = null;
+        } finally {
+            isLoadingSetupData.value = false;
         }
     };
 
@@ -100,12 +108,11 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
         manualSetupKey,
         recoveryCodesList,
         errors,
+        isLoadingSetupData,
         hasSetupData,
         clearSetupData,
         clearErrors,
         clearTwoFactorAuthData,
-        fetchQrCode,
-        fetchSetupKey,
         fetchSetupData,
         fetchRecoveryCodes,
     };

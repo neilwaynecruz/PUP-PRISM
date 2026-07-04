@@ -47,6 +47,7 @@ class EnsurePrivilegedTwoFactorIsConfirmed
             'logout',
             'session/keep-alive',
             'settings/security',
+            'settings/security/two-factor/setup-data',
             'settings/password',
             'user/confirm-password',
             'user/confirm-password/*',

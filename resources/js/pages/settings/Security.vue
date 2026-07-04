@@ -31,6 +31,7 @@ type Props = {
     requiresPrivilegedTwoFactor?: boolean;
     twoFactorConfirmed?: boolean;
     twoFactorEnabled?: boolean;
+    twoFactorSetupPending?: boolean;
 };
 
 const props = withDefaults(defineProps<Props>(), {
@@ -39,6 +40,7 @@ const props = withDefaults(defineProps<Props>(), {
     requiresPrivilegedTwoFactor: false,
     twoFactorConfirmed: false,
     twoFactorEnabled: false,
+    twoFactorSetupPending: false,
 });
 
 defineOptions({
@@ -52,11 +54,21 @@ defineOptions({
     },
 });
 
-const { hasSetupData, clearTwoFactorAuthData } = useTwoFactorAuth();
+const {
+    hasSetupData,
+    clearTwoFactorAuthData,
+} = useTwoFactorAuth();
 const showSetupModal = ref<boolean>(false);
 const shouldShowMandatoryTwoFactorNotice = computed<boolean>(
     () => props.requiresPrivilegedTwoFactor && !props.twoFactorConfirmed,
 );
+const hasPendingTwoFactorSetup = computed<boolean>(
+    () => props.twoFactorSetupPending,
+);
+
+const openTwoFactorSetupModal = async (): Promise<void> => {
+    showSetupModal.value = true;
+};
 
 onUnmounted(() => clearTwoFactorAuthData());
 </script>
@@ -155,23 +167,29 @@ onUnmounted(() => clearTwoFactorAuthData());
         />
 
         <div
-            v-if="!twoFactorEnabled"
+            v-if="!twoFactorConfirmed"
             class="flex flex-col items-start justify-start space-y-4"
         >
             <p class="text-sm text-muted-foreground">
-                When you enable two-factor authentication, you will be prompted
-                for a secure pin during login. This pin can be retrieved from a
-                TOTP-supported application on your phone.
+                {{
+                    hasPendingTwoFactorSetup
+                        ? 'Finish confirming your authenticator app to complete two-factor setup and unlock recovery codes.'
+                        : 'When you enable two-factor authentication, you will be prompted for a secure pin during login. This pin can be retrieved from a TOTP-supported application on your phone.'
+                }}
             </p>
 
             <div>
-                <Button v-if="hasSetupData" @click="showSetupModal = true">
+                <Button
+                    v-if="hasSetupData || hasPendingTwoFactorSetup"
+                    @click="openTwoFactorSetupModal"
+                >
                     <ShieldCheck />Continue setup
                 </Button>
                 <Form
                     v-else
                     v-bind="enable.form()"
-                    @success="showSetupModal = true"
+                    :options="{ preserveScroll: true }"
+                    @success="openTwoFactorSetupModal"
                     #default="{ processing }"
                 >
                     <Button type="submit" :disabled="processing">
@@ -236,7 +254,7 @@ onUnmounted(() => clearTwoFactorAuthData());
         <TwoFactorSetupModal
             v-model:isOpen="showSetupModal"
             :requiresConfirmation="requiresConfirmation"
-            :twoFactorEnabled="twoFactorEnabled"
+            :twoFactorConfirmed="twoFactorConfirmed"
         />
     </div>
 </template>

@@ -29,6 +29,7 @@ test('security page is displayed', function () {
             ->where('canManageTwoFactor', true)
             ->where('twoFactorEnabled', false)
             ->where('twoFactorConfirmed', false)
+            ->where('twoFactorSetupPending', false)
             ->where('requiresPrivilegedTwoFactor', false),
         );
 });
@@ -102,6 +103,7 @@ test('security page renders without two factor when feature is disabled', functi
             ->component('settings/Security')
             ->where('canManageTwoFactor', false)
             ->missing('twoFactorEnabled')
+            ->missing('twoFactorSetupPending')
             ->missing('requiresConfirmation'),
         );
 });
@@ -152,6 +154,120 @@ test('two factor confirmation is audited when enabled', function () {
         'model_type' => 'User',
         'model_id' => $user->id,
     ]);
+});
+
+test('combined two factor setup data can be fetched before confirmation completes', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->post(route('two-factor.enable'))
+        ->assertRedirect();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->get(route('security.two-factor.setup-data'))
+        ->assertOk()
+        ->assertJsonStructure(['secretKey', 'svg', 'url']);
+});
+
+test('pending two factor setup remains available across repeated security page visits', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $user = User::factory()->create();
+
+    $user->forceFill([
+        'two_factor_secret' => encrypt('pending-setup-secret'),
+        'two_factor_recovery_codes' => encrypt(json_encode(['code-1', 'code-2'])),
+        'two_factor_confirmed_at' => null,
+    ])->save();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()]);
+
+    $this->get(route('security.edit'))->assertOk();
+
+    $this->get(route('security.edit'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('settings/Security')
+            ->where('twoFactorEnabled', false)
+            ->where('twoFactorConfirmed', false)
+            ->where('twoFactorSetupPending', true),
+        );
+
+    $this->get(route('security.two-factor.setup-data'))
+        ->assertOk()
+        ->assertJson([
+            'secretKey' => 'pending-setup-secret',
+        ])
+        ->assertJsonStructure(['svg', 'url']);
+});
+
+test('privileged users can fetch pending two factor setup data', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $user = User::factory()->create();
+    $user->assignRole('Admin');
+    $user->forceFill([
+        'two_factor_secret' => encrypt('privileged-pending-secret'),
+        'two_factor_recovery_codes' => encrypt(json_encode(['code-1', 'code-2'])),
+        'two_factor_confirmed_at' => null,
+    ])->save();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->get(route('security.two-factor.setup-data'))
+        ->assertOk()
+        ->assertJson([
+            'secretKey' => 'privileged-pending-secret',
+        ])
+        ->assertJsonStructure(['svg', 'url']);
+});
+
+test('security page keeps unconfirmed two factor setup in progress', function () {
+    $this->skipUnlessFortifyHas(Features::twoFactorAuthentication());
+
+    Features::twoFactorAuthentication([
+        'confirm' => true,
+        'confirmPassword' => true,
+    ]);
+
+    $user = User::factory()->create();
+
+    $user->forceFill([
+        'two_factor_secret' => encrypt('pending-setup-secret'),
+        'two_factor_recovery_codes' => encrypt(json_encode(['code-1', 'code-2'])),
+        'two_factor_confirmed_at' => null,
+    ])->save();
+
+    $this->actingAs($user)
+        ->withSession(['auth.password_confirmed_at' => time()])
+        ->get(route('security.edit'))
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('settings/Security')
+            ->where('twoFactorEnabled', false)
+            ->where('twoFactorConfirmed', false)
+            ->where('twoFactorSetupPending', true)
+            ->where('requiresConfirmation', true),
+        );
 });
 
 test('two factor disable is audited', function () {
