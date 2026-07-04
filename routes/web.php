@@ -1,8 +1,12 @@
 <?php
 
 use App\Http\Controllers\Admin\AlertsController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\HealthController;
 use App\Http\Controllers\Admin\OperationsHealthController;
+use App\Http\Controllers\Admin\OriginController;
+use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Inventory\AuditLogController;
@@ -73,6 +77,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::patch('users/{managedUser}/deactivate', [UserManagementController::class, 'deactivate'])
             ->name('users.deactivate');
+
+        Route::resource('departments', DepartmentController::class)->except(['show']);
+        Route::patch('departments/{department}/deactivate', [DepartmentController::class, 'deactivate'])
+            ->name('departments.deactivate');
+
+        Route::resource('positions', PositionController::class)->except(['show']);
+        Route::patch('positions/{position}/deactivate', [PositionController::class, 'deactivate'])
+            ->name('positions.deactivate');
+
+        Route::resource('categories', CategoryController::class)->except(['show']);
+        Route::patch('categories/{category}/deactivate', [CategoryController::class, 'deactivate'])
+            ->name('categories.deactivate');
+
+        Route::resource('origins', OriginController::class)->except(['show']);
+        Route::patch('origins/{origin}/deactivate', [OriginController::class, 'deactivate'])
+            ->name('origins.deactivate');
     });
 
     Route::prefix('admin/alerts')->name('admin.alerts.')->middleware('role:Admin|Supply Head')->group(function () {

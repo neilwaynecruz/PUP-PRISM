@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\AuditLogController::index
  * @see app/Http/Controllers/Inventory/AuditLogController.php:22
@@ -42,41 +42,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\AuditLogController::index
- * @see app/Http/Controllers/Inventory/AuditLogController.php:22
- * @route '/inventory/audit-logs'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\AuditLogController::index
- * @see app/Http/Controllers/Inventory/AuditLogController.php:22
- * @route '/inventory/audit-logs'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\AuditLogController::index
- * @see app/Http/Controllers/Inventory/AuditLogController.php:22
- * @route '/inventory/audit-logs'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\AuditLogController::exportMethod
  * @see app/Http/Controllers/Inventory/AuditLogController.php:185
@@ -119,42 +84,6 @@ exportMethod.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: exportMethod.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\AuditLogController::exportMethod
- * @see app/Http/Controllers/Inventory/AuditLogController.php:185
- * @route '/inventory/audit-logs/export'
- */
-    const exportMethodForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: exportMethod.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\AuditLogController::exportMethod
- * @see app/Http/Controllers/Inventory/AuditLogController.php:185
- * @route '/inventory/audit-logs/export'
- */
-        exportMethodForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: exportMethod.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\AuditLogController::exportMethod
- * @see app/Http/Controllers/Inventory/AuditLogController.php:185
- * @route '/inventory/audit-logs/export'
- */
-        exportMethodForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: exportMethod.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    exportMethod.form = exportMethodForm
 const AuditLogController = { index, exportMethod, export: exportMethod }
 
 export default AuditLogController

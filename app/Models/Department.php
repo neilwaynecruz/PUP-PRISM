@@ -15,6 +15,16 @@ class Department extends Model
     use HasFactory;
 
     /**
+     * @return array<string, string>
+     */
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+        ];
+    }
+
+    /**
      * @return HasMany<Position, $this>
      */
     public function positions(): HasMany

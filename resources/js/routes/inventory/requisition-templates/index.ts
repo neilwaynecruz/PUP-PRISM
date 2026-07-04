@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionTemplateController::store
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:15
@@ -33,27 +33,6 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionTemplateController::store
- * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:15
- * @route '/inventory/requisition-templates'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionTemplateController::store
- * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:15
- * @route '/inventory/requisition-templates'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionTemplateController::update
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:37
@@ -112,37 +91,6 @@ update.put = (args: { requisitionTemplate: number | { id: number } } | [requisit
     method: 'put',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionTemplateController::update
- * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:37
- * @route '/inventory/requisition-templates/{requisitionTemplate}'
- */
-    const updateForm = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: update.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PUT',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionTemplateController::update
- * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:37
- * @route '/inventory/requisition-templates/{requisitionTemplate}'
- */
-        updateForm.put = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: update.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PUT',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    update.form = updateForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionTemplateController::duplicate
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:60
@@ -201,27 +149,6 @@ duplicate.post = (args: { requisitionTemplate: number | { id: number } } | [requ
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionTemplateController::duplicate
- * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:60
- * @route '/inventory/requisition-templates/{requisitionTemplate}/duplicate'
- */
-    const duplicateForm = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: duplicate.url(args, options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionTemplateController::duplicate
- * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:60
- * @route '/inventory/requisition-templates/{requisitionTemplate}/duplicate'
- */
-        duplicateForm.post = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: duplicate.url(args, options),
-            method: 'post',
-        })
-    
-    duplicate.form = duplicateForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionTemplateController::destroy
  * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:78
@@ -279,38 +206,6 @@ destroy.delete = (args: { requisitionTemplate: number | { id: number } } | [requ
     url: destroy.url(args, options),
     method: 'delete',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\RequisitionTemplateController::destroy
- * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:78
- * @route '/inventory/requisition-templates/{requisitionTemplate}'
- */
-    const destroyForm = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: destroy.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\RequisitionTemplateController::destroy
- * @see app/Http/Controllers/Inventory/RequisitionTemplateController.php:78
- * @route '/inventory/requisition-templates/{requisitionTemplate}'
- */
-        destroyForm.delete = (args: { requisitionTemplate: number | { id: number } } | [requisitionTemplate: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: destroy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    destroy.form = destroyForm
 const requisitionTemplates = {
     store: Object.assign(store, store),
 update: Object.assign(update, update),

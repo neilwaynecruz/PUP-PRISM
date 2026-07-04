@@ -19,6 +19,7 @@ class OriginFactory extends Factory
     {
         return [
             'name' => fake()->unique()->randomElement(['Main Campus', 'LGU', 'Donation']),
+            'is_active' => true,
         ];
     }
 }

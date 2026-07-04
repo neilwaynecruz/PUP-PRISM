@@ -62,6 +62,7 @@ Policies and route middleware enforce access for inventory operations, requisiti
 - Admin operations health UI: `GET /admin/operations/health` (Admin role) surfaces the same operational metrics in a dashboard page.
 - Inventory alerts inbox: `GET /admin/alerts` (Admin / Supply Head) with acknowledge, assign, and resolve workflows.
 - Notification history: `GET /notifications` with pagination and filters (all authenticated users).
+- Master data admin (Admin role): `/admin/departments`, `/admin/positions`, `/admin/categories`, `/admin/origins` with in-use protection and deactivate workflows.
 - Scheduled commands (`app:generate-demand-forecasts`, `app:inventory-generate-alerts`, `app:send-notification-digests`, `trash:cleanup`, `app:prune-operational-data`) record last-success timestamps in cache for health checks.
 - Production runbooks: [docs/operations/](docs/operations/) — backup/DR, queue ops, Redis migration, logging, and data retention.
 

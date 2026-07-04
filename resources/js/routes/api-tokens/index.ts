@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\Settings\ApiTokenController::index
  * @see app/Http/Controllers/Settings/ApiTokenController.php:18
@@ -42,41 +42,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Settings\ApiTokenController::index
- * @see app/Http/Controllers/Settings/ApiTokenController.php:18
- * @route '/settings/api-tokens'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Settings\ApiTokenController::index
- * @see app/Http/Controllers/Settings/ApiTokenController.php:18
- * @route '/settings/api-tokens'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Settings\ApiTokenController::index
- * @see app/Http/Controllers/Settings/ApiTokenController.php:18
- * @route '/settings/api-tokens'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Settings\ApiTokenController::store
  * @see app/Http/Controllers/Settings/ApiTokenController.php:47
@@ -111,27 +76,6 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Settings\ApiTokenController::store
- * @see app/Http/Controllers/Settings/ApiTokenController.php:47
- * @route '/settings/api-tokens'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Settings\ApiTokenController::store
- * @see app/Http/Controllers/Settings/ApiTokenController.php:47
- * @route '/settings/api-tokens'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Settings\ApiTokenController::destroy
  * @see app/Http/Controllers/Settings/ApiTokenController.php:79
@@ -184,38 +128,6 @@ destroy.delete = (args: { token: string | number } | [token: string | number ] |
     url: destroy.url(args, options),
     method: 'delete',
 })
-
-    /**
-* @see \App\Http\Controllers\Settings\ApiTokenController::destroy
- * @see app/Http/Controllers/Settings/ApiTokenController.php:79
- * @route '/settings/api-tokens/{token}'
- */
-    const destroyForm = (args: { token: string | number } | [token: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: destroy.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'DELETE',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Settings\ApiTokenController::destroy
- * @see app/Http/Controllers/Settings/ApiTokenController.php:79
- * @route '/settings/api-tokens/{token}'
- */
-        destroyForm.delete = (args: { token: string | number } | [token: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: destroy.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'DELETE',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    destroy.form = destroyForm
 const apiTokens = {
     index: Object.assign(index, index),
 store: Object.assign(store, store),

@@ -266,8 +266,8 @@ class ProductController extends Controller
 
         return Inertia::render('inventory/products/Edit', [
             'product' => (new ProductResource($product))->resolve(),
-            'categories' => $this->categoryOptions(),
-            'origins' => $this->originOptions(),
+            'categories' => $this->categoryOptions($product->category_id),
+            'origins' => $this->originOptions($product->origin_id),
             'suppliers' => $this->supplierOptions(),
             'can' => [
                 'delete' => $request->user()?->can('delete', $product) ?? false,
@@ -610,11 +610,12 @@ class ProductController extends Controller
     /**
      * @return array<int, array{id: int, name: string}>
      */
-    private function categoryOptions(): array
+    private function categoryOptions(?int $includeId = null): array
     {
-        return $this->rememberOptionList(
+        $options = $this->rememberOptionList(
             Category::OPTIONS_CACHE_KEY,
             fn () => Category::query()
+                ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name'])
                 ->map(fn (Category $category) => [
@@ -624,16 +625,19 @@ class ProductController extends Controller
                 ->values()
                 ->all(),
         );
+
+        return $this->appendInactiveReferenceOption($options, Category::class, $includeId);
     }
 
     /**
      * @return array<int, array{id: int, name: string}>
      */
-    private function originOptions(): array
+    private function originOptions(?int $includeId = null): array
     {
-        return $this->rememberOptionList(
+        $options = $this->rememberOptionList(
             Origin::OPTIONS_CACHE_KEY,
             fn () => Origin::query()
+                ->where('is_active', true)
                 ->orderBy('name')
                 ->get(['id', 'name'])
                 ->map(fn (Origin $origin) => [
@@ -643,6 +647,33 @@ class ProductController extends Controller
                 ->values()
                 ->all(),
         );
+
+        return $this->appendInactiveReferenceOption($options, Origin::class, $includeId);
+    }
+
+    /**
+     * @param  array<int, array{id: int, name: string}>  $options
+     * @param  class-string  $modelClass
+     * @return array<int, array{id: int, name: string}>
+     */
+    private function appendInactiveReferenceOption(array $options, string $modelClass, ?int $includeId): array
+    {
+        if ($includeId === null || collect($options)->contains('id', $includeId)) {
+            return $options;
+        }
+
+        $record = $modelClass::query()->find($includeId);
+
+        if ($record === null) {
+            return $options;
+        }
+
+        $options[] = [
+            'id' => (int) $record->id,
+            'name' => $record->name.' [Inactive]',
+        ];
+
+        return $options;
     }
 
     /**

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../wayfinder'
 import handover from './handover'
 import bookings from './bookings'
 import requisitions from './requisitions'
@@ -53,42 +53,6 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: trash.url(options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\TrashController::__invoke
- * @see app/Http/Controllers/Inventory/TrashController.php:15
- * @route '/inventory/trash'
- */
-    const trashForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: trash.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\TrashController::__invoke
- * @see app/Http/Controllers/Inventory/TrashController.php:15
- * @route '/inventory/trash'
- */
-        trashForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: trash.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\TrashController::__invoke
- * @see app/Http/Controllers/Inventory/TrashController.php:15
- * @route '/inventory/trash'
- */
-        trashForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: trash.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    trash.form = trashForm
 const inventory = {
     handover: Object.assign(handover, handover),
 bookings: Object.assign(bookings, bookings),

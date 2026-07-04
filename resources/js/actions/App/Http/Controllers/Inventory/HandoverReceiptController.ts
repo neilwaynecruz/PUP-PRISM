@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\HandoverReceiptController::__invoke
  * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
@@ -65,40 +65,4 @@ HandoverReceiptController.head = (args: { handoverLog: number | { id: number } }
     url: HandoverReceiptController.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\HandoverReceiptController::__invoke
- * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
- * @route '/inventory/handover/receipt/{handoverLog}'
- */
-    const HandoverReceiptControllerForm = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: HandoverReceiptController.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\HandoverReceiptController::__invoke
- * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
- * @route '/inventory/handover/receipt/{handoverLog}'
- */
-        HandoverReceiptControllerForm.get = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: HandoverReceiptController.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\HandoverReceiptController::__invoke
- * @see app/Http/Controllers/Inventory/HandoverReceiptController.php:16
- * @route '/inventory/handover/receipt/{handoverLog}'
- */
-        HandoverReceiptControllerForm.head = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: HandoverReceiptController.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    HandoverReceiptController.form = HandoverReceiptControllerForm
 export default HandoverReceiptController

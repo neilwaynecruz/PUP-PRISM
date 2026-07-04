@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::index
  * @see app/Http/Controllers/Admin/AlertsController.php:18
@@ -42,41 +42,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Admin\AlertsController::index
- * @see app/Http/Controllers/Admin/AlertsController.php:18
- * @route '/admin/alerts'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Admin\AlertsController::index
- * @see app/Http/Controllers/Admin/AlertsController.php:18
- * @route '/admin/alerts'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Admin\AlertsController::index
- * @see app/Http/Controllers/Admin/AlertsController.php:18
- * @route '/admin/alerts'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::acknowledge
  * @see app/Http/Controllers/Admin/AlertsController.php:109
@@ -135,37 +100,6 @@ acknowledge.patch = (args: { alert: number | { id: number } } | [alert: number |
     method: 'patch',
 })
 
-    /**
-* @see \App\Http\Controllers\Admin\AlertsController::acknowledge
- * @see app/Http/Controllers/Admin/AlertsController.php:109
- * @route '/admin/alerts/{alert}/acknowledge'
- */
-    const acknowledgeForm = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: acknowledge.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PATCH',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Admin\AlertsController::acknowledge
- * @see app/Http/Controllers/Admin/AlertsController.php:109
- * @route '/admin/alerts/{alert}/acknowledge'
- */
-        acknowledgeForm.patch = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: acknowledge.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PATCH',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    acknowledge.form = acknowledgeForm
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::assign
  * @see app/Http/Controllers/Admin/AlertsController.php:126
@@ -224,37 +158,6 @@ assign.patch = (args: { alert: number | { id: number } } | [alert: number | { id
     method: 'patch',
 })
 
-    /**
-* @see \App\Http\Controllers\Admin\AlertsController::assign
- * @see app/Http/Controllers/Admin/AlertsController.php:126
- * @route '/admin/alerts/{alert}/assign'
- */
-    const assignForm = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: assign.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PATCH',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Admin\AlertsController::assign
- * @see app/Http/Controllers/Admin/AlertsController.php:126
- * @route '/admin/alerts/{alert}/assign'
- */
-        assignForm.patch = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: assign.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PATCH',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    assign.form = assignForm
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::resolve
  * @see app/Http/Controllers/Admin/AlertsController.php:145
@@ -312,38 +215,6 @@ resolve.patch = (args: { alert: number | { id: number } } | [alert: number | { i
     url: resolve.url(args, options),
     method: 'patch',
 })
-
-    /**
-* @see \App\Http\Controllers\Admin\AlertsController::resolve
- * @see app/Http/Controllers/Admin/AlertsController.php:145
- * @route '/admin/alerts/{alert}/resolve'
- */
-    const resolveForm = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: resolve.url(args, {
-                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                        _method: 'PATCH',
-                        ...(options?.query ?? options?.mergeQuery ?? {}),
-                    }
-                }),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Admin\AlertsController::resolve
- * @see app/Http/Controllers/Admin/AlertsController.php:145
- * @route '/admin/alerts/{alert}/resolve'
- */
-        resolveForm.patch = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: resolve.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'PATCH',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'post',
-        })
-    
-    resolve.form = resolveForm
 const AlertsController = { index, acknowledge, assign, resolve }
 
 export default AlertsController

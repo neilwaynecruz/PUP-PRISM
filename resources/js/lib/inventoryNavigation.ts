@@ -36,7 +36,11 @@ import {
     index as suppliersIndex,
 } from '@/routes/inventory/suppliers';
 import { index as adminAlertsIndex } from '@/routes/admin/alerts';
+import { index as categoriesIndex } from '@/routes/admin/categories';
+import { index as departmentsIndex } from '@/routes/admin/departments';
 import { health as operationsHealthIndex } from '@/routes/admin/operations';
+import { index as originsIndex } from '@/routes/admin/origins';
+import { index as positionsIndex } from '@/routes/admin/positions';
 import { index as adminUsersIndex } from '@/routes/admin/users';
 import { index as notificationsIndex } from '@/routes/notifications';
 import type { Auth, AuthPermissions, NavItem } from '@/types';
@@ -67,6 +71,7 @@ const defaultPermissions: AuthPermissions = {
     viewForecasting: false,
     viewAlerts: false,
     viewOperationsHealth: false,
+    viewMasterData: false,
 };
 
 const mainNavigationItems: InventoryNavItem[] = [
@@ -152,6 +157,30 @@ const mainNavigationItems: InventoryNavItem[] = [
         href: operationsHealthIndex(),
         icon: BarChart3,
         permission: 'viewOperationsHealth',
+    },
+    {
+        title: 'Departments',
+        href: departmentsIndex(),
+        icon: ShieldCheck,
+        permission: 'viewMasterData',
+    },
+    {
+        title: 'Positions',
+        href: positionsIndex(),
+        icon: ShieldCheck,
+        permission: 'viewMasterData',
+    },
+    {
+        title: 'Categories',
+        href: categoriesIndex(),
+        icon: Package,
+        permission: 'viewMasterData',
+    },
+    {
+        title: 'Origins',
+        href: originsIndex(),
+        icon: Package,
+        permission: 'viewMasterData',
     },
 ];
 
@@ -438,6 +467,30 @@ export function useInventoryNavigation() {
                         href: adminUsersIndex(),
                         icon: ShieldCheck,
                         permission: 'viewUsers',
+                    },
+                    {
+                        title: 'Departments',
+                        href: departmentsIndex(),
+                        icon: ShieldCheck,
+                        permission: 'viewMasterData',
+                    },
+                    {
+                        title: 'Positions',
+                        href: positionsIndex(),
+                        icon: ShieldCheck,
+                        permission: 'viewMasterData',
+                    },
+                    {
+                        title: 'Categories',
+                        href: categoriesIndex(),
+                        icon: Package,
+                        permission: 'viewMasterData',
+                    },
+                    {
+                        title: 'Origins',
+                        href: originsIndex(),
+                        icon: Package,
+                        permission: 'viewMasterData',
                     },
                     {
                         title: 'Settings',

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::index
  * @see app/Http/Controllers/Inventory/StockMovementController.php:23
@@ -42,41 +42,6 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\StockMovementController::index
- * @see app/Http/Controllers/Inventory/StockMovementController.php:23
- * @route '/inventory/movements'
- */
-    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: index.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\StockMovementController::index
- * @see app/Http/Controllers/Inventory/StockMovementController.php:23
- * @route '/inventory/movements'
- */
-        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\StockMovementController::index
- * @see app/Http/Controllers/Inventory/StockMovementController.php:23
- * @route '/inventory/movements'
- */
-        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: index.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::adjust
  * @see app/Http/Controllers/Inventory/StockMovementController.php:127
@@ -111,27 +76,6 @@ adjust.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\StockMovementController::adjust
- * @see app/Http/Controllers/Inventory/StockMovementController.php:127
- * @route '/inventory/movements/adjustments'
- */
-    const adjustForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: adjust.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\StockMovementController::adjust
- * @see app/Http/Controllers/Inventory/StockMovementController.php:127
- * @route '/inventory/movements/adjustments'
- */
-        adjustForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: adjust.url(options),
-            method: 'post',
-        })
-    
-    adjust.form = adjustForm
 /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::cycleCount
  * @see app/Http/Controllers/Inventory/StockMovementController.php:157
@@ -165,28 +109,6 @@ cycleCount.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: cycleCount.url(options),
     method: 'post',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\StockMovementController::cycleCount
- * @see app/Http/Controllers/Inventory/StockMovementController.php:157
- * @route '/inventory/movements/cycle-counts'
- */
-    const cycleCountForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: cycleCount.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\StockMovementController::cycleCount
- * @see app/Http/Controllers/Inventory/StockMovementController.php:157
- * @route '/inventory/movements/cycle-counts'
- */
-        cycleCountForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: cycleCount.url(options),
-            method: 'post',
-        })
-    
-    cycleCount.form = cycleCountForm
 const StockMovementController = { index, adjust, cycleCount }
 
 export default StockMovementController

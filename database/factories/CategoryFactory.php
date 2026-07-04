@@ -19,6 +19,7 @@ class CategoryFactory extends Factory
     {
         return [
             'name' => fake()->unique()->words(nb: 2, asText: true),
+            'is_active' => true,
         ];
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Models\AuditLog;
 use App\Models\Booking;
+use App\Models\Department;
 use App\Models\InventoryAlert;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
@@ -110,6 +111,7 @@ class HandleInertiaRequests extends Middleware
                 'viewForecasting' => false,
                 'viewAlerts' => false,
                 'viewOperationsHealth' => false,
+                'viewMasterData' => false,
             ];
         }
 
@@ -130,6 +132,7 @@ class HandleInertiaRequests extends Middleware
             'viewForecasting' => $user->hasAnyRole(['Admin', 'Supply Head']),
             'viewAlerts' => $user->can('viewAny', InventoryAlert::class),
             'viewOperationsHealth' => $user->hasRole('Admin'),
+            'viewMasterData' => $user->can('viewAny', Department::class),
         ];
     }
 

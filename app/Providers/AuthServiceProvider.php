@@ -5,8 +5,12 @@ namespace App\Providers;
 use App\Models\Asset;
 use App\Models\AuditLog;
 use App\Models\Booking;
+use App\Models\Category;
+use App\Models\Department;
 use App\Models\InventoryAlert;
 use App\Models\NotificationPreference;
+use App\Models\Origin;
+use App\Models\Position;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Requisition;
@@ -17,8 +21,12 @@ use App\Models\User;
 use App\Policies\AssetPolicy;
 use App\Policies\AuditLogPolicy;
 use App\Policies\BookingPolicy;
+use App\Policies\CategoryPolicy;
+use App\Policies\DepartmentPolicy;
 use App\Policies\InventoryAlertPolicy;
 use App\Policies\NotificationPreferencePolicy;
+use App\Policies\OriginPolicy;
+use App\Policies\PositionPolicy;
 use App\Policies\ProductPolicy;
 use App\Policies\PurchaseOrderPolicy;
 use App\Policies\RequisitionPolicy;
@@ -56,5 +64,9 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(PurchaseOrder::class, PurchaseOrderPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(InventoryAlert::class, InventoryAlertPolicy::class);
+        Gate::policy(Department::class, DepartmentPolicy::class);
+        Gate::policy(Position::class, PositionPolicy::class);
+        Gate::policy(Category::class, CategoryPolicy::class);
+        Gate::policy(Origin::class, OriginPolicy::class);
     }
 }

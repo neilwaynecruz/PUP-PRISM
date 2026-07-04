@@ -261,3 +261,60 @@ test('supply head can partially issue a requisition and mark remaining quantitie
     expect($lot->qty_remaining)->toBe(3);
     expect(ProductStock::query()->where('product_id', $product->id)->firstOrFail()->on_hand_qty)->toBe(3);
 });
+
+test('supply head can partially issue a requisition without backordering remaining quantities', function () {
+    $requesterPosition = Position::factory()->create();
+    $issuerPosition = Position::factory()->create();
+    $approverPosition = Position::factory()->create();
+    $csrfToken = 'requisition-partial-issue-token';
+
+    $requester = User::factory()->assignedPosition($requesterPosition)->create();
+    $issuer = requisitionUser('Supply Head', $issuerPosition);
+
+    $product = Product::factory()->consumable()->create(['sku' => 'SKU-PARTIAL-001']);
+    ProductStock::factory()->create(['product_id' => $product->id, 'on_hand_qty' => 6]);
+
+    StockLot::factory()->create([
+        'product_id' => $product->id,
+        'qty_received' => 6,
+        'qty_remaining' => 6,
+        'received_at' => CarbonImmutable::now()->subDay(),
+    ]);
+
+    $requisition = Requisition::factory()->create([
+        'requester_id' => $requester->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => RequisitionStatus::Approved,
+        'approved_at' => CarbonImmutable::now(),
+        'approver_id' => User::factory()->assignedPosition($approverPosition)->create()->id,
+        'approver_position_id' => $approverPosition->id,
+    ]);
+
+    $line = $requisition->lines()->create([
+        'product_id' => $product->id,
+        'qty_requested' => 5,
+        'qty_issued' => 0,
+    ]);
+
+    $this->actingAs($issuer)
+        ->withSession(['_token' => $csrfToken])
+        ->put(route('inventory.requisitions.issue', $requisition, absolute: false), [
+            '_token' => $csrfToken,
+            'notes' => 'Issuing available stock now; remainder pending.',
+            'lines' => [
+                [
+                    'id' => $line->id,
+                    'qty_to_issue' => 3,
+                ],
+            ],
+        ])
+        ->assertRedirect();
+
+    $requisition->refresh();
+    $line->refresh();
+
+    expect($requisition->status)->toBe(RequisitionStatus::PartiallyIssued);
+    expect($line->qty_issued)->toBe(3);
+    expect($line->remainingQuantity())->toBe(2);
+    expect(ProductStock::query()->where('product_id', $product->id)->firstOrFail()->on_hand_qty)->toBe(3);
+});

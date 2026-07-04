@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::products
  * @see app/Http/Controllers/Inventory/InventoryReportController.php:32
@@ -61,41 +61,6 @@ products.head = (args: { format: string | number } | [format: string | number ] 
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::products
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:32
- * @route '/inventory/reports/products/{format}'
- */
-    const productsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: products.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::products
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:32
- * @route '/inventory/reports/products/{format}'
- */
-        productsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: products.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::products
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:32
- * @route '/inventory/reports/products/{format}'
- */
-        productsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: products.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    products.form = productsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
  * @see app/Http/Controllers/Inventory/InventoryReportController.php:53
@@ -158,41 +123,6 @@ bookings.head = (args: { format: string | number } | [format: string | number ] 
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:53
- * @route '/inventory/reports/bookings/{format}'
- */
-    const bookingsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: bookings.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:53
- * @route '/inventory/reports/bookings/{format}'
- */
-        bookingsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: bookings.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:53
- * @route '/inventory/reports/bookings/{format}'
- */
-        bookingsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: bookings.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    bookings.form = bookingsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
  * @see app/Http/Controllers/Inventory/InventoryReportController.php:60
@@ -255,41 +185,6 @@ requisitions.head = (args: { format: string | number } | [format: string | numbe
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:60
- * @route '/inventory/reports/requisitions/{format}'
- */
-    const requisitionsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: requisitions.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:60
- * @route '/inventory/reports/requisitions/{format}'
- */
-        requisitionsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: requisitions.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:60
- * @route '/inventory/reports/requisitions/{format}'
- */
-        requisitionsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: requisitions.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    requisitions.form = requisitionsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::movements
  * @see app/Http/Controllers/Inventory/InventoryReportController.php:39
@@ -352,41 +247,6 @@ movements.head = (args: { format: string | number } | [format: string | number ]
     method: 'head',
 })
 
-    /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::movements
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:39
- * @route '/inventory/reports/movements/{format}'
- */
-    const movementsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: movements.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::movements
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:39
- * @route '/inventory/reports/movements/{format}'
- */
-        movementsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: movements.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::movements
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:39
- * @route '/inventory/reports/movements/{format}'
- */
-        movementsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: movements.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    movements.form = movementsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
  * @see app/Http/Controllers/Inventory/InventoryReportController.php:46
@@ -448,42 +308,6 @@ assetConditions.head = (args: { format: string | number } | [format: string | nu
     url: assetConditions.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:46
- * @route '/inventory/reports/assets/condition/{format}'
- */
-    const assetConditionsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: assetConditions.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:46
- * @route '/inventory/reports/assets/condition/{format}'
- */
-        assetConditionsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: assetConditions.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:46
- * @route '/inventory/reports/assets/condition/{format}'
- */
-        assetConditionsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: assetConditions.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    assetConditions.form = assetConditionsForm
 const reports = {
     products: Object.assign(products, products),
 bookings: Object.assign(bookings, bookings),

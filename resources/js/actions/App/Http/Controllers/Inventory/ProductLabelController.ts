@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\ProductLabelController::show
  * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
@@ -65,42 +65,6 @@ show.head = (args: { product: number | { id: number } } | [product: number | { i
     url: show.url(args, options),
     method: 'head',
 })
-
-    /**
-* @see \App\Http\Controllers\Inventory\ProductLabelController::show
- * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
- * @route '/inventory/products/{product}/label'
- */
-    const showForm = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: show.url(args, options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\ProductLabelController::show
- * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
- * @route '/inventory/products/{product}/label'
- */
-        showForm.get = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\ProductLabelController::show
- * @see app/Http/Controllers/Inventory/ProductLabelController.php:17
- * @route '/inventory/products/{product}/label'
- */
-        showForm.head = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: show.url(args, {
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    show.form = showForm
 const ProductLabelController = { show }
 
 export default ProductLabelController

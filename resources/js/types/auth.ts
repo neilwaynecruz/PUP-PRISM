@@ -26,6 +26,7 @@ export type AuthPermissions = {
     viewForecasting: boolean;
     viewAlerts: boolean;
     viewOperationsHealth: boolean;
+    viewMasterData: boolean;
 };
 
 export type Auth = {
