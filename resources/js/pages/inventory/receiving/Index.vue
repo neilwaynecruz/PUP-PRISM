@@ -18,6 +18,8 @@ defineOptions({
 });
 
 const mode = ref<'single' | 'batch'>('single');
+const tagScanFeedback = ref('');
+const batchTagFeedback = ref<Record<number, string>>({});
 
 const form = useForm({
     sku: '',
@@ -108,6 +110,35 @@ function lineTagCodes(text: string): string[] {
         .filter(Boolean);
 }
 
+function mergeTagCodeText(
+    currentValue: string,
+    nextValue: string,
+): { value: string; added: boolean; count: number } {
+    const normalized = nextValue.trim();
+
+    if (!normalized) {
+        return {
+            value: currentValue,
+            added: false,
+            count: lineTagCodes(currentValue).length,
+        };
+    }
+
+    const nextLines = lineTagCodes(currentValue);
+    const existing = new Set(nextLines);
+    const added = !existing.has(normalized);
+
+    if (added) {
+        existing.add(normalized);
+    }
+
+    return {
+        value: Array.from(existing).join('\n'),
+        added,
+        count: existing.size,
+    };
+}
+
 function submitBatch() {
     const lines = batchForm.lines.map((line) => ({
         sku: line.sku,
@@ -133,15 +164,27 @@ function submitBatch() {
 }
 
 function appendTagCode(value: string): void {
-    const nextValue = value.trim();
+    const merged = mergeTagCodeText(form.tag_codes_text, value);
 
-    if (!nextValue) {
+    form.tag_codes_text = merged.value;
+    tagScanFeedback.value = merged.added
+        ? `Captured ${value.trim()}. ${merged.count} tag code(s) ready for receiving.`
+        : `${value.trim()} is already in the list.`;
+}
+
+function appendBatchLineTagCode(index: number, value: string): void {
+    const line = batchForm.lines[index];
+
+    if (!line) {
         return;
     }
 
-    const existing = new Set(tagCodes.value);
-    existing.add(nextValue);
-    form.tag_codes_text = Array.from(existing).join('\n');
+    const merged = mergeTagCodeText(line.tag_codes_text, value);
+
+    line.tag_codes_text = merged.value;
+    batchTagFeedback.value[index] = merged.added
+        ? `Captured ${value.trim()}. ${merged.count} tag code(s) on this line.`
+        : `${value.trim()} is already on this line.`;
 }
 </script>
 
@@ -336,9 +379,11 @@ function appendTagCode(value: string): void {
                             >Asset tag codes (one per line)</Label
                         >
                         <QrScannerDialog
-                            button-label="Scan asset tag"
+                            button-label="Batch scan tags"
                             title="Scan asset tag QR"
-                            description="Each successful scan appends one asset tag code to the list below."
+                            description="Keep the camera open to capture multiple asset tags in one receiving session."
+                            :continuous="true"
+                            trigger-test-id="receiving-tag-scanner-button"
                             @scanned="appendTagCode"
                         />
                     </div>
@@ -352,6 +397,12 @@ function appendTagCode(value: string): void {
                     <div class="text-xs text-muted-foreground">
                         Asset scans are appended automatically. You can still
                         paste or type multiple tag codes here.
+                    </div>
+                    <div
+                        v-if="tagScanFeedback"
+                        class="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
+                    >
+                        {{ tagScanFeedback }}
                     </div>
                     <InputError :message="form.errors.tag_codes" />
                 </div>
@@ -384,7 +435,9 @@ function appendTagCode(value: string): void {
                 </div>
             </div>
 
-            <div class="flex items-center justify-end gap-2">
+            <div
+                class="sticky bottom-4 z-10 flex items-center justify-end gap-2 rounded-xl border border-border/60 bg-background/95 px-4 py-3 shadow-lg backdrop-blur supports-backdrop-filter:bg-background/80 md:static md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none"
+            >
                 <Button
                     type="submit"
                     :disabled="form.processing"
@@ -401,7 +454,131 @@ function appendTagCode(value: string): void {
 
         <form v-else class="flex flex-col gap-5" @submit.prevent="submitBatch">
             <div
-                class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm"
+                class="grid gap-4 lg:hidden"
+                data-testid="receiving-batch-mobile-lines"
+            >
+                <div
+                    v-for="(line, i) in batchForm.lines"
+                    :key="`mobile-${i}`"
+                    class="rounded-xl border border-border/60 bg-card p-4 shadow-sm"
+                >
+                    <div class="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                            <div class="text-sm font-semibold">Batch line {{ i + 1 }}</div>
+                            <div class="text-xs text-muted-foreground">
+                                Capture item details and asset tags for this entry.
+                            </div>
+                        </div>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            class="h-8 rounded-lg text-xs text-muted-foreground hover:text-rose-600"
+                            @click="removeBatchLine(i)"
+                        >
+                            Remove
+                        </Button>
+                    </div>
+
+                    <div class="grid gap-4">
+                        <div class="grid gap-2">
+                            <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                SKU
+                            </Label>
+                            <Input
+                                v-model="line.sku"
+                                placeholder="SKU"
+                                class="rounded-lg"
+                            />
+                        </div>
+
+                        <div class="grid gap-4 sm:grid-cols-2">
+                            <div class="grid gap-2">
+                                <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                    Qty
+                                </Label>
+                                <Input
+                                    v-model="line.qty"
+                                    type="number"
+                                    min="1"
+                                    placeholder="Qty"
+                                    class="rounded-lg"
+                                />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                    Ref no.
+                                </Label>
+                                <Input
+                                    v-model="line.reference_no"
+                                    placeholder="Ref"
+                                    class="rounded-lg"
+                                />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                    Received
+                                </Label>
+                                <Input
+                                    v-model="line.received_at"
+                                    type="datetime-local"
+                                    class="rounded-lg"
+                                />
+                            </div>
+                            <div class="grid gap-2">
+                                <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                    Expires
+                                </Label>
+                                <Input
+                                    v-model="line.expires_at"
+                                    type="date"
+                                    class="rounded-lg"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="grid gap-2">
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                    Asset tags
+                                </Label>
+                                <QrScannerDialog
+                                    button-label="Batch scan tags"
+                                    title="Scan batch line asset tags"
+                                    description="Keep scanning to append multiple asset tags to this batch line."
+                                    :continuous="true"
+                                    @scanned="appendBatchLineTagCode(i, $event)"
+                                />
+                            </div>
+                            <textarea
+                                v-model="line.tag_codes_text"
+                                class="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm transition-colors focus:border-ring focus:outline-none"
+                                placeholder="One tag code per line"
+                            />
+                            <div
+                                v-if="batchTagFeedback[i]"
+                                class="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
+                            >
+                                {{ batchTagFeedback[i] }}
+                            </div>
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                Notes
+                            </Label>
+                            <Input
+                                v-model="line.notes"
+                                placeholder="Notes"
+                                class="rounded-lg"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div
+                class="hidden overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm lg:block"
             >
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-left">
@@ -421,7 +598,7 @@ function appendTagCode(value: string): void {
                     <tbody class="divide-y divide-border/60">
                         <tr
                             v-for="(line, i) in batchForm.lines"
-                            :key="i"
+                            :key="`desktop-${i}`"
                             class="[&>td]:px-4 [&>td]:py-2"
                         >
                             <td>
@@ -461,12 +638,25 @@ function appendTagCode(value: string): void {
                                     class="h-8 rounded-lg text-xs"
                                 />
                             </td>
-                            <td>
+                            <td class="space-y-2">
                                 <textarea
                                     v-model="line.tag_codes_text"
                                     class="min-h-16 w-32 rounded-lg border border-input bg-background px-2 py-1 text-xs transition-colors focus:border-ring focus:outline-none"
                                     placeholder="One per line"
                                 />
+                                <QrScannerDialog
+                                    button-label="Scan tags"
+                                    title="Scan batch line asset tags"
+                                    description="Keep scanning to append multiple asset tags to this batch line."
+                                    :continuous="true"
+                                    @scanned="appendBatchLineTagCode(i, $event)"
+                                />
+                                <div
+                                    v-if="batchTagFeedback[i]"
+                                    class="max-w-32 text-[11px] text-muted-foreground"
+                                >
+                                    {{ batchTagFeedback[i] }}
+                                </div>
                             </td>
                             <td>
                                 <Input
@@ -491,7 +681,9 @@ function appendTagCode(value: string): void {
                 </table>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div
+                class="sticky bottom-4 z-10 flex flex-col gap-2 rounded-xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur supports-backdrop-filter:bg-background/80 sm:flex-row sm:items-center md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none"
+            >
                 <Button
                     type="button"
                     variant="outline"

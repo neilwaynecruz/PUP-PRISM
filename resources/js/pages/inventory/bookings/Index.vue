@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/vue3';
 import { Form, Head, Link, router } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import BookingController from '@/actions/App/Http/Controllers/Inventory/BookingController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -132,6 +132,7 @@ const selectedBooking = ref<BookingBase | null>(null);
 const deleteDialogOpen = ref(false);
 const deleteReason = ref('');
 const deleteReasonCustom = ref('');
+const isCompactCalendar = ref(false);
 
 const deletionReasons = [
     { value: 'No longer needed', label: 'No longer needed' },
@@ -300,14 +301,15 @@ const events = computed(() =>
 
 const calendarOptions = computed<CalendarOptions>(() => ({
     plugins: [dayGridPlugin, interactionPlugin],
-    initialView: 'dayGridMonth',
+    initialView: isCompactCalendar.value ? 'dayGridWeek' : 'dayGridMonth',
     headerToolbar: {
-        left: 'prev,next today',
+        left: isCompactCalendar.value ? 'prev,next' : 'prev,next today',
         center: 'title',
-        right: 'dayGridMonth,dayGridWeek,dayGridDay',
+        right: isCompactCalendar.value ? '' : 'dayGridMonth,dayGridWeek,dayGridDay',
     },
     events: events.value,
-    height: 520,
+    height: isCompactCalendar.value ? 420 : 520,
+    dayMaxEventRows: isCompactCalendar.value ? 2 : 4,
     eventDisplay: 'block',
 }));
 
@@ -320,6 +322,7 @@ const listQuery = computed(() => ({
 }));
 
 let assetSearchTimer: number | undefined;
+let compactCalendarMediaQuery: MediaQueryList | null = null;
 watch([assetSearch, listSearch, listStatus, listDateFrom, listDateTo], () => {
     window.clearTimeout(assetSearchTimer);
     assetSearchTimer = window.setTimeout(() => {
@@ -333,6 +336,25 @@ watch([assetSearch, listSearch, listStatus, listDateFrom, listDateTo], () => {
 
 onBeforeUnmount(() => {
     window.clearTimeout(assetSearchTimer);
+
+    compactCalendarMediaQuery?.removeEventListener(
+        'change',
+        syncCompactCalendarMode,
+    );
+});
+
+function syncCompactCalendarMode(): void {
+    isCompactCalendar.value = compactCalendarMediaQuery?.matches ?? false;
+}
+
+onMounted(() => {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    compactCalendarMediaQuery = window.matchMedia('(max-width: 767px)');
+    syncCompactCalendarMode();
+    compactCalendarMediaQuery.addEventListener('change', syncCompactCalendarMode);
 });
 
 watch(
@@ -449,8 +471,8 @@ function applyScannedAsset(tagCode: string): void {
             </div>
         </div>
 
-        <div class="grid items-start gap-6 xl:grid-cols-[1fr_400px]">
-            <div class="rounded-xl border border-border/50 bg-card shadow-sm">
+        <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+            <div class="order-2 rounded-xl border border-border/50 bg-card shadow-sm lg:order-1">
                 <div
                     class="flex flex-col gap-3 border-b border-border/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
@@ -504,6 +526,12 @@ function applyScannedAsset(tagCode: string): void {
                         </template>
                     </FullCalendar>
                     <div
+                        v-if="isCompactCalendar"
+                        class="mt-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
+                    >
+                        Mobile view uses a compact weekly calendar for faster field scheduling.
+                    </div>
+                    <div
                         v-if="props.calendar_events.length === 0"
                         class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-12 text-center"
                     >
@@ -547,7 +575,7 @@ function applyScannedAsset(tagCode: string): void {
             </div>
 
             <div
-                class="self-start rounded-xl border border-border/50 bg-card shadow-sm"
+                class="order-1 self-start rounded-xl border border-border/50 bg-card shadow-sm lg:order-2"
             >
                 <div class="border-b border-border/40 px-5 py-4">
                     <div class="text-sm font-semibold tracking-tight">
@@ -582,7 +610,7 @@ function applyScannedAsset(tagCode: string): void {
                     </div>
 
                     <div class="grid gap-1.5">
-                        <div class="flex items-center justify-between">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <Label
                                 for="asset_id"
                                 class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
@@ -593,6 +621,7 @@ function applyScannedAsset(tagCode: string): void {
                                 button-label="Scan QR"
                                 title="Scan booking asset QR"
                                 description="Scan an asset tag to auto-select the matching asset for this booking request."
+                                trigger-test-id="booking-scan-button"
                                 @scanned="applyScannedAsset"
                             />
                         </div>
@@ -624,7 +653,7 @@ function applyScannedAsset(tagCode: string): void {
                         </select>
                         <div
                             v-if="assetScanFeedback"
-                            class="text-[11px] text-muted-foreground/80"
+                            class="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
                         >
                             {{ assetScanFeedback }}
                         </div>
@@ -686,7 +715,9 @@ function applyScannedAsset(tagCode: string): void {
                         <InputError :message="errors.purpose" />
                     </div>
 
-                    <div class="pt-1">
+                    <div
+                        class="sticky bottom-4 z-10 rounded-xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur supports-backdrop-filter:bg-background/80 md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none"
+                    >
                         <Button
                             type="submit"
                             :disabled="processing"

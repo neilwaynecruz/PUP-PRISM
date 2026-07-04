@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f172a">
+    <title>PUP PRISM Offline</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            font-family: Inter, Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background:
+                radial-gradient(circle at top, rgba(59, 130, 246, 0.18), transparent 35%),
+                #020617;
+            color: #e2e8f0;
+        }
+
+        main {
+            width: min(28rem, calc(100vw - 2rem));
+            border: 1px solid rgba(148, 163, 184, 0.18);
+            border-radius: 24px;
+            padding: 1.5rem;
+            background: rgba(15, 23, 42, 0.88);
+            box-shadow: 0 25px 60px rgba(2, 6, 23, 0.35);
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-radius: 999px;
+            background: rgba(37, 99, 235, 0.14);
+            color: #93c5fd;
+            padding: 0.45rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .badge::before {
+            content: "";
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 999px;
+            background: #3b82f6;
+        }
+
+        h1 {
+            margin: 1rem 0 0.5rem;
+            font-size: 1.5rem;
+            line-height: 1.2;
+        }
+
+        p {
+            margin: 0 0 0.75rem;
+            color: #cbd5e1;
+            line-height: 1.5;
+        }
+
+        ul {
+            margin: 1rem 0 0;
+            padding-left: 1.25rem;
+            color: #cbd5e1;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="badge">Offline mode</div>
+        <h1>PUP PRISM is temporarily offline</h1>
+        <p>
+            The app shell is available, but live inventory actions still need a network connection.
+            Reconnect and refresh to continue receiving, handover, booking, and reporting work.
+        </p>
+        <ul>
+            <li>Check your Wi-Fi or mobile data connection.</li>
+            <li>Retry once the device is back online.</li>
+            <li>Use manual records only if your field process requires a temporary fallback.</li>
+        </ul>
+    </main>
+</body>
+</html>

@@ -31,6 +31,13 @@ export function verifyEmail(email: string): void {
     runArtisan(['e2e:verify-email', email]);
 }
 
+export function confirmTwoFactor(email: string): void {
+    runArtisan([
+        'tinker',
+        `--execute=$user = App\\Models\\User::where("email", "${email}")->firstOrFail(); $user->forceFill(["two_factor_secret" => encrypt("e2e-secret"), "two_factor_recovery_codes" => encrypt(json_encode(["e2e-recovery-code"])), "two_factor_confirmed_at" => now()])->save();`,
+    ]);
+}
+
 export function getUserIdByEmail(email: string): number {
     const output = runArtisan(['e2e:user-id', email]);
 

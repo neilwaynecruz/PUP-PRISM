@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { CameraOff, ScanLine } from 'lucide-vue-next';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,17 +13,23 @@ import {
 } from '@/components/ui/dialog';
 import { useQrScanner } from '@/composables/useQrScanner';
 
-withDefaults(
+const props = withDefaults(
     defineProps<{
         buttonLabel?: string;
         title?: string;
         description?: string;
+        continuous?: boolean;
+        closeOnScan?: boolean;
+        triggerTestId?: string;
     }>(),
     {
         buttonLabel: 'Scan QR',
         title: 'Scan QR code',
         description:
             'Use your phone or tablet camera. Manual entry stays available if the camera is unavailable.',
+        continuous: false,
+        closeOnScan: undefined,
+        triggerTestId: undefined,
     },
 );
 
@@ -32,6 +38,8 @@ const emit = defineEmits<{
 }>();
 
 const isOpen = ref(false);
+const sessionScanCount = ref(0);
+const closesAfterScan = computed(() => props.closeOnScan ?? !props.continuous);
 
 const {
     canvasRef,
@@ -39,19 +47,29 @@ const {
     hasCameraSupport,
     isRunning,
     isStarting,
+    lastDetectedValue,
     start,
     status,
     stop,
+    totalDetections,
     videoRef,
 } = useQrScanner({
+    continuous: props.continuous,
+    cooldownMs: 1600,
     onDetected: (value) => {
         emit('scanned', value);
-        isOpen.value = false;
+
+        sessionScanCount.value = totalDetections.value;
+
+        if (closesAfterScan.value) {
+            isOpen.value = false;
+        }
     },
 });
 
 watch(isOpen, async (open) => {
     if (!open) {
+        sessionScanCount.value = 0;
         stop();
 
         return;
@@ -66,17 +84,18 @@ watch(isOpen, async (open) => {
         type="button"
         variant="outline"
         class="w-full sm:w-auto"
+        :data-testid="triggerTestId"
         @click="isOpen = true"
     >
         <ScanLine class="mr-2 size-4" />
-        {{ buttonLabel }}
+        {{ props.buttonLabel }}
     </Button>
 
     <Dialog :open="isOpen" @update:open="isOpen = $event">
-        <DialogContent class="sm:max-w-lg">
+        <DialogContent class="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-lg">
             <DialogHeader>
-                <DialogTitle>{{ title }}</DialogTitle>
-                <DialogDescription>{{ description }}</DialogDescription>
+                <DialogTitle>{{ props.title }}</DialogTitle>
+                <DialogDescription>{{ props.description }}</DialogDescription>
             </DialogHeader>
 
             <div class="grid gap-4">
@@ -90,9 +109,27 @@ watch(isOpen, async (open) => {
                     <Badge v-else variant="outline"
                         >Manual fallback ready</Badge
                     >
+                    <Badge v-if="props.continuous" variant="secondary">
+                        Continuous mode
+                    </Badge>
                     <span class="text-sm text-muted-foreground">{{
                         status
                     }}</span>
+                </div>
+
+                <div
+                    v-if="props.continuous && sessionScanCount > 0"
+                    class="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-sm"
+                >
+                    <div class="font-medium text-primary">
+                        {{ sessionScanCount }} code(s) captured in this session
+                    </div>
+                    <div
+                        v-if="lastDetectedValue"
+                        class="mt-1 text-xs text-muted-foreground"
+                    >
+                        Last captured: <span class="font-mono">{{ lastDetectedValue }}</span>
+                    </div>
                 </div>
 
                 <div
@@ -150,10 +187,18 @@ watch(isOpen, async (open) => {
                         Retry camera
                     </Button>
                     <Button
+                        v-if="hasCameraSupport && isRunning && props.continuous"
+                        type="button"
+                        variant="secondary"
+                        @click="stop"
+                    >
+                        Pause camera
+                    </Button>
+                    <Button
                         type="button"
                         variant="ghost"
                         @click="isOpen = false"
-                        >Close</Button
+                        >{{ props.continuous ? 'Done scanning' : 'Close' }}</Button
                     >
                 </div>
             </div>

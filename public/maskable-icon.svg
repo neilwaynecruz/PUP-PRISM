@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">PUP PRISM maskable icon</title>
+<desc id="desc">Maskable install icon for the PUP PRISM progressive web app</desc>
+<defs>
+<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#020617" />
+<stop offset="100%" stop-color="#1e293b" />
+</linearGradient>
+<linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#38bdf8" />
+<stop offset="100%" stop-color="#2563eb" />
+</linearGradient>
+</defs>
+<rect width="512" height="512" rx="132" fill="url(#bg)" />
+<circle cx="256" cy="256" r="184" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="20" />
+<path d="M144 146h156c76 0 126 46 126 116c0 72-50 120-126 120h-77v54h-79V146Zm79 66v104h67c33 0 55-19 55-52c0-32-22-52-55-52h-67Z" fill="#f8fafc" />
+<path d="M359 140l51 51l-51 51" fill="none" stroke="url(#accent)" stroke-linecap="round" stroke-linejoin="round" stroke-width="24" />
+</svg>

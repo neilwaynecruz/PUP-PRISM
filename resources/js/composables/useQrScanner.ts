@@ -3,6 +3,8 @@ import { onBeforeUnmount, ref, useTemplateRef } from 'vue';
 
 type UseQrScannerOptions = {
     onDetected: (value: string) => void;
+    continuous?: boolean;
+    cooldownMs?: number;
 };
 
 export function useQrScanner(options: UseQrScannerOptions) {
@@ -13,9 +15,12 @@ export function useQrScanner(options: UseQrScannerOptions) {
     const isStarting = ref(false);
     const status = ref('Ready to scan a QR code.');
     const error = ref<string | null>(null);
+    const lastDetectedValue = ref<string | null>(null);
+    const totalDetections = ref(0);
 
     let stream: MediaStream | null = null;
     let frameRequestId: number | null = null;
+    let lastDetectionAt = 0;
 
     const hasCameraSupport =
         typeof navigator !== 'undefined' &&
@@ -39,6 +44,21 @@ export function useQrScanner(options: UseQrScannerOptions) {
 
         isRunning.value = false;
         isStarting.value = false;
+    }
+
+    function triggerScanFeedback(): void {
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate?.(35);
+        }
+    }
+
+    function shouldIgnoreDetection(value: string): boolean {
+        const cooldownMs = options.cooldownMs ?? 1500;
+
+        return (
+            value === lastDetectedValue.value &&
+            Date.now() - lastDetectionAt < cooldownMs
+        );
     }
 
     function scanFrame(): void {
@@ -73,8 +93,28 @@ export function useQrScanner(options: UseQrScannerOptions) {
         });
 
         if (code?.data) {
+            const nextValue = code.data.trim();
+
+            if (!nextValue || shouldIgnoreDetection(nextValue)) {
+                frameRequestId = window.requestAnimationFrame(scanFrame);
+
+                return;
+            }
+
+            lastDetectedValue.value = nextValue;
+            lastDetectionAt = Date.now();
+            totalDetections.value += 1;
+            triggerScanFeedback();
+            options.onDetected(nextValue);
+
+            if (options.continuous) {
+                status.value = `Captured ${nextValue}. Keep scanning...`;
+                frameRequestId = window.requestAnimationFrame(scanFrame);
+
+                return;
+            }
+
             status.value = 'QR code detected.';
-            options.onDetected(code.data);
             stop();
 
             return;
@@ -94,6 +134,8 @@ export function useQrScanner(options: UseQrScannerOptions) {
 
         isStarting.value = true;
         error.value = null;
+        lastDetectedValue.value = null;
+        totalDetections.value = 0;
         status.value = 'Requesting camera access...';
 
         try {
@@ -113,7 +155,9 @@ export function useQrScanner(options: UseQrScannerOptions) {
 
             isRunning.value = true;
             isStarting.value = false;
-            status.value = 'Camera ready. Point it at a QR code.';
+            status.value = options.continuous
+                ? 'Camera ready. Keep the camera open to capture multiple QR codes.'
+                : 'Camera ready. Point it at a QR code.';
             scanFrame();
         } catch (caughtError) {
             stop();
@@ -140,9 +184,11 @@ export function useQrScanner(options: UseQrScannerOptions) {
         hasCameraSupport,
         isRunning,
         isStarting,
+        lastDetectedValue,
         start,
         status,
         stop,
+        totalDetections,
         videoRef,
     };
 }

@@ -206,7 +206,118 @@ function submitResolve(): void {
             </select>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm">
+        <div
+            v-if="alerts.data.length === 0"
+            class="rounded-xl border border-border/60 bg-card px-4 py-8 text-center text-sm text-muted-foreground shadow-sm"
+        >
+            No alerts match the current filters.
+        </div>
+
+        <div
+            v-else
+            class="grid gap-3 md:hidden"
+            data-testid="alerts-mobile-cards"
+        >
+            <div
+                v-for="alert in alerts.data"
+                :key="`mobile-${alert.id}`"
+                class="rounded-xl border border-border/60 bg-card p-4 shadow-sm"
+            >
+                <div class="flex items-start justify-between gap-3">
+                    <div>
+                        <div class="font-medium capitalize">
+                            {{ typeLabel(alert.type) }}
+                        </div>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            {{ alert.message }}
+                        </p>
+                    </div>
+                    <span
+                        class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium"
+                        :class="
+                            alert.is_active
+                                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                : 'bg-muted text-muted-foreground'
+                        "
+                    >
+                        {{ alert.is_active ? 'Active' : 'Resolved' }}
+                    </span>
+                </div>
+
+                <div class="mt-3 grid gap-2 text-xs text-muted-foreground">
+                    <div>
+                        Detected:
+                        <span class="text-foreground/80">{{
+                            formatDate(alert.detected_at)
+                        }}</span>
+                    </div>
+                    <div v-if="alert.product">
+                        Product:
+                        <span class="text-foreground/80">
+                            {{ alert.product.sku }} — {{ alert.product.name }}
+                        </span>
+                    </div>
+                    <div v-if="alert.assigned_to">
+                        Assigned: <span class="text-foreground/80">{{ alert.assigned_to.name }}</span>
+                    </div>
+                    <div v-if="alert.acknowledged_by">
+                        Acknowledged:
+                        <span class="text-foreground/80">{{ alert.acknowledged_by.name }}</span>
+                    </div>
+                    <div v-if="alert.resolved_by">
+                        Resolved:
+                        <span class="text-foreground/80">{{ alert.resolved_by.name }}</span>
+                    </div>
+                </div>
+
+                <div
+                    v-if="alert.is_active"
+                    class="mt-4 grid gap-2"
+                >
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        class="w-full rounded-lg"
+                        @click="acknowledgeAlert(alert.id)"
+                    >
+                        Acknowledge
+                    </Button>
+                    <div class="grid gap-2 sm:grid-cols-[1fr_auto]">
+                        <select
+                            v-model="assignSelections[alert.id]"
+                            class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                        >
+                            <option value="">Assign to...</option>
+                            <option
+                                v-for="operator in operators"
+                                :key="operator.id"
+                                :value="String(operator.id)"
+                            >
+                                {{ operator.name }}
+                            </option>
+                        </select>
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            class="rounded-lg"
+                            :disabled="!assignSelections[alert.id]"
+                            @click="assignAlert(alert.id)"
+                        >
+                            Assign
+                        </Button>
+                    </div>
+                    <Button
+                        size="sm"
+                        class="w-full rounded-lg"
+                        @click="openResolveDialog(alert.id)"
+                    >
+                        Resolve
+                    </Button>
+                </div>
+            </div>
+        </div>
+
+        <div class="hidden overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm md:block">
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left">
                     <tr
@@ -220,11 +331,6 @@ function submitResolve(): void {
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border/60">
-                    <tr v-if="alerts.data.length === 0">
-                        <td colspan="5" class="px-4 py-8 text-center text-muted-foreground">
-                            No alerts match the current filters.
-                        </td>
-                    </tr>
                     <tr
                         v-for="alert in alerts.data"
                         :key="alert.id"

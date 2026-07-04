@@ -90,7 +90,7 @@ function clearSignature(): void {
             description="Review the transfer details, sign to acknowledge receipt, and confirm accountability."
         />
 
-        <div class="grid items-start gap-6 xl:grid-cols-[1fr_480px]">
+        <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_480px]">
             <!-- Left: Handover details -->
             <div class="self-start rounded-xl border border-border/50 bg-card shadow-sm">
                 <div class="border-b border-border/40 px-5 py-4">
@@ -204,7 +204,7 @@ function clearSignature(): void {
                             <VueSignaturePad
                                 ref="signaturePad"
                                 width="100%"
-                                height="180px"
+                                height="220px"
                             />
                         </div>
                         <div class="mt-3 flex items-center justify-between">

@@ -42,6 +42,19 @@ type MethodOption = {
     label: string;
 };
 
+type ForecastItem = {
+    product_id: number;
+    product_name: string;
+    sku: string;
+    current_on_hand_qty: number;
+    reorder_point_qty: number;
+    predicted_daily_consumption: number;
+    predicted_days_until_stockout: number | null;
+    predicted_stockout_date: string | null;
+    recommended_reorder_qty: number;
+    confidence_score: number | null;
+};
+
 const props = defineProps<{
     filters: {
         search: string;
@@ -55,7 +68,7 @@ const props = defineProps<{
         urgent_count: number;
         at_risk_count: number;
         average_confidence: number | null;
-        items: unknown[];
+        items: ForecastItem[];
     };
     methodOptions: MethodOption[];
     products: Paginated<ProductRow>;
@@ -202,7 +215,105 @@ function riskClass(days: number | null): string {
                 </div>
             </div>
 
-            <div class="overflow-x-auto">
+            <div
+                v-if="products.data.length > 0"
+                class="grid gap-3 p-4 md:hidden"
+                data-testid="forecast-mobile-cards"
+            >
+                <div
+                    v-for="product in products.data"
+                    :key="`mobile-${product.id}`"
+                    class="rounded-xl border border-border/60 bg-card p-4 shadow-sm"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <div class="font-medium">{{ product.name }}</div>
+                            <div class="text-xs text-muted-foreground">
+                                {{ product.sku }}
+                            </div>
+                        </div>
+                        <span
+                            class="rounded-full border px-2 py-0.5 text-[11px] font-medium"
+                            :class="
+                                product.snapshot?.predicted_days_until_stockout !== null &&
+                                product.snapshot?.predicted_days_until_stockout !== undefined
+                                    ? riskClass(product.snapshot.predicted_days_until_stockout)
+                                    : 'text-muted-foreground'
+                            "
+                        >
+                            {{
+                                product.snapshot?.predicted_days_until_stockout !== null &&
+                                product.snapshot?.predicted_days_until_stockout !== undefined
+                                    ? `${product.snapshot.predicted_days_until_stockout} days`
+                                    : 'No stockout date'
+                            }}
+                        </span>
+                    </div>
+
+                    <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                        <div class="rounded-lg border border-border/50 bg-muted/20 p-3">
+                            <div class="text-[11px] uppercase tracking-wider text-muted-foreground">
+                                On hand
+                            </div>
+                            <div class="mt-1 font-semibold">
+                                {{
+                                    product.snapshot?.current_on_hand_qty ??
+                                    product.on_hand_qty
+                                }}
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-border/50 bg-muted/20 p-3">
+                            <div class="text-[11px] uppercase tracking-wider text-muted-foreground">
+                                Reorder qty
+                            </div>
+                            <div class="mt-1 font-semibold">
+                                {{
+                                    product.snapshot?.recommended_reorder_qty ?? '—'
+                                }}
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-border/50 bg-muted/20 p-3">
+                            <div class="text-[11px] uppercase tracking-wider text-muted-foreground">
+                                Daily demand
+                            </div>
+                            <div class="mt-1 font-semibold">
+                                {{
+                                    product.snapshot
+                                        ? product.snapshot.predicted_daily_consumption.toFixed(2)
+                                        : '—'
+                                }}
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-border/50 bg-muted/20 p-3">
+                            <div class="text-[11px] uppercase tracking-wider text-muted-foreground">
+                                Confidence
+                            </div>
+                            <div class="mt-1 font-semibold">
+                                {{
+                                    product.snapshot?.confidence_score?.toFixed(0) ?? '—'
+                                }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                        <span>
+                            Method:
+                            {{
+                                methodLabel(
+                                    product.snapshot?.forecast_method ??
+                                        product.profile_method,
+                                )
+                            }}
+                        </span>
+                        <Button variant="ghost" size="sm" as-child>
+                            <Link :href="forecastingShow(product.id)">View</Link>
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="hidden overflow-x-auto md:block">
                 <table class="min-w-full text-sm">
                     <thead class="border-b border-border/50 bg-muted/30 text-left">
                         <tr>
@@ -292,6 +403,13 @@ function riskClass(days: number | null): string {
                         </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div
+                v-if="products.data.length === 0"
+                class="px-5 py-10 text-center text-muted-foreground md:hidden"
+            >
+                No consumable forecasts match the current filters.
             </div>
 
             <div

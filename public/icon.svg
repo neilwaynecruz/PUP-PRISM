@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+<title id="title">PUP PRISM</title>
+<desc id="desc">Install icon for the PUP PRISM progressive web app</desc>
+<defs>
+<linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#0f172a" />
+<stop offset="100%" stop-color="#1e293b" />
+</linearGradient>
+<linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+<stop offset="0%" stop-color="#3b82f6" />
+<stop offset="100%" stop-color="#06b6d4" />
+</linearGradient>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)" />
+<path d="M102 128h169c82 0 137 50 137 127c0 79-55 132-137 132h-84v57H102V128Zm85 72v113h76c37 0 61-20 61-57c0-36-24-56-61-56h-76Z" fill="#f8fafc" />
+<path d="M342 106l64 64l-64 64" fill="none" stroke="url(#accent)" stroke-linecap="round" stroke-linejoin="round" stroke-width="28" />
+</svg>

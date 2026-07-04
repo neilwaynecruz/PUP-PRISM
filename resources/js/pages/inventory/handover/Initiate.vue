@@ -33,6 +33,7 @@ type RecentRow = {
 };
 
 const assetTagCode = ref('');
+const assetTagScanFeedback = ref('');
 
 const props = defineProps<{
     filters: { recipient_search: string };
@@ -89,6 +90,11 @@ watch(recipientSearch, () => {
 onBeforeUnmount(() => {
     window.clearTimeout(recipientSearchTimer);
 });
+
+function applyScannedTag(tagCode: string): void {
+    assetTagCode.value = tagCode;
+    assetTagScanFeedback.value = `Captured ${tagCode}. Continue with recipient selection to send the verification link.`;
+}
 </script>
 
 <template>
@@ -104,7 +110,7 @@ onBeforeUnmount(() => {
             description="Transfer accountability by scanning an asset tag and sending a verification link to the recipient. Position records stay visible throughout."
         />
 
-        <div class="grid items-start gap-6 xl:grid-cols-[560px_1fr]">
+        <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,560px)_1fr]">
             <div
                 class="self-start rounded-xl border border-border/50 bg-card shadow-sm"
             >
@@ -130,7 +136,7 @@ onBeforeUnmount(() => {
                             >Asset tag code
                             <span class="text-rose-500">*</span></Label
                         >
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
                             <Input
                                 id="asset_tag_code"
                                 v-model="assetTagCode"
@@ -144,8 +150,15 @@ onBeforeUnmount(() => {
                                 button-label="Scan"
                                 title="Scan handover asset tag"
                                 description="Use the camera to read the asset label, or type the tag code manually."
-                                @scanned="assetTagCode = $event"
+                                trigger-test-id="handover-scan-button"
+                                @scanned="applyScannedTag"
                             />
+                        </div>
+                        <div
+                            v-if="assetTagScanFeedback"
+                            class="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
+                        >
+                            {{ assetTagScanFeedback }}
                         </div>
                         <InputError :message="errors.asset_tag_code" />
                     </div>
@@ -221,7 +234,9 @@ onBeforeUnmount(() => {
                     </div>
 
                     <!-- Submit -->
-                    <div class="pt-1">
+                    <div
+                        class="sticky bottom-4 z-10 rounded-xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur supports-backdrop-filter:bg-background/80 md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none"
+                    >
                         <Button
                             type="submit"
                             :disabled="processing"

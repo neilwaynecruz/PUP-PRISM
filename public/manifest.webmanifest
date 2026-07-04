@@ -1,0 +1,43 @@
+{
+    "name": "PUP PRISM Field Operations",
+    "short_name": "PRISM",
+    "description": "Mobile-first inventory workflows for receiving, handover, bookings, forecasting, and operational field work.",
+    "start_url": "/dashboard",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait-primary",
+    "background_color": "#020617",
+    "theme_color": "#0f172a",
+    "lang": "en-PH",
+    "icons": [
+        {
+            "src": "/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        },
+        {
+            "src": "/maskable-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Receive stock",
+            "short_name": "Receiving",
+            "url": "/inventory/receiving"
+        },
+        {
+            "name": "Asset handover",
+            "short_name": "Handover",
+            "url": "/inventory/handover"
+        },
+        {
+            "name": "Bookings",
+            "short_name": "Bookings",
+            "url": "/inventory/bookings"
+        }
+    ]
+}

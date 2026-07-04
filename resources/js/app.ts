@@ -15,6 +15,22 @@ if (typeof window !== 'undefined') {
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+function registerServiceWorker(): void {
+    if (
+        typeof window === 'undefined' ||
+        !('serviceWorker' in navigator) ||
+        !window.isSecureContext
+    ) {
+        return;
+    }
+
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+            // Ignore registration failures so field workflows continue without PWA features.
+        });
+    });
+}
+
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
@@ -42,3 +58,5 @@ initializeFlashToast();
 
 // This keeps module navigation feedback in sync across persistent layouts.
 initializeAppNavigation();
+
+registerServiceWorker();
