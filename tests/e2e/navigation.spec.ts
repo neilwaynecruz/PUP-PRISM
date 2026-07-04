@@ -13,13 +13,15 @@ type ModuleLink = {
 const adminModules: ModuleLink[] = [
     { name: 'Dashboard', href: '/dashboard', region: 'main', url: /\/dashboard$/, testId: 'dashboard-page' },
     { name: 'Products', href: '/inventory/products', region: 'main', url: /\/inventory\/products$/, testId: 'products-index-page' },
+    { name: 'Suppliers', href: '/inventory/suppliers', region: 'main', url: /\/inventory\/suppliers$/, testId: 'suppliers-index-page' },
+    { name: 'Purchase Orders', href: '/inventory/purchase-orders', region: 'main', url: /\/inventory\/purchase-orders$/, testId: 'purchase-orders-index-page' },
     { name: 'Handover', href: '/inventory/handover', region: 'main', url: /\/inventory\/handover$/, testId: 'handover-initiate-page' },
     { name: 'Bookings', href: '/inventory/bookings', region: 'main', url: /\/inventory\/bookings$/, testId: 'bookings-page' },
     { name: 'Requisitions', href: '/inventory/requisitions', region: 'main', url: /\/inventory\/requisitions$/, testId: 'requisitions-index-page' },
     { name: 'Receiving', href: '/inventory/receiving', region: 'main', url: /\/inventory\/receiving$/, testId: 'receiving-page' },
-    { name: 'Stock movements', href: '/inventory/movements', region: 'main', url: /\/inventory\/movements$/, testId: 'movements-index-page' },
-    { name: 'Audit logs', href: '/inventory/audit-logs', region: 'main', url: /\/inventory\/audit-logs$/, testId: 'audit-logs-page' },
-    { name: 'Settings', href: '/settings/profile', region: 'footer', url: /\/settings\/profile$/, testId: 'profile-settings-page' },
+    { name: 'Stock Movements', href: '/inventory/movements', region: 'main', url: /\/inventory\/movements$/, testId: 'movements-index-page' },
+    { name: 'Audit Logs', href: '/inventory/audit-logs', region: 'main', url: /\/inventory\/audit-logs$/, testId: 'audit-logs-page' },
+    { name: 'Settings', href: '/settings/profile', region: 'main', url: /\/settings\/profile$/, testId: 'profile-settings-page' },
 ];
 
 function moduleLink(page: Page, module: ModuleLink) {
@@ -44,54 +46,48 @@ test.describe('Inventory Navigation', () => {
         await loginAs(page, 'supply@e2e.test');
 
         await expect(
-            moduleLink(page, adminModules[7]),
+            moduleLink(page, adminModules[9]),
         ).toHaveCount(0);
         await expect(
-            moduleLink(page, adminModules[6]),
+            moduleLink(page, adminModules[8]),
         ).toHaveCount(0);
         await expect(
-            moduleLink(page, adminModules[2]),
+            moduleLink(page, adminModules[4]),
         ).toHaveCount(0);
 
-        await Promise.all([
-            page.waitForURL(/\/inventory\/products$/),
-            moduleLink(page, adminModules[1]).click(),
-        ]);
+        await moduleLink(page, adminModules[1]).click();
+        await page.waitForURL(/\/inventory\/products$/);
         await expect(page.getByTestId('products-index-page')).toBeVisible();
 
-        await Promise.all([
-            page.waitForURL(/\/inventory\/bookings$/),
-            moduleLink(page, adminModules[3]).click(),
-        ]);
+        await moduleLink(page, adminModules[5]).click();
+        await page.waitForURL(/\/inventory\/bookings$/);
         await expect(page.getByTestId('bookings-page')).toBeVisible();
 
-        await Promise.all([
-            page.waitForURL(/\/inventory\/requisitions$/),
-            moduleLink(page, adminModules[4]).click(),
-        ]);
+        await moduleLink(page, adminModules[6]).click();
+        await page.waitForURL(/\/inventory\/requisitions$/);
         await expect(page.getByTestId('requisitions-index-page')).toBeVisible();
 
-        await Promise.all([
-            page.waitForURL(/\/inventory\/receiving$/),
-            moduleLink(page, adminModules[5]).click(),
-        ]);
+        await moduleLink(page, adminModules[7]).click();
+        await page.waitForURL(/\/inventory\/receiving$/);
         await expect(page.getByTestId('receiving-page')).toBeVisible();
     });
 
     test('property custodian only sees modules they are allowed to access', async ({ page }) => {
         await loginAs(page, 'custodian@e2e.test');
 
-        await expect(moduleLink(page, adminModules[5])).toHaveCount(0);
-        await expect(moduleLink(page, adminModules[6])).toHaveCount(0);
+        await expect(moduleLink(page, adminModules[2])).toHaveCount(0);
+        await expect(moduleLink(page, adminModules[3])).toHaveCount(0);
         await expect(moduleLink(page, adminModules[7])).toHaveCount(0);
+        await expect(moduleLink(page, adminModules[8])).toHaveCount(0);
+        await expect(moduleLink(page, adminModules[9])).toHaveCount(0);
 
         for (const module of [
             adminModules[0],
             adminModules[1],
-            adminModules[2],
-            adminModules[3],
             adminModules[4],
-            adminModules[8],
+            adminModules[5],
+            adminModules[6],
+            adminModules[10],
         ]) {
             await expect(moduleLink(page, module)).toHaveCount(1);
         }
@@ -123,11 +119,10 @@ test.describe('Inventory Navigation', () => {
 
         for (let round = 0; round < 2; round++) {
             for (const module of adminModules) {
-                await Promise.all([
-                    page.waitForURL(module.url!),
-                    moduleLink(page, module).click(),
-                ]);
+                await moduleLink(page, module).click();
+                await page.waitForLoadState('networkidle');
                 await expect(page.getByTestId(module.testId!)).toBeVisible();
+                await expect(page).toHaveURL(module.url!);
             }
         }
 

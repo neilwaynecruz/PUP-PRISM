@@ -6,6 +6,7 @@ import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
+import { initializeSessionGuard } from '@/lib/sessionGuard';
 
 if (typeof window !== 'undefined') {
     configureEcho({
@@ -58,5 +59,7 @@ initializeFlashToast();
 
 // This keeps module navigation feedback in sync across persistent layouts.
 initializeAppNavigation();
+
+initializeSessionGuard();
 
 registerServiceWorker();

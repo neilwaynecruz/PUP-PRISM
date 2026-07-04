@@ -51,3 +51,13 @@ function validHandoverSignaturePng(): string
 {
     return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 }
+
+function expectResponsePreventsClientCaching(\Illuminate\Testing\TestResponse $response): void
+{
+    $cacheControl = (string) $response->headers->get('Cache-Control');
+
+    expect($cacheControl)->toContain('no-store');
+    expect($cacheControl)->toContain('no-cache');
+    expect($cacheControl)->toContain('must-revalidate');
+    expect($cacheControl)->toContain('private');
+}

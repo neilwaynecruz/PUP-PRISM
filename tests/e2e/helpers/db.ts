@@ -1,5 +1,6 @@
 import { execFileSync } from 'child_process';
 import { dirname, resolve } from 'path';
+import { DatabaseSync } from 'node:sqlite';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -8,6 +9,7 @@ const __dirname = dirname(__filename);
 const PHP_BINARY = process.env.PHP_BINARY || 'php';
 const PROJECT_ROOT = resolve(__dirname, '..', '..', '..');
 const ARTISAN = resolve(PROJECT_ROOT, 'artisan');
+const E2E_DATABASE = resolve(PROJECT_ROOT, 'database', 'e2e.sqlite');
 
 function runArtisan(args: string[]): string {
     const result = execFileSync(
@@ -60,4 +62,30 @@ export function preparePendingHandoverVerification(
     );
 
     return parseInt(output, 10);
+}
+
+export function getProductOnHandQtyBySku(sku: string): number {
+    const database = new DatabaseSync(E2E_DATABASE, { readonly: true });
+
+    try {
+        const row = database
+            .prepare(
+                `
+                    select product_stocks.on_hand_qty
+                    from product_stocks
+                    inner join products on products.id = product_stocks.product_id
+                    where products.sku = ?
+                    limit 1
+                `,
+            )
+            .get(sku) as { on_hand_qty?: number } | undefined;
+
+        if (typeof row?.on_hand_qty !== 'number') {
+            throw new Error(`Unable to find on-hand quantity for SKU [${sku}].`);
+        }
+
+        return row.on_hand_qty;
+    } finally {
+        database.close();
+    }
 }

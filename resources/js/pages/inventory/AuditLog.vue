@@ -14,6 +14,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useAppNavigation } from '@/composables/useAppNavigation';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {
     exportMethod as auditLogsExport,
     index as auditLogsIndex,
@@ -73,8 +74,8 @@ const props = defineProps<{
 }>();
 
 const search = ref(props.filters.search);
-const action = ref(props.filters.action);
-const modelType = ref(props.filters.model_type);
+const action = ref(props.filters.action || 'all');
+const modelType = ref(props.filters.model_type || 'all');
 const dateFrom = ref(props.filters.date_from);
 const dateTo = ref(props.filters.date_to);
 const isRefreshing = ref(false);
@@ -86,8 +87,8 @@ let pollTimer: number | null = null;
 const hasActiveFilters = computed(() => {
     return Boolean(
         search.value ||
-        action.value ||
-        modelType.value ||
+        (action.value && action.value !== 'all') ||
+        (modelType.value && modelType.value !== 'all') ||
         dateFrom.value ||
         dateTo.value,
     );
@@ -96,8 +97,8 @@ const hasActiveFilters = computed(() => {
 function currentQuery() {
     return {
         search: search.value || undefined,
-        action: action.value || undefined,
-        model_type: modelType.value || undefined,
+        action: action.value === 'all' ? undefined : action.value,
+        model_type: modelType.value === 'all' ? undefined : modelType.value,
         date_from: dateFrom.value || undefined,
         date_to: dateTo.value || undefined,
     };
@@ -119,8 +120,8 @@ function applyFilters(): void {
 
 function resetFilters(): void {
     search.value = '';
-    action.value = '';
-    modelType.value = '';
+    action.value = 'all';
+    modelType.value = 'all';
     dateFrom.value = '';
     dateTo.value = '';
     applyFilters();
@@ -129,7 +130,8 @@ function resetFilters(): void {
 function pollLogs(): void {
     if (
         document.visibilityState !== 'visible' ||
-        isNavigating.value
+        isNavigating.value ||
+        !shouldApplyDebouncedVisit('/inventory/audit-logs')
     ) {
         return;
     }
@@ -246,6 +248,10 @@ watch(isNavigating, (navigating) => {
         return;
     }
 
+    if (!shouldApplyDebouncedVisit('/inventory/audit-logs')) {
+        return;
+    }
+
     if (document.visibilityState === 'visible') {
         startPolling();
     }
@@ -314,7 +320,7 @@ watch(isNavigating, (navigating) => {
                             <SelectValue placeholder="All actions" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">All actions</SelectItem>
+                            <SelectItem value="all">All actions</SelectItem>
                             <SelectItem
                                 v-for="item in filterOptions.actions"
                                 :key="item"
@@ -332,7 +338,7 @@ watch(isNavigating, (navigating) => {
                             <SelectValue placeholder="All types" />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="">All types</SelectItem>
+                            <SelectItem value="all">All types</SelectItem>
                             <SelectItem
                                 v-for="item in filterOptions.modelTypes"
                                 :key="item"

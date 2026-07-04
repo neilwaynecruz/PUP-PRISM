@@ -4,6 +4,7 @@ import { onBeforeUnmount, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {
     create as suppliersCreate,
     index as suppliersIndex,
@@ -56,10 +57,15 @@ const active = ref(
 );
 
 let refreshTimer: number | undefined;
+let isComponentActive = true;
 
 watch([search, active], () => {
     window.clearTimeout(refreshTimer);
     refreshTimer = window.setTimeout(() => {
+        if (!isComponentActive || !shouldApplyDebouncedVisit('/inventory/suppliers')) {
+            return;
+        }
+
         router.get(
             suppliersIndex().url,
             {
@@ -76,6 +82,7 @@ watch([search, active], () => {
 });
 
 onBeforeUnmount(() => {
+    isComponentActive = false;
     window.clearTimeout(refreshTimer);
 });
 </script>
@@ -83,7 +90,10 @@ onBeforeUnmount(() => {
 <template>
     <Head title="Suppliers" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
+    <div
+        class="flex flex-col gap-6 p-4 sm:p-6"
+        data-testid="suppliers-index-page"
+    >
         <div
             class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
         >

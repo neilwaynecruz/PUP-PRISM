@@ -5,6 +5,7 @@ import PurchaseOrderController from '@/actions/App/Http/Controllers/Inventory/Pu
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { formatPhilippinePeso } from '@/lib/utils';
 import {
     create as purchaseOrdersCreate,
@@ -81,10 +82,18 @@ const dateFrom = ref(props.filters.date_from ?? '');
 const dateTo = ref(props.filters.date_to ?? '');
 
 let refreshTimer: number | undefined;
+let isComponentActive = true;
 
 watch([search, status, supplierId, dateFrom, dateTo], () => {
     window.clearTimeout(refreshTimer);
     refreshTimer = window.setTimeout(() => {
+        if (
+            !isComponentActive ||
+            !shouldApplyDebouncedVisit('/inventory/purchase-orders')
+        ) {
+            return;
+        }
+
         router.get(
             purchaseOrdersIndex().url,
             {
@@ -104,6 +113,7 @@ watch([search, status, supplierId, dateFrom, dateTo], () => {
 });
 
 onBeforeUnmount(() => {
+    isComponentActive = false;
     window.clearTimeout(refreshTimer);
 });
 
@@ -131,7 +141,10 @@ function formatDate(iso: string | null): string {
 <template>
     <Head title="Purchase Orders" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
+    <div
+        class="flex flex-col gap-6 p-4 sm:p-6"
+        data-testid="purchase-orders-index-page"
+    >
         <div
             class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
         >

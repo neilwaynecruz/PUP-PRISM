@@ -27,6 +27,8 @@ use App\Http\Controllers\Inventory\StockMovementController;
 use App\Http\Controllers\Inventory\SupplierController;
 use App\Http\Controllers\Inventory\TrashController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SessionStatusController;
+use App\Support\PreventClientCaching;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -38,10 +40,12 @@ Route::get('/', function (Request $request) {
     return redirect()->route('login');
 })->name('home');
 
+Route::get('session/status', SessionStatusController::class)->name('session.status');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
     Route::get('search', GlobalSearchController::class)->name('search');
-    Route::get('session/keep-alive', fn () => response()->noContent()->header('Cache-Control', 'no-store'))
+    Route::get('session/keep-alive', fn () => PreventClientCaching::apply(response()->noContent()))
         ->name('session.keep-alive');
     Route::prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])

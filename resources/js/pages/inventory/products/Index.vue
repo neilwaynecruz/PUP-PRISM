@@ -24,6 +24,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useBulkSelection } from '@/composables/useBulkSelection';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {
     index as productsIndex,
     create as productsCreate,
@@ -257,9 +258,15 @@ const query = computed(() => ({
 }));
 
 let searchTimer: number | undefined;
+let isComponentActive = true;
+
 watch([search, type, categoryId, originId, supplierId, active], () => {
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => {
+        if (!isComponentActive || !shouldApplyDebouncedVisit('/inventory/products')) {
+            return;
+        }
+
         router.get(productsIndex().url, query.value, {
             preserveState: true,
             preserveScroll: true,
@@ -275,6 +282,7 @@ watch([search, type, categoryId, originId, supplierId, active], () => {
 });
 
 onBeforeUnmount(() => {
+    isComponentActive = false;
     window.clearTimeout(searchTimer);
 });
 </script>

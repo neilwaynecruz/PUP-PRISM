@@ -1,5 +1,6 @@
 import { router, usePage } from '@inertiajs/vue3';
 import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { isAppNavigating } from '@/composables/useAppNavigation';
 
 interface SyncOptions {
     interval?: number;
@@ -27,7 +28,7 @@ export function useRealTimeSync<T>(options: SyncOptions = {}) {
      * Perform a sync by refreshing the current page data
      */
     const sync = async (preserveScroll = true): Promise<void> => {
-        if (isSyncing.value) {
+        if (isSyncing.value || isAppNavigating()) {
             return;
         }
 

@@ -18,4 +18,22 @@ test.describe('Authentication Flow', () => {
         await expect(page).toHaveURL(/\/dashboard$/);
         await expect(page.getByTestId('dashboard-page')).toBeVisible();
     });
+
+    test('back button after logout does not restore protected dashboard content', async ({
+        page,
+    }) => {
+        await loginAs(page, TEST_USER.email, TEST_USER.password);
+        await expect(page.getByTestId('dashboard-page')).toBeVisible();
+
+        await page.getByTestId('sidebar-menu-button').click();
+        await page.getByTestId('logout-button').click();
+        await page.waitForURL(/\/login$/);
+        await expect(page.getByTestId('login-page')).toBeVisible();
+
+        await page.goBack();
+
+        await expect(page).toHaveURL(/\/login$/);
+        await expect(page.getByTestId('login-page')).toBeVisible();
+        await expect(page.getByTestId('dashboard-page')).toHaveCount(0);
+    });
 });

@@ -12,6 +12,7 @@ use App\Models\Requisition;
 use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Support\PreventClientCaching;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
@@ -36,8 +37,8 @@ class HandleInertiaRequests extends Middleware
     {
         $response = parent::handle($request, $next);
 
-        if ($this->shouldDisableClientCaching($request, $response)) {
-            $response->headers->set('Cache-Control', 'private, no-store');
+        if ($this->shouldPreventClientCaching($request, $response)) {
+            PreventClientCaching::apply($response);
         }
 
         return $response;
@@ -76,6 +77,7 @@ class HandleInertiaRequests extends Middleware
                 'lifetimeMinutes' => (int) config('session.lifetime', 120),
                 'warningMinutes' => max(1, min(5, ((int) config('session.lifetime', 120)) - 1)),
                 'keepAliveUrl' => route('session.keep-alive', absolute: false),
+                'statusUrl' => route('session.status', absolute: false),
                 'loginUrl' => route('login', absolute: false),
             ],
             'notifications' => $user instanceof User
@@ -136,17 +138,17 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 
-    private function shouldDisableClientCaching(Request $request, Response $response): bool
+    private function shouldPreventClientCaching(Request $request, Response $response): bool
     {
-        if (! $request->isMethod('GET')) {
+        if (! $response->isSuccessful() && $response->getStatusCode() !== Response::HTTP_UNAUTHORIZED) {
             return false;
         }
 
-        if (! $response->isSuccessful()) {
-            return false;
+        if ($request->user() instanceof User) {
+            return true;
         }
 
-        return $request->user() instanceof User;
+        return $request->routeIs('login', 'session.status', 'home');
     }
 
     /**

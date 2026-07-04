@@ -446,6 +446,7 @@ defineOptions({
             <Form
                 v-if="can.approve"
                 v-bind="RequisitionController.approve.form(requisition.id)"
+                :preserve-state="false"
                 v-slot="{ errors, processing }"
                 class="flex flex-1 items-end gap-2"
             >
@@ -482,6 +483,7 @@ defineOptions({
                         v-bind="
                             RequisitionController.reject.form(requisition.id)
                         "
+                        :preserve-state="false"
                         v-slot="{ errors, processing }"
                         @success="rejectDialogOpen = false"
                         class="grid gap-4"
@@ -516,6 +518,7 @@ defineOptions({
             <Form
                 v-if="can.issue"
                 v-bind="RequisitionController.issue.form(requisition.id)"
+                :preserve-state="false"
                 v-slot="{ errors, processing }"
                 class="grid flex-1 gap-4"
             >
@@ -542,7 +545,7 @@ defineOptions({
                                 type="number"
                                 min="0"
                                 :max="line.qty_remaining"
-                                :value="line.qty_remaining"
+                                :default-value="line.qty_remaining"
                             />
                         </div>
                         <div class="text-xs text-muted-foreground md:self-end">

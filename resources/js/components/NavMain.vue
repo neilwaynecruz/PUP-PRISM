@@ -19,10 +19,10 @@ defineProps<{
 }>();
 
 const { isCurrentUrl } = useCurrentUrl();
-const { navigateTo, pendingPath } = useAppNavigation();
+const { closeOverlays, pendingPath } = useAppNavigation();
 
-function handleNavigation(item: NavItem): void {
-    navigateTo(item.href, item.title);
+function handleNavigation(): void {
+    closeOverlays();
 }
 
 function isPendingItem(item: NavItem): boolean {
@@ -48,7 +48,7 @@ function isPendingItem(item: NavItem): boolean {
                     <Link
                         :href="item.href"
                         class="flex items-center gap-3"
-                        @click.prevent="handleNavigation(item)"
+                        @click="handleNavigation()"
                     >
                         <component
                             :is="item.icon"

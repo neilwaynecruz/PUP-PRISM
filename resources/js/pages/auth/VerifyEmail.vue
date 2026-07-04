@@ -3,6 +3,7 @@ import { Form, Head } from '@inertiajs/vue3';
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
+import { clearSessionClientState } from '@/lib/sessionGuard';
 import { logout } from '@/routes';
 import { send } from '@/routes/verification';
 
@@ -17,6 +18,10 @@ defineOptions({
 defineProps<{
     status?: string;
 }>();
+
+function handleLogout(): void {
+    clearSessionClientState();
+}
 </script>
 
 <template>
@@ -41,7 +46,14 @@ defineProps<{
             Resend verification email
         </Button>
 
-        <TextLink :href="logout()" as="button" class="mx-auto block text-sm">
+        <TextLink
+            :href="logout()"
+            method="post"
+            as="button"
+            class="mx-auto block text-sm"
+            data-testid="verify-email-logout-button"
+            @click="handleLogout"
+        >
             Log out
         </TextLink>
     </Form>

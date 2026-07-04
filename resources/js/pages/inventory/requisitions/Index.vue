@@ -24,6 +24,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { useBulkSelection } from '@/composables/useBulkSelection';
 import {
     destroy as requisitionTemplatesDestroy,
@@ -104,21 +105,27 @@ defineOptions({
 });
 
 const search = ref(props.filters.search ?? '');
-const status = ref(props.filters.status ?? '');
+const status = ref(props.filters.status ?? 'all');
 const dateFrom = ref(props.filters.date_from ?? '');
 const dateTo = ref(props.filters.date_to ?? '');
 
 const listQuery = computed(() => ({
     search: search.value || undefined,
-    status: status.value || undefined,
+    status: status.value === 'all' ? undefined : status.value,
     date_from: dateFrom.value || undefined,
     date_to: dateTo.value || undefined,
 }));
 
 let listFilterTimer: number | undefined;
+let isComponentActive = true;
+
 watch([search, status, dateFrom, dateTo], () => {
     window.clearTimeout(listFilterTimer);
     listFilterTimer = window.setTimeout(() => {
+        if (!isComponentActive || !shouldApplyDebouncedVisit('/inventory/requisitions')) {
+            return;
+        }
+
         router.get(requisitionsIndex().url, listQuery.value, {
             preserveState: true,
             preserveScroll: true,
@@ -128,6 +135,7 @@ watch([search, status, dateFrom, dateTo], () => {
 });
 
 onBeforeUnmount(() => {
+    isComponentActive = false;
     window.clearTimeout(listFilterTimer);
 });
 
@@ -544,7 +552,7 @@ function confirmBulkAction(): void {
                     <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="">All statuses</SelectItem>
+                    <SelectItem value="all">All statuses</SelectItem>
                     <SelectItem
                         v-for="option in statusOptions"
                         :key="option.value"

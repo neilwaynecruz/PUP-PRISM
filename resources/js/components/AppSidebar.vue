@@ -19,7 +19,7 @@ import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
 
 const { groupedNavItems } = useInventoryNavigation();
-const { navigateTo, pendingPath } = useAppNavigation();
+const { closeOverlays, pendingPath } = useAppNavigation();
 </script>
 
 <template>
@@ -39,7 +39,7 @@ const { navigateTo, pendingPath } = useAppNavigation();
                         <Link
                             :href="dashboard()"
                             class="flex items-center gap-3"
-                            @click.prevent="navigateTo(dashboard(), 'Dashboard')"
+                            @click="closeOverlays()"
                         >
                             <div
                                 class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm"

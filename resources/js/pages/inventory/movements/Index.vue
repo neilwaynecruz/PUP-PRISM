@@ -6,6 +6,7 @@ import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { Label } from '@/components/ui/label';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
@@ -93,9 +94,15 @@ const query = computed(() => ({
 }));
 
 let timer: number | undefined;
+let isComponentActive = true;
+
 watch([type, search, dateFrom, dateTo, performedBy], () => {
     window.clearTimeout(timer);
     timer = window.setTimeout(() => {
+        if (!isComponentActive || !shouldApplyDebouncedVisit('/inventory/movements')) {
+            return;
+        }
+
         router.get(StockMovementController.index().url, query.value, {
             preserveState: true,
             preserveScroll: true,
@@ -105,6 +112,7 @@ watch([type, search, dateFrom, dateTo, performedBy], () => {
 });
 
 onBeforeUnmount(() => {
+    isComponentActive = false;
     window.clearTimeout(timer);
 });
 

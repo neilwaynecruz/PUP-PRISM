@@ -18,11 +18,7 @@ type Props = {
 };
 
 defineProps<Props>();
-const { navigateTo, pendingPath } = useAppNavigation();
-
-function handleNavigation(item: NavItem): void {
-    navigateTo(item.href, item.title);
-}
+const { closeOverlays, pendingPath } = useAppNavigation();
 
 function isPendingItem(item: NavItem): boolean {
     return pendingPath.value === toUrl(item.href);
@@ -43,7 +39,7 @@ function isPendingItem(item: NavItem): boolean {
                         <Link
                             :href="item.href"
                             class="flex items-center gap-2"
-                            @click.prevent="handleNavigation(item)"
+                            @click="closeOverlays()"
                         >
                             <component :is="item.icon" />
                             <span>{{ item.title }}</span>

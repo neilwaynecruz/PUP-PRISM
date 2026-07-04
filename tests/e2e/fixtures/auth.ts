@@ -6,7 +6,7 @@ export async function loginAs(
     email: string,
     password: string = 'password',
 ): Promise<void> {
-    if (['admin@e2e.test', 'supplyhead@e2e.test'].includes(email)) {
+    if (['admin@e2e.test', 'supply@e2e.test'].includes(email)) {
         confirmTwoFactor(email);
     }
 
@@ -71,8 +71,8 @@ export function bypassEmailVerification(email: string): void {
 }
 
 export async function logout(page: Page): Promise<void> {
-    await page.request.post('/logout', { failOnStatusCode: false });
-    await page.context().clearCookies();
-    await page.goto('/login');
+    await page.getByTestId('sidebar-menu-button').click();
+    await page.getByTestId('logout-button').click();
+    await page.waitForURL(/\/login$/);
     await page.waitForLoadState('networkidle');
 }

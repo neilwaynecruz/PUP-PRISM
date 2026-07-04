@@ -1,28 +1,33 @@
 import { loginAs } from './fixtures/auth';
 import { expect, test } from './fixtures/test';
-import { getLatestRequisitionId } from './helpers/db';
+import { getLatestRequisitionId, getProductOnHandQtyBySku } from './helpers/db';
 
 test.describe('Requisition Lifecycle', () => {
     test('Submit -> Approve -> Issue -> Verify stock decrement', async ({ page }) => {
+        const pageErrors: string[] = [];
+        const consoleErrors: string[] = [];
+
+        page.on('pageerror', (error) => {
+            pageErrors.push(error.message);
+        });
+
+        page.on('console', (message) => {
+            if (message.type() === 'error') {
+                consoleErrors.push(message.text());
+            }
+        });
+
         await loginAs(page, 'requester@e2e.test');
 
-        // Capture initial stock before requisition flow
-        await page.goto('/inventory/products');
-        await page.getByTestId('product-search-input').fill('CON-E2E-001');
-        await page.waitForLoadState('networkidle');
-        await page.getByTestId('product-row-CON-E2E-001').getByTestId('view-product-button').click();
-        await page.waitForLoadState('networkidle');
-        const initialStockText = await page.getByTestId('product-on-hand-value').textContent() ?? '';
-        const initialMatch = initialStockText.match(/On hand: (\d+)/);
-        expect(initialMatch).not.toBeNull();
-        const initialStock = parseInt(initialMatch![1], 10);
+        const initialStock = getProductOnHandQtyBySku('CON-E2E-001');
 
         await page.goto('/inventory/requisitions');
         await expect(page.getByTestId('requisitions-index-page')).toBeVisible();
+        expect(pageErrors).toEqual([]);
+        expect(consoleErrors).toEqual([]);
 
         await page.getByTestId('requisition-sku-input').fill('CON-E2E-001');
         await page.getByTestId('requisition-qty-input').fill('10');
-        await page.getByTestId('requisition-notes-input').fill('E2E requisition request');
 
         await page.getByTestId('submit-requisition-button').click();
         await page.waitForLoadState('networkidle');
@@ -45,13 +50,6 @@ test.describe('Requisition Lifecycle', () => {
         await expect(page.getByTestId('requisition-status-value')).toHaveText('Issued');
         await expect(page.getByTestId('requisition-line-issued-CON-E2E-001')).toHaveText('10');
 
-        await page.goto('/inventory/products');
-        await page.getByTestId('product-search-input').fill('CON-E2E-001');
-        await expect(page).toHaveURL(/search=CON-E2E-001$/);
-        await Promise.all([
-            page.waitForURL(/\/inventory\/products\/\d+$/),
-            page.getByTestId('product-row-CON-E2E-001').getByTestId('view-product-button').click(),
-        ]);
-        await expect(page.getByTestId('product-on-hand-value')).toHaveText(new RegExp(`On hand: ${initialStock - 10}`));
+        expect(getProductOnHandQtyBySku('CON-E2E-001')).toBe(initialStock - 10);
     });
 });

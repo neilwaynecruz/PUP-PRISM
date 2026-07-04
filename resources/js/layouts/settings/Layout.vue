@@ -54,7 +54,7 @@ const sidebarNavItems = computed<NavItem[]>(() => {
 });
 
 const { isCurrentOrParentUrl } = useCurrentUrl();
-const { navigateTo, pendingPath } = useAppNavigation();
+const { closeOverlays, pendingPath } = useAppNavigation();
 
 function isPendingItem(item: NavItem): boolean {
     return pendingPath.value === toUrl(item.href);
@@ -87,7 +87,7 @@ function isPendingItem(item: NavItem): boolean {
                         <Link
                             :href="item.href"
                             class="flex items-center gap-2"
-                            @click.prevent="navigateTo(item.href, item.title)"
+                            @click="closeOverlays()"
                         >
                             <component :is="item.icon" class="h-4 w-4" />
                             {{ item.title }}

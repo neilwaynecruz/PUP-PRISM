@@ -39,6 +39,7 @@ export type SessionMeta = {
     lifetimeMinutes: number;
     warningMinutes: number;
     keepAliveUrl: string;
+    statusUrl: string;
     loginUrl: string;
 };
 

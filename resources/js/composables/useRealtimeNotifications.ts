@@ -2,7 +2,7 @@ import { router, usePage } from '@inertiajs/vue3';
 import { echo, echoIsConfigured, useConnectionStatus } from '@laravel/echo-vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
-import { read, readAll } from '@/routes/notifications';
+import { isAppNavigating } from '@/composables/useAppNavigation';
 import type {
     Auth,
     RealtimeNotificationItem,
@@ -102,12 +102,20 @@ export function useRealtimeNotifications() {
         }, 120);
     }
 
-    function queuePageReload(): void {
+    function queuePageReload(modules: string[]): void {
         if (pageReloadTimer !== null) {
             window.clearTimeout(pageReloadTimer);
         }
 
         pageReloadTimer = window.setTimeout(() => {
+            if (isAppNavigating()) {
+                return;
+            }
+
+            if (!shouldReloadCurrentPage(modules)) {
+                return;
+            }
+
             router.reload({
                 preserveScroll: true,
                 preserveState: true,
@@ -116,7 +124,7 @@ export function useRealtimeNotifications() {
     }
 
     function reloadNotifications(): void {
-        if (isSyncing.value) {
+        if (isSyncing.value || isAppNavigating()) {
             return;
         }
 
@@ -330,7 +338,7 @@ export function useRealtimeNotifications() {
             queueNotificationsReload();
 
             if (shouldReloadCurrentPage(modulesForNotification(payload))) {
-                queuePageReload();
+                queuePageReload(modulesForNotification(payload));
             }
         };
 
@@ -347,7 +355,7 @@ export function useRealtimeNotifications() {
                 queueNotificationsReload();
 
                 if (shouldReloadCurrentPage(payload.modules ?? [])) {
-                    queuePageReload();
+                    queuePageReload(payload.modules ?? []);
                 }
             };
 

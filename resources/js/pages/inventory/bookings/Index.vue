@@ -29,6 +29,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { useBulkSelection } from '@/composables/useBulkSelection';
 import {
     index as bookingsIndex,
@@ -123,7 +124,7 @@ const endAt = ref<string>('');
 const purpose = ref<string>('');
 const assetSearch = ref<string>(props.filters.asset_search ?? '');
 const listSearch = ref<string>(props.filters.search ?? '');
-const listStatus = ref<string>(props.filters.status ?? '');
+const listStatus = ref<string>(props.filters.status ?? 'all');
 const listDateFrom = ref<string>(props.filters.date_from ?? '');
 const listDateTo = ref<string>(props.filters.date_to ?? '');
 const assetScanFeedback = ref<string>('');
@@ -316,16 +317,22 @@ const calendarOptions = computed<CalendarOptions>(() => ({
 const listQuery = computed(() => ({
     asset_search: assetSearch.value || undefined,
     search: listSearch.value || undefined,
-    status: listStatus.value || undefined,
+    status: listStatus.value === 'all' ? undefined : listStatus.value,
     date_from: listDateFrom.value || undefined,
     date_to: listDateTo.value || undefined,
 }));
 
 let assetSearchTimer: number | undefined;
 let compactCalendarMediaQuery: MediaQueryList | null = null;
+let isComponentActive = true;
+
 watch([assetSearch, listSearch, listStatus, listDateFrom, listDateTo], () => {
     window.clearTimeout(assetSearchTimer);
     assetSearchTimer = window.setTimeout(() => {
+        if (!isComponentActive || !shouldApplyDebouncedVisit('/inventory/bookings')) {
+            return;
+        }
+
         router.get(bookingsIndex().url, listQuery.value, {
             preserveState: true,
             preserveScroll: true,
@@ -335,6 +342,7 @@ watch([assetSearch, listSearch, listStatus, listDateFrom, listDateTo], () => {
 });
 
 onBeforeUnmount(() => {
+    isComponentActive = false;
     window.clearTimeout(assetSearchTimer);
 
     compactCalendarMediaQuery?.removeEventListener(
@@ -987,7 +995,7 @@ function applyScannedAsset(tagCode: string): void {
                                 <SelectValue placeholder="All statuses" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">All statuses</SelectItem>
+                                <SelectItem value="all">All statuses</SelectItem>
                                 <SelectItem
                                     v-for="option in statusOptions"
                                     :key="option.value"
