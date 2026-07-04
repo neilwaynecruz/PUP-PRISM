@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\NotificationController::index
  * @see app/Http/Controllers/NotificationController.php:13
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\NotificationController::index
+ * @see app/Http/Controllers/NotificationController.php:13
+ * @route '/notifications'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificationController::index
+ * @see app/Http/Controllers/NotificationController.php:13
+ * @route '/notifications'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\NotificationController::index
+ * @see app/Http/Controllers/NotificationController.php:13
+ * @route '/notifications'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\NotificationController::read
  * @see app/Http/Controllers/NotificationController.php:82
@@ -95,6 +130,37 @@ read.put = (args: { notification: string | number } | [notification: string | nu
     method: 'put',
 })
 
+    /**
+* @see \App\Http\Controllers\NotificationController::read
+ * @see app/Http/Controllers/NotificationController.php:82
+ * @route '/notifications/{notification}/read'
+ */
+    const readForm = (args: { notification: string | number } | [notification: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: read.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificationController::read
+ * @see app/Http/Controllers/NotificationController.php:82
+ * @route '/notifications/{notification}/read'
+ */
+        readForm.put = (args: { notification: string | number } | [notification: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: read.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    read.form = readForm
 /**
 * @see \App\Http\Controllers\NotificationController::readAll
  * @see app/Http/Controllers/NotificationController.php:97
@@ -128,6 +194,38 @@ readAll.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: readAll.url(options),
     method: 'put',
 })
+
+    /**
+* @see \App\Http\Controllers\NotificationController::readAll
+ * @see app/Http/Controllers/NotificationController.php:97
+ * @route '/notifications/read-all'
+ */
+    const readAllForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: readAll.url({
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\NotificationController::readAll
+ * @see app/Http/Controllers/NotificationController.php:97
+ * @route '/notifications/read-all'
+ */
+        readAllForm.put = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: readAll.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    readAll.form = readAllForm
 const notifications = {
     index: Object.assign(index, index),
 read: Object.assign(read, read),

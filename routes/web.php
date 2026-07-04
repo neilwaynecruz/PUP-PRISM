@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\OriginController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\Inventory\AuditLogController;
 use App\Http\Controllers\Inventory\BookingController;
 use App\Http\Controllers\Inventory\ForecastController;
@@ -39,6 +40,7 @@ Route::get('/', function (Request $request) {
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
+    Route::get('search', GlobalSearchController::class)->name('search');
     Route::get('session/keep-alive', fn () => response()->noContent()->header('Cache-Control', 'no-store'))
         ->name('session.keep-alive');
     Route::prefix('notifications')->name('notifications.')->group(function () {
@@ -211,6 +213,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('reports/requisitions/{format}', [InventoryReportController::class, 'requisitions'])
                 ->whereIn('format', ['csv', 'pdf'])
                 ->name('reports.requisitions');
+
+            Route::get('reports/procurement/{format}', [InventoryReportController::class, 'procurement'])
+                ->whereIn('format', ['csv', 'pdf'])
+                ->name('reports.procurement');
+
+            Route::get('reports/forecasting/{format}', [InventoryReportController::class, 'forecasting'])
+                ->whereIn('format', ['csv', 'pdf'])
+                ->name('reports.forecasting');
+
+            Route::get('reports/slow-moving/{format}', [InventoryReportController::class, 'slowMovingStock'])
+                ->whereIn('format', ['csv', 'pdf'])
+                ->name('reports.slow-moving');
         });
 
         Route::middleware('role:Admin|Supply Head')->group(function () {

@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Admin\OriginController::index
  * @see app/Http/Controllers/Admin/OriginController.php:22
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\OriginController::index
+ * @see app/Http/Controllers/Admin/OriginController.php:22
+ * @route '/admin/origins'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::index
+ * @see app/Http/Controllers/Admin/OriginController.php:22
+ * @route '/admin/origins'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::index
+ * @see app/Http/Controllers/Admin/OriginController.php:22
+ * @route '/admin/origins'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Admin\OriginController::create
  * @see app/Http/Controllers/Admin/OriginController.php:54
@@ -85,6 +120,41 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\OriginController::create
+ * @see app/Http/Controllers/Admin/OriginController.php:54
+ * @route '/admin/origins/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::create
+ * @see app/Http/Controllers/Admin/OriginController.php:54
+ * @route '/admin/origins/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::create
+ * @see app/Http/Controllers/Admin/OriginController.php:54
+ * @route '/admin/origins/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\Http\Controllers\Admin\OriginController::store
  * @see app/Http/Controllers/Admin/OriginController.php:61
@@ -119,6 +189,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\OriginController::store
+ * @see app/Http/Controllers/Admin/OriginController.php:61
+ * @route '/admin/origins'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::store
+ * @see app/Http/Controllers/Admin/OriginController.php:61
+ * @route '/admin/origins'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Admin\OriginController::edit
  * @see app/Http/Controllers/Admin/OriginController.php:72
@@ -186,6 +277,41 @@ edit.head = (args: { origin: number | { id: number } } | [origin: number | { id:
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\OriginController::edit
+ * @see app/Http/Controllers/Admin/OriginController.php:72
+ * @route '/admin/origins/{origin}/edit'
+ */
+    const editForm = (args: { origin: number | { id: number } } | [origin: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: edit.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::edit
+ * @see app/Http/Controllers/Admin/OriginController.php:72
+ * @route '/admin/origins/{origin}/edit'
+ */
+        editForm.get = (args: { origin: number | { id: number } } | [origin: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::edit
+ * @see app/Http/Controllers/Admin/OriginController.php:72
+ * @route '/admin/origins/{origin}/edit'
+ */
+        editForm.head = (args: { origin: number | { id: number } } | [origin: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    edit.form = editForm
 /**
 * @see \App\Http\Controllers\Admin\OriginController::update
  * @see app/Http/Controllers/Admin/OriginController.php:93
@@ -253,6 +379,51 @@ update.patch = (args: { origin: number | { id: number } } | [origin: number | { 
     method: 'patch',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\OriginController::update
+ * @see app/Http/Controllers/Admin/OriginController.php:93
+ * @route '/admin/origins/{origin}'
+ */
+    const updateForm = (args: { origin: number | { id: number } } | [origin: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::update
+ * @see app/Http/Controllers/Admin/OriginController.php:93
+ * @route '/admin/origins/{origin}'
+ */
+        updateForm.put = (args: { origin: number | { id: number } } | [origin: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::update
+ * @see app/Http/Controllers/Admin/OriginController.php:93
+ * @route '/admin/origins/{origin}'
+ */
+        updateForm.patch = (args: { origin: number | { id: number } } | [origin: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 /**
 * @see \App\Http\Controllers\Admin\OriginController::destroy
  * @see app/Http/Controllers/Admin/OriginController.php:105
@@ -311,6 +482,37 @@ destroy.delete = (args: { origin: number | { id: number } } | [origin: number | 
     method: 'delete',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\OriginController::destroy
+ * @see app/Http/Controllers/Admin/OriginController.php:105
+ * @route '/admin/origins/{origin}'
+ */
+    const destroyForm = (args: { origin: number | { id: number } } | [origin: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::destroy
+ * @see app/Http/Controllers/Admin/OriginController.php:105
+ * @route '/admin/origins/{origin}'
+ */
+        destroyForm.delete = (args: { origin: number | { id: number } } | [origin: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\Admin\OriginController::deactivate
  * @see app/Http/Controllers/Admin/OriginController.php:126
@@ -368,6 +570,38 @@ deactivate.patch = (args: { origin: number | { id: number } } | [origin: number 
     url: deactivate.url(args, options),
     method: 'patch',
 })
+
+    /**
+* @see \App\Http\Controllers\Admin\OriginController::deactivate
+ * @see app/Http/Controllers/Admin/OriginController.php:126
+ * @route '/admin/origins/{origin}/deactivate'
+ */
+    const deactivateForm = (args: { origin: number | { id: number } } | [origin: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: deactivate.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PATCH',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\OriginController::deactivate
+ * @see app/Http/Controllers/Admin/OriginController.php:126
+ * @route '/admin/origins/{origin}/deactivate'
+ */
+        deactivateForm.patch = (args: { origin: number | { id: number } } | [origin: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: deactivate.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    deactivate.form = deactivateForm
 const OriginController = { index, create, store, edit, update, destroy, deactivate }
 
 export default OriginController

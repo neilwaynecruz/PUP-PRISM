@@ -86,7 +86,15 @@ type Paginated<T> = {
 };
 
 const props = defineProps<{
-    filters: { asset_search: string };
+    filters: {
+        asset_search: string;
+        search: string;
+        status: string | null;
+        date_from: string | null;
+        date_to: string | null;
+        requester_id: number | null;
+    };
+    statusOptions: Array<{ value: string; label: string }>;
     assets: AssetOption[];
     calendar_events: Array<
         Pick<
@@ -114,6 +122,10 @@ const startAt = ref<string>('');
 const endAt = ref<string>('');
 const purpose = ref<string>('');
 const assetSearch = ref<string>(props.filters.asset_search ?? '');
+const listSearch = ref<string>(props.filters.search ?? '');
+const listStatus = ref<string>(props.filters.status ?? '');
+const listDateFrom = ref<string>(props.filters.date_from ?? '');
+const listDateTo = ref<string>(props.filters.date_to ?? '');
 const assetScanFeedback = ref<string>('');
 const selectedRejectBooking = ref<BookingBase | null>(null);
 const selectedBooking = ref<BookingBase | null>(null);
@@ -299,21 +311,23 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     eventDisplay: 'block',
 }));
 
+const listQuery = computed(() => ({
+    asset_search: assetSearch.value || undefined,
+    search: listSearch.value || undefined,
+    status: listStatus.value || undefined,
+    date_from: listDateFrom.value || undefined,
+    date_to: listDateTo.value || undefined,
+}));
+
 let assetSearchTimer: number | undefined;
-watch(assetSearch, () => {
+watch([assetSearch, listSearch, listStatus, listDateFrom, listDateTo], () => {
     window.clearTimeout(assetSearchTimer);
     assetSearchTimer = window.setTimeout(() => {
-        router.get(
-            bookingsIndex().url,
-            {
-                asset_search: assetSearch.value || undefined,
-            },
-            {
-                preserveState: true,
-                preserveScroll: true,
-                replace: true,
-            },
-        );
+        router.get(bookingsIndex().url, listQuery.value, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
     }, 250);
 });
 
@@ -930,6 +944,40 @@ function applyScannedAsset(tagCode: string): void {
                 </div>
 
                 <div class="px-5 py-4">
+                    <div
+                        class="mb-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4"
+                    >
+                        <Input
+                            v-model="listSearch"
+                            placeholder="Search booking, asset, requester..."
+                        />
+                        <Select v-model="listStatus">
+                            <SelectTrigger>
+                                <SelectValue placeholder="All statuses" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="">All statuses</SelectItem>
+                                <SelectItem
+                                    v-for="option in statusOptions"
+                                    :key="option.value"
+                                    :value="option.value"
+                                >
+                                    {{ option.label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Input
+                            v-model="listDateFrom"
+                            type="date"
+                            aria-label="Start date from"
+                        />
+                        <Input
+                            v-model="listDateTo"
+                            type="date"
+                            aria-label="Start date to"
+                        />
+                    </div>
+
                     <div v-if="bookings.data.length" class="grid gap-3">
                         <div
                             v-for="booking in bookings.data"

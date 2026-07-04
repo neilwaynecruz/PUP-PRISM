@@ -20,7 +20,7 @@
 | Audit, Alerts, and Operations Control Center | High | Medium-High | Low-Medium | ✅ DONE |
 | Inventory Integrity, Adjustments, and Fulfillment | High | High | Medium | ✅ DONE |
 | Master Data and Administrative Governance | High | Medium | Low-Medium | ✅ DONE |
-| Search, Dashboards, Reporting, and API Experience | High | Medium-High | Low-Medium | ⬜ NOT STARTED |
+| Search, Dashboards, Reporting, and API Experience | High | Medium-High | Low-Medium | ✅ DONE |
 | Mobile Field Operations | Medium | Medium-High | Medium | ⬜ NOT STARTED |
 
 ## Summary
@@ -28,11 +28,11 @@
 | Metric | Count |
 | ------ | ----- |
 | Total epics suggested | 7 |
-| Total completed | 5 |
-| Total not started | 2 |
+| Total completed | 6 |
+| Total not started | 1 |
 | Total in progress | 0 |
 | Total blocked | 0 |
-| Overall completion percentage | 71% |
+| Overall completion percentage | 86% |
 
 ## Epic Completion Log
 
@@ -45,6 +45,7 @@
 | 2026-07-04 | Audit, Alerts, and Operations Control Center | ✅ DONE | `vendor/bin/pint --dirty --format agent`; `cmd /c php artisan test --compact tests/Feature/Admin/AlertsManagementTest.php tests/Feature/Admin/OperationsHealthPageTest.php tests/Feature/Notifications/NotificationHistoryTest.php tests/Feature/Inventory/OperationalAuditCoverageTest.php` (12 passed) | Expanded audit coverage for receiving, handover, issuance detail, and security-sensitive settings; added alerts triage module with acknowledge/assign/resolve; admin operations health UI; paginated notification history; policies, navigation, and Wayfinder routes. |
 | 2026-07-04 | Master Data and Administrative Governance | ✅ DONE | `vendor/bin/pint --dirty --format agent`; `cmd /c php artisan test --compact tests/Feature/Admin/MasterDataAdminTest.php` (9 passed) | Added Admin CRUD for departments, positions, categories, and origins with `MasterDataUsageService` in-use validation, impact warnings, deactivate flows, audit logging, `is_active` on categories/origins, product option filtering, navigation, and policies. |
 | 2026-07-04 | Inventory Integrity, Adjustments, and Fulfillment | ✅ DONE | `cmd /c php artisan test --compact tests/Feature/Inventory/StockAdjustmentWorkflowTest.php tests/Feature/Inventory/RequisitionIssuanceTest.php tests/Feature/Inventory/BookingAvailabilityTest.php tests/Feature/Inventory/HandoverVerificationTest.php` (30 passed) | Added `AssetIntegrityService` for booking/handover conflict checks, stock adjustments and cycle counts with reason codes, partial requisition fulfillment with `PartiallyIssued`/`Backordered` statuses, and append-only stock movement audit metadata. |
+| 2026-07-04 | Search, Dashboards, Reporting, and API Experience | ✅ DONE | `vendor/bin/pint --dirty --format agent`; `cmd /c php artisan test --compact tests/Feature/Search/OperatorExperienceTest.php tests/Feature/Api/ApiIntegrationTest.php tests/Feature/DashboardTest.php tests/Feature/DashboardCacheTest.php tests/Feature/Inventory/ReportExportTest.php` (46 passed) | Replaced placeholder dashboard KPIs with live metrics; added Supply Head and Property Custodian dashboard variants; requisition/booking index filters; cross-entity global search API; procurement/forecasting/slow-moving reports; API `per_page` caps via `config/api.php`. |
 
 ## Final Status
 

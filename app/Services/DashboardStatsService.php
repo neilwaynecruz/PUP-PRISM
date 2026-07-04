@@ -10,12 +10,15 @@ use App\Enums\RequisitionStatus;
 use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\ForecastSnapshot;
+use App\Models\HandoverLog;
 use App\Models\InventoryAlert;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Requisition;
+use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\Supplier;
+use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -47,6 +50,17 @@ class DashboardStatsService
      * @param  array{from: string|null, to: string|null}  $range
      * @return array<string, mixed>
      */
+    public function getCustodianStats(User $user, array $range): array
+    {
+        $cacheKey = 'custodian:'.$user->id;
+
+        return $this->cache->remember($cacheKey, $range, fn (): array => $this->buildCustodianStats($user, $range));
+    }
+
+    /**
+     * @param  array{from: string|null, to: string|null}  $range
+     * @return array<string, mixed>
+     */
     private function buildAdminStats(array $range): array
     {
         $from = isset($range['from']) ? CarbonImmutable::parse($range['from'])->startOfDay() : CarbonImmutable::now()->startOfMonth();
@@ -66,6 +80,8 @@ class DashboardStatsService
             'supplierPerformance' => $this->supplierPerformance(),
             'assetConditionSummary' => $this->assetConditionSummary(),
             'recentlyDeleted' => $this->recentlyDeleted(),
+            'kpiSummary' => $this->kpiSummary($from, $to),
+            'nearExpiryLots' => $this->nearExpiryLots(),
         ];
     }
 
@@ -79,10 +95,14 @@ class DashboardStatsService
         $to = isset($range['to']) ? CarbonImmutable::parse($range['to'])->endOfDay() : CarbonImmutable::now()->endOfDay();
 
         return [
+            'alerts' => $this->activeAlerts(),
             'forecastSummary' => $this->getForecastSummary(),
             'lowStock' => $this->lowStockProducts(),
             'purchaseOrderSummary' => $this->purchaseOrderSummary($from, $to),
             'supplierPerformance' => $this->supplierPerformance(),
+            'requisitionSummary' => $this->requisitionSummary($from, $to),
+            'bookingSummary' => $this->bookingSummary($from, $to),
+            'kpiSummary' => $this->kpiSummary($from, $to),
         ];
     }
 
@@ -477,5 +497,150 @@ class DashboardStatsService
             ->take(5)
             ->values()
             ->toArray();
+    }
+
+    /**
+     * @param  array{from: string|null, to: string|null}  $range
+     * @return array<string, mixed>
+     */
+    private function buildCustodianStats(User $user, array $range): array
+    {
+        $from = isset($range['from']) ? CarbonImmutable::parse($range['from'])->startOfDay() : CarbonImmutable::now()->startOfMonth();
+        $to = isset($range['to']) ? CarbonImmutable::parse($range['to'])->endOfDay() : CarbonImmutable::now()->endOfDay();
+        $positionId = $user->position_id;
+
+        $myOpenRequisitions = Requisition::query()
+            ->where('requester_id', $user->id)
+            ->whereIn('status', [
+                RequisitionStatus::Submitted,
+                RequisitionStatus::Approved,
+                RequisitionStatus::PartiallyIssued,
+                RequisitionStatus::Backordered,
+            ])
+            ->count();
+
+        $myUpcomingBookings = Booking::query()
+            ->where('requester_id', $user->id)
+            ->where('status', BookingStatus::Approved)
+            ->where('end_at', '>=', CarbonImmutable::now())
+            ->count();
+
+        $assignedAssets = $positionId
+            ? Asset::query()->where('position_id', $positionId)->where('status', AssetStatus::Available)->count()
+            : 0;
+
+        $pendingHandovers = HandoverLog::query()
+            ->where('to_user_id', $user->id)
+            ->whereNull('verified_at')
+            ->count();
+
+        return [
+            'custodianSummary' => [
+                'my_open_requisitions' => $myOpenRequisitions,
+                'my_upcoming_bookings' => $myUpcomingBookings,
+                'assigned_assets' => $assignedAssets,
+                'pending_handovers' => $pendingHandovers,
+            ],
+            'requisitionSummary' => Requisition::query()
+                ->where('requester_id', $user->id)
+                ->whereBetween('created_at', [$from, $to])
+                ->select('status', DB::raw('CAST(COUNT(*) AS INTEGER) as count'))
+                ->groupBy('status')
+                ->pluck('count', 'status')
+                ->mapWithKeys(fn (mixed $count, string $status) => [$status => (int) $count])
+                ->all(),
+            'bookingSummary' => Booking::query()
+                ->where('requester_id', $user->id)
+                ->whereBetween('created_at', [$from, $to])
+                ->select('status', DB::raw('CAST(COUNT(*) AS INTEGER) as count'))
+                ->groupBy('status')
+                ->pluck('count', 'status')
+                ->mapWithKeys(fn (mixed $count, string $status) => [$status => (int) $count])
+                ->all(),
+            'kpiSummary' => [
+                'my_open_requisitions' => $myOpenRequisitions,
+                'my_upcoming_bookings' => $myUpcomingBookings,
+                'pending_handovers' => $pendingHandovers,
+                'assigned_assets' => $assignedAssets,
+            ],
+        ];
+    }
+
+    /**
+     * @return array{
+     *     issued_today_count: int,
+     *     near_expiry_batch_count: int,
+     *     low_stock_count: int,
+     *     pending_requisitions_count: int,
+     *     pending_bookings_count: int,
+     *     active_alerts_count: int,
+     *     open_purchase_orders_count: int
+     * }
+     */
+    private function kpiSummary(CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $today = CarbonImmutable::now();
+
+        $issuedTodayCount = StockMovement::query()
+            ->where('movement_type', 'issue')
+            ->whereBetween('performed_at', [$today->startOfDay(), $today->endOfDay()])
+            ->count();
+
+        $nearExpiryBatchCount = StockLot::query()
+            ->where('qty_remaining', '>', 0)
+            ->whereNotNull('expires_at')
+            ->whereDate('expires_at', '<=', $today->addDays(30))
+            ->count();
+
+        $pendingRequisitions = (int) (Requisition::query()
+            ->where('status', RequisitionStatus::Submitted)
+            ->count());
+
+        $pendingBookings = (int) (Booking::query()
+            ->where('status', BookingStatus::Requested)
+            ->count());
+
+        $openPurchaseOrders = (int) (PurchaseOrder::query()
+            ->whereIn('status', [
+                PurchaseOrderStatus::Draft,
+                PurchaseOrderStatus::Sent,
+                PurchaseOrderStatus::Partial,
+            ])
+            ->count());
+
+        return [
+            'issued_today_count' => $issuedTodayCount,
+            'near_expiry_batch_count' => $nearExpiryBatchCount,
+            'low_stock_count' => count($this->lowStockProducts()),
+            'pending_requisitions_count' => $pendingRequisitions,
+            'pending_bookings_count' => $pendingBookings,
+            'active_alerts_count' => InventoryAlert::query()->whereNull('resolved_at')->count(),
+            'open_purchase_orders_count' => $openPurchaseOrders,
+        ];
+    }
+
+    /**
+     * @return list<array{id: int, product_name: string, sku: string, qty_remaining: int, expires_at: string}>
+     */
+    private function nearExpiryLots(): array
+    {
+        $threshold = CarbonImmutable::now()->addDays(30);
+
+        return StockLot::query()
+            ->with('product:id,sku,name')
+            ->where('qty_remaining', '>', 0)
+            ->whereNotNull('expires_at')
+            ->whereDate('expires_at', '<=', $threshold)
+            ->orderBy('expires_at')
+            ->limit(10)
+            ->get(['id', 'product_id', 'qty_remaining', 'expires_at'])
+            ->map(fn (StockLot $lot) => [
+                'id' => $lot->id,
+                'product_name' => $lot->product?->name ?? 'Unknown',
+                'sku' => $lot->product?->sku ?? 'N/A',
+                'qty_remaining' => $lot->qty_remaining,
+                'expires_at' => CarbonImmutable::parse((string) $lot->expires_at)->toDateString(),
+            ])
+            ->all();
     }
 }

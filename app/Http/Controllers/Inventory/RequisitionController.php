@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Inventory;
 use App\Enums\RequisitionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\RequisitionApproveRequest;
+use App\Http\Requests\Inventory\RequisitionIndexRequest;
 use App\Http\Requests\Inventory\RequisitionIssueRequest;
 use App\Http\Requests\Inventory\RequisitionRejectRequest;
 use App\Http\Requests\Inventory\RequisitionStoreRequest;
@@ -35,18 +36,49 @@ class RequisitionController extends Controller
     ) {}
 
     public function index(
-        Request $request,
+        RequisitionIndexRequest $request,
         RequisitionTemplateService $templates,
     ): Response {
         $this->authorize('viewAny', Requisition::class);
 
+        $validated = $request->validated();
+        $search = $request->searchTerm();
+        $status = $request->statusFilter();
+
         $requisitions = Requisition::query()
             ->with(['requester:id,name,email', 'requesterPosition:id,department_id,title', 'requesterPosition.department:id,name'])
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    if (ctype_digit($search)) {
+                        $query->whereKey((int) $search);
+                    }
+
+                    $query->orWhereHas('requester', function ($query) use ($search) {
+                        $query->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                    });
+                });
+            })
+            ->when($status !== null, fn ($query) => $query->where('status', $status))
+            ->when(isset($validated['date_from']), fn ($query) => $query->whereDate('created_at', '>=', $validated['date_from']))
+            ->when(isset($validated['date_to']), fn ($query) => $query->whereDate('created_at', '<=', $validated['date_to']))
+            ->when(isset($validated['requester_id']), fn ($query) => $query->where('requester_id', $validated['requester_id']))
             ->orderByDesc('created_at')
             ->paginate(15)
             ->withQueryString();
 
         return Inertia::render('inventory/requisitions/Index', [
+            'filters' => [
+                'search' => $search,
+                'status' => $status,
+                'date_from' => $validated['date_from'] ?? null,
+                'date_to' => $validated['date_to'] ?? null,
+                'requester_id' => $validated['requester_id'] ?? null,
+            ],
+            'statusOptions' => collect(RequisitionStatus::cases())->map(fn (RequisitionStatus $case) => [
+                'value' => $case->value,
+                'label' => $case->value,
+            ])->values()->all(),
             'requisitions' => (new RequisitionCollection($requisitions))->toArray($request),
             'exportUrls' => [
                 'csv' => route('inventory.reports.requisitions', ['format' => 'csv'], absolute: false),

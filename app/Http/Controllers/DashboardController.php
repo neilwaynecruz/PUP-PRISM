@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AssetStatus;
+use App\Models\User;
 use App\Services\DashboardStatsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -19,8 +20,10 @@ class DashboardController extends Controller
     public function __invoke(Request $request): Response
     {
         $user = $request->user();
-        $canViewForecasting = $user?->hasAnyRole(['Admin', 'Supply Head']) ?? false;
-        $canViewProcurement = $user?->hasAnyRole(['Admin', 'Supply Head']) ?? false;
+        abort_unless($user instanceof User, 403);
+
+        $canViewForecasting = $user->hasAnyRole(['Admin', 'Supply Head']);
+        $canViewProcurement = $user->hasAnyRole(['Admin', 'Supply Head']);
 
         $validated = Validator::make($request->all(), [
             'from' => ['nullable', 'date'],
@@ -37,11 +40,20 @@ class DashboardController extends Controller
             'items' => [],
         ];
 
-        $stats = $user->hasRole('Admin')
-            ? $this->statsService->getAdminStats($range)
-            : ($canViewProcurement ? $this->statsService->getProcurementStats($range) : []);
+        $dashboardVariant = match (true) {
+            $user->hasRole('Admin') => 'admin',
+            $user->hasRole('Supply Head') => 'supply_head',
+            default => 'custodian',
+        };
+
+        $stats = match ($dashboardVariant) {
+            'admin' => $this->statsService->getAdminStats($range),
+            'supply_head' => $this->statsService->getProcurementStats($range),
+            default => $this->statsService->getCustodianStats($user, $range),
+        };
 
         return Inertia::render('Dashboard', [
+            'dashboardVariant' => $dashboardVariant,
             'canViewForecasting' => $canViewForecasting,
             'dateRange' => $range,
             'alerts' => $stats['alerts'] ?? [],
@@ -50,6 +62,9 @@ class DashboardController extends Controller
                 : $emptyForecastSummary,
             'lowStock' => $stats['lowStock'] ?? [],
             'unserviceableAssets' => $stats['unserviceableAssets'] ?? [],
+            'kpiSummary' => $stats['kpiSummary'] ?? [],
+            'nearExpiryLots' => $stats['nearExpiryLots'] ?? [],
+            'custodianSummary' => $stats['custodianSummary'] ?? null,
             'assetStatusCounts' => [
                 'labels' => [AssetStatus::Unserviceable->value, AssetStatus::Condemned->value],
                 'data' => [

@@ -323,3 +323,30 @@ it('rejects requisition creation for read-only tokens', function () {
         ])
         ->assertForbidden();
 });
+
+it('rejects api pagination above the configured maximum', function () {
+    $admin = apiRoleUser('Admin');
+    $token = $admin->createToken('test', ['read'])->plainTextToken;
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->getJson('/api/products?per_page=500')
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['per_page']);
+});
+
+it('accepts api pagination within the configured maximum', function () {
+    $admin = apiRoleUser('Admin');
+    $token = $admin->createToken('test', ['read'])->plainTextToken;
+
+    Product::factory()->count(3)->create([
+        'type' => ProductType::Consumable,
+        'origin_id' => Origin::factory()->create()->id,
+        'category_id' => Category::factory()->create()->id,
+    ]);
+
+    $this->withHeader('Authorization', "Bearer {$token}")
+        ->getJson('/api/products?per_page=2')
+        ->assertOk()
+        ->assertJsonPath('meta.per_page', 2)
+        ->assertJsonCount(2, 'data');
+});

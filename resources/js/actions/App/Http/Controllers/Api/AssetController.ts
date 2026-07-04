@@ -1,7 +1,7 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\AssetController::index
- * @see app/Http/Controllers/Api/AssetController.php:14
+ * @see app/Http/Controllers/Api/AssetController.php:16
  * @route '/api/assets'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\AssetController::index
- * @see app/Http/Controllers/Api/AssetController.php:14
+ * @see app/Http/Controllers/Api/AssetController.php:16
  * @route '/api/assets'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\AssetController::index
- * @see app/Http/Controllers/Api/AssetController.php:14
+ * @see app/Http/Controllers/Api/AssetController.php:16
  * @route '/api/assets'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\AssetController::index
- * @see app/Http/Controllers/Api/AssetController.php:14
+ * @see app/Http/Controllers/Api/AssetController.php:16
  * @route '/api/assets'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -42,9 +42,44 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Api\AssetController::index
+ * @see app/Http/Controllers/Api/AssetController.php:16
+ * @route '/api/assets'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\AssetController::index
+ * @see app/Http/Controllers/Api/AssetController.php:16
+ * @route '/api/assets'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\AssetController::index
+ * @see app/Http/Controllers/Api/AssetController.php:16
+ * @route '/api/assets'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:48
+ * @see app/Http/Controllers/Api/AssetController.php:50
  * @route '/api/assets/{asset}'
  */
 export const show = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -59,7 +94,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:48
+ * @see app/Http/Controllers/Api/AssetController.php:50
  * @route '/api/assets/{asset}'
  */
 show.url = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -92,7 +127,7 @@ show.url = (args: { asset: number | { id: number } } | [asset: number | { id: nu
 
 /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:48
+ * @see app/Http/Controllers/Api/AssetController.php:50
  * @route '/api/assets/{asset}'
  */
 show.get = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -101,13 +136,49 @@ show.get = (args: { asset: number | { id: number } } | [asset: number | { id: nu
 })
 /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:48
+ * @see app/Http/Controllers/Api/AssetController.php:50
  * @route '/api/assets/{asset}'
  */
 show.head = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(args, options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\Api\AssetController::show
+ * @see app/Http/Controllers/Api/AssetController.php:50
+ * @route '/api/assets/{asset}'
+ */
+    const showForm = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\AssetController::show
+ * @see app/Http/Controllers/Api/AssetController.php:50
+ * @route '/api/assets/{asset}'
+ */
+        showForm.get = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\AssetController::show
+ * @see app/Http/Controllers/Api/AssetController.php:50
+ * @route '/api/assets/{asset}'
+ */
+        showForm.head = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 const AssetController = { index, show }
 
 export default AssetController

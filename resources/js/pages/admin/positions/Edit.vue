@@ -17,7 +17,7 @@ const props = defineProps<{
     can: { delete: boolean; deactivate: boolean };
 }>();
 
-defineOptions({ layout: { breadcrumbs: [{ title: 'Admin', href: index() }, { title: 'Positions', href: index() }, { title: 'Edit', href: edit(props.position.id) }] } });
+defineOptions({ layout: { breadcrumbs: [{ title: 'Admin', href: index() }, { title: 'Positions', href: index() }, { title: 'Edit', href: edit(0) }] } });
 
 const form = useForm({
     department_id: String(props.position.department_id),

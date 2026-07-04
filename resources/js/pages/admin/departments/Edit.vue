@@ -17,7 +17,7 @@ const props = defineProps<{
 }>();
 
 defineOptions({
-    layout: { breadcrumbs: [{ title: 'Admin', href: index() }, { title: 'Departments', href: index() }, { title: props.department.name, href: edit(props.department.id) }] },
+    layout: { breadcrumbs: [{ title: 'Admin', href: index() }, { title: 'Departments', href: index() }, { title: 'Edit', href: edit(0) }] },
 });
 
 const form = useForm({

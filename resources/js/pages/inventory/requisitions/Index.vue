@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
@@ -80,6 +80,14 @@ type DraftLine = {
 };
 
 const props = defineProps<{
+    filters: {
+        search: string;
+        status: string | null;
+        date_from: string | null;
+        date_to: string | null;
+        requester_id: number | null;
+    };
+    statusOptions: Array<{ value: string; label: string }>;
     requisitions: Paginated<ReqRow>;
     templates: TemplateSummary[];
     exportUrls: { csv: string; pdf: string };
@@ -93,6 +101,34 @@ defineOptions({
             { title: 'Requisitions', href: requisitionsIndex() },
         ],
     },
+});
+
+const search = ref(props.filters.search ?? '');
+const status = ref(props.filters.status ?? '');
+const dateFrom = ref(props.filters.date_from ?? '');
+const dateTo = ref(props.filters.date_to ?? '');
+
+const listQuery = computed(() => ({
+    search: search.value || undefined,
+    status: status.value || undefined,
+    date_from: dateFrom.value || undefined,
+    date_to: dateTo.value || undefined,
+}));
+
+let listFilterTimer: number | undefined;
+watch([search, status, dateFrom, dateTo], () => {
+    window.clearTimeout(listFilterTimer);
+    listFilterTimer = window.setTimeout(() => {
+        router.get(requisitionsIndex().url, listQuery.value, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    }, 250);
+});
+
+onBeforeUnmount(() => {
+    window.clearTimeout(listFilterTimer);
 });
 
 function makeDraftLine(line?: Partial<TemplateLine>): DraftLine {
@@ -497,6 +533,29 @@ function confirmBulkAction(): void {
                     <Link href="/inventory/requisitions/trash">Trash</Link>
                 </Button>
             </div>
+        </div>
+
+        <div
+            class="grid gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm md:grid-cols-2 lg:grid-cols-4"
+        >
+            <Input v-model="search" placeholder="Search ID or requester..." />
+            <Select v-model="status">
+                <SelectTrigger>
+                    <SelectValue placeholder="All statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="">All statuses</SelectItem>
+                    <SelectItem
+                        v-for="option in statusOptions"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}
+                    </SelectItem>
+                </SelectContent>
+            </Select>
+            <Input v-model="dateFrom" type="date" aria-label="Date from" />
+            <Input v-model="dateTo" type="date" aria-label="Date to" />
         </div>
 
         <div

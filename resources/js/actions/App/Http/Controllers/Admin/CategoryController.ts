@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Admin\CategoryController::index
  * @see app/Http/Controllers/Admin/CategoryController.php:22
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\CategoryController::index
+ * @see app/Http/Controllers/Admin/CategoryController.php:22
+ * @route '/admin/categories'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::index
+ * @see app/Http/Controllers/Admin/CategoryController.php:22
+ * @route '/admin/categories'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::index
+ * @see app/Http/Controllers/Admin/CategoryController.php:22
+ * @route '/admin/categories'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Admin\CategoryController::create
  * @see app/Http/Controllers/Admin/CategoryController.php:54
@@ -85,6 +120,41 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\CategoryController::create
+ * @see app/Http/Controllers/Admin/CategoryController.php:54
+ * @route '/admin/categories/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::create
+ * @see app/Http/Controllers/Admin/CategoryController.php:54
+ * @route '/admin/categories/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::create
+ * @see app/Http/Controllers/Admin/CategoryController.php:54
+ * @route '/admin/categories/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\Http\Controllers\Admin\CategoryController::store
  * @see app/Http/Controllers/Admin/CategoryController.php:61
@@ -119,6 +189,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\CategoryController::store
+ * @see app/Http/Controllers/Admin/CategoryController.php:61
+ * @route '/admin/categories'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::store
+ * @see app/Http/Controllers/Admin/CategoryController.php:61
+ * @route '/admin/categories'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Admin\CategoryController::edit
  * @see app/Http/Controllers/Admin/CategoryController.php:72
@@ -186,6 +277,41 @@ edit.head = (args: { category: number | { id: number } } | [category: number | {
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\CategoryController::edit
+ * @see app/Http/Controllers/Admin/CategoryController.php:72
+ * @route '/admin/categories/{category}/edit'
+ */
+    const editForm = (args: { category: number | { id: number } } | [category: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: edit.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::edit
+ * @see app/Http/Controllers/Admin/CategoryController.php:72
+ * @route '/admin/categories/{category}/edit'
+ */
+        editForm.get = (args: { category: number | { id: number } } | [category: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::edit
+ * @see app/Http/Controllers/Admin/CategoryController.php:72
+ * @route '/admin/categories/{category}/edit'
+ */
+        editForm.head = (args: { category: number | { id: number } } | [category: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    edit.form = editForm
 /**
 * @see \App\Http\Controllers\Admin\CategoryController::update
  * @see app/Http/Controllers/Admin/CategoryController.php:93
@@ -253,6 +379,51 @@ update.patch = (args: { category: number | { id: number } } | [category: number 
     method: 'patch',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\CategoryController::update
+ * @see app/Http/Controllers/Admin/CategoryController.php:93
+ * @route '/admin/categories/{category}'
+ */
+    const updateForm = (args: { category: number | { id: number } } | [category: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::update
+ * @see app/Http/Controllers/Admin/CategoryController.php:93
+ * @route '/admin/categories/{category}'
+ */
+        updateForm.put = (args: { category: number | { id: number } } | [category: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::update
+ * @see app/Http/Controllers/Admin/CategoryController.php:93
+ * @route '/admin/categories/{category}'
+ */
+        updateForm.patch = (args: { category: number | { id: number } } | [category: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 /**
 * @see \App\Http\Controllers\Admin\CategoryController::destroy
  * @see app/Http/Controllers/Admin/CategoryController.php:105
@@ -311,6 +482,37 @@ destroy.delete = (args: { category: number | { id: number } } | [category: numbe
     method: 'delete',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\CategoryController::destroy
+ * @see app/Http/Controllers/Admin/CategoryController.php:105
+ * @route '/admin/categories/{category}'
+ */
+    const destroyForm = (args: { category: number | { id: number } } | [category: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::destroy
+ * @see app/Http/Controllers/Admin/CategoryController.php:105
+ * @route '/admin/categories/{category}'
+ */
+        destroyForm.delete = (args: { category: number | { id: number } } | [category: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\Admin\CategoryController::deactivate
  * @see app/Http/Controllers/Admin/CategoryController.php:126
@@ -368,6 +570,38 @@ deactivate.patch = (args: { category: number | { id: number } } | [category: num
     url: deactivate.url(args, options),
     method: 'patch',
 })
+
+    /**
+* @see \App\Http\Controllers\Admin\CategoryController::deactivate
+ * @see app/Http/Controllers/Admin/CategoryController.php:126
+ * @route '/admin/categories/{category}/deactivate'
+ */
+    const deactivateForm = (args: { category: number | { id: number } } | [category: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: deactivate.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PATCH',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\CategoryController::deactivate
+ * @see app/Http/Controllers/Admin/CategoryController.php:126
+ * @route '/admin/categories/{category}/deactivate'
+ */
+        deactivateForm.patch = (args: { category: number | { id: number } } | [category: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: deactivate.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    deactivate.form = deactivateForm
 const CategoryController = { index, create, store, edit, update, destroy, deactivate }
 
 export default CategoryController

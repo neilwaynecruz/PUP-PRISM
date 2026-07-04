@@ -30,10 +30,14 @@ const defaultNotifications: SharedNotifications = {
 };
 
 const fallbackPollInterval = 60_000;
+const isClient = typeof window !== 'undefined';
+const defaultConnectionStatus = ref<'disconnected'>('disconnected');
 
 export function useRealtimeNotifications() {
     const page = usePage();
-    const connectionStatus = useConnectionStatus();
+    const connectionStatus = isClient
+        ? useConnectionStatus()
+        : defaultConnectionStatus;
     const notifications = ref<RealtimeNotificationItem[]>([]);
     const unreadCount = ref(0);
     const isSyncing = ref(false);
@@ -72,19 +76,21 @@ export function useRealtimeNotifications() {
         { immediate: true, deep: true },
     );
 
-    watch(
-        connectionStatus,
-        (status) => {
-            if (status === 'connected' || status === 'connecting') {
-                stopFallbackPolling();
+    if (isClient) {
+        watch(
+            connectionStatus,
+            (status) => {
+                if (status === 'connected' || status === 'connecting') {
+                    stopFallbackPolling();
 
-                return;
-            }
+                    return;
+                }
 
-            startFallbackPolling();
-        },
-        { immediate: true },
-    );
+                startFallbackPolling();
+            },
+            { immediate: true },
+        );
+    }
 
     function queueNotificationsReload(): void {
         if (notificationsReloadTimer !== null) {
@@ -127,6 +133,10 @@ export function useRealtimeNotifications() {
     }
 
     function startFallbackPolling(): void {
+        if (!isClient) {
+            return;
+        }
+
         if (fallbackTimer !== null) {
             return;
         }
@@ -137,6 +147,10 @@ export function useRealtimeNotifications() {
     }
 
     function stopFallbackPolling(): void {
+        if (!isClient) {
+            return;
+        }
+
         if (fallbackTimer === null) {
             return;
         }
@@ -346,10 +360,18 @@ export function useRealtimeNotifications() {
     }
 
     onMounted(() => {
+        if (!isClient) {
+            return;
+        }
+
         registerRealtimeChannels();
     });
 
     onUnmounted(() => {
+        if (!isClient) {
+            return;
+        }
+
         stopFallbackPolling();
 
         if (notificationsReloadTimer !== null) {

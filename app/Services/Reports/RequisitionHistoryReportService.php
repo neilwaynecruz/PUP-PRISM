@@ -11,6 +11,10 @@ class RequisitionHistoryReportService extends AbstractTableReportService
 {
     public function build(Request $request): TableReport
     {
+        $status = $request->string('status')->trim()->toString();
+        $dateFrom = $request->string('date_from')->trim()->toString();
+        $dateTo = $request->string('date_to')->trim()->toString();
+
         $query = Requisition::query()
             ->with([
                 'requester:id,name,email',
@@ -24,6 +28,9 @@ class RequisitionHistoryReportService extends AbstractTableReportService
                 'issuedPosition.department:id,name',
                 'lines.product:id,sku,name',
             ])
+            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($dateFrom !== '', fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo !== '', fn ($query) => $query->whereDate('created_at', '<=', $dateTo))
             ->orderByDesc('created_at');
 
         $rows = (function () use ($query) {
@@ -46,7 +53,9 @@ class RequisitionHistoryReportService extends AbstractTableReportService
             title: 'Requisition History Report',
             filenameBase: 'requisition-history-report',
             filters: $this->normalizeFilters([
-                'Status' => 'All',
+                'Status' => $status !== '' ? $status : 'All',
+                'Date from' => $dateFrom !== '' ? $dateFrom : null,
+                'Date to' => $dateTo !== '' ? $dateTo : null,
             ]),
             columns: [
                 'requisition_id' => 'Requisition ID',

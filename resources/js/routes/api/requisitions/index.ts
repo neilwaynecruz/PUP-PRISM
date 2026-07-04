@@ -1,7 +1,7 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::index
- * @see app/Http/Controllers/Api/RequisitionController.php:16
+ * @see app/Http/Controllers/Api/RequisitionController.php:19
  * @route '/api/requisitions'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::index
- * @see app/Http/Controllers/Api/RequisitionController.php:16
+ * @see app/Http/Controllers/Api/RequisitionController.php:19
  * @route '/api/requisitions'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::index
- * @see app/Http/Controllers/Api/RequisitionController.php:16
+ * @see app/Http/Controllers/Api/RequisitionController.php:19
  * @route '/api/requisitions'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::index
- * @see app/Http/Controllers/Api/RequisitionController.php:16
+ * @see app/Http/Controllers/Api/RequisitionController.php:19
  * @route '/api/requisitions'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -42,9 +42,44 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Api\RequisitionController::index
+ * @see app/Http/Controllers/Api/RequisitionController.php:19
+ * @route '/api/requisitions'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\RequisitionController::index
+ * @see app/Http/Controllers/Api/RequisitionController.php:19
+ * @route '/api/requisitions'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\RequisitionController::index
+ * @see app/Http/Controllers/Api/RequisitionController.php:19
+ * @route '/api/requisitions'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::show
- * @see app/Http/Controllers/Api/RequisitionController.php:42
+ * @see app/Http/Controllers/Api/RequisitionController.php:45
  * @route '/api/requisitions/{requisition}'
  */
 export const show = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -59,7 +94,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::show
- * @see app/Http/Controllers/Api/RequisitionController.php:42
+ * @see app/Http/Controllers/Api/RequisitionController.php:45
  * @route '/api/requisitions/{requisition}'
  */
 show.url = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -92,7 +127,7 @@ show.url = (args: { requisition: number | { id: number } } | [requisition: numbe
 
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::show
- * @see app/Http/Controllers/Api/RequisitionController.php:42
+ * @see app/Http/Controllers/Api/RequisitionController.php:45
  * @route '/api/requisitions/{requisition}'
  */
 show.get = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -101,7 +136,7 @@ show.get = (args: { requisition: number | { id: number } } | [requisition: numbe
 })
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::show
- * @see app/Http/Controllers/Api/RequisitionController.php:42
+ * @see app/Http/Controllers/Api/RequisitionController.php:45
  * @route '/api/requisitions/{requisition}'
  */
 show.head = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -109,9 +144,44 @@ show.head = (args: { requisition: number | { id: number } } | [requisition: numb
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Api\RequisitionController::show
+ * @see app/Http/Controllers/Api/RequisitionController.php:45
+ * @route '/api/requisitions/{requisition}'
+ */
+    const showForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: show.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\RequisitionController::show
+ * @see app/Http/Controllers/Api/RequisitionController.php:45
+ * @route '/api/requisitions/{requisition}'
+ */
+        showForm.get = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Api\RequisitionController::show
+ * @see app/Http/Controllers/Api/RequisitionController.php:45
+ * @route '/api/requisitions/{requisition}'
+ */
+        showForm.head = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: show.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    show.form = showForm
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::store
- * @see app/Http/Controllers/Api/RequisitionController.php:53
+ * @see app/Http/Controllers/Api/RequisitionController.php:56
  * @route '/api/requisitions'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -126,7 +196,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::store
- * @see app/Http/Controllers/Api/RequisitionController.php:53
+ * @see app/Http/Controllers/Api/RequisitionController.php:56
  * @route '/api/requisitions'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -135,13 +205,35 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Api\RequisitionController::store
- * @see app/Http/Controllers/Api/RequisitionController.php:53
+ * @see app/Http/Controllers/Api/RequisitionController.php:56
  * @route '/api/requisitions'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: store.url(options),
     method: 'post',
 })
+
+    /**
+* @see \App\Http\Controllers\Api\RequisitionController::store
+ * @see app/Http/Controllers/Api/RequisitionController.php:56
+ * @route '/api/requisitions'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Api\RequisitionController::store
+ * @see app/Http/Controllers/Api/RequisitionController.php:56
+ * @route '/api/requisitions'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 const requisitions = {
     index: Object.assign(index, index),
 show: Object.assign(show, show),

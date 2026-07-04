@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\AssetStatus;
+use App\Http\Controllers\Api\Concerns\PaginatesApiResources;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AssetResource;
 use App\Models\Asset;
@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 class AssetController extends Controller
 {
+    use PaginatesApiResources;
+
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Asset::class);
@@ -31,7 +33,7 @@ class AssetController extends Controller
                 $query->where('tag_code', 'like', "%{$search}%");
             })
             ->orderBy('tag_code')
-            ->paginate($request->integer('per_page', 25))
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return response()->json([

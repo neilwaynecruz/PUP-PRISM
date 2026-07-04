@@ -7,6 +7,7 @@ use App\Enums\BookingStatus;
 use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\BookingApproveRequest;
+use App\Http\Requests\Inventory\BookingIndexRequest;
 use App\Http\Requests\Inventory\BookingStoreRequest;
 use App\Http\Resources\AssetResource;
 use App\Http\Resources\BookingCollection;
@@ -34,12 +35,15 @@ class BookingController extends Controller
         private readonly AssetIntegrityService $assetIntegrity,
     ) {}
 
-    public function index(Request $request): Response
+    public function index(BookingIndexRequest $request): Response
     {
         $this->authorize('viewAny', Booking::class);
 
         $currentUser = Auth::user();
-        $assetSearch = $request->string('asset_search')->trim()->toString();
+        $validated = $request->validated();
+        $assetSearch = $request->assetSearchTerm();
+        $search = $request->searchTerm();
+        $status = $request->statusFilter();
 
         $assets = Asset::query()
             ->where('status', AssetStatus::Available)
@@ -89,6 +93,23 @@ class BookingController extends Controller
             ->with([
                 ...$bookingPayload,
             ])
+            ->when($search !== '', function ($query) use ($search) {
+                $query->where(function ($query) use ($search) {
+                    if (ctype_digit($search)) {
+                        $query->whereKey((int) $search);
+                    }
+
+                    $query->orWhereHas('asset', fn ($query) => $query->where('tag_code', 'like', "%{$search}%"))
+                        ->orWhereHas('requester', function ($query) use ($search) {
+                            $query->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+                });
+            })
+            ->when($status !== null, fn ($query) => $query->where('status', $status))
+            ->when(isset($validated['date_from']), fn ($query) => $query->whereDate('start_at', '>=', $validated['date_from']))
+            ->when(isset($validated['date_to']), fn ($query) => $query->whereDate('start_at', '<=', $validated['date_to']))
+            ->when(isset($validated['requester_id']), fn ($query) => $query->where('requester_id', $validated['requester_id']))
             ->orderByDesc('created_at')
             ->paginate(15)
             ->withQueryString();
@@ -96,7 +117,16 @@ class BookingController extends Controller
         return Inertia::render('inventory/bookings/Index', [
             'filters' => [
                 'asset_search' => $assetSearch,
+                'search' => $search,
+                'status' => $status,
+                'date_from' => $validated['date_from'] ?? null,
+                'date_to' => $validated['date_to'] ?? null,
+                'requester_id' => $validated['requester_id'] ?? null,
             ],
+            'statusOptions' => collect(BookingStatus::cases())->map(fn (BookingStatus $case) => [
+                'value' => $case->value,
+                'label' => $case->value,
+            ])->values()->all(),
             'assets' => AssetResource::collectionForInertia($assets, $request),
             'calendar_events' => BookingResource::collectionForInertia($calendarEvents, $request),
             'approval_queue' => BookingResource::collectionForInertia($approvalQueue, $request),

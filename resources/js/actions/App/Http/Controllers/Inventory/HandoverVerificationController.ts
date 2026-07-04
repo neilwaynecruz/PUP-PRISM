@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\HandoverVerificationController::__invoke
  * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:15
@@ -65,4 +65,40 @@ HandoverVerificationController.head = (args: { handoverLog: number | { id: numbe
     url: HandoverVerificationController.url(args, options),
     method: 'head',
 })
+
+    /**
+* @see \App\Http\Controllers\Inventory\HandoverVerificationController::__invoke
+ * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:15
+ * @route '/inventory/handover/verify/{handoverLog}'
+ */
+    const HandoverVerificationControllerForm = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: HandoverVerificationController.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\HandoverVerificationController::__invoke
+ * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:15
+ * @route '/inventory/handover/verify/{handoverLog}'
+ */
+        HandoverVerificationControllerForm.get = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: HandoverVerificationController.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Inventory\HandoverVerificationController::__invoke
+ * @see app/Http/Controllers/Inventory/HandoverVerificationController.php:15
+ * @route '/inventory/handover/verify/{handoverLog}'
+ */
+        HandoverVerificationControllerForm.head = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: HandoverVerificationController.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    HandoverVerificationController.form = HandoverVerificationControllerForm
 export default HandoverVerificationController

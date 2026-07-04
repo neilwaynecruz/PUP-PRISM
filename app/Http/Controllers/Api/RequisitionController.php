@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Enums\RequisitionStatus;
+use App\Http\Controllers\Api\Concerns\PaginatesApiResources;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreRequisitionRequest;
 use App\Http\Resources\RequisitionResource;
@@ -13,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 
 class RequisitionController extends Controller
 {
+    use PaginatesApiResources;
+
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Requisition::class);
@@ -25,7 +28,7 @@ class RequisitionController extends Controller
                 $query->where('status', $status);
             })
             ->orderByDesc('created_at')
-            ->paginate($request->integer('per_page', 25))
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return response()->json([

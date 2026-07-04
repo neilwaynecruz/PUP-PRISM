@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Enums\ProductType;
+use App\Http\Controllers\Api\Concerns\PaginatesApiResources;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ProductResource;
 use App\Models\Product;
@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 class ProductController extends Controller
 {
+    use PaginatesApiResources;
+
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', Product::class);
@@ -39,7 +41,7 @@ class ProductController extends Controller
                 $query->where('is_active', $active);
             })
             ->orderBy('name')
-            ->paginate($request->integer('per_page', 25))
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return response()->json([

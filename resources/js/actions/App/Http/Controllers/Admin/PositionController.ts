@@ -1,4 +1,4 @@
-import { queryParams, type RouteQueryOptions, type RouteDefinition, applyUrlDefaults } from './../../../../../wayfinder'
+import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Admin\PositionController::index
  * @see app/Http/Controllers/Admin/PositionController.php:23
@@ -42,6 +42,41 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\PositionController::index
+ * @see app/Http/Controllers/Admin/PositionController.php:23
+ * @route '/admin/positions'
+ */
+    const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: index.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::index
+ * @see app/Http/Controllers/Admin/PositionController.php:23
+ * @route '/admin/positions'
+ */
+        indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::index
+ * @see app/Http/Controllers/Admin/PositionController.php:23
+ * @route '/admin/positions'
+ */
+        indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: index.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    index.form = indexForm
 /**
 * @see \App\Http\Controllers\Admin\PositionController::create
  * @see app/Http/Controllers/Admin/PositionController.php:69
@@ -85,6 +120,41 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\PositionController::create
+ * @see app/Http/Controllers/Admin/PositionController.php:69
+ * @route '/admin/positions/create'
+ */
+    const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: create.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::create
+ * @see app/Http/Controllers/Admin/PositionController.php:69
+ * @route '/admin/positions/create'
+ */
+        createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::create
+ * @see app/Http/Controllers/Admin/PositionController.php:69
+ * @route '/admin/positions/create'
+ */
+        createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: create.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    create.form = createForm
 /**
 * @see \App\Http\Controllers\Admin\PositionController::store
  * @see app/Http/Controllers/Admin/PositionController.php:78
@@ -119,6 +189,27 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     method: 'post',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\PositionController::store
+ * @see app/Http/Controllers/Admin/PositionController.php:78
+ * @route '/admin/positions'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::store
+ * @see app/Http/Controllers/Admin/PositionController.php:78
+ * @route '/admin/positions'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+    
+    store.form = storeForm
 /**
 * @see \App\Http\Controllers\Admin\PositionController::edit
  * @see app/Http/Controllers/Admin/PositionController.php:89
@@ -186,6 +277,41 @@ edit.head = (args: { position: number | { id: number } } | [position: number | {
     method: 'head',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\PositionController::edit
+ * @see app/Http/Controllers/Admin/PositionController.php:89
+ * @route '/admin/positions/{position}/edit'
+ */
+    const editForm = (args: { position: number | { id: number } } | [position: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: edit.url(args, options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::edit
+ * @see app/Http/Controllers/Admin/PositionController.php:89
+ * @route '/admin/positions/{position}/edit'
+ */
+        editForm.get = (args: { position: number | { id: number } } | [position: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::edit
+ * @see app/Http/Controllers/Admin/PositionController.php:89
+ * @route '/admin/positions/{position}/edit'
+ */
+        editForm.head = (args: { position: number | { id: number } } | [position: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: edit.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+    
+    edit.form = editForm
 /**
 * @see \App\Http\Controllers\Admin\PositionController::update
  * @see app/Http/Controllers/Admin/PositionController.php:115
@@ -253,6 +379,51 @@ update.patch = (args: { position: number | { id: number } } | [position: number 
     method: 'patch',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\PositionController::update
+ * @see app/Http/Controllers/Admin/PositionController.php:115
+ * @route '/admin/positions/{position}'
+ */
+    const updateForm = (args: { position: number | { id: number } } | [position: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: update.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PUT',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::update
+ * @see app/Http/Controllers/Admin/PositionController.php:115
+ * @route '/admin/positions/{position}'
+ */
+        updateForm.put = (args: { position: number | { id: number } } | [position: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PUT',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::update
+ * @see app/Http/Controllers/Admin/PositionController.php:115
+ * @route '/admin/positions/{position}'
+ */
+        updateForm.patch = (args: { position: number | { id: number } } | [position: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: update.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    update.form = updateForm
 /**
 * @see \App\Http\Controllers\Admin\PositionController::destroy
  * @see app/Http/Controllers/Admin/PositionController.php:136
@@ -311,6 +482,37 @@ destroy.delete = (args: { position: number | { id: number } } | [position: numbe
     method: 'delete',
 })
 
+    /**
+* @see \App\Http\Controllers\Admin\PositionController::destroy
+ * @see app/Http/Controllers/Admin/PositionController.php:136
+ * @route '/admin/positions/{position}'
+ */
+    const destroyForm = (args: { position: number | { id: number } } | [position: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: destroy.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'DELETE',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::destroy
+ * @see app/Http/Controllers/Admin/PositionController.php:136
+ * @route '/admin/positions/{position}'
+ */
+        destroyForm.delete = (args: { position: number | { id: number } } | [position: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: destroy.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'DELETE',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\Admin\PositionController::deactivate
  * @see app/Http/Controllers/Admin/PositionController.php:157
@@ -368,6 +570,38 @@ deactivate.patch = (args: { position: number | { id: number } } | [position: num
     url: deactivate.url(args, options),
     method: 'patch',
 })
+
+    /**
+* @see \App\Http\Controllers\Admin\PositionController::deactivate
+ * @see app/Http/Controllers/Admin/PositionController.php:157
+ * @route '/admin/positions/{position}/deactivate'
+ */
+    const deactivateForm = (args: { position: number | { id: number } } | [position: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: deactivate.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PATCH',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\PositionController::deactivate
+ * @see app/Http/Controllers/Admin/PositionController.php:157
+ * @route '/admin/positions/{position}/deactivate'
+ */
+        deactivateForm.patch = (args: { position: number | { id: number } } | [position: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: deactivate.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    deactivate.form = deactivateForm
 const PositionController = { index, create, store, edit, update, destroy, deactivate }
 
 export default PositionController

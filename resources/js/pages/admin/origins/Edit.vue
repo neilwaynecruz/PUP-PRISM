@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { deactivate, destroy, edit, index } from '@/routes/admin/origins';
 
 const props = defineProps<{ origin: { id: number; name: string; is_active: boolean }; usage: Record<string, number>; impactWarnings: string[]; can: { delete: boolean; deactivate: boolean } }>();
-defineOptions({ layout: { breadcrumbs: [{ title: 'Admin', href: index() }, { title: 'Origins', href: index() }, { title: 'Edit', href: edit(props.origin.id) }] } });
+defineOptions({ layout: { breadcrumbs: [{ title: 'Admin', href: index() }, { title: 'Origins', href: index() }, { title: 'Edit', href: edit(0) }] } });
 const form = useForm({ name: props.origin.name, is_active: props.origin.is_active });
 </script>
 <template>

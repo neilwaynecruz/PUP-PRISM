@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Api\Concerns\PaginatesApiResources;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\StockMovementResource;
 use App\Models\StockMovement;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\Validator;
 
 class StockMovementController extends Controller
 {
+    use PaginatesApiResources;
+
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', StockMovement::class);
@@ -19,7 +22,8 @@ class StockMovementController extends Controller
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'product_id' => ['nullable', 'integer', 'exists:products,id'],
-            'movement_type' => ['nullable', 'string', 'in:receive,issue,adjustment,transfer'],
+            'movement_type' => ['nullable', 'string', 'in:receive,issue,adjustment,transfer,cycle_count'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:'.config('api.pagination.max_per_page', 100)],
         ])->validate();
 
         $movements = StockMovement::query()
@@ -37,7 +41,7 @@ class StockMovementController extends Controller
                 $query->where('movement_type', $validated['movement_type']);
             })
             ->orderByDesc('performed_at')
-            ->paginate($request->integer('per_page', 25))
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return response()->json([

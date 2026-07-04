@@ -9,9 +9,12 @@ use App\Models\Requisition;
 use App\Services\Reports\AssetConditionReportService;
 use App\Services\Reports\BookingScheduleReportService;
 use App\Services\Reports\CsvTableExporter;
+use App\Services\Reports\ForecastSummaryReportService;
 use App\Services\Reports\PdfTableExporter;
+use App\Services\Reports\ProcurementReportService;
 use App\Services\Reports\ProductInventoryReportService;
 use App\Services\Reports\RequisitionHistoryReportService;
+use App\Services\Reports\SlowMovingStockReportService;
 use App\Services\Reports\StockMovementAuditReportService;
 use App\Services\Reports\Support\TableReport;
 use Illuminate\Http\Request;
@@ -27,6 +30,9 @@ class InventoryReportController extends Controller
         private readonly AssetConditionReportService $assetConditionReports,
         private readonly BookingScheduleReportService $bookingScheduleReports,
         private readonly RequisitionHistoryReportService $requisitionHistoryReports,
+        private readonly ProcurementReportService $procurementReports,
+        private readonly ForecastSummaryReportService $forecastSummaryReports,
+        private readonly SlowMovingStockReportService $slowMovingStockReports,
     ) {}
 
     public function products(Request $request, string $format): Response
@@ -62,6 +68,27 @@ class InventoryReportController extends Controller
         $this->authorize('viewAny', Requisition::class);
 
         return $this->download($format, $this->requisitionHistoryReports->build($request));
+    }
+
+    public function procurement(Request $request, string $format): Response
+    {
+        abort_unless($request->user()?->hasAnyRole(['Admin', 'Supply Head']), 403);
+
+        return $this->download($format, $this->procurementReports->build($request));
+    }
+
+    public function forecasting(Request $request, string $format): Response
+    {
+        abort_unless($request->user()?->hasAnyRole(['Admin', 'Supply Head']), 403);
+
+        return $this->download($format, $this->forecastSummaryReports->build($request));
+    }
+
+    public function slowMovingStock(Request $request, string $format): Response
+    {
+        abort_unless($request->user()?->hasAnyRole(['Admin', 'Supply Head']), 403);
+
+        return $this->download($format, $this->slowMovingStockReports->build($request));
     }
 
     private function download(string $format, TableReport $report): Response

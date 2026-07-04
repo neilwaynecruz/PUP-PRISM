@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Form, Head } from '@inertiajs/vue3';
+import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
+import { onMounted } from 'vue';
 import { CheckCircle2 } from 'lucide-vue-next';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
@@ -14,10 +15,13 @@ import { request } from '@/routes/password';
 
 defineOptions({
     name: 'AuthLogin',
-    layout: {
+});
+
+onMounted(() => {
+    setLayoutProps({
         title: 'Log in to your account',
         description: 'Enter your email and password below to log in',
-    },
+    });
 });
 
 defineProps<{

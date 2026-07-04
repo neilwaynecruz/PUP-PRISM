@@ -17,8 +17,8 @@ import {
     AlertOctagon,
     AlertTriangle,
     Calendar,
-    DollarSign,
     FileText,
+    Package,
     Sparkles,
 } from 'lucide-vue-next';
 import {
@@ -84,7 +84,37 @@ type SupplierPerformanceRow = {
     avg_lead_time_days: number | null;
 };
 
+type KpiSummary = {
+    issued_today_count?: number;
+    near_expiry_batch_count?: number;
+    low_stock_count?: number;
+    pending_requisitions_count?: number;
+    pending_bookings_count?: number;
+    active_alerts_count?: number;
+    open_purchase_orders_count?: number;
+    my_open_requisitions?: number;
+    my_upcoming_bookings?: number;
+    pending_handovers?: number;
+    assigned_assets?: number;
+};
+
+type NearExpiryLot = {
+    id: number;
+    product_name: string;
+    sku: string;
+    qty_remaining: number;
+    expires_at: string;
+};
+
+type CustodianSummary = {
+    my_open_requisitions: number;
+    my_upcoming_bookings: number;
+    assigned_assets: number;
+    pending_handovers: number;
+};
+
 const props = defineProps<{
+    dashboardVariant: 'admin' | 'supply_head' | 'custodian';
     canViewForecasting: boolean;
     dateRange: { from: string | null; to: string | null };
     alerts: Alert[];
@@ -112,6 +142,9 @@ const props = defineProps<{
     supplierPerformance: SupplierPerformanceRow[];
     assetConditionSummary: SummaryData;
     recentlyDeleted: RecentlyDeleted[];
+    kpiSummary: KpiSummary;
+    nearExpiryLots: NearExpiryLot[];
+    custodianSummary: CustodianSummary | null;
     exportUrls: {
         assetConditionsCsv: string;
         assetConditionsPdf: string;
@@ -132,24 +165,37 @@ defineOptions({
 
 const page = usePage();
 const roles = computed<string[]>(() => page.props.auth.roles ?? []);
-const isAdmin = computed(() => roles.value.includes('Admin'));
-const canViewProcurement = computed(() =>
-    roles.value.some((role) => ['Admin', 'Supply Head'].includes(role)),
+const isAdmin = computed(() => props.dashboardVariant === 'admin');
+const isSupplyHead = computed(() => props.dashboardVariant === 'supply_head');
+const isCustodian = computed(() => props.dashboardVariant === 'custodian');
+const canViewProcurement = computed(() => isAdmin.value || isSupplyHead.value);
+const canUseDateRange = computed(() => isAdmin.value || isSupplyHead.value);
+
+const pendingRequisitionsCount = computed(
+    () =>
+        props.kpiSummary.pending_requisitions_count ??
+        (() => {
+            const summary = props.requisitionSummary ?? {};
+            const key = Object.keys(summary).find(
+                (k) => k.toLowerCase() === 'submitted',
+            );
+
+            return key ? Number(summary[key]) : 0;
+        })(),
 );
 
-const pendingRequisitionsCount = computed(() => {
-    const summary = props.requisitionSummary ?? {};
-    const key = Object.keys(summary).find(k => k.toLowerCase() === 'pending');
+const pendingBookingsCount = computed(
+    () =>
+        props.kpiSummary.pending_bookings_count ??
+        (() => {
+            const summary = props.bookingSummary ?? {};
+            const key = Object.keys(summary).find(
+                (k) => k.toLowerCase() === 'requested',
+            );
 
-    return key ? Number(summary[key]) : 0;
-});
-
-const pendingBookingsCount = computed(() => {
-    const summary = props.bookingSummary ?? {};
-    const key = Object.keys(summary).find(k => k.toLowerCase() === 'pending');
-
-    return key ? Number(summary[key]) : 0;
-});
+            return key ? Number(summary[key]) : 0;
+        })(),
+);
 
 const openPurchaseOrdersCount = computed(() => {
     const summary = props.purchaseOrderSummary ?? {};
@@ -542,7 +588,7 @@ function restoreItem(url: string): void {
 
         <!-- Date Range Filter -->
         <div
-            v-if="isAdmin"
+            v-if="canUseDateRange"
             class="flex flex-col gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm sm:flex-row sm:items-center"
         >
             <div class="flex gap-2">
@@ -594,146 +640,18 @@ function restoreItem(url: string): void {
             </div>
         </div>
 
-        <!-- Recently Deleted Widget -->
-        <div
-            v-if="isAdmin && recentlyDeleted.length > 0"
-            class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-        >
-            <div class="mb-4 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="text-sm font-semibold tracking-tight">
-                        Recently Deleted
-                    </div>
-                    <div class="h-1.5 w-1.5 rounded-full bg-rose-500/60" />
-                </div>
-                <Button variant="ghost" size="sm" as-child>
-                    <Link href="/inventory/trash">View Trash</Link>
-                </Button>
-            </div>
-            <ul class="space-y-2 text-sm">
-                <li
-                    v-for="item in recentlyDeleted"
-                    :key="`${item.type}-${item.id}`"
-                    class="flex items-center justify-between gap-3 rounded-lg border border-border/40 p-3 transition-colors hover:bg-muted/40"
-                >
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
-                            :class="{
-                                'bg-sky-500/10 text-sky-700 dark:text-sky-400':
-                                    item.type === 'product',
-                                'bg-amber-500/10 text-amber-700 dark:text-amber-400':
-                                    item.type === 'booking',
-                                'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400':
-                                    item.type === 'requisition',
-                            }"
-                        >
-                            {{ item.type }}
-                        </span>
-                        <div>
-                            <div class="font-medium">{{ item.name }}</div>
-                            <div class="text-xs text-muted-foreground">
-                                Deleted by {{ item.deleted_by }} ·
-                                {{ item.deleted_at }}
-                            </div>
-                        </div>
-                    </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        class="h-7 text-xs"
-                        @click="restoreItem(item.restore_url)"
-                    >
-                        Restore
-                    </Button>
-                </li>
-            </ul>
-        </div>
-
-        <ForecastWidget
-            v-if="canViewForecasting"
-            :summary="forecastSummary"
-        />
-
-        <!-- PRISM Intelligence Panel -->
-        <div v-if="isAdmin" class="rounded-xl border border-blue-500/20 bg-linear-to-br from-blue-500/5 via-primary/5 to-transparent p-5 shadow-xs relative overflow-hidden transition-all duration-300 hover:shadow-sm">
-            <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-blue-500/5 blur-3xl pointer-events-none"></div>
-            <div class="flex items-center gap-3 mb-4">
-                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
-                    <Sparkles class="h-5 w-5" />
-                </div>
-                <div>
-                    <h3 class="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                        PRISM Intelligence
-                        <span class="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400">Decision Support</span>
-                    </h3>
-                    <p class="text-xs text-muted-foreground">Smart suggestions and observations compiled from system logs and inventory thresholds.</p>
-                </div>
-            </div>
-            
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <!-- Observation 1: Low Stock -->
-                <div class="flex gap-3 bg-card/60 backdrop-blur-xs border border-border/50 p-4 rounded-lg transition-all hover:bg-card/90">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                        <AlertTriangle class="h-4.5 w-4.5" />
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="text-xs font-semibold text-foreground">Reorder Consumables</div>
-                        <p class="text-xs text-muted-foreground mt-1 truncate">
-                            <span class="font-medium text-foreground">{{ lowStock.length > 0 ? lowStock[0].name : 'Office Printer Ink' }}</span> is running below reorder threshold.
-                        </p>
-                        <Link href="/inventory/products" class="text-[11px] font-medium text-primary hover:underline mt-2 inline-flex items-center gap-0.5">
-                            Adjust Stock &rarr;
-                        </Link>
-                    </div>
-                </div>
-                
-                <!-- Observation 2: Near Expiry -->
-                <div class="flex gap-3 bg-card/60 backdrop-blur-xs border border-border/50 p-4 rounded-lg transition-all hover:bg-card/90">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400">
-                        <Calendar class="h-4.5 w-4.5" />
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="text-xs font-semibold text-foreground">Near-Expiry Warning</div>
-                        <p class="text-xs text-muted-foreground mt-1">
-                            <span class="font-medium text-foreground">3 items</span> are expiring within 30 days. Recommend dispatching to departments.
-                        </p>
-                        <Link href="/inventory/handover" class="text-[11px] font-medium text-primary hover:underline mt-2 inline-flex items-center gap-0.5">
-                            Initiate Handover &rarr;
-                        </Link>
-                    </div>
-                </div>
-                
-                <!-- Observation 3: Pending Approvals -->
-                <div class="flex gap-3 bg-card/60 backdrop-blur-xs border border-border/50 p-4 rounded-lg transition-all hover:bg-card/90">
-                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                        <Activity class="h-4.5 w-4.5" />
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="text-xs font-semibold text-foreground">Pending Action Items</div>
-                        <p class="text-xs text-muted-foreground mt-1">
-                            You have <span class="font-medium text-foreground">{{ pendingRequisitionsCount }} requisitions</span> and <span class="font-medium text-foreground">{{ pendingBookingsCount }} bookings</span> awaiting review.
-                        </p>
-                        <Link href="/inventory/requisitions" class="text-[11px] font-medium text-primary hover:underline mt-2 inline-flex items-center gap-0.5">
-                            Approve Requisitions &rarr;
-                        </Link>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Redesigned KPI Stats Row -->
+        <!-- KPI Stats Row -->
         <div v-if="isAdmin" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            <!-- 1. Today's Sales -->
+            <!-- 1. Issued Today -->
             <div class="group relative overflow-hidden rounded-xl border border-border/60 bg-card p-5 shadow-xs transition-all duration-300 hover:border-primary/20 hover:shadow-md">
                 <div class="flex items-center justify-between">
-                    <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Today's Sales</span>
+                    <span class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Issued Today</span>
                     <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
-                        <DollarSign class="h-4 w-4" />
+                        <Package class="h-4 w-4" />
                     </div>
                 </div>
-                <div class="mt-3 font-display text-2xl font-bold text-foreground">$1,240.00</div>
-                <div class="mt-1 text-xs text-muted-foreground">12 Issuances completed</div>
+                <div class="mt-3 font-display text-2xl font-bold text-foreground">{{ kpiSummary.issued_today_count ?? 0 }}</div>
+                <div class="mt-1 text-xs text-muted-foreground">Issue movements recorded today</div>
             </div>
 
             <!-- 2. Low Stock -->
@@ -756,8 +674,8 @@ function restoreItem(url: string): void {
                         <Calendar class="h-4 w-4" />
                     </div>
                 </div>
-                <div class="mt-3 font-display text-2xl font-bold text-foreground">3 Batches</div>
-                <div class="mt-1 text-xs text-muted-foreground">Expires within 30 days</div>
+                <div class="mt-3 font-display text-2xl font-bold text-foreground">{{ kpiSummary.near_expiry_batch_count ?? 0 }}</div>
+                <div class="mt-1 text-xs text-muted-foreground">Batches expiring within 30 days</div>
             </div>
 
             <!-- 4. Pending Requisitions -->
@@ -794,6 +712,147 @@ function restoreItem(url: string): void {
                 </div>
                 <div class="mt-3 font-display text-2xl font-bold text-foreground">{{ alerts.length }}</div>
                 <div class="mt-1 text-xs text-muted-foreground">Attention required</div>
+            </div>
+        </div>
+
+        <!-- PRISM Intelligence Panel -->
+        <div v-if="isAdmin" class="rounded-xl border border-blue-500/20 bg-linear-to-br from-blue-500/5 via-primary/5 to-transparent p-5 shadow-xs relative overflow-hidden transition-all duration-300 hover:shadow-sm">
+            <div class="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-blue-500/5 blur-3xl pointer-events-none"></div>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600/10 text-blue-600 dark:bg-blue-400/10 dark:text-blue-400">
+                    <Sparkles class="h-5 w-5" />
+                </div>
+                <div>
+                    <h3 class="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                        PRISM Intelligence
+                        <span class="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400">Decision Support</span>
+                    </h3>
+                    <p class="text-xs text-muted-foreground">Smart suggestions and observations compiled from system logs and inventory thresholds.</p>
+                </div>
+            </div>
+            
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <!-- Observation 1: Low Stock -->
+                <div class="flex gap-3 bg-card/60 backdrop-blur-xs border border-border/50 p-4 rounded-lg transition-all hover:bg-card/90">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                        <AlertTriangle class="h-4.5 w-4.5" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-xs font-semibold text-foreground">Reorder Consumables</div>
+                        <p class="text-xs text-muted-foreground mt-1 truncate">
+                            <span class="font-medium text-foreground">{{ lowStock.length > 0 ? lowStock[0].name : 'No low-stock items' }}</span>
+                            {{ lowStock.length > 0 ? ' is running below reorder threshold.' : ' detected right now.' }}
+                        </p>
+                        <Link href="/inventory/products" class="text-[11px] font-medium text-primary hover:underline mt-2 inline-flex items-center gap-0.5">
+                            Adjust Stock &rarr;
+                        </Link>
+                    </div>
+                </div>
+                
+                <!-- Observation 2: Near Expiry -->
+                <div class="flex gap-3 bg-card/60 backdrop-blur-xs border border-border/50 p-4 rounded-lg transition-all hover:bg-card/90">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                        <Calendar class="h-4.5 w-4.5" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-xs font-semibold text-foreground">Near-Expiry Warning</div>
+                        <p class="text-xs text-muted-foreground mt-1">
+                            <span class="font-medium text-foreground">{{ kpiSummary.near_expiry_batch_count ?? 0 }} batch(es)</span>
+                            {{ (kpiSummary.near_expiry_batch_count ?? 0) > 0 ? ' expire within 30 days.' : ' are expiring within 30 days.' }}
+                        </p>
+                        <Link href="/inventory/handover" class="text-[11px] font-medium text-primary hover:underline mt-2 inline-flex items-center gap-0.5">
+                            Initiate Handover &rarr;
+                        </Link>
+                    </div>
+                </div>
+                
+                <!-- Observation 3: Pending Approvals -->
+                <div class="flex gap-3 bg-card/60 backdrop-blur-xs border border-border/50 p-4 rounded-lg transition-all hover:bg-card/90">
+                    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                        <Activity class="h-4.5 w-4.5" />
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-xs font-semibold text-foreground">Pending Action Items</div>
+                        <p class="text-xs text-muted-foreground mt-1">
+                            You have <span class="font-medium text-foreground">{{ pendingRequisitionsCount }} requisitions</span> and <span class="font-medium text-foreground">{{ pendingBookingsCount }} bookings</span> awaiting review.
+                        </p>
+                        <Link href="/inventory/requisitions" class="text-[11px] font-medium text-primary hover:underline mt-2 inline-flex items-center gap-0.5">
+                            Approve Requisitions &rarr;
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="isSupplyHead" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-xs">
+                <div class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Open POs</div>
+                <div class="mt-3 font-display text-2xl font-bold">{{ kpiSummary.open_purchase_orders_count ?? openPurchaseOrdersCount }}</div>
+            </div>
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-xs">
+                <div class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Low Stock</div>
+                <div class="mt-3 font-display text-2xl font-bold">{{ lowStock.length }}</div>
+            </div>
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-xs">
+                <div class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Pending Requisitions</div>
+                <div class="mt-3 font-display text-2xl font-bold">{{ pendingRequisitionsCount }}</div>
+            </div>
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-xs">
+                <div class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Forecast Urgent</div>
+                <div class="mt-3 font-display text-2xl font-bold">{{ forecastSummary.urgent_count }}</div>
+            </div>
+        </div>
+
+        <div v-if="isCustodian && custodianSummary" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-xs">
+                <div class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">My Open Requisitions</div>
+                <div class="mt-3 font-display text-2xl font-bold">{{ custodianSummary.my_open_requisitions }}</div>
+            </div>
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-xs">
+                <div class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Upcoming Bookings</div>
+                <div class="mt-3 font-display text-2xl font-bold">{{ custodianSummary.my_upcoming_bookings }}</div>
+            </div>
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-xs">
+                <div class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Assigned Assets</div>
+                <div class="mt-3 font-display text-2xl font-bold">{{ custodianSummary.assigned_assets }}</div>
+            </div>
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-xs">
+                <div class="text-xs font-semibold tracking-wider text-muted-foreground uppercase">Pending Handovers</div>
+                <div class="mt-3 font-display text-2xl font-bold">{{ custodianSummary.pending_handovers }}</div>
+            </div>
+        </div>
+
+        <div
+            v-if="isCustodian"
+            class="grid gap-6 lg:grid-cols-2"
+        >
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+                <div class="mb-4 text-sm font-semibold tracking-tight">My requisition activity</div>
+                <ul v-if="summaryEntries(requisitionSummary).length" class="space-y-2 text-sm">
+                    <li
+                        v-for="entry in summaryEntries(requisitionSummary)"
+                        :key="entry.key"
+                        class="flex items-center justify-between rounded-lg border border-border/40 p-2"
+                    >
+                        <span class="text-muted-foreground capitalize">{{ entry.key }}</span>
+                        <span class="font-mono text-xs font-semibold">{{ entry.value }}</span>
+                    </li>
+                </ul>
+                <div v-else class="text-sm text-muted-foreground">No requisition activity in the selected range.</div>
+            </div>
+            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+                <div class="mb-4 text-sm font-semibold tracking-tight">My booking activity</div>
+                <ul v-if="summaryEntries(bookingSummary).length" class="space-y-2 text-sm">
+                    <li
+                        v-for="entry in summaryEntries(bookingSummary)"
+                        :key="entry.key"
+                        class="flex items-center justify-between rounded-lg border border-border/40 p-2"
+                    >
+                        <span class="text-muted-foreground capitalize">{{ entry.key }}</span>
+                        <span class="font-mono text-xs font-semibold">{{ entry.value }}</span>
+                    </li>
+                </ul>
+                <div v-else class="text-sm text-muted-foreground">No booking activity in the selected range.</div>
             </div>
         </div>
 
@@ -1122,6 +1181,69 @@ function restoreItem(url: string): void {
                             a.tag_code
                         }}</span>
                     </span>
+                </li>
+            </ul>
+        </div>
+
+        <ForecastWidget
+            v-if="canViewForecasting"
+            :summary="forecastSummary"
+        />
+
+        <!-- Recently Deleted Widget -->
+        <div
+            v-if="isAdmin && recentlyDeleted.length > 0"
+            class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+        >
+            <div class="mb-4 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="text-sm font-semibold tracking-tight">
+                        Recently Deleted
+                    </div>
+                    <div class="h-1.5 w-1.5 rounded-full bg-rose-500/60" />
+                </div>
+                <Button variant="ghost" size="sm" as-child>
+                    <Link href="/inventory/trash">View Trash</Link>
+                </Button>
+            </div>
+            <ul class="space-y-2 text-sm">
+                <li
+                    v-for="item in recentlyDeleted"
+                    :key="`${item.type}-${item.id}`"
+                    class="flex items-center justify-between gap-3 rounded-lg border border-border/40 p-3 transition-colors hover:bg-muted/40"
+                >
+                    <div class="flex items-center gap-3">
+                        <span
+                            class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
+                            :class="{
+                                'bg-sky-500/10 text-sky-700 dark:text-sky-400':
+                                    item.type === 'product',
+                                'bg-amber-500/10 text-amber-700 dark:text-amber-400':
+                                    item.type === 'booking',
+                                'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400':
+                                    item.type === 'requisition',
+                            }"
+                        >
+                            {{ item.type }}
+                        </span>
+                        <div>
+                            <div class="font-medium">{{ item.name }}</div>
+                            <div class="text-xs text-muted-foreground">
+                                <template v-if="item.deleted_by && item.deleted_by !== 'Unknown'">
+                                    Deleted by {{ item.deleted_by }} ·
+                                </template>
+                                {{ item.deleted_at }}
+                            </div>
+                        </div>
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 text-xs"
+                        @click="restoreItem(item.restore_url)"
+                    >
+                        Restore
+                    </Button>
                 </li>
             </ul>
         </div>
