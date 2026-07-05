@@ -28,13 +28,18 @@ const isLoginPage = computed(() => page.component === 'auth/Login');
                     class="flex w-fit items-center gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-4 focus-visible:ring-offset-[#0a1730] focus-visible:outline-none"
                     aria-label="PRISM home"
                 >
-                    <span
-                        class="grid size-10 place-items-center rounded-lg bg-blue-600"
-                    >
-                        <AppLogoIcon class="size-5 text-white" />
-                    </span>
-                    <span class="text-lg font-semibold tracking-[0.14em]">
-                        PRISM
+                    <AppLogoIcon class="size-12 shrink-0" />
+                    <span class="grid">
+                        <span
+                            class="text-base leading-none font-semibold tracking-[0.18em] uppercase"
+                        >
+                            PUP PRISM
+                        </span>
+                        <span
+                            class="mt-1 text-[0.65rem] leading-none font-medium tracking-[0.18em] text-blue-200/80 uppercase"
+                        >
+                            Inventory Operations
+                        </span>
                     </span>
                 </Link>
 
@@ -78,13 +83,18 @@ const isLoginPage = computed(() => page.component === 'auth/Login');
                         class="mb-10 flex w-fit items-center gap-3 rounded-lg text-slate-950 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-4 focus-visible:outline-none lg:hidden dark:text-white"
                         aria-label="PRISM home"
                     >
-                        <span
-                            class="grid size-10 place-items-center rounded-lg bg-blue-600 text-white"
-                        >
-                            <AppLogoIcon class="size-5" />
-                        </span>
-                        <span class="text-lg font-semibold tracking-[0.14em]">
-                            PRISM
+                        <AppLogoIcon class="size-12 shrink-0" />
+                        <span class="grid">
+                            <span
+                                class="text-base leading-none font-semibold tracking-[0.18em] uppercase"
+                            >
+                                PUP PRISM
+                            </span>
+                            <span
+                                class="mt-1 text-[0.65rem] leading-none font-medium tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400"
+                            >
+                                Inventory Operations
+                            </span>
                         </span>
                     </Link>
 

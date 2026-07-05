@@ -3,14 +3,20 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
 </script>
 
 <template>
-    <div
-        class="flex aspect-square size-8 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"
-    >
-        <AppLogoIcon class="size-5 fill-current text-white dark:text-black" />
-    </div>
-    <div class="ml-1 grid flex-1 text-left text-sm">
-        <span class="mb-0.5 truncate leading-tight font-semibold"
-            >Laravel Starter Kit</span
-        >
+    <div class="flex items-center gap-3">
+        <AppLogoIcon class="size-11 shrink-0" />
+
+        <div class="grid min-w-0 flex-1 text-left">
+            <span
+                class="truncate text-[0.85rem] leading-none font-semibold tracking-[0.18em] text-foreground uppercase"
+            >
+                PUP PRISM
+            </span>
+            <span
+                class="mt-1 truncate text-[0.68rem] leading-none font-medium tracking-[0.08em] text-muted-foreground uppercase"
+            >
+                Inventory Operations
+            </span>
+        </div>
     </div>
 </template>

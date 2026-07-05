@@ -1,10 +1,14 @@
-const CACHE_NAME = 'pup-prism-shell-v1';
+const CACHE_NAME = 'pup-prism-shell-v2';
 const PRECACHE_URLS = [
     '/offline.html',
     '/manifest.webmanifest',
-    '/favicon.svg',
-    '/icon.svg',
-    '/maskable-icon.svg',
+    '/manifest.json',
+    '/favicon.ico',
+    '/favicon-16x16.png',
+    '/favicon-32x32.png',
+    '/favicon-96x96.png',
+    '/android-icon-192x192.png',
+    '/apple-icon-180x180.png',
 ];
 
 self.addEventListener('install', (event) => {

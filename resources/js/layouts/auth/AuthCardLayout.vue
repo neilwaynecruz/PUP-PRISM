@@ -23,12 +23,20 @@ defineProps<{
         <div class="flex w-full max-w-md flex-col gap-6">
             <Link
                 :href="home()"
-                class="flex items-center gap-2 self-center font-medium"
+                class="flex items-center gap-3 self-center"
             >
-                <div class="flex h-9 w-9 items-center justify-center">
-                    <AppLogoIcon
-                        class="size-9 fill-current text-black dark:text-white"
-                    />
+                <AppLogoIcon class="size-12 shrink-0" />
+                <div class="grid text-left">
+                    <span
+                        class="text-sm leading-none font-semibold tracking-[0.18em] uppercase"
+                    >
+                        PUP PRISM
+                    </span>
+                    <span
+                        class="mt-1 text-[0.65rem] leading-none font-medium tracking-[0.16em] text-muted-foreground uppercase"
+                    >
+                        Inventory Operations
+                    </span>
                 </div>
             </Link>
 

@@ -5,6 +5,7 @@ import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { create, edit, index } from '@/routes/admin/departments';
+import { Plus } from 'lucide-vue-next';
 
 type Row = { id: number; name: string; code: string | null; is_active: boolean; positions_count: number };
 type PaginationLink = { url: string | null; label: string; active: boolean };
@@ -40,28 +41,62 @@ onBeforeUnmount(() => window.clearTimeout(timer));
     <div class="flex flex-col gap-6 p-4 sm:p-6">
         <div class="flex items-start justify-between gap-3">
             <Heading variant="small" title="Departments" description="Organizational units for positions and accountability." />
-            <Button v-if="can.create" as-child size="sm"><Link :href="create()">New department</Link></Button>
+            <Button v-if="can.create" as-child size="sm" class="rounded-lg shadow-sm">
+                <Link :href="create()">
+                    <Plus class="mr-1.5 h-4 w-4" />New department
+                </Link>
+            </Button>
         </div>
         <div class="grid gap-3 sm:grid-cols-3">
             <Input v-model="search" placeholder="Search name or code..." class="h-10 rounded-lg sm:col-span-2" />
-            <select v-model="active" class="h-10 rounded-lg border border-input bg-background px-3 text-sm">
+            <select v-model="active" class="h-10 rounded-lg border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring">
                 <option value="">All statuses</option>
                 <option value="1">Active</option>
                 <option value="0">Inactive</option>
             </select>
         </div>
         <div class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm">
-            <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left text-xs uppercase text-muted-foreground [&>th]:px-4 [&>th]:py-3">
-                    <tr><th>Name</th><th>Code</th><th>Positions</th><th>Status</th><th class="text-right">Actions</th></tr>
+            <table class="w-full min-w-[900px] table-fixed text-sm">
+                <colgroup>
+                    <col class="w-[45%]" />
+                    <col class="w-[15%]" />
+                    <col class="w-[15%]" />
+                    <col class="w-[15%]" />
+                    <col class="w-[10%]" />
+                </colgroup>
+                <thead class="bg-muted/60 border-b border-border/80 text-left text-xs uppercase tracking-wider [&>th]:px-4 [&>th]:py-3.5 [&>th]:text-slate-900 dark:[&>th]:text-slate-100 [&>th]:font-bold">
+                    <tr>
+                        <th>Name</th>
+                        <th>Code</th>
+                        <th class="text-center">Positions</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
                 </thead>
                 <tbody class="divide-y divide-border/60">
-                    <tr v-for="row in departments.data" :key="row.id" class="[&>td]:px-4 [&>td]:py-3">
-                        <td class="font-medium">{{ row.name }}</td>
-                        <td>{{ row.code ?? '—' }}</td>
-                        <td>{{ row.positions_count }}</td>
-                        <td><span class="rounded-full px-2 py-0.5 text-xs" :class="row.is_active ? 'bg-emerald-500/10 text-emerald-700' : 'bg-muted'">{{ row.is_active ? 'Active' : 'Inactive' }}</span></td>
-                        <td class="text-right"><Button variant="ghost" size="sm" as-child><Link :href="edit(row.id)">Edit</Link></Button></td>
+                    <tr v-for="row in departments.data" :key="row.id" class="transition-colors hover:bg-muted/30 [&>td]:px-4 [&>td]:py-3.5">
+                        <td class="font-medium text-foreground">{{ row.name }}</td>
+                        <td>
+                            <span class="font-mono text-xs text-muted-foreground bg-muted/40 px-2 py-0.5 rounded border border-border/30">
+                                {{ row.code ?? '—' }}
+                            </span>
+                        </td>
+                        <td class="text-center">
+                            <span class="font-mono text-xs font-medium text-muted-foreground bg-muted/30 rounded-md px-2.5 py-0.5">
+                                {{ row.positions_count }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold" :class="row.is_active ? 'bg-emerald-500/10 text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-400' : 'bg-rose-500/10 text-rose-700 dark:bg-rose-400/10 dark:text-rose-400'">
+                                <span class="h-1.5 w-1.5 rounded-full" :class="row.is_active ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-rose-500 dark:bg-rose-400'" />
+                                {{ row.is_active ? 'Active' : 'Inactive' }}
+                            </span>
+                        </td>
+                        <td class="text-right">
+                            <Button variant="ghost" size="sm" class="h-8 hover:bg-primary/10 hover:text-primary text-xs rounded-lg" as-child>
+                                <Link :href="edit(row.id)">Edit</Link>
+                            </Button>
+                        </td>
                     </tr>
                 </tbody>
             </table>

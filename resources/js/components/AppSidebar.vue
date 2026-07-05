@@ -41,15 +41,19 @@ const { closeOverlays, pendingPath } = useAppNavigation();
                             class="flex items-center gap-3"
                             @click="closeOverlays()"
                         >
-                            <div
-                                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm"
-                            >
-                                <AppLogoIcon class="h-5 w-5 fill-current" />
+                            <AppLogoIcon class="size-11 shrink-0" />
+                            <div class="grid min-w-0 flex-1">
+                                <span
+                                    class="truncate text-sm leading-none font-semibold tracking-[0.18em] uppercase"
+                                >
+                                    PUP PRISM
+                                </span>
+                                <span
+                                    class="mt-1 truncate text-[0.62rem] leading-none font-medium tracking-[0.12em] text-sidebar-foreground/65 uppercase"
+                                >
+                                    Inventory Operations
+                                </span>
                             </div>
-                            <span
-                                class="font-display text-lg font-semibold tracking-tight"
-                                >PRISM</span
-                              >
                             <LoaderCircle
                                 v-if="pendingPath === toUrl(dashboard())"
                                 class="h-4 w-4 animate-spin text-primary"

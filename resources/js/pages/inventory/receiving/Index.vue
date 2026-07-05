@@ -8,6 +8,7 @@ import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Plus, Check, Trash2 } from 'lucide-vue-next';
 
 defineOptions({
     layout: {
@@ -237,218 +238,233 @@ function appendBatchLineTagCode(index: number, value: string): void {
 
         <form
             v-if="mode === 'single'"
-            class="grid max-w-3xl gap-5"
+            class="grid gap-6 lg:grid-cols-12 lg:items-start"
             @submit.prevent="submitSingle"
         >
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
+            <!-- Left Column: Details -->
+            <div class="grid gap-6 lg:col-span-7 xl:col-span-8">
+                <!-- Product identification -->
                 <div
-                    class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
+                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
                 >
-                    <span
-                        class="inline-block h-1.5 w-1.5 rounded-full bg-primary/60"
-                    />
-                    Product identification
+                    <div
+                        class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
+                    >
+                        <span
+                            class="inline-block h-1.5 w-1.5 rounded-full bg-primary/60"
+                        />
+                        Product identification
+                    </div>
+                    <div class="grid gap-4">
+                        <div class="grid gap-2">
+                            <div
+                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                                <Label
+                                    for="sku"
+                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                    >SKU</Label
+                                >
+                                <QrScannerDialog
+                                    button-label="Scan SKU"
+                                    title="Scan product QR"
+                                    description="Point the camera at a product label QR code to fill the SKU field."
+                                    @scanned="form.sku = $event"
+                                />
+                            </div>
+                            <Input
+                                id="sku"
+                                v-model="form.sku"
+                                data-testid="receiving-sku-input"
+                                required
+                                placeholder="Scan or type SKU"
+                                class="rounded-lg"
+                            />
+                            <InputError :message="form.errors.sku" />
+                        </div>
+                    </div>
                 </div>
-                <div class="grid gap-4">
+
+                <!-- Quantity & reference -->
+                <div
+                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                >
+                    <div
+                        class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
+                    >
+                        <span
+                            class="inline-block h-1.5 w-1.5 rounded-full bg-amber-500/60"
+                        />
+                        Quantity & reference
+                    </div>
+                    <div class="grid gap-4 md:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label
+                                for="qty"
+                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >Quantity (consumables)</Label
+                            >
+                            <Input
+                                id="qty"
+                                v-model="form.qty"
+                                data-testid="receiving-qty-input"
+                                type="number"
+                                min="1"
+                                placeholder="e.g. 12"
+                                class="rounded-lg"
+                            />
+                            <InputError :message="form.errors.qty" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label
+                                for="reference_no"
+                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >Reference no.</Label
+                            >
+                            <Input
+                                id="reference_no"
+                                v-model="form.reference_no"
+                                data-testid="receiving-reference-input"
+                                placeholder="e.g. DR-000123"
+                                class="rounded-lg"
+                            />
+                            <InputError :message="form.errors.reference_no" />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label
+                                for="received_at"
+                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >Received at</Label
+                            >
+                            <Input
+                                id="received_at"
+                                v-model="form.received_at"
+                                type="datetime-local"
+                                class="rounded-lg"
+                            />
+                            <InputError :message="form.errors.received_at" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label
+                                for="expires_at"
+                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >Expires at (optional)</Label
+                            >
+                            <Input
+                                id="expires_at"
+                                v-model="form.expires_at"
+                                type="date"
+                                class="rounded-lg"
+                            />
+                            <InputError :message="form.errors.expires_at" />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div
+                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                >
+                    <div
+                        class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
+                    >
+                        <span
+                            class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/60"
+                        />
+                        Notes
+                    </div>
+                    <div class="grid gap-2">
+                        <Label
+                            for="notes"
+                            class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                            >Additional notes</Label
+                        >
+                        <textarea
+                            id="notes"
+                            v-model="form.notes"
+                            class="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm transition-colors focus:border-ring focus:outline-none"
+                            placeholder="Optional notes…"
+                        />
+                        <InputError :message="form.errors.notes" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Tags & Confirmation -->
+            <div class="grid gap-6 lg:col-span-5 xl:col-span-4">
+                <!-- Asset tags -->
+                <div
+                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                >
+                    <div
+                        class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
+                    >
+                        <span
+                            class="inline-block h-1.5 w-1.5 rounded-full bg-sky-500/60"
+                        />
+                        Asset tags
+                    </div>
                     <div class="grid gap-2">
                         <div
                             class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
                         >
                             <Label
-                                for="sku"
+                                for="tag_codes_text"
                                 class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >SKU</Label
+                                >Asset tag codes (one per line)</Label
                             >
                             <QrScannerDialog
-                                button-label="Scan SKU"
-                                title="Scan product QR"
-                                description="Point the camera at a product label QR code to fill the SKU field."
-                                @scanned="form.sku = $event"
+                                button-label="Batch scan tags"
+                                title="Scan asset tag QR"
+                                description="Keep the camera open to capture multiple asset tags in one receiving session."
+                                :continuous="true"
+                                trigger-test-id="receiving-tag-scanner-button"
+                                @scanned="appendTagCode"
                             />
                         </div>
-                        <Input
-                            id="sku"
-                            v-model="form.sku"
-                            data-testid="receiving-sku-input"
-                            required
-                            placeholder="Scan or type SKU"
-                            class="rounded-lg"
+                        <textarea
+                            id="tag_codes_text"
+                            v-model="form.tag_codes_text"
+                            data-testid="receiving-tag-codes-input"
+                            class="min-h-[160px] rounded-lg border border-input bg-background px-3 py-2 text-sm transition-colors focus:border-ring focus:outline-none"
+                            placeholder="AST-00000001&#10;AST-00000002"
                         />
-                        <InputError :message="form.errors.sku" />
+                        <div class="text-xs text-muted-foreground">
+                            Asset scans are appended automatically. You can still
+                            paste or type multiple tag codes here.
+                        </div>
+                        <div
+                            v-if="tagScanFeedback"
+                            class="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
+                        >
+                            {{ tagScanFeedback }}
+                        </div>
+                        <InputError :message="form.errors.tag_codes" />
                     </div>
                 </div>
-            </div>
 
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
+                <!-- Confirm Transaction Card -->
                 <div
-                    class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
+                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-4"
                 >
-                    <span
-                        class="inline-block h-1.5 w-1.5 rounded-full bg-amber-500/60"
-                    />
-                    Quantity & reference
-                </div>
-                <div class="grid gap-4 md:grid-cols-2">
-                    <div class="grid gap-2">
-                        <Label
-                            for="qty"
-                            class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Quantity (consumables)</Label
-                        >
-                        <Input
-                            id="qty"
-                            v-model="form.qty"
-                            data-testid="receiving-qty-input"
-                            type="number"
-                            min="1"
-                            placeholder="e.g. 12"
-                            class="rounded-lg"
-                        />
-                        <InputError :message="form.errors.qty" />
+                    <div>
+                        <h4 class="text-sm font-semibold tracking-tight">Confirm receiving</h4>
+                        <p class="mt-1 text-xs text-muted-foreground leading-normal">
+                            Make sure all details, references, and asset tag codes are filled and validated before receiving stock.
+                        </p>
                     </div>
-
-                    <div class="grid gap-2">
-                        <Label
-                            for="reference_no"
-                            class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Reference no.</Label
-                        >
-                        <Input
-                            id="reference_no"
-                            v-model="form.reference_no"
-                            data-testid="receiving-reference-input"
-                            placeholder="e.g. DR-000123"
-                            class="rounded-lg"
-                        />
-                        <InputError :message="form.errors.reference_no" />
-                    </div>
-
-                    <div class="grid gap-2">
-                        <Label
-                            for="received_at"
-                            class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Received at</Label
-                        >
-                        <Input
-                            id="received_at"
-                            v-model="form.received_at"
-                            type="datetime-local"
-                            class="rounded-lg"
-                        />
-                        <InputError :message="form.errors.received_at" />
-                    </div>
-                    <div class="grid gap-2">
-                        <Label
-                            for="expires_at"
-                            class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Expires at (optional)</Label
-                        >
-                        <Input
-                            id="expires_at"
-                            v-model="form.expires_at"
-                            type="date"
-                            class="rounded-lg"
-                        />
-                        <InputError :message="form.errors.expires_at" />
-                    </div>
-                </div>
-            </div>
-
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div
-                    class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
-                >
-                    <span
-                        class="inline-block h-1.5 w-1.5 rounded-full bg-sky-500/60"
-                    />
-                    Asset tags
-                </div>
-                <div class="grid gap-2">
-                    <div
-                        class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                    <Button
+                        type="submit"
+                        :disabled="form.processing"
+                        data-test="receive-stock-button"
+                        data-testid="receive-stock-button"
+                        class="w-full rounded-lg shadow-sm"
                     >
-                        <Label
-                            for="tag_codes_text"
-                            class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Asset tag codes (one per line)</Label
-                        >
-                        <QrScannerDialog
-                            button-label="Batch scan tags"
-                            title="Scan asset tag QR"
-                            description="Keep the camera open to capture multiple asset tags in one receiving session."
-                            :continuous="true"
-                            trigger-test-id="receiving-tag-scanner-button"
-                            @scanned="appendTagCode"
-                        />
-                    </div>
-                    <textarea
-                        id="tag_codes_text"
-                        v-model="form.tag_codes_text"
-                        data-testid="receiving-tag-codes-input"
-                        class="min-h-28 rounded-lg border border-input bg-background px-3 py-2 text-sm transition-colors focus:border-ring focus:outline-none"
-                        placeholder="AST-00000001&#10;AST-00000002"
-                    />
-                    <div class="text-xs text-muted-foreground">
-                        Asset scans are appended automatically. You can still
-                        paste or type multiple tag codes here.
-                    </div>
-                    <div
-                        v-if="tagScanFeedback"
-                        class="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
-                    >
-                        {{ tagScanFeedback }}
-                    </div>
-                    <InputError :message="form.errors.tag_codes" />
+                        <Check class="mr-1.5 h-4 w-4" />Receive stock
+                    </Button>
                 </div>
-            </div>
-
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div
-                    class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
-                >
-                    <span
-                        class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/60"
-                    />
-                    Notes
-                </div>
-                <div class="grid gap-2">
-                    <Label
-                        for="notes"
-                        class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                        >Additional notes</Label
-                    >
-                    <textarea
-                        id="notes"
-                        v-model="form.notes"
-                        class="min-h-20 rounded-lg border border-input bg-background px-3 py-2 text-sm transition-colors focus:border-ring focus:outline-none"
-                        placeholder="Optional notes…"
-                    />
-                    <InputError :message="form.errors.notes" />
-                </div>
-            </div>
-
-            <div
-                class="sticky bottom-4 z-10 flex items-center justify-end gap-2 rounded-xl border border-border/60 bg-background/95 px-4 py-3 shadow-lg backdrop-blur supports-backdrop-filter:bg-background/80 md:static md:border-0 md:bg-transparent md:px-0 md:py-0 md:shadow-none"
-            >
-                <Button
-                    type="submit"
-                    :disabled="form.processing"
-                    data-test="receive-stock-button"
-                    data-testid="receive-stock-button"
-                    class="rounded-lg shadow-sm"
-                >
-                    <span
-                        class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary-foreground/60"
-                    />Receive stock
-                </Button>
             </div>
         </form>
 
@@ -580,10 +596,20 @@ function appendBatchLineTagCode(index: number, value: string): void {
             <div
                 class="hidden overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm lg:block"
             >
-                <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-left">
+                <table class="w-full min-w-[1250px] table-fixed text-sm">
+                    <colgroup>
+                        <col class="w-[14%]" />
+                        <col class="w-[7%]" />
+                        <col class="w-[11%]" />
+                        <col class="w-[18%]" />
+                        <col class="w-[14%]" />
+                        <col class="w-[20%]" />
+                        <col class="w-[12%]" />
+                        <col class="w-[4%]" />
+                    </colgroup>
+                    <thead class="bg-muted/50 border-b border-border/60 text-left">
                         <tr
-                            class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
+                            class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3.5"
                         >
                             <th>SKU</th>
                             <th>Qty</th>
@@ -599,7 +625,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                         <tr
                             v-for="(line, i) in batchForm.lines"
                             :key="`desktop-${i}`"
-                            class="[&>td]:px-4 [&>td]:py-2"
+                            class="[&>td]:px-4 [&>td]:py-3.5"
                         >
                             <td>
                                 <Input
@@ -641,7 +667,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                             <td class="space-y-2">
                                 <textarea
                                     v-model="line.tag_codes_text"
-                                    class="min-h-16 w-32 rounded-lg border border-input bg-background px-2 py-1 text-xs transition-colors focus:border-ring focus:outline-none"
+                                    class="min-h-12 w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs transition-colors focus:border-ring focus:outline-none"
                                     placeholder="One per line"
                                 />
                                 <QrScannerDialog
@@ -653,7 +679,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                 />
                                 <div
                                     v-if="batchTagFeedback[i]"
-                                    class="max-w-32 text-[11px] text-muted-foreground"
+                                    class="max-w-full text-[11px] text-muted-foreground leading-normal"
                                 >
                                     {{ batchTagFeedback[i] }}
                                 </div>
@@ -665,15 +691,16 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                     class="h-8 rounded-lg text-xs"
                                 />
                             </td>
-                            <td>
+                            <td class="text-center">
                                 <Button
                                     type="button"
                                     variant="ghost"
-                                    size="sm"
-                                    class="h-7 rounded-lg text-xs text-muted-foreground hover:text-rose-600"
+                                    size="icon"
+                                    class="h-8 w-8 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600"
+                                    title="Remove line"
                                     @click="removeBatchLine(i)"
                                 >
-                                    Remove
+                                    <Trash2 class="h-4 w-4" />
                                 </Button>
                             </td>
                         </tr>
@@ -691,16 +718,14 @@ function appendBatchLineTagCode(index: number, value: string): void {
                     class="rounded-lg"
                     @click="addBatchLine"
                 >
-                    + Add line
+                    <Plus class="mr-1.5 h-4 w-4" />Add line
                 </Button>
                 <Button
                     type="submit"
                     :disabled="batchForm.processing"
                     class="rounded-lg shadow-sm"
                 >
-                    <span
-                        class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary-foreground/60"
-                    />Receive batch
+                    <Check class="mr-1.5 h-4 w-4" />Receive batch
                 </Button>
             </div>
 
