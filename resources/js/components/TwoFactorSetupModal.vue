@@ -161,90 +161,90 @@ watch(
                     <div v-if="errors?.length" class="w-full">
                         <AlertError :errors="errors" />
                     </div>
-                    <template>
+                    <div
+                        class="relative mx-auto flex max-w-md items-center overflow-hidden"
+                    >
                         <div
-                            class="relative mx-auto flex max-w-md items-center overflow-hidden"
+                            class="relative mx-auto aspect-square w-64 overflow-hidden rounded-lg border border-border"
                         >
                             <div
-                                class="relative mx-auto aspect-square w-64 overflow-hidden rounded-lg border border-border"
+                                v-if="!qrCodeSvg"
+                                class="absolute inset-0 z-10 flex aspect-square h-auto w-full animate-pulse items-center justify-center bg-background"
+                            >
+                                <Spinner class="size-6" />
+                            </div>
+                            <div
+                                v-else
+                                class="relative z-10 overflow-hidden border p-5"
                             >
                                 <div
-                                    v-if="!qrCodeSvg"
-                                    class="absolute inset-0 z-10 flex aspect-square h-auto w-full animate-pulse items-center justify-center bg-background"
-                                >
-                                    <Spinner class="size-6" />
-                                </div>
-                                <div
-                                    v-else
-                                    class="relative z-10 overflow-hidden border p-5"
-                                >
-                                    <div
-                                        v-html="qrCodeSvg"
-                                        class="flex aspect-square size-full items-center justify-center"
-                                        :style="{
-                                            filter:
-                                                resolvedAppearance === 'dark'
-                                                    ? 'invert(1) brightness(1.5)'
-                                                    : undefined,
-                                        }"
-                                    />
-                                </div>
+                                    data-testid="two-factor-qr-code"
+                                    v-html="qrCodeSvg"
+                                    class="flex aspect-square size-full items-center justify-center"
+                                    :style="{
+                                        filter:
+                                            resolvedAppearance === 'dark'
+                                                ? 'invert(1) brightness(1.5)'
+                                                : undefined,
+                                    }"
+                                />
                             </div>
                         </div>
+                    </div>
 
-                        <div class="flex w-full items-center space-x-5">
-                            <Button class="w-full" @click="handleModalNextStep">
-                                {{ modalConfig.buttonText }}
-                            </Button>
-                        </div>
+                    <div class="flex w-full items-center space-x-5">
+                        <Button class="w-full" @click="handleModalNextStep">
+                            {{ modalConfig.buttonText }}
+                        </Button>
+                    </div>
 
+                    <div
+                        class="relative flex w-full items-center justify-center"
+                    >
                         <div
-                            class="relative flex w-full items-center justify-center"
+                            class="absolute inset-0 top-1/2 h-px w-full bg-border"
+                        />
+                        <span class="relative bg-card px-2 py-1"
+                            >or, enter the code manually</span
+                        >
+                    </div>
+
+                    <div
+                        class="flex w-full items-center justify-center space-x-2"
+                    >
+                        <div
+                            class="flex w-full items-stretch overflow-hidden rounded-xl border border-border"
                         >
                             <div
-                                class="absolute inset-0 top-1/2 h-px w-full bg-border"
-                            />
-                            <span class="relative bg-card px-2 py-1"
-                                >or, enter the code manually</span
+                                v-if="!manualSetupKey"
+                                class="flex h-full w-full items-center justify-center bg-muted p-3 text-center text-sm text-muted-foreground"
                             >
-                        </div>
-
-                        <div
-                            class="flex w-full items-center justify-center space-x-2"
-                        >
-                            <div
-                                class="flex w-full items-stretch overflow-hidden rounded-xl border border-border"
-                            >
-                                <div
-                                    v-if="!manualSetupKey"
-                                    class="flex h-full w-full items-center justify-center bg-muted p-3 text-center text-sm text-muted-foreground"
-                                >
-                                    <Spinner v-if="!errors?.length" />
-                                    <span v-else>
-                                        Setup key unavailable right now.
-                                    </span>
-                                </div>
-                                <template v-else>
-                                    <input
-                                        type="text"
-                                        readonly
-                                        :value="manualSetupKey"
-                                        class="h-full w-full bg-background p-3 text-foreground"
-                                    />
-                                    <button
-                                        @click="copy(manualSetupKey || '')"
-                                        class="relative block h-auto border-l border-border px-3 hover:bg-muted"
-                                    >
-                                        <Check
-                                            v-if="copied"
-                                            class="w-4 text-green-500"
-                                        />
-                                        <Copy v-else class="w-4" />
-                                    </button>
-                                </template>
+                                <Spinner v-if="!errors?.length" />
+                                <span v-else>
+                                    Setup key unavailable right now.
+                                </span>
                             </div>
+                            <template v-else>
+                                <input
+                                    data-testid="two-factor-setup-key"
+                                    type="text"
+                                    readonly
+                                    :value="manualSetupKey"
+                                    class="h-full w-full bg-background p-3 text-foreground"
+                                />
+                                <button
+                                    @click="copy(manualSetupKey || '')"
+                                    class="relative block h-auto border-l border-border px-3 hover:bg-muted"
+                                >
+                                    <Check
+                                        v-if="copied"
+                                        class="w-4 text-green-500"
+                                    />
+                                    <Copy v-else class="w-4" />
+                                </button>
+                            </template>
                         </div>
-                    </template>
+                    </div>
                 </template>
 
                 <template v-else>

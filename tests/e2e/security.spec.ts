@@ -45,10 +45,14 @@ test.describe('Security Settings', () => {
                 name: 'Enable two-factor authentication',
             }),
         ).toBeVisible();
+        const setupDialog = page.getByRole('dialog');
         await expect(page.getByText('Failed to fetch a setup key')).toHaveCount(
             0,
         );
-        await expect(page.locator('input[readonly]')).toHaveValue(
+        await expect(
+            setupDialog.getByTestId('two-factor-qr-code').locator('svg'),
+        ).toBeVisible();
+        await expect(setupDialog.getByTestId('two-factor-setup-key')).toHaveValue(
             /^[A-Z0-9]{16,}$/,
         );
     });
@@ -92,10 +96,14 @@ test.describe('Security Settings', () => {
                 name: 'Enable two-factor authentication',
             }),
         ).toBeVisible();
+        const setupDialog = page.getByRole('dialog');
         await expect(page.getByText('Failed to fetch a setup key')).toHaveCount(
             0,
         );
-        await expect(page.locator('input[readonly]')).toHaveValue(
+        await expect(
+            setupDialog.getByTestId('two-factor-qr-code').locator('svg'),
+        ).toBeVisible();
+        await expect(setupDialog.getByTestId('two-factor-setup-key')).toHaveValue(
             'e2e-secret',
         );
     });
@@ -143,10 +151,14 @@ test.describe('Security Settings', () => {
                 name: 'Enable two-factor authentication',
             }),
         ).toBeVisible();
+        const setupDialog = page.getByRole('dialog');
         await expect(page.getByText('Failed to load two-factor setup data')).toHaveCount(
             0,
         );
-        await expect(page.locator('input[readonly]')).toHaveValue(
+        await expect(
+            setupDialog.getByTestId('two-factor-qr-code').locator('svg'),
+        ).toBeVisible();
+        await expect(setupDialog.getByTestId('two-factor-setup-key')).toHaveValue(
             'e2e-secret',
         );
     });
