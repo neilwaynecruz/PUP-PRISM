@@ -1701,11 +1701,9 @@ function restoreItem(url: string): void {
                                 }}</span>
                             </div>
                         </div>
-                        <div
-                            class="flex min-w-[7.25rem] flex-col items-end gap-1"
-                        >
+                        <div class="flex min-w-29 flex-col items-end gap-1">
                             <div
-                                class="inline-flex min-w-[4.5rem] items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-0.5 font-mono text-xs leading-5 font-semibold text-amber-700 dark:text-amber-300"
+                                class="inline-flex min-w-18 items-center justify-center rounded-full border border-amber-500/25 bg-amber-500/10 px-2.5 py-0.5 font-mono text-xs leading-5 font-semibold text-amber-700 dark:text-amber-300"
                             >
                                 {{ p.on_hand_qty ?? 0 }}
                                 <span

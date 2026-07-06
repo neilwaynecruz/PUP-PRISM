@@ -211,7 +211,7 @@ function submitResolve(): void {
     <Head title="Alerts" />
 
     <div
-        class="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8"
+        class="mx-auto flex w-full max-w-400 flex-col gap-6 p-4 sm:p-6 lg:p-8"
     >
         <div
             class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
@@ -231,7 +231,7 @@ function submitResolve(): void {
 
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             <div
-                class="group relative overflow-hidden rounded-xl border border-amber-400/25 bg-gradient-to-br from-amber-500/15 via-card to-card p-5 shadow-sm transition-colors hover:border-amber-400/45"
+                class="group relative overflow-hidden rounded-xl border border-amber-400/25 bg-linear-to-br from-amber-500/15 via-card to-card p-5 shadow-sm transition-colors hover:border-amber-400/45"
             >
                 <div class="flex items-start justify-between gap-4">
                     <div>
@@ -257,7 +257,7 @@ function submitResolve(): void {
                 </div>
             </div>
             <div
-                class="group relative overflow-hidden rounded-xl border border-rose-400/25 bg-gradient-to-br from-rose-500/15 via-card to-card p-5 shadow-sm transition-colors hover:border-rose-400/45"
+                class="group relative overflow-hidden rounded-xl border border-rose-400/25 bg-linear-to-br from-rose-500/15 via-card to-card p-5 shadow-sm transition-colors hover:border-rose-400/45"
             >
                 <div class="flex items-start justify-between gap-4">
                     <div>
@@ -281,7 +281,7 @@ function submitResolve(): void {
                 </p>
             </div>
             <div
-                class="group relative overflow-hidden rounded-xl border border-cyan-400/25 bg-gradient-to-br from-cyan-500/15 via-card to-card p-5 shadow-sm transition-colors hover:border-cyan-400/45 sm:col-span-2 xl:col-span-1"
+                class="group relative overflow-hidden rounded-xl border border-cyan-400/25 bg-linear-to-br from-cyan-500/15 via-card to-card p-5 shadow-sm transition-colors hover:border-cyan-400/45 sm:col-span-2 xl:col-span-1"
             >
                 <div class="flex items-start justify-between gap-4">
                     <div>
@@ -495,7 +495,7 @@ function submitResolve(): void {
                         <tr
                             v-for="alert in alerts.data"
                             :key="alert.id"
-                            class="border-l-4 align-top transition-colors hover:bg-primary/[0.035] dark:hover:bg-primary/[0.06] [&>td]:px-5 [&>td]:py-4"
+                            class="border-l-4 align-top transition-colors hover:bg-primary/[0.035] dark:hover:bg-primary/6 [&>td]:px-5 [&>td]:py-4"
                             :class="alertRowAccent(alert)"
                         >
                             <td>
