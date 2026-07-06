@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
+import {
+    ArrowUpRight,
+    Gauge,
+    PackageSearch,
+    Search,
+    SlidersHorizontal,
+} from 'lucide-vue-next';
 import { onBeforeUnmount, ref, watch } from 'vue';
-import ForecastWidget from '@/components/inventory/ForecastWidget.vue';
 import Heading from '@/components/Heading.vue';
+import ForecastWidget from '@/components/inventory/ForecastWidget.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -132,55 +139,115 @@ function methodLabel(value: string | null | undefined): string {
 
 function riskClass(days: number | null): string {
     if (days === null) {
-        return 'text-muted-foreground';
+        return 'border-slate-500/25 bg-slate-500/10 text-slate-600 dark:text-slate-300';
     }
 
     if (days <= 7) {
-        return 'text-rose-600 dark:text-rose-400';
+        return 'border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-300';
     }
 
     if (days <= 14) {
-        return 'text-amber-600 dark:text-amber-400';
+        return 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300';
     }
 
-    return 'text-emerald-600 dark:text-emerald-400';
+    return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+}
+
+function riskRowClass(days: number | null): string {
+    if (days === null) {
+        return 'hover:bg-slate-500/5';
+    }
+
+    if (days <= 7) {
+        return 'hover:bg-rose-500/5';
+    }
+
+    if (days <= 14) {
+        return 'hover:bg-amber-500/5';
+    }
+
+    return 'hover:bg-emerald-500/5';
+}
+
+function confidenceClass(score: number | null | undefined): string {
+    if (score === null || score === undefined) {
+        return 'border-slate-500/25 bg-slate-500/10 text-slate-600 dark:text-slate-300';
+    }
+
+    if (score >= 80) {
+        return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+    }
+
+    if (score >= 60) {
+        return 'border-blue-500/25 bg-blue-500/10 text-blue-700 dark:text-blue-300';
+    }
+
+    return 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300';
 }
 </script>
 
 <template>
     <Head title="Forecasting" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
-        <Heading
-            variant="small"
-            title="Demand forecasting"
-            description="Review consumable forecasts, tune model settings, and prioritize replenishment risks."
-        />
+    <div
+        class="flex flex-col gap-6 bg-[radial-gradient(circle_at_top_right,rgba(139,92,246,0.11),transparent_32%),radial-gradient(circle_at_15%_0%,rgba(20,184,166,0.08),transparent_28%)] p-4 sm:p-6"
+    >
+        <div
+            class="rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur"
+        >
+            <div
+                class="mb-3 inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-[11px] font-semibold tracking-[0.22em] text-violet-700 uppercase dark:text-violet-300"
+            >
+                <Gauge class="h-3.5 w-3.5" />
+                Forecast command deck
+            </div>
+            <Heading
+                variant="small"
+                title="Demand forecasting"
+                description="Review consumable forecasts, tune model settings, and prioritize replenishment risks."
+            />
+        </div>
 
         <ForecastWidget :summary="forecastSummary" />
 
-        <section class="rounded-2xl border border-border/60 bg-card shadow-sm">
+        <section
+            class="overflow-hidden rounded-3xl border border-blue-500/20 bg-card/90 shadow-xl shadow-blue-950/10"
+        >
             <div
-                class="flex flex-col gap-4 border-b border-border/50 px-5 py-4 lg:flex-row lg:items-end lg:justify-between"
+                class="flex flex-col gap-4 border-b border-blue-500/15 bg-linear-to-r from-blue-500/10 via-violet-500/5 to-transparent px-5 py-5 lg:flex-row lg:items-end lg:justify-between"
             >
-                <div>
-                    <h2 class="text-sm font-semibold tracking-tight">
-                        Consumable forecast registry
-                    </h2>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        Filter by urgency, confidence, or forecasting method.
-                    </p>
+                <div class="flex items-start gap-3">
+                    <div
+                        class="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-600 ring-1 ring-blue-500/20 dark:text-blue-300"
+                    >
+                        <PackageSearch class="h-5 w-5" />
+                    </div>
+                    <div>
+                        <h2 class="text-base font-semibold tracking-tight">
+                            Consumable forecast registry
+                        </h2>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            Filter by urgency, confidence, or forecasting
+                            method.
+                        </p>
+                    </div>
                 </div>
 
                 <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                    <Input
-                        v-model="search"
-                        placeholder="Search SKU or product name"
-                        aria-label="Search forecasts"
-                    />
+                    <div class="relative">
+                        <Search
+                            class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                        />
+                        <Input
+                            v-model="search"
+                            placeholder="Search SKU or product name"
+                            aria-label="Search forecasts"
+                            class="h-11 rounded-xl border-border/70 bg-background/80 pl-9 shadow-inner shadow-black/5 focus-visible:ring-blue-500/30"
+                        />
+                    </div>
                     <select
                         v-model="urgency"
-                        class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-blue-400/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
                         aria-label="Urgency filter"
                     >
                         <option value="">All urgency levels</option>
@@ -191,7 +258,7 @@ function riskClass(days: number | null): string {
                     </select>
                     <select
                         v-model="method"
-                        class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                        class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-violet-400/40 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 focus:outline-none"
                         aria-label="Method filter"
                     >
                         <option value="">All methods</option>
@@ -211,6 +278,7 @@ function riskClass(days: number | null): string {
                         step="1"
                         placeholder="Min confidence %"
                         aria-label="Minimum confidence"
+                        class="h-11 rounded-xl border-border/70 bg-background/80 shadow-inner shadow-black/5 focus-visible:ring-cyan-500/30"
                     />
                 </div>
             </div>
@@ -223,7 +291,13 @@ function riskClass(days: number | null): string {
                 <div
                     v-for="product in products.data"
                     :key="`mobile-${product.id}`"
-                    class="rounded-xl border border-border/60 bg-card p-4 shadow-sm"
+                    class="rounded-2xl border border-border/60 bg-linear-to-br from-background/80 via-card to-card p-4 shadow-sm transition-colors"
+                    :class="
+                        riskRowClass(
+                            product.snapshot?.predicted_days_until_stockout ??
+                                null,
+                        )
+                    "
                 >
                     <div class="flex items-start justify-between gap-3">
                         <div>
@@ -233,17 +307,26 @@ function riskClass(days: number | null): string {
                             </div>
                         </div>
                         <span
-                            class="rounded-full border px-2 py-0.5 text-[11px] font-medium"
+                            class="rounded-full border px-2.5 py-1 text-[11px] font-semibold"
                             :class="
-                                product.snapshot?.predicted_days_until_stockout !== null &&
-                                product.snapshot?.predicted_days_until_stockout !== undefined
-                                    ? riskClass(product.snapshot.predicted_days_until_stockout)
+                                product.snapshot
+                                    ?.predicted_days_until_stockout !== null &&
+                                product.snapshot
+                                    ?.predicted_days_until_stockout !==
+                                    undefined
+                                    ? riskClass(
+                                          product.snapshot
+                                              .predicted_days_until_stockout,
+                                      )
                                     : 'text-muted-foreground'
                             "
                         >
                             {{
-                                product.snapshot?.predicted_days_until_stockout !== null &&
-                                product.snapshot?.predicted_days_until_stockout !== undefined
+                                product.snapshot
+                                    ?.predicted_days_until_stockout !== null &&
+                                product.snapshot
+                                    ?.predicted_days_until_stockout !==
+                                    undefined
                                     ? `${product.snapshot.predicted_days_until_stockout} days`
                                     : 'No stockout date'
                             }}
@@ -251,8 +334,12 @@ function riskClass(days: number | null): string {
                     </div>
 
                     <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
-                        <div class="rounded-lg border border-border/50 bg-muted/20 p-3">
-                            <div class="text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <div
+                            class="rounded-lg border border-border/50 bg-muted/20 p-3"
+                        >
+                            <div
+                                class="text-[11px] tracking-wider text-muted-foreground uppercase"
+                            >
                                 On hand
                             </div>
                             <div class="mt-1 font-semibold">
@@ -262,41 +349,67 @@ function riskClass(days: number | null): string {
                                 }}
                             </div>
                         </div>
-                        <div class="rounded-lg border border-border/50 bg-muted/20 p-3">
-                            <div class="text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <div
+                            class="rounded-lg border border-border/50 bg-muted/20 p-3"
+                        >
+                            <div
+                                class="text-[11px] tracking-wider text-muted-foreground uppercase"
+                            >
                                 Reorder qty
                             </div>
                             <div class="mt-1 font-semibold">
                                 {{
-                                    product.snapshot?.recommended_reorder_qty ?? '—'
+                                    product.snapshot?.recommended_reorder_qty ??
+                                    '—'
                                 }}
                             </div>
                         </div>
-                        <div class="rounded-lg border border-border/50 bg-muted/20 p-3">
-                            <div class="text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <div
+                            class="rounded-lg border border-border/50 bg-muted/20 p-3"
+                        >
+                            <div
+                                class="text-[11px] tracking-wider text-muted-foreground uppercase"
+                            >
                                 Daily demand
                             </div>
                             <div class="mt-1 font-semibold">
                                 {{
                                     product.snapshot
-                                        ? product.snapshot.predicted_daily_consumption.toFixed(2)
+                                        ? product.snapshot.predicted_daily_consumption.toFixed(
+                                              2,
+                                          )
                                         : '—'
                                 }}
                             </div>
                         </div>
-                        <div class="rounded-lg border border-border/50 bg-muted/20 p-3">
-                            <div class="text-[11px] uppercase tracking-wider text-muted-foreground">
+                        <div
+                            class="rounded-lg border border-border/50 bg-muted/20 p-3"
+                        >
+                            <div
+                                class="text-[11px] tracking-wider text-muted-foreground uppercase"
+                            >
                                 Confidence
                             </div>
-                            <div class="mt-1 font-semibold">
+                            <div
+                                class="mt-1 inline-flex rounded-full border px-2 py-0.5 text-xs font-semibold"
+                                :class="
+                                    confidenceClass(
+                                        product.snapshot?.confidence_score,
+                                    )
+                                "
+                            >
                                 {{
-                                    product.snapshot?.confidence_score?.toFixed(0) ?? '—'
+                                    product.snapshot?.confidence_score?.toFixed(
+                                        0,
+                                    ) ?? '—'
                                 }}
                             </div>
                         </div>
                     </div>
 
-                    <div class="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <div
+                        class="mt-3 flex items-center justify-between gap-3 text-xs text-muted-foreground"
+                    >
                         <span>
                             Method:
                             {{
@@ -306,8 +419,19 @@ function riskClass(days: number | null): string {
                                 )
                             }}
                         </span>
-                        <Button variant="ghost" size="sm" as-child>
-                            <Link :href="forecastingShow(product.id)">View</Link>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            as-child
+                            class="rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-700 hover:bg-violet-500/15 dark:text-violet-300"
+                        >
+                            <Link
+                                :href="forecastingShow(product.id)"
+                                class="gap-1"
+                            >
+                                View
+                                <ArrowUpRight class="h-3.5 w-3.5" />
+                            </Link>
                         </Button>
                     </div>
                 </div>
@@ -315,26 +439,40 @@ function riskClass(days: number | null): string {
 
             <div class="hidden overflow-x-auto md:block">
                 <table class="min-w-full text-sm">
-                    <thead class="border-b border-border/50 bg-muted/30 text-left">
+                    <thead
+                        class="border-b border-blue-500/15 bg-blue-500/10 text-left text-[11px] font-semibold tracking-[0.16em] text-muted-foreground uppercase"
+                    >
                         <tr>
-                            <th class="px-5 py-3 font-medium">Product</th>
-                            <th class="px-5 py-3 font-medium">On hand</th>
-                            <th class="px-5 py-3 font-medium">Daily demand</th>
-                            <th class="px-5 py-3 font-medium">Stockout horizon</th>
-                            <th class="px-5 py-3 font-medium">Reorder qty</th>
-                            <th class="px-5 py-3 font-medium">Confidence</th>
-                            <th class="px-5 py-3 font-medium">Method</th>
-                            <th class="px-5 py-3 font-medium" />
+                            <th class="px-5 py-3 font-semibold">Product</th>
+                            <th class="px-5 py-3 font-semibold">On hand</th>
+                            <th class="px-5 py-3 font-semibold">
+                                Daily demand
+                            </th>
+                            <th class="px-5 py-3 font-semibold">
+                                Stockout horizon
+                            </th>
+                            <th class="px-5 py-3 font-semibold">Reorder qty</th>
+                            <th class="px-5 py-3 font-semibold">Confidence</th>
+                            <th class="px-5 py-3 font-semibold">Method</th>
+                            <th class="px-5 py-3 font-semibold" />
                         </tr>
                     </thead>
                     <tbody>
                         <tr
                             v-for="product in products.data"
                             :key="product.id"
-                            class="border-b border-border/30"
+                            class="border-b border-border/30 transition-colors"
+                            :class="
+                                riskRowClass(
+                                    product.snapshot
+                                        ?.predicted_days_until_stockout ?? null,
+                                )
+                            "
                         >
                             <td class="px-5 py-4">
-                                <div class="font-medium">{{ product.name }}</div>
+                                <div class="font-medium">
+                                    {{ product.name }}
+                                </div>
                                 <div class="text-xs text-muted-foreground">
                                     {{ product.sku }}
                                 </div>
@@ -348,47 +486,87 @@ function riskClass(days: number | null): string {
                             <td class="px-5 py-4">
                                 {{
                                     product.snapshot
-                                        ? product.snapshot.predicted_daily_consumption.toFixed(2)
+                                        ? product.snapshot.predicted_daily_consumption.toFixed(
+                                              2,
+                                          )
                                         : '—'
                                 }}
                             </td>
-                            <td
-                                class="px-5 py-4 font-medium"
-                                :class="
-                                    riskClass(
-                                        product.snapshot?.predicted_days_until_stockout ??
-                                            null,
-                                    )
-                                "
-                            >
-                                {{
-                                    product.snapshot?.predicted_days_until_stockout ??
-                                    '—'
-                                }}
+                            <td class="px-5 py-4">
+                                <span
+                                    class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold"
+                                    :class="
+                                        riskClass(
+                                            product.snapshot
+                                                ?.predicted_days_until_stockout ??
+                                                null,
+                                        )
+                                    "
+                                >
+                                    {{
+                                        product.snapshot
+                                            ?.predicted_days_until_stockout ??
+                                        'No date'
+                                    }}
+                                </span>
                             </td>
                             <td class="px-5 py-4">
-                                {{
-                                    product.snapshot?.recommended_reorder_qty ?? '—'
-                                }}
+                                <span
+                                    class="inline-flex rounded-full border px-2.5 py-1 font-mono text-xs font-semibold"
+                                    :class="
+                                        product.snapshot
+                                            ?.recommended_reorder_qty
+                                            ? 'border-amber-500/25 bg-amber-500/10 text-amber-700 dark:text-amber-300'
+                                            : 'border-slate-500/25 bg-slate-500/10 text-slate-600 dark:text-slate-300'
+                                    "
+                                >
+                                    {{
+                                        product.snapshot
+                                            ?.recommended_reorder_qty ?? '—'
+                                    }}
+                                </span>
                             </td>
                             <td class="px-5 py-4">
-                                {{
-                                    product.snapshot?.confidence_score?.toFixed(0) ??
-                                    '—'
-                                }}
+                                <span
+                                    class="inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold"
+                                    :class="
+                                        confidenceClass(
+                                            product.snapshot?.confidence_score,
+                                        )
+                                    "
+                                >
+                                    {{
+                                        product.snapshot?.confidence_score?.toFixed(
+                                            0,
+                                        ) ?? '—'
+                                    }}
+                                </span>
                             </td>
                             <td class="px-5 py-4">
-                                {{
-                                    methodLabel(
-                                        product.snapshot?.forecast_method ??
-                                            product.profile_method,
-                                    )
-                                }}
+                                <span
+                                    class="inline-flex rounded-full border border-violet-500/20 bg-violet-500/10 px-2.5 py-1 text-xs font-medium text-violet-700 dark:text-violet-300"
+                                >
+                                    {{
+                                        methodLabel(
+                                            product.snapshot?.forecast_method ??
+                                                product.profile_method,
+                                        )
+                                    }}
+                                </span>
                             </td>
                             <td class="px-5 py-4 text-right">
-                                <Button variant="ghost" size="sm" as-child>
-                                    <Link :href="forecastingShow(product.id)">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    as-child
+                                    class="rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-700 hover:bg-violet-500/15 dark:text-violet-300"
+                                >
+                                    <Link
+                                        :href="forecastingShow(product.id)"
+                                        class="gap-1"
+                                    >
                                         View
+                                        <ArrowUpRight class="h-3.5 w-3.5" />
                                     </Link>
                                 </Button>
                             </td>
@@ -396,9 +574,13 @@ function riskClass(days: number | null): string {
                         <tr v-if="products.data.length === 0">
                             <td
                                 colspan="8"
-                                class="px-5 py-10 text-center text-muted-foreground"
+                                class="px-5 py-12 text-center text-muted-foreground"
                             >
-                                No consumable forecasts match the current filters.
+                                <SlidersHorizontal
+                                    class="mx-auto mb-3 h-8 w-8 text-muted-foreground/70"
+                                />
+                                No consumable forecasts match the current
+                                filters.
                             </td>
                         </tr>
                     </tbody>
@@ -429,8 +611,9 @@ function riskClass(days: number | null): string {
                         :href="link.url"
                         preserve-scroll
                         preserve-state
-                        v-html="link.label"
-                    />
+                    >
+                        <span v-html="link.label" />
+                    </Link>
                     <span v-else v-html="link.label" />
                 </Button>
             </div>
