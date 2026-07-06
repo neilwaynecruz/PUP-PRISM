@@ -56,8 +56,6 @@ class AuditLogPresenter
             'created_at' => $log->created_at?->toIso8601String(),
             'ip_address' => $log->ip_address,
             'changes' => $this->buildChanges($oldValues, $newValues),
-            'raw_old_values' => $oldValues === [] ? null : $oldValues,
-            'raw_new_values' => $newValues === [] ? null : $newValues,
         ];
     }
 

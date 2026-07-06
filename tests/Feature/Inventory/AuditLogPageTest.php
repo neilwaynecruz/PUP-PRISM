@@ -5,13 +5,16 @@ use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\withoutVite;
+
 beforeEach(function () {
-    $this->withoutVite();
+    withoutVite();
 
     Role::findOrCreate('Admin');
 });
 
-test('audit log index shows readable diffs and hides sensitive raw values', function () {
+test('audit log index shows readable diffs without exposing raw value payloads', function () {
     $user = User::factory()->withTwoFactor()->create();
     $user->assignRole('Admin');
 
@@ -39,7 +42,7 @@ test('audit log index shows readable diffs and hides sensitive raw values', func
         'user_agent' => 'Pest',
     ]);
 
-    $this->actingAs($user)
+    actingAs($user)
         ->get(route('inventory.audit-logs.index', absolute: false))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
@@ -53,6 +56,6 @@ test('audit log index shows readable diffs and hides sensitive raw values', func
             ->where('logs.data.0.changes.2.label', 'Is Active')
             ->where('logs.data.0.changes.2.old_value', 'No')
             ->where('logs.data.0.changes.2.new_value', 'Yes')
-            ->missing('logs.data.0.raw_old_values.password')
-            ->missing('logs.data.0.raw_new_values.password'));
+            ->missing('logs.data.0.raw_old_values')
+            ->missing('logs.data.0.raw_new_values'));
 });

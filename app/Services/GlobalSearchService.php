@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class GlobalSearchService
 {
-    private const int LIMIT_PER_TYPE = 5;
+    private const LIMIT_PER_TYPE = 5;
 
     /**
      * @return list<array{type: string, id: int, title: string, subtitle: string|null, url: string}>

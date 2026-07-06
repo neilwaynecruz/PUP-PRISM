@@ -38,8 +38,6 @@ interface LogEntry {
     created_at: string;
     ip_address: string | null;
     changes: LogChange[];
-    raw_old_values: Record<string, unknown> | null;
-    raw_new_values: Record<string, unknown> | null;
 }
 
 interface PaginationLink {
@@ -193,10 +191,6 @@ function formatRelativeUpdate(): string {
         hour: 'numeric',
         minute: '2-digit',
     })}`;
-}
-
-function formatJson(payload: Record<string, unknown> | null): string {
-    return payload ? JSON.stringify(payload, null, 2) : '—';
 }
 
 function getActionColor(actionValue: string): string {
@@ -446,43 +440,6 @@ watch(isNavigating, (navigating) => {
                             </div>
                         </div>
 
-                        <details
-                            v-if="log.raw_old_values || log.raw_new_values"
-                            class="mt-3 rounded-lg border border-border/50 p-3"
-                        >
-                            <summary class="cursor-pointer text-sm font-medium">
-                                Advanced details
-                            </summary>
-                            <div class="mt-3 grid gap-3">
-                                <div>
-                                    <div
-                                        class="mb-1 text-xs font-semibold text-muted-foreground uppercase"
-                                    >
-                                        Previous
-                                    </div>
-                                    <pre
-                                        class="overflow-x-auto rounded bg-muted/60 p-3 text-xs"
-                                        >{{
-                                            formatJson(log.raw_old_values)
-                                        }}</pre
-                                    >
-                                </div>
-                                <div>
-                                    <div
-                                        class="mb-1 text-xs font-semibold text-muted-foreground uppercase"
-                                    >
-                                        New
-                                    </div>
-                                    <pre
-                                        class="overflow-x-auto rounded bg-muted/60 p-3 text-xs"
-                                        >{{
-                                            formatJson(log.raw_new_values)
-                                        }}</pre
-                                    >
-                                </div>
-                            </div>
-                        </details>
-
                         <div class="mt-3 text-xs text-muted-foreground">
                             IP: {{ log.ip_address ?? '—' }}
                         </div>
@@ -583,53 +540,6 @@ watch(isNavigating, (navigating) => {
                                                 </span>
                                             </div>
                                         </div>
-                                        <details
-                                            v-if="
-                                                log.raw_old_values ||
-                                                log.raw_new_values
-                                            "
-                                            class="rounded-lg border border-border/50 p-3"
-                                        >
-                                            <summary
-                                                class="cursor-pointer text-sm font-medium"
-                                            >
-                                                Advanced details
-                                            </summary>
-                                            <div
-                                                class="mt-3 grid gap-3 xl:grid-cols-2"
-                                            >
-                                                <div>
-                                                    <div
-                                                        class="mb-1 text-xs font-semibold text-muted-foreground uppercase"
-                                                    >
-                                                        Previous
-                                                    </div>
-                                                    <pre
-                                                        class="overflow-x-auto rounded bg-muted/60 p-3 text-xs"
-                                                        >{{
-                                                            formatJson(
-                                                                log.raw_old_values,
-                                                            )
-                                                        }}</pre
-                                                    >
-                                                </div>
-                                                <div>
-                                                    <div
-                                                        class="mb-1 text-xs font-semibold text-muted-foreground uppercase"
-                                                    >
-                                                        New
-                                                    </div>
-                                                    <pre
-                                                        class="overflow-x-auto rounded bg-muted/60 p-3 text-xs"
-                                                        >{{
-                                                            formatJson(
-                                                                log.raw_new_values,
-                                                            )
-                                                        }}</pre
-                                                    >
-                                                </div>
-                                            </div>
-                                        </details>
                                     </div>
                                 </td>
                                 <td class="text-xs text-muted-foreground">

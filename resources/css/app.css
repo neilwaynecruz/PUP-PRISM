@@ -104,6 +104,7 @@
 :root {
     --background: #F8FAFC;
     --foreground: #0F172A;
+    --calendar-picker-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 2v4'/%3E%3Cpath d='M16 2v4'/%3E%3Crect x='3.5' y='4.5' width='17' height='16.5' rx='2.25'/%3E%3Cpath d='M3.5 10h17'/%3E%3C/svg%3E");
     --card: #FFFFFF;
     --card-foreground: #0F172A;
     --popover: #FFFFFF;
@@ -175,11 +176,86 @@
 }
 
 @layer base {
+    :root {
+        color-scheme: light;
+    }
+
+    .dark {
+        color-scheme: dark;
+    }
+
     * {
         @apply border-border outline-ring/50;
     }
     body {
         @apply bg-background text-foreground;
+    }
+
+    input:is(
+        [type='date'],
+        [type='datetime-local'],
+        [type='month'],
+        [type='time'],
+        [type='week']
+    ) {
+        color-scheme: light;
+    }
+
+    .dark
+        input:is(
+            [type='date'],
+            [type='datetime-local'],
+            [type='month'],
+            [type='time'],
+            [type='week']
+        ) {
+        color-scheme: dark;
+    }
+
+    input:is(
+            [type='date'],
+            [type='datetime-local'],
+            [type='month'],
+            [type='time'],
+            [type='week']
+        )::-webkit-calendar-picker-indicator {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 0.95rem;
+        height: 0.95rem;
+        margin-inline-start: 0.25rem;
+        background-color: var(--foreground);
+        background-image: none;
+        -webkit-mask: var(--calendar-picker-icon) center / contain no-repeat;
+        mask: var(--calendar-picker-icon) center / contain no-repeat;
+        cursor: pointer;
+        opacity: 0.78;
+        transition:
+            background-color 150ms ease,
+            opacity 150ms ease;
+    }
+
+    input:is(
+            [type='date'],
+            [type='datetime-local'],
+            [type='month'],
+            [type='time'],
+            [type='week']
+        )::-webkit-calendar-picker-indicator:hover {
+        opacity: 1;
+    }
+
+    .dark
+        input:is(
+            [type='date'],
+            [type='datetime-local'],
+            [type='month'],
+            [type='time'],
+            [type='week']
+        )::-webkit-calendar-picker-indicator {
+        background-color: var(--foreground);
+        filter: none;
+        opacity: 0.95;
     }
 }
 
