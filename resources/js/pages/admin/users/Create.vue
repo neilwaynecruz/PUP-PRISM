@@ -17,7 +17,7 @@ type PositionOption = {
     label: string;
 };
 
-const props = defineProps<{
+defineProps<{
     roles: string[];
     positions: PositionOption[];
 }>();
