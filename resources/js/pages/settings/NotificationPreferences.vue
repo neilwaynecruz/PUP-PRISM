@@ -57,12 +57,6 @@ function descriptionFor(eventType: string): string {
     return eventTypeMap.value[eventType]?.description ?? '';
 }
 
-function preferenceIndex(eventType: string): number {
-    return form.preferences.findIndex(
-        (preference) => preference.event_type === eventType,
-    );
-}
-
 function submit(): void {
     form.put(NotificationPreferenceController.update().url, {
         preserveScroll: true,
