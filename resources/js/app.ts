@@ -8,7 +8,13 @@ import SettingsLayout from '@/layouts/settings/Layout.vue';
 import { initializeFlashToast } from '@/lib/flashToast';
 import { initializeSessionGuard } from '@/lib/sessionGuard';
 
-if (typeof window !== 'undefined') {
+const reverbAppKey = import.meta.env.VITE_REVERB_APP_KEY;
+
+if (
+    typeof window !== 'undefined' &&
+    typeof reverbAppKey === 'string' &&
+    reverbAppKey.trim() !== ''
+) {
     configureEcho({
         broadcaster: 'reverb',
     });
