@@ -37,7 +37,9 @@ const defaultConnectionStatus = ref<'disconnected'>('disconnected');
 export function useRealtimeNotifications() {
     const page = usePage();
     const connectionStatus = isClient
-        ? useConnectionStatus()
+        ? echoIsConfigured()
+            ? useConnectionStatus()
+            : defaultConnectionStatus
         : defaultConnectionStatus;
     const notifications = ref<RealtimeNotificationItem[]>([]);
     const unreadCount = ref(0);
