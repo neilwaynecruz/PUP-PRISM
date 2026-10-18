@@ -13,6 +13,10 @@ class UatOrganizationSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new \RuntimeException('UAT demo data cannot be seeded in production.');
+        }
+
         foreach (['Admin', 'Supply Head', 'Property Custodian'] as $roleName) {
             Role::findOrCreate($roleName);
         }
@@ -83,7 +87,7 @@ class UatOrganizationSeeder extends Seeder
      */
     protected function seedUser(string $email, string $name, Position $position, array $roles): void
     {
-        $user = User::query()->updateOrCreate(
+        $user = User::query()->firstOrCreate(
             ['email' => $email],
             [
                 'name' => $name,
@@ -93,7 +97,9 @@ class UatOrganizationSeeder extends Seeder
             ],
         );
 
-        $user->syncRoles($roles);
+        if ($user->wasRecentlyCreated) {
+            $user->syncRoles($roles);
+        }
     }
 
     protected function seedPosition(string $code, Department $department, string $title): Position

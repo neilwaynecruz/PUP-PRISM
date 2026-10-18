@@ -55,20 +55,14 @@ class HandoverVerificationNotification extends Notification implements ShouldQue
      */
     public function toArray(object $notifiable): array
     {
-        /** @var string $url */
-        $url = route('inventory.handover.verify', [
-            'handoverLog' => $this->handoverLogId,
-            'token' => $this->token,
-        ], absolute: false);
-
         return [
             'event_type' => $this->notificationEventType(),
             'type' => 'handover.verification-required',
             'category' => 'handover',
             'severity' => 'info',
             'title' => __('Handover verification required'),
-            'message' => __('An internal asset handover is awaiting your verification.'),
-            'url' => $url,
+            'message' => __('An internal asset handover is awaiting your verification. Use the secure link sent to your email.'),
+            'url' => null,
             'handover_log_id' => $this->handoverLogId,
         ];
     }

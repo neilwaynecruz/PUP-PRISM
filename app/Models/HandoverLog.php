@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Database\Factories\HandoverLogFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'signature_png',
     'notes',
 ])]
+#[Hidden(['verification_token_hash', 'signature_png'])]
 class HandoverLog extends Model
 {
     /** @use HasFactory<HandoverLogFactory> */

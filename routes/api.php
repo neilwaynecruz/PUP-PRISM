@@ -19,15 +19,21 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth:sanctum', 'verified', 'throttle:api'])->group(function () {
     Route::middleware('ability:read,*')->group(function () {
         Route::get('products', [ProductController::class, 'index'])->name('api.products.index');
-        Route::get('products/{product}', [ProductController::class, 'show'])->name('api.products.show');
+        Route::get('products/{product}', [ProductController::class, 'show'])
+            ->whereNumber('product')
+            ->name('api.products.show');
 
         Route::get('assets', [AssetController::class, 'index'])->name('api.assets.index');
-        Route::get('assets/{asset}', [AssetController::class, 'show'])->name('api.assets.show');
+        Route::get('assets/{asset}', [AssetController::class, 'show'])
+            ->whereNumber('asset')
+            ->name('api.assets.show');
 
         Route::get('stock-movements', [StockMovementController::class, 'index'])->name('api.stock-movements.index');
 
         Route::get('requisitions', [RequisitionController::class, 'index'])->name('api.requisitions.index');
-        Route::get('requisitions/{requisition}', [RequisitionController::class, 'show'])->name('api.requisitions.show');
+        Route::get('requisitions/{requisition}', [RequisitionController::class, 'show'])
+            ->whereNumber('requisition')
+            ->name('api.requisitions.show');
     });
 
     Route::middleware('ability:write,*')->group(function () {

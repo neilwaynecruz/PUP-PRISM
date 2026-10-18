@@ -12,7 +12,7 @@
         "lint:check": "eslint .",
         "type-check": "vue-tsc --noEmit",
         "types:check": "vue-tsc --noEmit",
-        "e2e:setup": "php artisan e2e:setup --fresh",
+        "e2e:setup": "php artisan e2e:setup --fresh --env=e2e",
         "e2e:test": "playwright test",
         "e2e:ui": "playwright test --ui",
         "e2e:report": "playwright show-report tests/e2e/report"

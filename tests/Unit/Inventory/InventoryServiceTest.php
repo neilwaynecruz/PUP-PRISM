@@ -285,6 +285,181 @@ test('issue requisition fails on insufficient stock and rolls back changes', fun
     expect(StockMovement::query()->where('requisition_id', $requisition->id)->count())->toBe(0);
 });
 
+test('issue requisition rolls back partial lot allocations when aggregate lot inventory is insufficient', function () {
+    $requesterPosition = Position::factory()->create();
+    $issuer = User::factory()->assignedPosition(Position::factory()->create())->create();
+
+    $product = Product::factory()->consumable()->create(['sku' => 'SKU-LOT-DRIFT-0001']);
+    $stock = ProductStock::factory()->create([
+        'product_id' => $product->id,
+        'on_hand_qty' => 5,
+    ]);
+    $firstLot = StockLot::factory()->create([
+        'product_id' => $product->id,
+        'qty_received' => 1,
+        'qty_remaining' => 1,
+    ]);
+    $secondLot = StockLot::factory()->create([
+        'product_id' => $product->id,
+        'qty_received' => 2,
+        'qty_remaining' => 2,
+    ]);
+    $requisition = Requisition::factory()->create([
+        'requester_id' => User::factory()->assignedPosition($requesterPosition)->create()->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => RequisitionStatus::Approved,
+    ]);
+    $line = $requisition->lines()->create([
+        'product_id' => $product->id,
+        'qty_requested' => 4,
+        'qty_issued' => 0,
+    ]);
+
+    expect(fn () => app(InventoryService::class)->issueRequisition(
+        user: $issuer,
+        requisition: $requisition,
+        linePayloads: [['id' => $line->id, 'qty_to_issue' => 4]],
+    ))->toThrow(RuntimeException::class, 'Unable to allocate lots');
+
+    expect($firstLot->fresh()?->qty_remaining)->toBe(1);
+    expect($secondLot->fresh()?->qty_remaining)->toBe(2);
+    expect($stock->fresh()?->on_hand_qty)->toBe(5);
+    expect($line->fresh()?->qty_issued)->toBe(0);
+    expect($requisition->fresh()?->status)->toBe(RequisitionStatus::Approved);
+    expect(StockMovement::query()->where('requisition_id', $requisition->id)->exists())->toBeFalse();
+});
+
+test('issue requisition rejects quantities above the locked remaining quantity', function () {
+    $requesterPosition = Position::factory()->create();
+    $issuer = User::factory()->assignedPosition(Position::factory()->create())->create();
+    $product = Product::factory()->consumable()->create(['sku' => 'SKU-OVER-0001']);
+    ProductStock::factory()->create(['product_id' => $product->id, 'on_hand_qty' => 10]);
+    $lot = StockLot::factory()->create([
+        'product_id' => $product->id,
+        'qty_received' => 10,
+        'qty_remaining' => 10,
+    ]);
+    $requisition = Requisition::factory()->create([
+        'requester_id' => User::factory()->assignedPosition($requesterPosition)->create()->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => RequisitionStatus::PartiallyIssued,
+    ]);
+    $line = $requisition->lines()->create([
+        'product_id' => $product->id,
+        'qty_requested' => 5,
+        'qty_issued' => 4,
+    ]);
+
+    expect(fn () => app(InventoryService::class)->issueRequisition(
+        user: $issuer,
+        requisition: $requisition,
+        linePayloads: [['id' => $line->id, 'qty_to_issue' => 2]],
+    ))->toThrow(RuntimeException::class, 'exceeds the remaining quantity');
+
+    expect($line->fresh()?->qty_issued)->toBe(4);
+    expect($lot->fresh()?->qty_remaining)->toBe(10);
+    expect(ProductStock::query()->where('product_id', $product->id)->value('on_hand_qty'))->toBe(10);
+    expect(StockMovement::query()->where('requisition_id', $requisition->id)->exists())->toBeFalse();
+});
+
+test('issue requisition rejects duplicate foreign and negative line submissions', function () {
+    $requesterPosition = Position::factory()->create();
+    $issuer = User::factory()->assignedPosition(Position::factory()->create())->create();
+    $product = Product::factory()->consumable()->create(['sku' => 'SKU-INVALID-LINE-0001']);
+    ProductStock::factory()->create(['product_id' => $product->id, 'on_hand_qty' => 5]);
+    StockLot::factory()->create([
+        'product_id' => $product->id,
+        'qty_received' => 5,
+        'qty_remaining' => 5,
+    ]);
+    $requisition = Requisition::factory()->create([
+        'requester_id' => User::factory()->assignedPosition($requesterPosition)->create()->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => RequisitionStatus::Approved,
+    ]);
+    $line = $requisition->lines()->create([
+        'product_id' => $product->id,
+        'qty_requested' => 3,
+        'qty_issued' => 0,
+    ]);
+    $service = app(InventoryService::class);
+
+    expect(fn () => $service->issueRequisition(
+        user: $issuer,
+        requisition: $requisition,
+        linePayloads: [
+            ['id' => $line->id, 'qty_to_issue' => 1],
+            ['id' => $line->id, 'qty_to_issue' => 1],
+        ],
+    ))->toThrow(RuntimeException::class, 'Duplicate requisition line submissions');
+
+    expect(fn () => $service->issueRequisition(
+        user: $issuer,
+        requisition: $requisition,
+        linePayloads: [['id' => PHP_INT_MAX, 'qty_to_issue' => 1]],
+    ))->toThrow(RuntimeException::class, 'does not belong to this requisition');
+
+    expect(fn () => $service->issueRequisition(
+        user: $issuer,
+        requisition: $requisition,
+        linePayloads: [['id' => $line->id, 'qty_to_issue' => -1]],
+    ))->toThrow(RuntimeException::class, 'cannot be negative');
+
+    expect($line->fresh()?->qty_issued)->toBe(0);
+    expect(ProductStock::query()->where('product_id', $product->id)->value('on_hand_qty'))->toBe(5);
+    expect(StockMovement::query()->where('requisition_id', $requisition->id)->exists())->toBeFalse();
+});
+
+test('issue requisition rolls back earlier line allocations when a later line exceeds its remaining quantity', function () {
+    $requesterPosition = Position::factory()->create();
+    $issuer = User::factory()->assignedPosition(Position::factory()->create())->create();
+    $requisition = Requisition::factory()->create([
+        'requester_id' => User::factory()->assignedPosition($requesterPosition)->create()->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => RequisitionStatus::Approved,
+    ]);
+
+    $firstProduct = Product::factory()->consumable()->create(['sku' => 'SKU-ROLLBACK-0001']);
+    $secondProduct = Product::factory()->consumable()->create(['sku' => 'SKU-ROLLBACK-0002']);
+    $firstStock = ProductStock::factory()->create(['product_id' => $firstProduct->id, 'on_hand_qty' => 5]);
+    ProductStock::factory()->create(['product_id' => $secondProduct->id, 'on_hand_qty' => 5]);
+    $firstLot = StockLot::factory()->create([
+        'product_id' => $firstProduct->id,
+        'qty_received' => 5,
+        'qty_remaining' => 5,
+    ]);
+    StockLot::factory()->create([
+        'product_id' => $secondProduct->id,
+        'qty_received' => 5,
+        'qty_remaining' => 5,
+    ]);
+    $firstLine = $requisition->lines()->create([
+        'product_id' => $firstProduct->id,
+        'qty_requested' => 2,
+        'qty_issued' => 0,
+    ]);
+    $secondLine = $requisition->lines()->create([
+        'product_id' => $secondProduct->id,
+        'qty_requested' => 1,
+        'qty_issued' => 0,
+    ]);
+
+    expect(fn () => app(InventoryService::class)->issueRequisition(
+        user: $issuer,
+        requisition: $requisition,
+        linePayloads: [
+            ['id' => $firstLine->id, 'qty_to_issue' => 2],
+            ['id' => $secondLine->id, 'qty_to_issue' => 2],
+        ],
+    ))->toThrow(RuntimeException::class, 'exceeds the remaining quantity');
+
+    expect($firstStock->fresh()?->on_hand_qty)->toBe(5);
+    expect($firstLot->fresh()?->qty_remaining)->toBe(5);
+    expect($firstLine->fresh()?->qty_issued)->toBe(0);
+    expect($requisition->fresh()?->status)->toBe(RequisitionStatus::Approved);
+    expect(StockMovement::query()->where('requisition_id', $requisition->id)->exists())->toBeFalse();
+});
+
 test('issue requisition rejects non approved records before allocating stock', function () {
     $requesterPosition = Position::factory()->create();
     $issuer = User::factory()->assignedPosition(Position::factory()->create())->create();
@@ -302,7 +477,7 @@ test('issue requisition rejects non approved records before allocating stock', f
         requisition: $requisition,
         notes: null,
         ipAddress: '10.0.0.32',
-    ))->toThrow(RuntimeException::class, 'Only approved requisitions can be issued.');
+    ))->toThrow(RuntimeException::class, 'Only approved or partially fulfilled requisitions can be issued.');
 });
 
 test('inventory domain models expose backed enum casts without changing stored values', function () {

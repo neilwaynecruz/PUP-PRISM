@@ -22,7 +22,7 @@ A Laravel + Inertia (Vue 3) system for Property and Resource Inventory, Stock Re
 2. Create env and key:
    - `copy .env.example .env` (Windows) or `cp .env.example .env`
    - `php artisan key:generate`
-3. Configure DB in `.env` and run:
+3. Configure DB in `.env` and run (local/testing environments only):
    - `php artisan migrate --seed`
 4. Frontend dependencies and dev server:
    - `npm install`
@@ -31,7 +31,7 @@ A Laravel + Inertia (Vue 3) system for Property and Resource Inventory, Stock Re
    - Queue: `php artisan queue:listen --queue=default,notifications,broadcast --tries=3`
    - Scheduler (cron alternative): keep a system cron in production (see Deployment)
 
-## Default UAT Accounts (seeded)
+## Default UAT Accounts (non-production only)
 All passwords are `password` (UAT only):
 - Admin — `admin@local.test`
 - Supply Head — `supply@local.test`
@@ -39,6 +39,8 @@ All passwords are `password` (UAT only):
 - IT Expert (Admin) — `it.expert@local.test`
 - Director (Custodian) — `director@local.test`
 - Department Custodians — e.g. `eng.custodian@local.test`, `education.custodian@local.test`, `business.custodian@local.test`, `registrar.custodian@local.test`, `library.custodian@local.test`, `student.affairs.custodian@local.test`, `admin.office.custodian@local.test`, `director.office.custodian@local.test`
+
+`DatabaseSeeder` creates this walkthrough data only outside production. In production it initializes roles only. Direct UAT and E2E seeders, plus `e2e:setup`, refuse to run when `APP_ENV=production`. Rerunning the UAT organization seeder does not reset passwords, email-verification state, two-factor data, or roles on existing accounts.
 
 ## Roles & Permissions
 - Admin
@@ -104,6 +106,7 @@ Policies and route middleware enforce access for inventory operations, requisiti
    - `php artisan storage:link`
 5. Database migrations
    - `php artisan migrate --force`
+   - Optional production-safe role initialization: `php artisan db:seed --force` (demo/UAT records are skipped in production)
 6. Queue worker (systemd, supervisor, or equivalent) — see [PRODUCTION_READINESS_PLAN.md](PRODUCTION_READINESS_PLAN.md) **P1.7**
    - Notifications and realtime broadcasts are queued (`notifications` queue + broadcast jobs); a persistent worker is required in production.
    - `php artisan queue:work --queue=default,notifications,broadcast --sleep=1 --tries=3 --max-time=3600`

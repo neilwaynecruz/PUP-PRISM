@@ -15,7 +15,15 @@ use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
+use Database\Seeders\E2eSeeder;
+use Database\Seeders\UatInventorySeeder;
+use Database\Seeders\UatMonitoringSeeder;
+use Database\Seeders\UatOrganizationSeeder;
+use Database\Seeders\UatProcurementSeeder;
+use Database\Seeders\UatWorkflowSeeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 
 test('database seeder creates uat organization and walkthrough data', function () {
     $this->seed(DatabaseSeeder::class);
@@ -58,4 +66,96 @@ test('database seeder can be rerun without duplicating seeded positions', functi
     expect(User::query()->count())->toBe($userCount);
     expect(DB::table('notifications')->count())->toBe($notificationCount);
     expect(RequisitionTemplate::query()->count())->toBe($templateCount);
+});
+
+test('production database seeding excludes demo users and direct demo seeders are blocked', function () {
+    $originalEnvironment = $this->app->environment();
+    $this->app['env'] = 'production';
+
+    try {
+        (new DatabaseSeeder)->setContainer($this->app)->run();
+
+        expect(User::query()->where('email', 'admin@local.test')->exists())->toBeFalse();
+        foreach ([
+            UatOrganizationSeeder::class,
+            UatInventorySeeder::class,
+            UatProcurementSeeder::class,
+            UatWorkflowSeeder::class,
+            UatMonitoringSeeder::class,
+        ] as $seederClass) {
+            expect(fn () => (new $seederClass)->setContainer($this->app)->run())
+                ->toThrow(RuntimeException::class, 'production');
+        }
+
+        expect(fn () => (new E2eSeeder)->setContainer($this->app)->run())
+            ->toThrow(RuntimeException::class, 'production');
+    } finally {
+        $this->app['env'] = $originalEnvironment;
+    }
+});
+
+test('the e2e setup command refuses to run in production', function () {
+    $originalEnvironment = $this->app->environment();
+    $this->app['env'] = 'production';
+
+    try {
+        $this->artisan('e2e:setup --fresh')
+            ->expectsOutputToContain('cannot run in production')
+            ->assertFailed();
+    } finally {
+        $this->app['env'] = $originalEnvironment;
+    }
+});
+
+test('the e2e setup command refuses non dedicated databases', function () {
+    $this->artisan('e2e:setup --fresh')
+        ->expectsOutputToContain('requires the dedicated database/e2e.sqlite')
+        ->assertFailed();
+});
+
+test('the e2e setup command refuses similarly named sqlite databases outside the dedicated path', function () {
+    $unsafeDirectory = storage_path('framework/testing/e2e-guard/database');
+    $unsafeDatabase = $unsafeDirectory.DIRECTORY_SEPARATOR.'e2e.sqlite';
+    $originalDatabase = config('database.connections.sqlite.database');
+
+    File::ensureDirectoryExists($unsafeDirectory);
+    File::put($unsafeDatabase, '');
+    config()->set('database.connections.sqlite.database', $unsafeDatabase);
+
+    try {
+        $this->artisan('e2e:setup --fresh')
+            ->expectsOutputToContain('requires the dedicated database/e2e.sqlite')
+            ->assertFailed();
+    } finally {
+        config()->set('database.connections.sqlite.database', $originalDatabase);
+        File::deleteDirectory(storage_path('framework/testing/e2e-guard'));
+    }
+});
+
+test('rerunning the uat organization seeder preserves existing user security settings', function () {
+    $this->seed(UatOrganizationSeeder::class);
+
+    $user = User::query()->where('email', 'admin@local.test')->firstOrFail();
+    $user->forceFill([
+        'password' => 'a-user-selected-password',
+        'email_verified_at' => null,
+        'two_factor_secret' => encrypt('existing-two-factor-secret'),
+        'two_factor_recovery_codes' => encrypt(json_encode(['existing-code'], JSON_THROW_ON_ERROR)),
+    ])->save();
+    $user->syncRoles(['Supply Head']);
+
+    $passwordHash = $user->getRawOriginal('password');
+    $twoFactorSecret = $user->getRawOriginal('two_factor_secret');
+    $twoFactorRecoveryCodes = $user->getRawOriginal('two_factor_recovery_codes');
+
+    $this->seed(UatOrganizationSeeder::class);
+
+    $user->refresh();
+
+    expect($user->getRawOriginal('password'))->toBe($passwordHash);
+    expect(Hash::check('a-user-selected-password', $user->password))->toBeTrue();
+    expect($user->email_verified_at)->toBeNull();
+    expect($user->getRawOriginal('two_factor_secret'))->toBe($twoFactorSecret);
+    expect($user->getRawOriginal('two_factor_recovery_codes'))->toBe($twoFactorRecoveryCodes);
+    expect($user->getRoleNames()->all())->toBe(['Supply Head']);
 });

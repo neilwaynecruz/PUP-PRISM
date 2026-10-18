@@ -4,6 +4,7 @@ use App\Models\Department;
 use App\Models\Position;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
@@ -78,3 +79,33 @@ test('stock movements route stays admin only', function () {
         ->get(route('inventory.movements.index', absolute: false))
         ->assertForbidden();
 });
+
+test('static inventory trash routes are not shadowed by detail routes', function (string $uri, string $expectedRoute): void {
+    $route = app('router')->getRoutes()->match(Request::create($uri, 'GET'));
+
+    expect($route->getName())->toBe($expectedRoute);
+})->with([
+    'bookings' => ['/inventory/bookings/trash', 'inventory.bookings.trash'],
+    'requisitions' => ['/inventory/requisitions/trash', 'inventory.requisitions.trash'],
+    'products' => ['/inventory/products/trash', 'inventory.products.trash'],
+]);
+
+test('numeric inventory detail routes still resolve', function (string $uri, string $expectedRoute): void {
+    $route = app('router')->getRoutes()->match(Request::create($uri, 'GET'));
+
+    expect($route->getName())->toBe($expectedRoute);
+})->with([
+    'bookings' => ['/inventory/bookings/123', 'inventory.bookings.show'],
+    'requisitions' => ['/inventory/requisitions/123', 'inventory.requisitions.show'],
+    'products' => ['/inventory/products/123', 'inventory.products.show'],
+]);
+
+test('inventory detail routes reject non numeric identifiers', function (string $uri): void {
+    $this->actingAs(inventoryUserWithRole('Admin'))
+        ->get($uri)
+        ->assertNotFound();
+})->with([
+    'bookings' => ['/inventory/bookings/not-a-number'],
+    'requisitions' => ['/inventory/requisitions/not-a-number'],
+    'products' => ['/inventory/products/not-a-number'],
+]);

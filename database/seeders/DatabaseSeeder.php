@@ -8,8 +8,13 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->call(RoleSeeder::class);
+
+        if (app()->isProduction()) {
+            return;
+        }
+
         $this->call([
-            RoleSeeder::class,
             UatOrganizationSeeder::class,
             UatInventorySeeder::class,
             UatProcurementSeeder::class,

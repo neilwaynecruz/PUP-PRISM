@@ -20,6 +20,10 @@ class UatInventorySeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new \RuntimeException('UAT demo data cannot be seeded in production.');
+        }
+
         $timeline = CarbonImmutable::today()->setTime(9, 0);
         $origins = [];
 

@@ -20,6 +20,10 @@ class UatWorkflowSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new \RuntimeException('UAT demo data cannot be seeded in production.');
+        }
+
         $timeline = CarbonImmutable::today()->setTime(11, 0);
         /** @var array<string, User> $users */
         $users = User::query()->get()->keyBy('email')->all();

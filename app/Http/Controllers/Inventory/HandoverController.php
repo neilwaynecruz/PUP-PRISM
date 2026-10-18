@@ -128,10 +128,6 @@ class HandoverController extends Controller
 
     public function verify(Request $request, HandoverLog $handoverLog): RedirectResponse
     {
-        $request->validate([
-            'token' => ['required', 'string'],
-        ]);
-
         $user = $request->user();
 
         if (! $user) {
@@ -147,9 +143,23 @@ class HandoverController extends Controller
         }
 
         if ($handoverLog->verified_at !== null) {
+            $request->session()->forget("handover_verify_token.{$handoverLog->id}");
             Inertia::flash('toast', ['type' => 'info', 'message' => __('Already verified.')]);
 
             return redirect()->route('inventory.handover.index');
+        }
+
+        $sessionKey = "handover_verify_token.{$handoverLog->id}";
+        $token = (string) $request->session()->get($sessionKey, '');
+
+        if (
+            $token === ''
+            || $handoverLog->verification_token_hash === null
+            || ! hash_equals($handoverLog->verification_token_hash, hash('sha256', $token))
+        ) {
+            $request->session()->forget($sessionKey);
+
+            abort(403);
         }
 
         $request->validate([
@@ -160,17 +170,22 @@ class HandoverController extends Controller
             $request->string('signature_png')->toString(),
         );
 
-        $token = $request->string('token')->toString();
-
-        if (! hash_equals((string) $handoverLog->verification_token_hash, hash('sha256', $token))) {
-            abort(403);
-        }
-
-        DB::transaction(function () use ($request, $handoverLog, $user, $signaturePng): void {
+        $wasVerified = DB::transaction(function () use ($request, $handoverLog, $user, $signaturePng, $token): bool {
             $handoverLog = HandoverLog::query()->whereKey($handoverLog->id)->lockForUpdate()->firstOrFail();
 
+            if ($handoverLog->to_user_id !== $user->id) {
+                abort(403);
+            }
+
             if ($handoverLog->verified_at !== null) {
-                return;
+                return false;
+            }
+
+            if (
+                $handoverLog->verification_token_hash === null
+                || ! hash_equals($handoverLog->verification_token_hash, hash('sha256', $token))
+            ) {
+                abort(403);
             }
 
             $asset = Asset::query()->whereKey($handoverLog->asset_id)->lockForUpdate()->firstOrFail();
@@ -208,7 +223,18 @@ class HandoverController extends Controller
                 'performed_at' => CarbonImmutable::now(),
                 'notes' => $handoverLog->notes,
             ]);
+
+            return true;
         });
+
+        $request->session()->forget($sessionKey);
+
+        if (! $wasVerified) {
+            Inertia::flash('toast', ['type' => 'info', 'message' => __('Already verified.')]);
+
+            return redirect()->route('inventory.handover.index');
+        }
+
         $this->realtime->handoverVerified($handoverLog->fresh() ?? $handoverLog);
 
         AuditLogService::logCustom(
@@ -221,8 +247,6 @@ class HandoverController extends Controller
                 'verified_by' => $user->id,
             ],
         );
-
-        $request->session()->forget("handover_verify_token.{$handoverLog->id}");
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Handover verified.')]);
 
