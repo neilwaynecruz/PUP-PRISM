@@ -14,13 +14,39 @@ class HandoverVerificationController extends Controller
 {
     public function __invoke(Request $request, HandoverLog $handoverLog): Response|RedirectResponse
     {
+        $user = $request->user();
+
+        if (! $user) {
+            abort(401);
+        }
+
+        if ($user->id !== $handoverLog->to_user_id) {
+            abort(403);
+        }
+
         $sessionKey = $this->sessionKey($handoverLog->id);
         $queryToken = $request->string('token')->trim()->toString();
 
         if ($queryToken !== '') {
-            $request->session()->put($sessionKey, $queryToken);
+            if ($handoverLog->verified_at === null) {
+                if (! $this->tokenMatches($handoverLog, $queryToken)) {
+                    abort(403);
+                }
+
+                $request->session()->put($sessionKey, $queryToken);
+            }
 
             return redirect()->route('inventory.handover.verify', $handoverLog);
+        }
+
+        if ($handoverLog->verified_at === null) {
+            $sessionToken = (string) $request->session()->get($sessionKey, '');
+
+            if (! $this->tokenMatches($handoverLog, $sessionToken)) {
+                $request->session()->forget($sessionKey);
+
+                abort(403);
+            }
         }
 
         $handoverLog->load([
@@ -35,12 +61,16 @@ class HandoverVerificationController extends Controller
         ]);
 
         return Inertia::render('inventory/handover/Verify', [
-            'handover' => [
-                ...(new HandoverLogResource($handoverLog))->resolve($request),
-                'token' => (string) $request->session()->get($sessionKey, ''),
-            ],
-            'email_verified' => $request->user()?->hasVerifiedEmail() ?? false,
+            'handover' => (new HandoverLogResource($handoverLog))->resolve($request),
+            'email_verified' => $user->hasVerifiedEmail(),
         ]);
+    }
+
+    private function tokenMatches(HandoverLog $handoverLog, string $token): bool
+    {
+        return $token !== ''
+            && $handoverLog->verification_token_hash !== null
+            && hash_equals($handoverLog->verification_token_hash, hash('sha256', $token));
     }
 
     private function sessionKey(int $handoverLogId): string

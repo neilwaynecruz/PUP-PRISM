@@ -356,6 +356,9 @@ describe('Notification delivery channels', function () {
         expect($handover->toArray($user))->toMatchArray([
             'category' => 'handover',
             'severity' => 'info',
+            'message' => 'An internal asset handover is awaiting your verification. Use the secure link sent to your email.',
+            'url' => null,
         ]);
+        expect($handover->toMail($user)->actionUrl)->toContain('token=verification-token');
     });
 });

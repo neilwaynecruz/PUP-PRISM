@@ -25,6 +25,42 @@ export function useQrScanner(options: UseQrScannerOptions) {
     const hasCameraSupport =
         typeof navigator !== 'undefined' &&
         !!navigator.mediaDevices?.getUserMedia;
+    const isSecureContext =
+        typeof window === 'undefined' || window.isSecureContext;
+
+    function cameraErrorMessage(caughtError: unknown): string {
+        const errorName =
+            typeof DOMException !== 'undefined' &&
+            caughtError instanceof DOMException
+                ? caughtError.name
+                : caughtError instanceof Error
+                  ? caughtError.name
+                  : '';
+
+        if (['NotAllowedError', 'PermissionDeniedError'].includes(errorName)) {
+            return 'Camera access was blocked. Allow camera permission or enter the code manually.';
+        }
+
+        if (['NotFoundError', 'DevicesNotFoundError'].includes(errorName)) {
+            return 'No camera was found on this device. Enter the code manually.';
+        }
+
+        if (['NotReadableError', 'TrackStartError'].includes(errorName)) {
+            return 'The camera is unavailable or already in use by another app. Close the other app and retry, or enter the code manually.';
+        }
+
+        if (errorName === 'OverconstrainedError') {
+            return 'No compatible camera is available. Enter the code manually.';
+        }
+
+        if (['SecurityError', 'TypeError'].includes(errorName)) {
+            return 'Camera scanning requires a secure HTTPS connection. Enter the code manually.';
+        }
+
+        return caughtError instanceof Error
+            ? caughtError.message
+            : 'Unable to start the camera. Enter the code manually.';
+    }
 
     function stop(): void {
         if (frameRequestId !== null) {
@@ -124,8 +160,18 @@ export function useQrScanner(options: UseQrScannerOptions) {
     }
 
     async function start(): Promise<void> {
+        if (!isSecureContext) {
+            error.value =
+                'Camera scanning requires a secure HTTPS connection. Enter the code manually.';
+            status.value = 'Scanner unavailable.';
+
+            return;
+        }
+
         if (!hasCameraSupport) {
-            error.value = 'This browser does not support camera scanning.';
+            error.value =
+                'This browser does not support camera scanning. Enter the code manually.';
+            status.value = 'Scanner unavailable.';
 
             return;
         }
@@ -161,15 +207,7 @@ export function useQrScanner(options: UseQrScannerOptions) {
             scanFrame();
         } catch (caughtError) {
             stop();
-
-            const message =
-                caughtError instanceof Error
-                    ? caughtError.message
-                    : 'Unable to start the camera.';
-
-            error.value = message.includes('Permission')
-                ? 'Camera access was blocked. Allow camera permission or enter the code manually.'
-                : message;
+            error.value = cameraErrorMessage(caughtError);
             status.value = 'Scanner unavailable.';
         }
     }

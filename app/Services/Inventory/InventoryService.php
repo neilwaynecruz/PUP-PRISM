@@ -200,8 +200,30 @@ class InventoryService
                 ->lockForUpdate()
                 ->get();
 
+            $submittedLines = collect($linePayloads ?? []);
+            $submittedLineIds = $submittedLines
+                ->map(function (array $line): int {
+                    if (! array_key_exists('id', $line) || ! array_key_exists('qty_to_issue', $line)) {
+                        throw new \RuntimeException('Each requisition line submission must include an id and issue quantity.');
+                    }
+
+                    if ((int) $line['qty_to_issue'] < 0) {
+                        throw new \RuntimeException('Requisition issue quantities cannot be negative.');
+                    }
+
+                    return (int) $line['id'];
+                });
+
+            if ($submittedLineIds->duplicates()->isNotEmpty()) {
+                throw new \RuntimeException('Duplicate requisition line submissions are not allowed.');
+            }
+
+            if ($submittedLineIds->diff($lines->modelKeys())->isNotEmpty()) {
+                throw new \RuntimeException('A submitted requisition line does not belong to this requisition.');
+            }
+
             /** @var array<int, int> $requestedQuantities */
-            $requestedQuantities = collect($linePayloads ?? [])
+            $requestedQuantities = $submittedLines
                 ->mapWithKeys(fn (array $line): array => [(int) $line['id'] => (int) $line['qty_to_issue']])
                 ->all();
 
@@ -217,6 +239,10 @@ class InventoryService
                 $qty = array_key_exists($line->id, $requestedQuantities)
                     ? $requestedQuantities[$line->id]
                     : $line->remainingQuantity();
+
+                if ($qty > $line->remainingQuantity()) {
+                    throw new \RuntimeException("Issue quantity exceeds the remaining quantity for SKU {$product->sku}.");
+                }
 
                 if ($qty === 0) {
                     continue;

@@ -124,6 +124,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('handover.store');
 
             Route::put('bookings/{booking}', [BookingController::class, 'update'])
+                ->whereNumber('booking')
                 ->name('bookings.update');
         });
 
@@ -131,22 +132,26 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('bookings', [BookingController::class, 'index'])
                 ->name('bookings.index');
 
-            Route::get('bookings/{booking}', [BookingController::class, 'show'])
-                ->name('bookings.show');
-
             Route::post('bookings', [BookingController::class, 'store'])
                 ->name('bookings.store');
-
-            Route::delete('bookings/{booking}', [BookingController::class, 'destroy'])
-                ->name('bookings.destroy');
 
             Route::get('bookings/trash', [BookingController::class, 'trash'])
                 ->name('bookings.trash');
 
+            Route::get('bookings/{booking}', [BookingController::class, 'show'])
+                ->whereNumber('booking')
+                ->name('bookings.show');
+
+            Route::delete('bookings/{booking}', [BookingController::class, 'destroy'])
+                ->whereNumber('booking')
+                ->name('bookings.destroy');
+
             Route::put('bookings/{booking}/restore', [BookingController::class, 'restore'])
+                ->whereNumber('booking')
                 ->name('bookings.restore');
 
             Route::delete('bookings/{booking}/force', [BookingController::class, 'forceDelete'])
+                ->whereNumber('booking')
                 ->name('bookings.force-delete');
 
             Route::post('bookings/bulk-restore', [BookingController::class, 'bulkRestore'])
@@ -171,27 +176,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('requisition-templates.store');
 
             Route::put('requisition-templates/{requisitionTemplate}', [RequisitionTemplateController::class, 'update'])
+                ->whereNumber('requisitionTemplate')
                 ->name('requisition-templates.update');
 
             Route::post('requisition-templates/{requisitionTemplate}/duplicate', [RequisitionTemplateController::class, 'duplicate'])
+                ->whereNumber('requisitionTemplate')
                 ->name('requisition-templates.duplicate');
 
             Route::delete('requisition-templates/{requisitionTemplate}', [RequisitionTemplateController::class, 'destroy'])
+                ->whereNumber('requisitionTemplate')
                 ->name('requisition-templates.destroy');
 
             Route::get('requisitions/trash', [RequisitionController::class, 'trash'])
                 ->name('requisitions.trash');
 
             Route::get('requisitions/{requisition}', [RequisitionController::class, 'show'])
+                ->whereNumber('requisition')
                 ->name('requisitions.show');
 
             Route::delete('requisitions/{requisition}', [RequisitionController::class, 'destroy'])
+                ->whereNumber('requisition')
                 ->name('requisitions.destroy');
 
             Route::put('requisitions/{requisition}/restore', [RequisitionController::class, 'restore'])
+                ->whereNumber('requisition')
                 ->name('requisitions.restore');
 
             Route::delete('requisitions/{requisition}/force', [RequisitionController::class, 'forceDelete'])
+                ->whereNumber('requisition')
                 ->name('requisitions.force-delete');
 
             Route::post('requisitions/bulk-restore', [RequisitionController::class, 'bulkRestore'])
@@ -233,16 +245,20 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::middleware('role:Admin|Supply Head')->group(function () {
             Route::put('requisitions/{requisition}/approve', [RequisitionController::class, 'approve'])
+                ->whereNumber('requisition')
                 ->name('requisitions.approve');
 
             Route::put('requisitions/{requisition}/reject', [RequisitionController::class, 'reject'])
+                ->whereNumber('requisition')
                 ->name('requisitions.reject');
 
             Route::put('requisitions/{requisition}/issue', [RequisitionController::class, 'issue'])
+                ->whereNumber('requisition')
                 ->name('requisitions.issue');
 
             // Not part of ProductController/authorizeResource, so it keeps its own guard.
             Route::get('products/{product}/label', [ProductLabelController::class, 'show'])
+                ->whereNumber('product')
                 ->name('products.label');
 
             Route::get('receiving', [ReceivingController::class, 'index'])
@@ -264,15 +280,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('suppliers.store');
 
             Route::get('suppliers/{supplier}', [SupplierController::class, 'show'])
+                ->whereNumber('supplier')
                 ->name('suppliers.show');
 
             Route::get('suppliers/{supplier}/edit', [SupplierController::class, 'edit'])
+                ->whereNumber('supplier')
                 ->name('suppliers.edit');
 
             Route::put('suppliers/{supplier}', [SupplierController::class, 'update'])
+                ->whereNumber('supplier')
                 ->name('suppliers.update');
 
             Route::delete('suppliers/{supplier}', [SupplierController::class, 'destroy'])
+                ->whereNumber('supplier')
                 ->name('suppliers.destroy');
 
             Route::get('purchase-orders', [PurchaseOrderController::class, 'index'])
@@ -282,9 +302,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('forecasting.index');
 
             Route::get('forecasting/{product}', [ForecastController::class, 'show'])
+                ->whereNumber('product')
                 ->name('forecasting.show');
 
             Route::put('forecasting/{product}/profile', [ForecastController::class, 'updateProfile'])
+                ->whereNumber('product')
                 ->name('forecasting.profile.update');
 
             Route::get('purchase-orders/create', [PurchaseOrderController::class, 'create'])
@@ -300,15 +322,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->name('purchase-orders.generate-from-forecasts');
 
             Route::get('purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])
+                ->whereNumber('purchaseOrder')
                 ->name('purchase-orders.show');
 
             Route::put('purchase-orders/{purchaseOrder}/send', [PurchaseOrderController::class, 'send'])
+                ->whereNumber('purchaseOrder')
                 ->name('purchase-orders.send');
 
             Route::post('purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])
+                ->whereNumber('purchaseOrder')
                 ->name('purchase-orders.receive');
 
             Route::put('purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])
+                ->whereNumber('purchaseOrder')
                 ->name('purchase-orders.cancel');
         });
 
@@ -349,21 +375,27 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('products.trash');
 
         Route::get('products/{product}', [ProductController::class, 'show'])
+            ->whereNumber('product')
             ->name('products.show');
 
         Route::get('products/{product}/edit', [ProductController::class, 'edit'])
+            ->whereNumber('product')
             ->name('products.edit');
 
         Route::put('products/{product}', [ProductController::class, 'update'])
+            ->whereNumber('product')
             ->name('products.update');
 
         Route::delete('products/{product}', [ProductController::class, 'destroy'])
+            ->whereNumber('product')
             ->name('products.destroy');
 
         Route::put('products/{product}/restore', [ProductController::class, 'restore'])
+            ->whereNumber('product')
             ->name('products.restore');
 
         Route::delete('products/{product}/force', [ProductController::class, 'forceDelete'])
+            ->whereNumber('product')
             ->name('products.force-delete');
 
         Route::post('products/bulk-restore', [ProductController::class, 'bulkRestore'])
@@ -389,14 +421,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('inventory/handover/verify/{handoverLog}', HandoverVerificationController::class)
+        ->whereNumber('handoverLog')
         ->name('inventory.handover.verify');
 
     Route::post('inventory/handover/verify/{handoverLog}', [HandoverController::class, 'verify'])
+        ->whereNumber('handoverLog')
         ->name('inventory.handover.verify.submit');
 
     Route::get('inventory/handover/receipt/{handoverLog}', HandoverReceiptController::class)
+        ->whereNumber('handoverLog')
         ->name('inventory.handover.receipt');
 });
 

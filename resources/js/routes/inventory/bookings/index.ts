@@ -167,6 +167,139 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     index.form = indexForm
 /**
+* @see \App\Http\Controllers\Inventory\BookingController::store
+ * @see app/Http/Controllers/Inventory/BookingController.php:186
+ * @route '/inventory/bookings'
+ */
+export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(options),
+    method: 'post',
+})
+
+store.definition = {
+    methods: ["post"],
+    url: '/inventory/bookings',
+} satisfies RouteDefinition<["post"]>
+
+/**
+* @see \App\Http\Controllers\Inventory\BookingController::store
+ * @see app/Http/Controllers/Inventory/BookingController.php:186
+ * @route '/inventory/bookings'
+ */
+store.url = (options?: RouteQueryOptions) => {
+    return store.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Inventory\BookingController::store
+ * @see app/Http/Controllers/Inventory/BookingController.php:186
+ * @route '/inventory/bookings'
+ */
+store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+    url: store.url(options),
+    method: 'post',
+})
+
+    /**
+* @see \App\Http\Controllers\Inventory\BookingController::store
+ * @see app/Http/Controllers/Inventory/BookingController.php:186
+ * @route '/inventory/bookings'
+ */
+    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: store.url(options),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\BookingController::store
+ * @see app/Http/Controllers/Inventory/BookingController.php:186
+ * @route '/inventory/bookings'
+ */
+        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: store.url(options),
+            method: 'post',
+        })
+
+    store.form = storeForm
+/**
+* @see \App\Http\Controllers\Inventory\BookingController::trash
+ * @see app/Http/Controllers/Inventory/BookingController.php:363
+ * @route '/inventory/bookings/trash'
+ */
+export const trash = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: trash.url(options),
+    method: 'get',
+})
+
+trash.definition = {
+    methods: ["get","head"],
+    url: '/inventory/bookings/trash',
+} satisfies RouteDefinition<["get","head"]>
+
+/**
+* @see \App\Http\Controllers\Inventory\BookingController::trash
+ * @see app/Http/Controllers/Inventory/BookingController.php:363
+ * @route '/inventory/bookings/trash'
+ */
+trash.url = (options?: RouteQueryOptions) => {
+    return trash.definition.url + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Inventory\BookingController::trash
+ * @see app/Http/Controllers/Inventory/BookingController.php:363
+ * @route '/inventory/bookings/trash'
+ */
+trash.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+    url: trash.url(options),
+    method: 'get',
+})
+/**
+* @see \App\Http\Controllers\Inventory\BookingController::trash
+ * @see app/Http/Controllers/Inventory/BookingController.php:363
+ * @route '/inventory/bookings/trash'
+ */
+trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+    url: trash.url(options),
+    method: 'head',
+})
+
+    /**
+* @see \App\Http\Controllers\Inventory\BookingController::trash
+ * @see app/Http/Controllers/Inventory/BookingController.php:363
+ * @route '/inventory/bookings/trash'
+ */
+    const trashForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        action: trash.url(options),
+        method: 'get',
+    })
+
+            /**
+* @see \App\Http\Controllers\Inventory\BookingController::trash
+ * @see app/Http/Controllers/Inventory/BookingController.php:363
+ * @route '/inventory/bookings/trash'
+ */
+        trashForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: trash.url(options),
+            method: 'get',
+        })
+            /**
+* @see \App\Http\Controllers\Inventory\BookingController::trash
+ * @see app/Http/Controllers/Inventory/BookingController.php:363
+ * @route '/inventory/bookings/trash'
+ */
+        trashForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+            action: trash.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'HEAD',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'get',
+        })
+
+    trash.form = trashForm
+/**
 * @see \App\Http\Controllers\Inventory\BookingController::show
  * @see app/Http/Controllers/Inventory/BookingController.php:146
  * @route '/inventory/bookings/{booking}'
@@ -264,61 +397,6 @@ show.head = (args: { booking: string | number } | [booking: string | number ] | 
     
     show.form = showForm
 /**
-* @see \App\Http\Controllers\Inventory\BookingController::store
- * @see app/Http/Controllers/Inventory/BookingController.php:186
- * @route '/inventory/bookings'
- */
-export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(options),
-    method: 'post',
-})
-
-store.definition = {
-    methods: ["post"],
-    url: '/inventory/bookings',
-} satisfies RouteDefinition<["post"]>
-
-/**
-* @see \App\Http\Controllers\Inventory\BookingController::store
- * @see app/Http/Controllers/Inventory/BookingController.php:186
- * @route '/inventory/bookings'
- */
-store.url = (options?: RouteQueryOptions) => {
-    return store.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\Inventory\BookingController::store
- * @see app/Http/Controllers/Inventory/BookingController.php:186
- * @route '/inventory/bookings'
- */
-store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
-    url: store.url(options),
-    method: 'post',
-})
-
-    /**
-* @see \App\Http\Controllers\Inventory\BookingController::store
- * @see app/Http/Controllers/Inventory/BookingController.php:186
- * @route '/inventory/bookings'
- */
-    const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-        action: store.url(options),
-        method: 'post',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\BookingController::store
- * @see app/Http/Controllers/Inventory/BookingController.php:186
- * @route '/inventory/bookings'
- */
-        storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
-            action: store.url(options),
-            method: 'post',
-        })
-    
-    store.form = storeForm
-/**
 * @see \App\Http\Controllers\Inventory\BookingController::destroy
  * @see app/Http/Controllers/Inventory/BookingController.php:347
  * @route '/inventory/bookings/{booking}'
@@ -407,84 +485,6 @@ destroy.delete = (args: { booking: number | { id: number } } | [booking: number 
         })
     
     destroy.form = destroyForm
-/**
-* @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:363
- * @route '/inventory/bookings/trash'
- */
-export const trash = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: trash.url(options),
-    method: 'get',
-})
-
-trash.definition = {
-    methods: ["get","head"],
-    url: '/inventory/bookings/trash',
-} satisfies RouteDefinition<["get","head"]>
-
-/**
-* @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:363
- * @route '/inventory/bookings/trash'
- */
-trash.url = (options?: RouteQueryOptions) => {
-    return trash.definition.url + queryParams(options)
-}
-
-/**
-* @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:363
- * @route '/inventory/bookings/trash'
- */
-trash.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
-    url: trash.url(options),
-    method: 'get',
-})
-/**
-* @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:363
- * @route '/inventory/bookings/trash'
- */
-trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
-    url: trash.url(options),
-    method: 'head',
-})
-
-    /**
-* @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:363
- * @route '/inventory/bookings/trash'
- */
-    const trashForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-        action: trash.url(options),
-        method: 'get',
-    })
-
-            /**
-* @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:363
- * @route '/inventory/bookings/trash'
- */
-        trashForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: trash.url(options),
-            method: 'get',
-        })
-            /**
-* @see \App\Http\Controllers\Inventory\BookingController::trash
- * @see app/Http/Controllers/Inventory/BookingController.php:363
- * @route '/inventory/bookings/trash'
- */
-        trashForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
-            action: trash.url({
-                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
-                            _method: 'HEAD',
-                            ...(options?.query ?? options?.mergeQuery ?? {}),
-                        }
-                    }),
-            method: 'get',
-        })
-    
-    trash.form = trashForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::restore
  * @see app/Http/Controllers/Inventory/BookingController.php:415
@@ -876,10 +876,10 @@ bulkReject.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 const bookings = {
     update: Object.assign(update, update),
 index: Object.assign(index, index),
-show: Object.assign(show, show),
 store: Object.assign(store, store),
-destroy: Object.assign(destroy, destroy),
 trash: Object.assign(trash, trash),
+show: Object.assign(show, show),
+destroy: Object.assign(destroy, destroy),
 restore: Object.assign(restore, restore),
 forceDelete: Object.assign(forceDelete, forceDelete),
 bulkRestore: Object.assign(bulkRestore, bulkRestore),

@@ -26,6 +26,10 @@ class UatMonitoringSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new \RuntimeException('UAT demo data cannot be seeded in production.');
+        }
+
         $now = CarbonImmutable::today()->setTime(15, 0);
 
         /** @var array<string, User> $users */

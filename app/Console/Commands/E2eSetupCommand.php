@@ -12,6 +12,27 @@ class E2eSetupCommand extends Command
 
     public function handle(): int
     {
+        if (app()->isProduction()) {
+            $this->components->error('The E2E database setup command cannot run in production.');
+
+            return Command::FAILURE;
+        }
+
+        $connection = (string) config('database.default');
+        $database = realpath((string) config("database.connections.{$connection}.database"));
+        $e2eDatabase = realpath(database_path('e2e.sqlite'));
+
+        if (
+            $connection !== 'sqlite'
+            || $database === false
+            || $e2eDatabase === false
+            || $database !== $e2eDatabase
+        ) {
+            $this->components->error('The E2E setup command requires the dedicated database/e2e.sqlite connection.');
+
+            return Command::FAILURE;
+        }
+
         if ($this->option('fresh')) {
             $this->call('migrate:fresh', [
                 '--force' => true,

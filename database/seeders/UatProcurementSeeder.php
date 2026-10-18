@@ -15,6 +15,10 @@ class UatProcurementSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new \RuntimeException('UAT demo data cannot be seeded in production.');
+        }
+
         $this->call(SupplierSeeder::class);
 
         $requestedBy = User::query()->where('email', 'supply@local.test')->firstOrFail();

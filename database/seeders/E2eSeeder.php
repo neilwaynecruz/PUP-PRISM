@@ -11,6 +11,7 @@ use App\Models\Origin;
 use App\Models\Position;
 use App\Models\Product;
 use App\Models\ProductStock;
+use App\Models\StockLot;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
@@ -21,6 +22,10 @@ class E2eSeeder extends Seeder
 {
     public function run(): void
     {
+        if (app()->isProduction()) {
+            throw new \RuntimeException('E2E demo data cannot be seeded in production.');
+        }
+
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
         foreach (['Admin', 'Supply Head', 'Property Custodian'] as $roleName) {
@@ -102,7 +107,7 @@ class E2eSeeder extends Seeder
             ['on_hand_qty' => 100],
         );
 
-        \App\Models\StockLot::query()->updateOrCreate(
+        StockLot::query()->updateOrCreate(
             ['product_id' => $consumableProduct->id, 'reference_no' => 'E2E-SEED-001'],
             [
                 'received_at' => $now,

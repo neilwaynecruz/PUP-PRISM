@@ -22,7 +22,7 @@ class SecurityHeadersMiddleware
         $response->headers->set('Cross-Origin-Resource-Policy', 'same-origin');
         $response->headers->set(
             'Permissions-Policy',
-            'camera=(), microphone=(), geolocation=(), payment=()',
+            'camera=(self), microphone=(), geolocation=(), payment=()',
         );
 
         if (app()->environment('production') && $request->isSecure()) {

@@ -318,3 +318,41 @@ test('supply head can partially issue a requisition without backordering remaini
     expect($line->remainingQuantity())->toBe(2);
     expect(ProductStock::query()->where('product_id', $product->id)->firstOrFail()->on_hand_qty)->toBe(3);
 });
+
+test('duplicate requisition line submissions are rejected before stock changes', function () {
+    $requesterPosition = Position::factory()->create();
+    $issuerPosition = Position::factory()->create();
+    $requester = User::factory()->assignedPosition($requesterPosition)->create();
+    $issuer = requisitionUser('Supply Head', $issuerPosition);
+    $product = Product::factory()->consumable()->create(['sku' => 'SKU-DUPLICATE-ISSUE-001']);
+    $stock = ProductStock::factory()->create(['product_id' => $product->id, 'on_hand_qty' => 5]);
+    $lot = StockLot::factory()->create([
+        'product_id' => $product->id,
+        'qty_received' => 5,
+        'qty_remaining' => 5,
+    ]);
+    $requisition = Requisition::factory()->create([
+        'requester_id' => $requester->id,
+        'requester_position_id' => $requesterPosition->id,
+        'status' => RequisitionStatus::Approved,
+    ]);
+    $line = $requisition->lines()->create([
+        'product_id' => $product->id,
+        'qty_requested' => 3,
+        'qty_issued' => 0,
+    ]);
+
+    $this->actingAs($issuer)
+        ->put(route('inventory.requisitions.issue', $requisition, absolute: false), [
+            'lines' => [
+                ['id' => $line->id, 'qty_to_issue' => 1],
+                ['id' => $line->id, 'qty_to_issue' => 1],
+            ],
+        ])
+        ->assertSessionHasErrors(['lines.0.id', 'lines.1.id']);
+
+    expect($line->fresh()?->qty_issued)->toBe(0);
+    expect($stock->fresh()?->on_hand_qty)->toBe(5);
+    expect($lot->fresh()?->qty_remaining)->toBe(5);
+    expect(StockMovement::query()->where('requisition_id', $requisition->id)->exists())->toBeFalse();
+});
