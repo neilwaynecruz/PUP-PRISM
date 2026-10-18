@@ -99,7 +99,11 @@ class ReceivingController extends Controller
 
             AuditLogService::logCustom(
                 'receive_batch',
-                __('Batch received :count stock line(s).', ['count' => count($lines)]),
+                trans_choice(
+                    '{1} Received :count stock line.|[0,*] Received :count stock lines.',
+                    count($lines),
+                    ['count' => count($lines)],
+                ),
                 null,
                 null,
                 ['line_count' => count($lines)],

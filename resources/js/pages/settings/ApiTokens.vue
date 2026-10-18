@@ -148,11 +148,10 @@ function revokeSelectedToken(): void {
 <template>
     <Head title="API Tokens" />
 
-    <h1 class="sr-only">API token settings</h1>
-
     <div class="space-y-6" data-testid="api-tokens-settings-page">
         <Heading
             variant="small"
+            :level="2"
             title="Create API token"
             description="Generate scoped personal access tokens for integrations and scripts."
         />
@@ -165,8 +164,17 @@ function revokeSelectedToken(): void {
                     v-model="createTokenForm.name"
                     autocomplete="off"
                     placeholder="Inventory integration"
+                    :aria-invalid="Boolean(createTokenForm.errors.name)"
+                    :aria-describedby="
+                        createTokenForm.errors.name
+                            ? 'api-token-name-error'
+                            : undefined
+                    "
                 />
-                <InputError :message="createTokenForm.errors.name" />
+                <InputError
+                    id="api-token-name-error"
+                    :message="createTokenForm.errors.name"
+                />
             </div>
 
             <div class="grid gap-3">
@@ -179,6 +187,12 @@ function revokeSelectedToken(): void {
 
                 <div
                     class="grid gap-3 rounded-xl border border-border/60 bg-card p-4"
+                    :aria-describedby="
+                        createTokenForm.errors.abilities ||
+                        createTokenForm.errors['abilities.0']
+                            ? 'api-token-abilities-error'
+                            : undefined
+                    "
                 >
                     <label
                         v-for="option in abilityOptions"
@@ -204,6 +218,7 @@ function revokeSelectedToken(): void {
                 </div>
 
                 <InputError
+                    id="api-token-abilities-error"
                     :message="
                         createTokenForm.errors.abilities ??
                         createTokenForm.errors['abilities.0']
@@ -229,6 +244,7 @@ function revokeSelectedToken(): void {
     >
         <Heading
             variant="small"
+            :level="2"
             title="Copy your new token now"
             description="This plaintext token is only shown once. Store it securely before leaving this page."
         />
@@ -274,6 +290,7 @@ function revokeSelectedToken(): void {
     <div class="space-y-6">
         <Heading
             variant="small"
+            :level="2"
             title="Issued tokens"
             description="Review your active API tokens and revoke any that are no longer needed."
         />

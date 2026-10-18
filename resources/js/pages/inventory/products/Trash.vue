@@ -487,15 +487,22 @@ function confirmBulkForceDelete(): void {
                     <DialogTitle>Bulk restore products?</DialogTitle>
                     <DialogDescription>
                         This will restore
-                        <strong>{{ selectedIds.size }} product(s)</strong> to
-                        the active products list.
+                        <strong
+                            >{{ selectedIds.size }}
+                            {{
+                                selectedIds.size === 1 ? 'product' : 'products'
+                            }}</strong
+                        >
+                        to the active products list.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>
                         <Button variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button @click="confirmBulkRestore">Restore All</Button>
+                    <Button @click="confirmBulkRestore"
+                        >Restore Selected</Button
+                    >
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -512,8 +519,12 @@ function confirmBulkForceDelete(): void {
                         <strong class="text-rose-600"
                             >permanently delete</strong
                         >
-                        <strong>{{ selectedIds.size }} product(s)</strong>.
-                        <br /><br />
+                        <strong
+                            >{{ selectedIds.size }}
+                            {{
+                                selectedIds.size === 1 ? 'product' : 'products'
+                            }}</strong
+                        >. <br /><br />
                         <span class="font-medium text-rose-600"
                             >This action cannot be undone.</span
                         >

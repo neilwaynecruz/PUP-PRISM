@@ -16,7 +16,9 @@ test.describe('Mobile Field Operations', () => {
         await page.goto('/inventory/receiving');
         await expect(page.getByTestId('receiving-page')).toBeVisible();
 
-        await page.getByRole('button', { name: 'Batch', exact: true }).click();
+        await page
+            .getByRole('button', { name: 'Batch delivery', exact: true })
+            .click();
         await expect(
             page.getByTestId('receiving-batch-mobile-lines'),
         ).toBeVisible();
@@ -24,7 +26,7 @@ test.describe('Mobile Field Operations', () => {
             page.getByRole('button', { name: 'Batch scan tags' }).first(),
         ).toBeVisible();
 
-        await page.getByRole('button', { name: 'Add line' }).click();
+        await page.getByRole('button', { name: 'Add Delivery Line' }).click();
         await expect(page.getByText('Batch line 2')).toBeVisible();
     });
 
@@ -41,7 +43,7 @@ test.describe('Mobile Field Operations', () => {
         await expect(page.getByTestId('booking-scan-button')).toBeVisible();
         await expect(
             page.getByText(
-                'Mobile view uses a compact weekly calendar for faster field scheduling.',
+                'On mobile, use the weekly view to review one week at a time.',
             ),
         ).toBeVisible();
     });

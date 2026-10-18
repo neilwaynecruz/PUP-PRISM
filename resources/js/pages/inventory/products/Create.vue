@@ -38,7 +38,7 @@ defineOptions({
         <Heading
             variant="small"
             title="New product"
-            description="Create a new catalog item."
+            description="Add an asset or consumable to the inventory catalog. Stock is recorded separately when items are received."
         />
 
         <Form
@@ -47,15 +47,20 @@ defineOptions({
             v-slot="{ errors, processing }"
         >
             <div class="grid gap-2">
-                <Label for="sku">SKU / Barcode</Label>
+                <Label for="sku">SKU or barcode</Label>
                 <Input
                     id="sku"
                     name="sku"
                     data-testid="product-sku-input"
                     required
-                    placeholder="e.g. 4801234567890"
+                    autocomplete="off"
+                    aria-describedby="sku-help sku-error"
+                    placeholder="Example: 4801234567890"
                 />
-                <InputError :message="errors.sku" />
+                <p id="sku-help" class="text-sm text-muted-foreground">
+                    Enter the unique code used to identify this product.
+                </p>
+                <InputError id="sku-error" :message="errors.sku" />
             </div>
 
             <div class="grid gap-2">
@@ -65,9 +70,10 @@ defineOptions({
                     name="name"
                     data-testid="product-name-input"
                     required
-                    placeholder="e.g. 1L Fresh Milk"
+                    aria-describedby="product-name-error"
+                    placeholder="Example: Bond paper, A4"
                 />
-                <InputError :message="errors.name" />
+                <InputError id="product-name-error" :message="errors.name" />
             </div>
 
             <div class="grid gap-2 md:grid-cols-2">
@@ -77,13 +83,18 @@ defineOptions({
                         id="type"
                         name="type"
                         data-testid="product-type-input"
-                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                        aria-describedby="type-help type-error"
+                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-9"
                         required
                     >
                         <option value="consumable" selected>Consumable</option>
                         <option value="asset">Asset</option>
                     </select>
-                    <InputError :message="errors.type" />
+                    <p id="type-help" class="text-sm text-muted-foreground">
+                        Consumables are issued by quantity. Assets receive
+                        individual property tags.
+                    </p>
+                    <InputError id="type-error" :message="errors.type" />
                 </div>
 
                 <div class="grid gap-2">
@@ -94,9 +105,21 @@ defineOptions({
                         data-testid="product-reorder-threshold-input"
                         type="number"
                         min="0"
+                        inputmode="numeric"
+                        aria-describedby="reorder-threshold-help reorder-threshold-error"
                         placeholder="0"
                     />
-                    <InputError :message="errors.reorder_threshold" />
+                    <p
+                        id="reorder-threshold-help"
+                        class="text-sm text-muted-foreground"
+                    >
+                        PRISM flags a consumable as low stock at or below this
+                        quantity.
+                    </p>
+                    <InputError
+                        id="reorder-threshold-error"
+                        :message="errors.reorder_threshold"
+                    />
                 </div>
             </div>
 
@@ -107,7 +130,7 @@ defineOptions({
                         id="category_id"
                         name="category_id"
                         data-testid="product-category-input"
-                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-9"
                     >
                         <option value="">None</option>
                         <option
@@ -127,7 +150,7 @@ defineOptions({
                         id="origin_id"
                         name="origin_id"
                         data-testid="product-origin-input"
-                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-9"
                     >
                         <option value="">None</option>
                         <option v-for="s in origins" :key="s.id" :value="s.id">
@@ -144,7 +167,7 @@ defineOptions({
                     <select
                         id="supplier_id"
                         name="supplier_id"
-                        class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-9"
                     >
                         <option value="">None</option>
                         <option
@@ -165,7 +188,8 @@ defineOptions({
                         name="lead_time_days"
                         type="number"
                         min="0"
-                        placeholder="e.g. 5"
+                        inputmode="numeric"
+                        placeholder="Example: 5"
                     />
                     <InputError :message="errors.lead_time_days" />
                 </div>
@@ -179,7 +203,8 @@ defineOptions({
                     type="number"
                     min="0"
                     step="0.01"
-                    placeholder="e.g. 125.50"
+                    inputmode="decimal"
+                    placeholder="Example: 125.50"
                 />
                 <InputError :message="errors.unit_price" />
             </div>
@@ -190,7 +215,7 @@ defineOptions({
                     id="is_active"
                     name="is_active"
                     data-testid="product-status-input"
-                    class="h-9 rounded-lg border border-input bg-background px-3 text-sm"
+                    class="h-11 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-9"
                     required
                 >
                     <option value="1" selected>Active</option>
@@ -207,7 +232,9 @@ defineOptions({
                     :disabled="processing"
                     data-test="create-product-submit"
                     data-testid="create-product-submit"
-                    >Create</Button
+                    >{{
+                        processing ? 'Creating Product…' : 'Create Product'
+                    }}</Button
                 >
             </div>
         </Form>

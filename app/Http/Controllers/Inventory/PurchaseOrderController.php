@@ -302,7 +302,11 @@ class PurchaseOrderController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('Generated :count draft purchase order(s).', ['count' => $generatedPurchaseOrders->count()]),
+            'message' => trans_choice(
+                '{1} Created :count draft purchase order.|[0,*] Created :count draft purchase orders.',
+                $generatedPurchaseOrders->count(),
+                ['count' => $generatedPurchaseOrders->count()],
+            ),
         ]);
 
         return to_route('inventory.purchase-orders.index');
@@ -325,7 +329,11 @@ class PurchaseOrderController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __('Generated :count draft purchase order(s) from forecast alerts.', ['count' => $generatedPurchaseOrders->count()]),
+            'message' => trans_choice(
+                '{1} Created :count draft purchase order from forecast alerts.|[0,*] Created :count draft purchase orders from forecast alerts.',
+                $generatedPurchaseOrders->count(),
+                ['count' => $generatedPurchaseOrders->count()],
+            ),
         ]);
 
         return to_route('inventory.purchase-orders.index');

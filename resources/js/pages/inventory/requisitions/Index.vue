@@ -189,6 +189,19 @@ function formatDateTime(iso: string | null): string {
     });
 }
 
+function formatStatusLabel(statusValue: string): string {
+    return statusValue
+        .replace(/_/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function selectedRequisitionLabel(): string {
+    const count = selectedIds.value.size;
+
+    return `${count} selected ${count === 1 ? 'requisition' : 'requisitions'}`;
+}
+
 function firstTemplateNameSuggestion(): string {
     const firstLine = requisitionForm.lines[0];
 
@@ -473,6 +486,7 @@ function confirmDelete(): void {
 
 const bulkActionDialogOpen = ref(false);
 const pendingBulkAction = ref<'approve' | 'issue' | null>(null);
+const bulkActionProcessing = ref(false);
 
 const {
     selectedIds,
@@ -495,7 +509,7 @@ function runBulkIssue(): void {
 }
 
 function confirmBulkAction(): void {
-    if (!pendingBulkAction.value) {
+    if (!pendingBulkAction.value || bulkActionProcessing.value) {
         return;
     }
 
@@ -503,6 +517,8 @@ function confirmBulkAction(): void {
         pendingBulkAction.value === 'approve'
             ? requisitionsBulkApprove().url
             : requisitionsBulkIssue().url;
+
+    bulkActionProcessing.value = true;
 
     router.post(
         endpoint,
@@ -514,6 +530,9 @@ function confirmBulkAction(): void {
                 clearSelection();
                 bulkActionDialogOpen.value = false;
                 pendingBulkAction.value = null;
+            },
+            onFinish: () => {
+                bulkActionProcessing.value = false;
             },
         },
     );
@@ -533,44 +552,70 @@ function confirmBulkAction(): void {
             <Heading
                 variant="small"
                 title="Requisitions"
-                description="Submit, template, and track issuance requests."
+                description="Request inventory items, follow approval progress, and track how many units have been issued."
             />
 
             <div class="flex flex-wrap gap-2">
-                <Button variant="outline" as-child>
-                    <a :href="exportUrls.csv">Export CSV</a>
+                <Button variant="outline" size="sm" class="rounded-lg" as-child>
+                    <a :href="exportUrls.csv">Download CSV</a>
                 </Button>
-                <Button variant="outline" as-child>
-                    <a :href="exportUrls.pdf">Export PDF</a>
+                <Button variant="outline" size="sm" class="rounded-lg" as-child>
+                    <a :href="exportUrls.pdf">Download PDF</a>
                 </Button>
-                <Button variant="outline" as-child>
+                <Button variant="outline" size="sm" class="rounded-lg" as-child>
                     <Link href="/inventory/requisitions/trash">Trash</Link>
                 </Button>
             </div>
         </div>
 
-        <div
+        <fieldset
             class="grid gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm md:grid-cols-2 lg:grid-cols-4"
         >
-            <Input v-model="search" placeholder="Search ID or requester..." />
-            <Select v-model="status">
-                <SelectTrigger>
-                    <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem
-                        v-for="option in statusOptions"
-                        :key="option.value"
-                        :value="option.value"
-                    >
-                        {{ option.label }}
-                    </SelectItem>
-                </SelectContent>
-            </Select>
-            <Input v-model="dateFrom" type="date" aria-label="Date from" />
-            <Input v-model="dateTo" type="date" aria-label="Date to" />
-        </div>
+            <legend class="sr-only">Filter requisitions</legend>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Search
+                <Input
+                    v-model="search"
+                    name="requisition_search"
+                    autocomplete="off"
+                    placeholder="Requisition number or requester…"
+                />
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Status
+                <Select v-model="status">
+                    <SelectTrigger aria-label="Requisition status">
+                        <SelectValue placeholder="All statuses" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All statuses</SelectItem>
+                        <SelectItem
+                            v-for="option in statusOptions"
+                            :key="option.value"
+                            :value="option.value"
+                        >
+                            {{ formatStatusLabel(option.label) }}
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Submitted on or after
+                <Input
+                    v-model="dateFrom"
+                    name="requisition_date_from"
+                    type="date"
+                />
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Submitted on or before
+                <Input
+                    v-model="dateTo"
+                    name="requisition_date_to"
+                    type="date"
+                />
+            </label>
+        </fieldset>
 
         <div
             v-if="
@@ -605,7 +650,21 @@ function confirmBulkAction(): void {
             <div
                 class="rounded-xl border border-border/60 bg-card p-5 shadow-sm lg:col-span-2"
             >
-                <div class="grid gap-3 md:hidden">
+                <div
+                    v-if="requisitions.data.length === 0"
+                    class="rounded-xl border border-dashed border-border/60 px-4 py-10 text-center"
+                >
+                    <p class="text-sm font-medium">No requisitions found</p>
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        No requisitions are available in this view. Try changing
+                        the search, status, or dates.
+                    </p>
+                </div>
+
+                <div
+                    v-if="requisitions.data.length"
+                    class="grid gap-3 md:hidden"
+                >
                     <div
                         v-for="r in requisitions.data"
                         :key="r.id"
@@ -628,7 +687,7 @@ function confirmBulkAction(): void {
                                 <span class="font-medium">#{{ r.id }}</span>
                             </div>
                             <div class="text-muted-foreground">
-                                {{ r.status }}
+                                {{ formatStatusLabel(r.status) }}
                             </div>
                         </div>
                         <div class="mt-2 space-y-1 text-muted-foreground">
@@ -653,7 +712,9 @@ function confirmBulkAction(): void {
                                 as-child
                                 data-testid="open-requisition-button"
                             >
-                                <Link :href="requisitionsShow(r.id)">Open</Link>
+                                <Link :href="requisitionsShow(r.id)"
+                                    >View Details</Link
+                                >
                             </Button>
                             <Button
                                 v-if="r.can_delete"
@@ -662,14 +723,21 @@ function confirmBulkAction(): void {
                                 class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
                                 @click="openDeleteDialog(r)"
                             >
-                                Delete
+                                Move to Trash
                             </Button>
                         </div>
                     </div>
                 </div>
 
-                <div class="hidden overflow-x-auto md:block">
+                <div
+                    v-if="requisitions.data.length"
+                    class="hidden overflow-x-auto md:block"
+                >
                     <table class="w-full text-sm">
+                        <caption class="sr-only">
+                            Requisitions with status, requester, submission
+                            date, and actions
+                        </caption>
                         <thead
                             class="text-left text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase"
                         >
@@ -693,11 +761,13 @@ function confirmBulkAction(): void {
                                         aria-label="Select all requisitions"
                                     />
                                 </th>
-                                <th class="py-2 pr-3">ID</th>
-                                <th class="py-2 pr-3">Status</th>
-                                <th class="py-2 pr-3">Requester</th>
-                                <th class="py-2 pr-3">Created</th>
-                                <th class="py-2 pr-3"></th>
+                                <th scope="col" class="py-2 pr-3">ID</th>
+                                <th scope="col" class="py-2 pr-3">Status</th>
+                                <th scope="col" class="py-2 pr-3">Requester</th>
+                                <th scope="col" class="py-2 pr-3">Submitted</th>
+                                <th scope="col" class="py-2 pr-3 text-right">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -727,7 +797,9 @@ function confirmBulkAction(): void {
                                 <td class="py-2 pr-3 font-medium">
                                     #{{ r.id }}
                                 </td>
-                                <td class="py-2 pr-3">{{ r.status }}</td>
+                                <td class="py-2 pr-3">
+                                    {{ formatStatusLabel(r.status) }}
+                                </td>
                                 <td class="py-2 pr-3">
                                     <div>
                                         {{
@@ -761,7 +833,7 @@ function confirmBulkAction(): void {
                                             data-testid="open-requisition-button"
                                         >
                                             <Link :href="requisitionsShow(r.id)"
-                                                >Open</Link
+                                                >View Details</Link
                                             >
                                         </Button>
                                         <Button
@@ -771,7 +843,7 @@ function confirmBulkAction(): void {
                                             class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
                                             @click="openDeleteDialog(r)"
                                         >
-                                            Delete
+                                            Move to Trash
                                         </Button>
                                     </div>
                                 </td>
@@ -951,8 +1023,9 @@ function confirmBulkAction(): void {
                     >
                         <Heading
                             variant="small"
+                            :level="2"
                             title="New requisition"
-                            description="Build a quick request or start from a saved template."
+                            description="Add each product and the quantity you need. After submission, the request must be approved before items can be issued."
                         />
 
                         <div class="grid gap-3">
@@ -1010,7 +1083,7 @@ function confirmBulkAction(): void {
                                             >
                                                 <Label
                                                     :for="`line-sku-${line.key}`"
-                                                    >SKU</Label
+                                                    >Product SKU</Label
                                                 >
                                                 <QrScannerDialog
                                                     button-label="Scan SKU"
@@ -1029,7 +1102,8 @@ function confirmBulkAction(): void {
                                                 v-model="line.sku"
                                                 :name="`lines[${index}][sku]`"
                                                 data-testid="requisition-sku-input"
-                                                placeholder="e.g. 4801234567890"
+                                                autocomplete="off"
+                                                placeholder="Example: 4801234567890"
                                                 required
                                                 @input="
                                                     clearLineAvailability(line)
@@ -1043,6 +1117,8 @@ function confirmBulkAction(): void {
                                             </div>
                                             <div
                                                 v-if="line.availabilityMessage"
+                                                role="status"
+                                                aria-live="polite"
                                                 class="text-xs text-amber-700 dark:text-amber-400"
                                             >
                                                 {{ line.availabilityMessage }}
@@ -1059,7 +1135,7 @@ function confirmBulkAction(): void {
 
                                         <div class="grid gap-2">
                                             <Label :for="`line-qty-${line.key}`"
-                                                >Qty</Label
+                                                >Quantity requested</Label
                                             >
                                             <Input
                                                 :id="`line-qty-${line.key}`"
@@ -1068,6 +1144,7 @@ function confirmBulkAction(): void {
                                                 data-testid="requisition-qty-input"
                                                 type="number"
                                                 min="1"
+                                                inputmode="numeric"
                                                 required
                                             />
                                             <InputError
@@ -1078,6 +1155,14 @@ function confirmBulkAction(): void {
                                                     )
                                                 "
                                             />
+                                            <p
+                                                class="text-xs text-muted-foreground"
+                                            >
+                                                Enter the number of units
+                                                needed. Available stock is
+                                                checked again when items are
+                                                issued.
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -1093,7 +1178,7 @@ function confirmBulkAction(): void {
                                 v-model="requisitionForm.notes"
                                 name="notes"
                                 data-testid="requisition-notes-input"
-                                placeholder="Reason, destination, or context"
+                                placeholder="Explain why or where the items are needed…"
                             />
                             <InputError
                                 :message="
@@ -1138,7 +1223,11 @@ function confirmBulkAction(): void {
                                     data-test="submit-requisition-button"
                                     data-testid="submit-requisition-button"
                                 >
-                                    Submit requisition
+                                    {{
+                                        requisitionForm.processing
+                                            ? 'Submitting Request…'
+                                            : 'Submit Request'
+                                    }}
                                 </Button>
                             </div>
                         </div>
@@ -1345,7 +1434,7 @@ function confirmBulkAction(): void {
         <Dialog v-model:open="deleteDialogOpen">
             <DialogContent>
                 <DialogHeader class="space-y-3">
-                    <DialogTitle>Delete requisition?</DialogTitle>
+                    <DialogTitle>Move requisition to trash?</DialogTitle>
                     <DialogDescription>
                         This will move requisition
                         <strong>#{{ selectedRequisition?.id }}</strong> to the
@@ -1360,7 +1449,7 @@ function confirmBulkAction(): void {
                         >
                         <Select v-model="deleteReason">
                             <SelectTrigger id="delete-reason">
-                                <SelectValue placeholder="Select a reason..." />
+                                <SelectValue placeholder="Select a reason…" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem
@@ -1381,7 +1470,7 @@ function confirmBulkAction(): void {
                         <textarea
                             id="delete-reason-custom"
                             v-model="deleteReasonCustom"
-                            placeholder="Enter your reason..."
+                            placeholder="Enter your reason…"
                             rows="3"
                             class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                         ></textarea>
@@ -1395,7 +1484,7 @@ function confirmBulkAction(): void {
                         variant="destructive"
                         :disabled="!canConfirmDelete"
                         @click="confirmDelete"
-                        >Delete</Button
+                        >Move to Trash</Button
                     >
                 </DialogFooter>
             </DialogContent>
@@ -1413,22 +1502,28 @@ function confirmBulkAction(): void {
                     </DialogTitle>
                     <DialogDescription>
                         This will process
-                        <strong
-                            >{{ selectedIds.size }} selected
-                            requisition(s)</strong
-                        >
-                        while preserving your current filters and pagination.
+                        <strong>{{ selectedRequisitionLabel() }}</strong
+                        >. Your current filters and page will stay in place.
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>
-                        <Button variant="secondary">Cancel</Button>
+                        <Button
+                            variant="secondary"
+                            :disabled="bulkActionProcessing"
+                            >Cancel</Button
+                        >
                     </DialogClose>
-                    <Button @click="confirmBulkAction">
+                    <Button
+                        :disabled="bulkActionProcessing"
+                        @click="confirmBulkAction"
+                    >
                         {{
-                            pendingBulkAction === 'approve'
-                                ? 'Confirm approve'
-                                : 'Confirm issue'
+                            bulkActionProcessing
+                                ? 'Processing…'
+                                : pendingBulkAction === 'approve'
+                                  ? 'Approve Requisitions'
+                                  : 'Issue Requisitions'
                         }}
                     </Button>
                 </DialogFooter>

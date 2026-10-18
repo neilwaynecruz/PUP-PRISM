@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import PurchaseOrderController from '@/actions/App/Http/Controllers/Inventory/PurchaseOrderController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -94,6 +95,10 @@ const receiveForm = useForm({
     })),
 });
 
+const isSending = ref(false);
+const isCancelling = ref(false);
+const isReceiving = ref(false);
+
 function formatDateTime(iso: string | null): string {
     if (!iso) {
         return '—';
@@ -110,18 +115,43 @@ function formatDateTime(iso: string | null): string {
 }
 
 function sendPurchaseOrder(): void {
-    router.put(PurchaseOrderController.send(props.purchaseOrder.id).url, {});
+    if (isSending.value) {
+        return;
+    }
+
+    router.put(
+        PurchaseOrderController.send(props.purchaseOrder.id).url,
+        {},
+        {
+            onStart: () => {
+                isSending.value = true;
+            },
+            onFinish: () => {
+                isSending.value = false;
+            },
+        },
+    );
 }
 
 function cancelPurchaseOrder(): void {
+    if (isCancelling.value) {
+        return;
+    }
+
     router.put(
         PurchaseOrderController.cancel(props.purchaseOrder.id).url,
         {
             reason: cancelForm.reason,
         },
         {
-            onStart: () => cancelForm.clearErrors(),
+            onStart: () => {
+                isCancelling.value = true;
+                cancelForm.clearErrors();
+            },
             onError: (errors) => cancelForm.setError(errors),
+            onFinish: () => {
+                isCancelling.value = false;
+            },
         },
     );
 }
@@ -134,6 +164,10 @@ function tagCodes(value: string): string[] {
 }
 
 function submitReceipts(): void {
+    if (isReceiving.value) {
+        return;
+    }
+
     router.post(
         PurchaseOrderController.receive(props.purchaseOrder.id).url,
         {
@@ -159,8 +193,14 @@ function submitReceipts(): void {
                 ),
         },
         {
-            onStart: () => receiveForm.clearErrors(),
+            onStart: () => {
+                isReceiving.value = true;
+                receiveForm.clearErrors();
+            },
             onError: (errors) => receiveForm.setError(errors),
+            onFinish: () => {
+                isReceiving.value = false;
+            },
         },
     );
 }
@@ -185,9 +225,10 @@ function submitReceipts(): void {
                 </Button>
                 <Button
                     v-if="can.send && purchaseOrder.status === 'draft'"
+                    :disabled="isSending"
                     @click="sendPurchaseOrder"
                 >
-                    Send to supplier
+                    {{ isSending ? 'Sending…' : 'Send to Supplier' }}
                 </Button>
             </div>
         </div>
@@ -278,7 +319,14 @@ function submitReceipts(): void {
                             </div>
                         </div>
 
-                        <div class="mt-3 h-2 rounded-full bg-muted">
+                        <div
+                            class="mt-3 h-2 rounded-full bg-muted"
+                            role="progressbar"
+                            :aria-label="`${line.product?.name ?? 'Product'} receiving progress`"
+                            aria-valuemin="0"
+                            aria-valuemax="100"
+                            :aria-valuenow="line.progress_pct"
+                        >
                             <div
                                 class="h-2 rounded-full bg-primary"
                                 :style="{ width: `${line.progress_pct}%` }"
@@ -349,11 +397,14 @@ function submitReceipts(): void {
                         Cancel purchase order
                     </div>
                     <div class="grid gap-2">
-                        <Label for="cancel-reason">Reason</Label>
+                        <Label for="cancel-reason"
+                            >Reason for cancellation</Label
+                        >
                         <textarea
                             id="cancel-reason"
                             v-model="cancelForm.reason"
                             rows="3"
+                            placeholder="Explain why this purchase order is being cancelled."
                             class="min-h-20 rounded-lg border border-input bg-background px-3 py-2 text-sm"
                         />
                         <InputError :message="cancelForm.errors.reason" />
@@ -361,10 +412,14 @@ function submitReceipts(): void {
                     <Button
                         class="mt-4"
                         variant="destructive"
-                        :disabled="!cancelForm.reason"
+                        :disabled="!cancelForm.reason || isCancelling"
                         @click="cancelPurchaseOrder"
                     >
-                        Cancel order
+                        {{
+                            isCancelling
+                                ? 'Cancelling…'
+                                : 'Cancel Purchase Order'
+                        }}
                     </Button>
                 </div>
             </div>
@@ -377,9 +432,13 @@ function submitReceipts(): void {
             "
             class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
         >
-            <div class="mb-4 text-sm font-semibold tracking-tight">
-                Receive against purchase order
+            <div class="mb-1 text-sm font-semibold tracking-tight">
+                Receive items
             </div>
+            <p class="mb-4 text-sm text-muted-foreground">
+                Enter only the quantities or asset tags delivered now. Remaining
+                items can be received later.
+            </p>
 
             <div class="grid gap-5">
                 <div
@@ -402,13 +461,15 @@ function submitReceipts(): void {
                     >
                         <div class="grid gap-2">
                             <Label :for="`receive-qty-${index}`"
-                                >Qty received</Label
+                                >Quantity received</Label
                             >
                             <Input
                                 :id="`receive-qty-${index}`"
                                 v-model="receiveForm.lines[index].qty_received"
                                 type="number"
                                 min="1"
+                                :max="line.qty_remaining"
+                                inputmode="numeric"
                             />
                             <InputError
                                 :message="
@@ -420,7 +481,7 @@ function submitReceipts(): void {
                         </div>
                         <div class="grid gap-2">
                             <Label :for="`receive-ref-${index}`"
-                                >Reference</Label
+                                >Delivery reference</Label
                             >
                             <Input
                                 :id="`receive-ref-${index}`"
@@ -429,7 +490,7 @@ function submitReceipts(): void {
                         </div>
                         <div class="grid gap-2">
                             <Label :for="`receive-at-${index}`"
-                                >Received at</Label
+                                >Date received</Label
                             >
                             <Input
                                 :id="`receive-at-${index}`"
@@ -439,7 +500,7 @@ function submitReceipts(): void {
                         </div>
                         <div class="grid gap-2">
                             <Label :for="`receive-exp-${index}`"
-                                >Expires at</Label
+                                >Expiration date</Label
                             >
                             <Input
                                 :id="`receive-exp-${index}`"
@@ -476,7 +537,7 @@ function submitReceipts(): void {
                         </div>
                         <div class="grid gap-2">
                             <Label :for="`receive-at-asset-${index}`"
-                                >Received at</Label
+                                >Date received</Label
                             >
                             <Input
                                 :id="`receive-at-asset-${index}`"
@@ -496,11 +557,8 @@ function submitReceipts(): void {
                 </div>
 
                 <div class="flex justify-end">
-                    <Button
-                        :disabled="receiveForm.processing"
-                        @click="submitReceipts"
-                    >
-                        Submit receipt
+                    <Button :disabled="isReceiving" @click="submitReceipts">
+                        {{ isReceiving ? 'Receiving Items…' : 'Receive Items' }}
                     </Button>
                 </div>
             </div>

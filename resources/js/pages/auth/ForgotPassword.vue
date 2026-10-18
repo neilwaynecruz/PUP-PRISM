@@ -12,7 +12,8 @@ import { email } from '@/routes/password';
 defineOptions({
     layout: {
         title: 'Forgot password',
-        description: 'Enter your email to receive a password reset link',
+        description:
+            'Enter your email address and we will send you a secure reset link.',
     },
 });
 
@@ -26,7 +27,9 @@ defineProps<{
 
     <div
         v-if="status"
-        class="mb-4 text-center text-sm font-medium text-green-600"
+        role="status"
+        aria-live="polite"
+        class="mb-4 text-center text-sm font-medium text-emerald-700 dark:text-emerald-300"
     >
         {{ status }}
     </div>
@@ -39,11 +42,14 @@ defineProps<{
                     id="email"
                     type="email"
                     name="email"
-                    autocomplete="off"
+                    autocomplete="email"
+                    inputmode="email"
                     autofocus
                     placeholder="email@example.com"
+                    :aria-invalid="Boolean(errors.email)"
+                    :aria-describedby="errors.email ? 'email-error' : undefined"
                 />
-                <InputError :message="errors.email" />
+                <InputError id="email-error" :message="errors.email" />
             </div>
 
             <div class="my-6 flex items-center justify-start">
@@ -53,14 +59,14 @@ defineProps<{
                     data-test="email-password-reset-link-button"
                 >
                     <Spinner v-if="processing" />
-                    Email password reset link
+                    {{ processing ? 'Sending Reset Link…' : 'Send Reset Link' }}
                 </Button>
             </div>
         </Form>
 
         <div class="space-x-1 text-center text-sm text-muted-foreground">
-            <span>Or, return to</span>
-            <TextLink :href="login()">log in</TextLink>
+            <span>Return to</span>
+            <TextLink :href="login()">Sign in</TextLink>
         </div>
     </div>
 </template>

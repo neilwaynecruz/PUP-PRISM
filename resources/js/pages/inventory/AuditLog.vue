@@ -262,7 +262,7 @@ watch(isNavigating, (navigating) => {
             <Heading
                 variant="small"
                 title="Audit Log"
-                description="Track operational changes with readable field-by-field diffs."
+                description="See who changed a record, what changed, and when the change happened."
             />
             <div class="text-sm text-muted-foreground">
                 {{ formatRelativeUpdate() }}
@@ -300,7 +300,7 @@ watch(isNavigating, (navigating) => {
                         id="search"
                         v-model="search"
                         data-shortcut="search"
-                        placeholder="Search activity or user..."
+                        placeholder="Activity or user…"
                         @keyup.enter="applyFilters"
                     />
                 </div>
@@ -323,7 +323,7 @@ watch(isNavigating, (navigating) => {
                     </Select>
                 </div>
                 <div class="grid gap-2">
-                    <Label>Model Type</Label>
+                    <Label>Record type</Label>
                     <Select v-model="modelType">
                         <SelectTrigger>
                             <SelectValue placeholder="All types" />
@@ -355,9 +355,11 @@ watch(isNavigating, (navigating) => {
                     variant="ghost"
                     @click="resetFilters"
                 >
-                    Reset
+                    Clear Filters
                 </Button>
-                <Button variant="outline" @click="exportCsv">Export CSV</Button>
+                <Button variant="outline" @click="exportCsv"
+                    >Download Audit Log (CSV)</Button
+                >
                 <Button :disabled="isRefreshing" @click="applyFilters">
                     Apply Filters
                 </Button>

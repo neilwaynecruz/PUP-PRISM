@@ -36,11 +36,10 @@ const user = computed(() => page.props.auth.user);
 <template>
     <Head title="Profile settings" />
 
-    <h1 class="sr-only">Profile settings</h1>
-
     <div class="flex flex-col space-y-6" data-testid="profile-settings-page">
         <Heading
             variant="small"
+            :level="2"
             title="Profile information"
             description="Update your name and email address"
         />
@@ -60,8 +59,14 @@ const user = computed(() => page.props.auth.user);
                     required
                     autocomplete="name"
                     placeholder="Full name"
+                    :aria-invalid="Boolean(errors.name)"
+                    :aria-describedby="errors.name ? 'name-error' : undefined"
                 />
-                <InputError class="mt-2" :message="errors.name" />
+                <InputError
+                    id="name-error"
+                    class="mt-2"
+                    :message="errors.name"
+                />
             </div>
 
             <div class="grid gap-2">
@@ -75,8 +80,14 @@ const user = computed(() => page.props.auth.user);
                     required
                     autocomplete="username"
                     placeholder="Email address"
+                    :aria-invalid="Boolean(errors.email)"
+                    :aria-describedby="errors.email ? 'email-error' : undefined"
                 />
-                <InputError class="mt-2" :message="errors.email" />
+                <InputError
+                    id="email-error"
+                    class="mt-2"
+                    :message="errors.email"
+                />
             </div>
 
             <div v-if="mustVerifyEmail && !user.email_verified_at">
@@ -93,7 +104,9 @@ const user = computed(() => page.props.auth.user);
 
                 <div
                     v-if="status === 'verification-link-sent'"
-                    class="mt-2 text-sm font-medium text-green-600"
+                    role="status"
+                    aria-live="polite"
+                    class="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-300"
                 >
                     A new verification link has been sent to your email address.
                 </div>

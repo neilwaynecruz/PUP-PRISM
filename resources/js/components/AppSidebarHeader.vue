@@ -37,6 +37,7 @@ function openGlobalSearch(): void {
         <div class="flex items-center gap-2.5">
             <SidebarTrigger
                 class="-ml-1 text-muted-foreground transition-colors hover:text-foreground"
+                aria-label="Toggle navigation menu"
             />
             <template v-if="breadcrumbs && breadcrumbs.length > 0">
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />
@@ -50,12 +51,15 @@ function openGlobalSearch(): void {
                 aria-live="polite"
                 class="hidden items-center gap-2 rounded-full border border-primary/15 bg-background/95 px-3 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur md:inline-flex"
             >
-                <LoaderCircle class="h-3.5 w-3.5 animate-spin text-primary" />
+                <LoaderCircle
+                    aria-hidden="true"
+                    class="h-3.5 w-3.5 animate-spin text-primary motion-reduce:animate-none"
+                />
                 <span>
                     {{
                         pendingLabel
-                            ? `Opening ${pendingLabel}...`
-                            : 'Loading module...'
+                            ? `Opening ${pendingLabel}…`
+                            : 'Loading page…'
                     }}
                 </span>
             </div>
@@ -69,7 +73,7 @@ function openGlobalSearch(): void {
                 class="inline-flex items-center gap-2 rounded-lg border-dashed"
                 @click="openGlobalSearch"
             >
-                <Search class="h-4 w-4" />
+                <Search aria-hidden="true" class="h-4 w-4" />
                 <span class="hidden sm:inline">Search</span>
                 <span
                     class="hidden rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground md:inline-flex"

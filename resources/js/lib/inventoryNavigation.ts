@@ -284,7 +284,7 @@ const searchNavigationItems: InventorySearchItem[] = [
         title: 'Stock movements',
         href: movementsIndex(),
         icon: BarChart3,
-        description: 'Review stock movement history and audit trails',
+        description: 'Review receipts, issuances, transfers, and adjustments',
         keywords: ['movements', 'stock', 'audit', 'history'],
         permission: 'viewMovements',
     },

@@ -70,7 +70,9 @@ test('approved bookings block overlapping requests', function () {
             'start_at' => $startAt->addMinutes(30)->toIso8601String(),
             'end_at' => $endAt->addMinutes(30)->toIso8601String(),
         ])
-        ->assertSessionHasErrors(['start_at']);
+        ->assertSessionHasErrors([
+            'start_at' => 'This asset is already booked for part of the selected schedule. Choose different dates or select another asset.',
+        ]);
 });
 
 test('booking index paginates records and bounds the asset selector payload', function () {

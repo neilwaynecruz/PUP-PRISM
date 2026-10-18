@@ -20,7 +20,7 @@ defineOptions({
 onMounted(() => {
     setLayoutProps({
         title: 'Log in to your account',
-        description: 'Enter your email and password below to log in',
+        description: 'Use your university email and password to continue.',
     });
 });
 
@@ -136,7 +136,7 @@ defineProps<{
                 data-testid="login-button"
             >
                 <Spinner v-if="processing" />
-                <span>{{ processing ? 'Signing in...' : 'Sign in' }}</span>
+                <span>{{ processing ? 'Signing in…' : 'Sign in' }}</span>
             </Button>
         </div>
 

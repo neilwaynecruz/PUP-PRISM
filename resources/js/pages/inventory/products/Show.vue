@@ -214,7 +214,7 @@ defineOptions({
                 <div class="mt-1 font-medium">
                     {{
                         product.lead_time_days !== null
-                            ? `${product.lead_time_days} day(s)`
+                            ? `${product.lead_time_days} ${product.lead_time_days === 1 ? 'day' : 'days'}`
                             : '—'
                     }}
                 </div>

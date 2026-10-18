@@ -73,11 +73,10 @@ onUnmounted(() => clearTwoFactorAuthData());
 <template>
     <Head title="Security settings" />
 
-    <h1 class="sr-only">Security settings</h1>
-
     <div class="space-y-6" data-testid="security-settings-page">
         <Heading
             variant="small"
+            :level="2"
             title="Update password"
             description="Ensure your account is using a long, random password to stay secure"
         />
@@ -104,8 +103,17 @@ onUnmounted(() => clearTwoFactorAuthData());
                     class="mt-1 block w-full"
                     autocomplete="current-password"
                     placeholder="Current password"
+                    :aria-invalid="Boolean(errors.current_password)"
+                    :aria-describedby="
+                        errors.current_password
+                            ? 'current-password-error'
+                            : undefined
+                    "
                 />
-                <InputError :message="errors.current_password" />
+                <InputError
+                    id="current-password-error"
+                    :message="errors.current_password"
+                />
             </div>
 
             <div class="grid gap-2">
@@ -116,8 +124,15 @@ onUnmounted(() => clearTwoFactorAuthData());
                     class="mt-1 block w-full"
                     autocomplete="new-password"
                     placeholder="New password"
+                    :aria-invalid="Boolean(errors.password)"
+                    :aria-describedby="
+                        errors.password ? 'new-password-error' : undefined
+                    "
                 />
-                <InputError :message="errors.password" />
+                <InputError
+                    id="new-password-error"
+                    :message="errors.password"
+                />
             </div>
 
             <div class="grid gap-2">
@@ -128,8 +143,17 @@ onUnmounted(() => clearTwoFactorAuthData());
                     class="mt-1 block w-full"
                     autocomplete="new-password"
                     placeholder="Confirm password"
+                    :aria-invalid="Boolean(errors.password_confirmation)"
+                    :aria-describedby="
+                        errors.password_confirmation
+                            ? 'password-confirmation-error'
+                            : undefined
+                    "
                 />
-                <InputError :message="errors.password_confirmation" />
+                <InputError
+                    id="password-confirmation-error"
+                    :message="errors.password_confirmation"
+                />
             </div>
 
             <div class="flex items-center gap-4">
@@ -159,6 +183,7 @@ onUnmounted(() => clearTwoFactorAuthData());
 
         <Heading
             variant="small"
+            :level="2"
             title="Two-factor authentication"
             description="Manage your two-factor authentication settings"
         />

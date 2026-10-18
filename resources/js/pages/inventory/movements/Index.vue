@@ -236,7 +236,7 @@ function humanizeReasonCode(value: string | null): string {
 </script>
 
 <template>
-    <Head title="Audit trail" />
+    <Head title="Stock Movements" />
 
     <div
         class="flex flex-col gap-6 p-4 sm:p-6"
@@ -244,8 +244,8 @@ function humanizeReasonCode(value: string | null): string {
     >
         <Heading
             variant="small"
-            title="Audit trail"
-            description="Every inbound and outbound transaction records the actor, accountable position, timestamp, and IP address."
+            title="Stock movements"
+            description="Review receipts, issuances, transfers, adjustments, and cycle counts recorded in inventory history."
         />
 
         <div class="grid gap-4 xl:grid-cols-2">
@@ -289,18 +289,23 @@ function humanizeReasonCode(value: string | null): string {
 
                     <div class="grid gap-1.5 md:grid-cols-2">
                         <div class="grid gap-1.5">
-                            <Label for="adjust-qty">Quantity delta</Label>
+                            <Label for="adjust-qty">Quantity change</Label>
                             <Input
                                 id="adjust-qty"
                                 name="qty_delta"
                                 type="number"
-                                placeholder="-3 or 5"
+                                inputmode="numeric"
+                                placeholder="Example: -3 or 5"
                                 required
                             />
+                            <p class="text-xs text-muted-foreground">
+                                Use a negative number to decrease stock or a
+                                positive number to increase it.
+                            </p>
                             <InputError :message="errors.qty_delta" />
                         </div>
                         <div class="grid gap-1.5">
-                            <Label for="adjust-reason">Reason code</Label>
+                            <Label for="adjust-reason">Reason</Label>
                             <select
                                 id="adjust-reason"
                                 name="reason_code"
@@ -329,7 +334,7 @@ function humanizeReasonCode(value: string | null): string {
                             name="notes"
                             rows="3"
                             class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                            placeholder="Optional audit note"
+                            placeholder="Explain why this adjustment is needed…"
                         />
                         <InputError :message="errors.notes" />
                     </div>
@@ -339,7 +344,11 @@ function humanizeReasonCode(value: string | null): string {
                         :disabled="processing"
                         class="w-full sm:w-auto"
                     >
-                        Save adjustment
+                        {{
+                            processing
+                                ? 'Saving Adjustment…'
+                                : 'Save Adjustment'
+                        }}
                     </Button>
                 </Form>
             </div>
@@ -395,7 +404,7 @@ function humanizeReasonCode(value: string | null): string {
                             <InputError :message="errors.counted_qty" />
                         </div>
                         <div class="grid gap-1.5">
-                            <Label for="count-reason">Reason code</Label>
+                            <Label for="count-reason">Reason</Label>
                             <select
                                 id="count-reason"
                                 name="reason_code"
@@ -424,7 +433,7 @@ function humanizeReasonCode(value: string | null): string {
                             name="notes"
                             rows="3"
                             class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                            placeholder="Optional counting note"
+                            placeholder="Add details about the physical count…"
                         />
                         <InputError :message="errors.notes" />
                     </div>
@@ -434,7 +443,11 @@ function humanizeReasonCode(value: string | null): string {
                         :disabled="processing"
                         class="w-full sm:w-auto"
                     >
-                        Save cycle count
+                        {{
+                            processing
+                                ? 'Saving Cycle Count…'
+                                : 'Save Cycle Count'
+                        }}
                     </Button>
                 </Form>
             </div>
@@ -553,7 +566,9 @@ function humanizeReasonCode(value: string | null): string {
                         as-child
                         class="rounded-lg border-dashed"
                     >
-                        <a :href="props.exportUrls.csv">Export CSV</a>
+                        <a :href="props.exportUrls.csv"
+                            >Download Stock Movements (CSV)</a
+                        >
                     </Button>
                     <Button
                         variant="outline"
@@ -561,7 +576,9 @@ function humanizeReasonCode(value: string | null): string {
                         as-child
                         class="rounded-lg border-dashed"
                     >
-                        <a :href="props.exportUrls.pdf">Export PDF</a>
+                        <a :href="props.exportUrls.pdf"
+                            >Download Stock Movements (PDF)</a
+                        >
                     </Button>
                 </div>
 
@@ -642,7 +659,7 @@ function humanizeReasonCode(value: string | null): string {
                 v-if="movements.data.length === 0"
                 class="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground"
             >
-                No audit entries match the current filters.
+                No stock movements match the current filters.
             </div>
         </div>
 
@@ -685,7 +702,7 @@ function humanizeReasonCode(value: string | null): string {
                             class="px-4 py-10 text-center text-muted-foreground"
                             colspan="10"
                         >
-                            No audit entries match the current filters.
+                            No stock movements match the current filters.
                         </td>
                     </tr>
 

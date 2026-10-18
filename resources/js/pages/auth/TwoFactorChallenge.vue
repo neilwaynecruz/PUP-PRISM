@@ -18,18 +18,17 @@ const code = ref<string>('');
 const authConfigContent = computed<TwoFactorConfigContent>(() => {
     if (showRecoveryInput.value) {
         return {
-            title: 'Recovery code',
+            title: 'Use a recovery code',
             description:
-                'Please confirm access to your account by entering one of your emergency recovery codes.',
-            buttonText: 'login using an authentication code',
+                'Enter one of your saved recovery codes to confirm your identity.',
+            buttonText: 'Use an authentication code instead',
         };
     }
 
     return {
-        title: 'Authentication code',
-        description:
-            'Enter the authentication code provided by your authenticator application.',
-        buttonText: 'login using a recovery code',
+        title: 'Enter your authentication code',
+        description: 'Enter the six-digit code from your authenticator app.',
+        buttonText: 'Use a recovery code instead',
     };
 });
 
@@ -70,7 +69,16 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                             v-model="code"
                             :maxlength="6"
                             :disabled="processing"
+                            aria-label="Six-digit authentication code"
+                            autocomplete="one-time-code"
+                            inputmode="numeric"
                             autofocus
+                            :aria-invalid="Boolean(errors.code)"
+                            :aria-describedby="
+                                errors.code
+                                    ? 'authentication-code-error'
+                                    : undefined
+                            "
                         >
                             <InputOTPGroup>
                                 <InputOTPSlot
@@ -81,13 +89,15 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                             </InputOTPGroup>
                         </InputOTP>
                     </div>
-                    <InputError :message="errors.code" />
+                    <InputError
+                        id="authentication-code-error"
+                        :message="errors.code"
+                    />
                 </div>
-                <Button type="submit" class="w-full" :disabled="processing"
-                    >Continue</Button
-                >
+                <Button type="submit" class="w-full" :disabled="processing">{{
+                    processing ? 'Verifying…' : 'Verify and Continue'
+                }}</Button>
                 <div class="text-center text-sm text-muted-foreground">
-                    <span>or you can </span>
                     <button
                         type="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
@@ -108,19 +118,28 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
                 #default="{ errors, processing, clearErrors }"
             >
                 <Input
+                    id="recovery-code"
                     name="recovery_code"
                     type="text"
                     placeholder="Enter recovery code"
+                    autocomplete="off"
+                    aria-label="Recovery code"
                     :autofocus="showRecoveryInput"
+                    :aria-invalid="Boolean(errors.recovery_code)"
+                    :aria-describedby="
+                        errors.recovery_code ? 'recovery-code-error' : undefined
+                    "
                     required
                 />
-                <InputError :message="errors.recovery_code" />
-                <Button type="submit" class="w-full" :disabled="processing"
-                    >Continue</Button
-                >
+                <InputError
+                    id="recovery-code-error"
+                    :message="errors.recovery_code"
+                />
+                <Button type="submit" class="w-full" :disabled="processing">{{
+                    processing ? 'Verifying…' : 'Verify and Continue'
+                }}</Button>
 
                 <div class="text-center text-sm text-muted-foreground">
-                    <span>or you can </span>
                     <button
                         type="button"
                         class="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"

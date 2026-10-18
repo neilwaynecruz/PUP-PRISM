@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
                         <td class="text-muted-foreground">
                             {{
                                 supplier.lead_time_days !== null
-                                    ? `${supplier.lead_time_days} day(s)`
+                                    ? `${supplier.lead_time_days} ${supplier.lead_time_days === 1 ? 'day' : 'days'}`
                                     : '—'
                             }}
                         </td>

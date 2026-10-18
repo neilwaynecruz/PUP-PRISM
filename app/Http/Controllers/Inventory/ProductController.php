@@ -429,7 +429,11 @@ class ProductController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __("{$restored} product(s) restored."),
+            'message' => trans_choice(
+                '{1} :count product restored.|[0,*] :count products restored.',
+                $restored,
+                ['count' => $restored],
+            ),
         ]);
 
         return back();
@@ -462,7 +466,11 @@ class ProductController extends Controller
             }
         }
 
-        $message = "{$deleted} product(s) permanently deleted.";
+        $message = trans_choice(
+            '{1} :count product permanently deleted.|[0,*] :count products permanently deleted.',
+            $deleted,
+            ['count' => $deleted],
+        );
         if ($errors > 0) {
             $message .= " {$errors} could not be deleted due to references.";
         }
@@ -504,7 +512,11 @@ class ProductController extends Controller
             $updated++;
         }
 
-        $message = "{$updated} product(s) activated.";
+        $message = trans_choice(
+            '{1} :count product activated.|[0,*] :count products activated.',
+            $updated,
+            ['count' => $updated],
+        );
 
         if ($skipped > 0) {
             $message .= " {$skipped} already active.";
@@ -547,7 +559,11 @@ class ProductController extends Controller
             $updated++;
         }
 
-        $message = "{$updated} product(s) deactivated.";
+        $message = trans_choice(
+            '{1} :count product deactivated.|[0,*] :count products deactivated.',
+            $updated,
+            ['count' => $updated],
+        );
 
         if ($skipped > 0) {
             $message .= " {$skipped} already inactive.";
@@ -593,7 +609,11 @@ class ProductController extends Controller
             $updated++;
         }
 
-        $message = "{$updated} product(s) moved to {$categoryName}.";
+        $message = trans_choice(
+            '{1} :count product moved to :category.|[0,*] :count products moved to :category.',
+            $updated,
+            ['count' => $updated, 'category' => $categoryName],
+        );
 
         if ($skipped > 0) {
             $message .= " {$skipped} already matched that category.";

@@ -57,9 +57,7 @@ export function useQrScanner(options: UseQrScannerOptions) {
             return 'Camera scanning requires a secure HTTPS connection. Enter the code manually.';
         }
 
-        return caughtError instanceof Error
-            ? caughtError.message
-            : 'Unable to start the camera. Enter the code manually.';
+        return 'The camera could not start. Retry the camera, or enter the code manually.';
     }
 
     function stop(): void {
@@ -107,7 +105,8 @@ export function useQrScanner(options: UseQrScannerOptions) {
         const context = canvas.getContext('2d', { willReadFrequently: true });
 
         if (!context) {
-            error.value = 'Unable to access the scanner canvas.';
+            error.value =
+                'The scanner could not read the camera image. Retry the camera, or enter the code manually.';
             stop();
 
             return;
@@ -131,7 +130,15 @@ export function useQrScanner(options: UseQrScannerOptions) {
         if (code?.data) {
             const nextValue = code.data.trim();
 
-            if (!nextValue || shouldIgnoreDetection(nextValue)) {
+            if (!nextValue) {
+                frameRequestId = window.requestAnimationFrame(scanFrame);
+
+                return;
+            }
+
+            if (shouldIgnoreDetection(nextValue)) {
+                status.value =
+                    'This code was already captured. Move to another label or wait before scanning it again.';
                 frameRequestId = window.requestAnimationFrame(scanFrame);
 
                 return;
@@ -144,7 +151,7 @@ export function useQrScanner(options: UseQrScannerOptions) {
             options.onDetected(nextValue);
 
             if (options.continuous) {
-                status.value = `Captured ${nextValue}. Keep scanning...`;
+                status.value = `Captured ${nextValue}. Keep scanning…`;
                 frameRequestId = window.requestAnimationFrame(scanFrame);
 
                 return;
@@ -182,7 +189,7 @@ export function useQrScanner(options: UseQrScannerOptions) {
         error.value = null;
         lastDetectedValue.value = null;
         totalDetections.value = 0;
-        status.value = 'Requesting camera access...';
+        status.value = 'Requesting camera access…';
 
         try {
             stream = await navigator.mediaDevices.getUserMedia({

@@ -48,7 +48,7 @@ class AssetIntegrityService
 
         if ($conflictExists) {
             throw ValidationException::withMessages([
-                'start_at' => __('This asset is already booked for the selected schedule.'),
+                'start_at' => __('This asset is already booked for part of the selected schedule. Choose different dates or select another asset.'),
             ]);
         }
     }
