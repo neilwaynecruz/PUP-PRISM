@@ -43,7 +43,7 @@ function isPendingItem(item: NavItem): boolean {
                     as-child
                     :is-active="isCurrentUrl(item.href)"
                     :tooltip="item.title"
-                    class="group relative transition-all duration-200 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:shadow-sm dark:data-[active=true]:bg-primary/15"
+                    class="group relative transition-colors duration-200 data-[active=true]:bg-primary/10 data-[active=true]:text-primary data-[active=true]:shadow-sm dark:data-[active=true]:bg-primary/15"
                 >
                     <Link
                         :href="item.href"
@@ -52,12 +52,14 @@ function isPendingItem(item: NavItem): boolean {
                     >
                         <component
                             :is="item.icon"
-                            class="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110"
+                            aria-hidden="true"
+                            class="h-[18px] w-[18px] shrink-0"
                         />
                         <span class="font-medium">{{ item.title }}</span>
                         <LoaderCircle
                             v-if="isPendingItem(item)"
-                            class="ml-auto h-3.5 w-3.5 animate-spin text-primary"
+                            aria-hidden="true"
+                            class="ml-auto h-3.5 w-3.5 animate-spin text-primary motion-reduce:animate-none"
                         />
                     </Link>
                 </SidebarMenuButton>

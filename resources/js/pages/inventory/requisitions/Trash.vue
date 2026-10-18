@@ -484,7 +484,14 @@ function confirmBulkForceDelete(): void {
                     <DialogTitle>Bulk restore requisitions?</DialogTitle>
                     <DialogDescription>
                         This will restore
-                        <strong>{{ selectedIds.size }} requisition(s)</strong>
+                        <strong
+                            >{{ selectedIds.size }}
+                            {{
+                                selectedIds.size === 1
+                                    ? 'requisition'
+                                    : 'requisitions'
+                            }}</strong
+                        >
                         to the active requisitions list.
                     </DialogDescription>
                 </DialogHeader>
@@ -492,7 +499,9 @@ function confirmBulkForceDelete(): void {
                     <DialogClose as-child>
                         <Button variant="secondary">Cancel</Button>
                     </DialogClose>
-                    <Button @click="confirmBulkRestore">Restore All</Button>
+                    <Button @click="confirmBulkRestore"
+                        >Restore Selected</Button
+                    >
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -509,8 +518,14 @@ function confirmBulkForceDelete(): void {
                         <strong class="text-rose-600"
                             >permanently delete</strong
                         >
-                        <strong>{{ selectedIds.size }} requisition(s)</strong>.
-                        <br /><br />
+                        <strong
+                            >{{ selectedIds.size }}
+                            {{
+                                selectedIds.size === 1
+                                    ? 'requisition'
+                                    : 'requisitions'
+                            }}</strong
+                        >. <br /><br />
                         <span class="font-medium text-rose-600"
                             >This action cannot be undone.</span
                         >

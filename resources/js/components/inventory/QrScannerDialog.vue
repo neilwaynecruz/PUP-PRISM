@@ -23,7 +23,7 @@ const props = withDefaults(
         triggerTestId?: string;
     }>(),
     {
-        buttonLabel: 'Scan QR',
+        buttonLabel: 'Scan QR Code',
         title: 'Scan QR code',
         description:
             'Use your phone or tablet camera. Manual entry stays available if the camera is unavailable.',
@@ -87,7 +87,7 @@ watch(isOpen, async (open) => {
         :data-testid="triggerTestId"
         @click="isOpen = true"
     >
-        <ScanLine class="mr-2 size-4" />
+        <ScanLine aria-hidden="true" class="mr-2 size-4" />
         {{ props.buttonLabel }}
     </Button>
 
@@ -101,15 +101,19 @@ watch(isOpen, async (open) => {
             </DialogHeader>
 
             <div class="grid gap-4">
-                <div class="flex flex-wrap items-center gap-2">
+                <div
+                    class="flex flex-wrap items-center gap-2"
+                    role="status"
+                    aria-live="polite"
+                >
                     <Badge v-if="isRunning" variant="default"
                         >Live camera</Badge
                     >
                     <Badge v-else-if="isStarting" variant="secondary"
-                        >Starting</Badge
+                        >Starting Camera…</Badge
                     >
                     <Badge v-else variant="outline"
-                        >Manual fallback ready</Badge
+                        >Manual Entry Available</Badge
                     >
                     <Badge v-if="props.continuous" variant="secondary">
                         Continuous mode
@@ -123,8 +127,10 @@ watch(isOpen, async (open) => {
                     v-if="props.continuous && sessionScanCount > 0"
                     class="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-sm"
                 >
-                    <div class="font-medium text-primary">
-                        {{ sessionScanCount }} code(s) captured in this session
+                    <div class="font-medium text-primary" aria-live="polite">
+                        {{ sessionScanCount }}
+                        {{ sessionScanCount === 1 ? 'code' : 'codes' }} captured
+                        in this session
                     </div>
                     <div
                         v-if="lastDetectedValue"
@@ -142,10 +148,15 @@ watch(isOpen, async (open) => {
                         <video
                             ref="videoRef"
                             class="size-full object-cover"
+                            aria-label="Live camera preview for QR scanning"
                             playsinline
                             muted
                         />
-                        <canvas ref="canvasRef" class="hidden" />
+                        <canvas
+                            ref="canvasRef"
+                            aria-hidden="true"
+                            class="hidden"
+                        />
 
                         <div
                             class="pointer-events-none absolute inset-0 flex items-center justify-center p-6"
@@ -161,10 +172,12 @@ watch(isOpen, async (open) => {
                         >
                             <div class="grid gap-2">
                                 <CameraOff
+                                    aria-hidden="true"
                                     class="mx-auto size-8 text-muted-foreground"
                                 />
                                 <Heading
                                     variant="small"
+                                    :level="3"
                                     title="Camera not supported"
                                     description="This browser cannot open the camera. Use the manual input field on the page instead."
                                 />
@@ -175,6 +188,8 @@ watch(isOpen, async (open) => {
 
                 <div
                     v-if="error"
+                    role="alert"
+                    aria-live="assertive"
                     class="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
                 >
                     {{ error }}
@@ -185,9 +200,10 @@ watch(isOpen, async (open) => {
                         v-if="hasCameraSupport && !isRunning"
                         type="button"
                         variant="secondary"
+                        :disabled="isStarting"
                         @click="start"
                     >
-                        Retry camera
+                        {{ isStarting ? 'Starting Camera…' : 'Retry Camera' }}
                     </Button>
                     <Button
                         v-if="hasCameraSupport && isRunning && props.continuous"
@@ -195,14 +211,14 @@ watch(isOpen, async (open) => {
                         variant="secondary"
                         @click="stop"
                     >
-                        Pause camera
+                        Pause Camera
                     </Button>
                     <Button
                         type="button"
                         variant="ghost"
                         @click="isOpen = false"
                         >{{
-                            props.continuous ? 'Done scanning' : 'Close'
+                            props.continuous ? 'Done Scanning' : 'Close'
                         }}</Button
                     >
                 </div>

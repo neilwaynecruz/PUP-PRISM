@@ -312,7 +312,11 @@ class RequisitionController extends Controller
             }
         }
 
-        $message = "{$updated} requisition(s) approved.";
+        $message = trans_choice(
+            '{1} :count requisition approved.|[0,*] :count requisitions approved.',
+            $updated,
+            ['count' => $updated],
+        );
 
         if ($skipped > 0) {
             $message .= " {$skipped} skipped because they were no longer submitted.";
@@ -369,7 +373,11 @@ class RequisitionController extends Controller
             }
         }
 
-        $message = "{$updated} requisition(s) issued.";
+        $message = trans_choice(
+            '{1} :count requisition issued.|[0,*] :count requisitions issued.',
+            $updated,
+            ['count' => $updated],
+        );
 
         if ($failed > 0) {
             $message .= " {$failed} could not be issued due to stock or workflow constraints.";
@@ -506,7 +514,11 @@ class RequisitionController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __("{$restored} requisition(s) restored."),
+            'message' => trans_choice(
+                '{1} :count requisition restored.|[0,*] :count requisitions restored.',
+                $restored,
+                ['count' => $restored],
+            ),
         ]);
 
         return back();
@@ -534,7 +546,11 @@ class RequisitionController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __("{$deleted} requisition(s) permanently deleted."),
+            'message' => trans_choice(
+                '{1} :count requisition permanently deleted.|[0,*] :count requisitions permanently deleted.',
+                $deleted,
+                ['count' => $deleted],
+            ),
         ]);
 
         return back();

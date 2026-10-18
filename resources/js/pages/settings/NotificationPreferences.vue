@@ -67,14 +67,13 @@ function submit(): void {
 <template>
     <Head title="Notification preferences" />
 
-    <h1 class="sr-only">Notification preferences</h1>
-
     <div
         class="flex flex-col space-y-6"
         data-testid="notification-preferences-page"
     >
         <Heading
             variant="small"
+            :level="2"
             title="Notification preferences"
             description="Choose how you receive workflow alerts by channel and email frequency."
         />
@@ -99,17 +98,21 @@ function submit(): void {
                             :key="preference.event_type"
                             class="border-t border-border align-top"
                         >
-                            <td class="px-4 py-4">
+                            <th
+                                scope="row"
+                                class="px-4 py-4 text-left font-normal"
+                            >
                                 <p class="font-medium text-foreground">
                                     {{ labelFor(preference.event_type) }}
                                 </p>
                                 <p class="mt-1 text-xs text-muted-foreground">
                                     {{ descriptionFor(preference.event_type) }}
                                 </p>
-                            </td>
+                            </th>
                             <td class="px-4 py-4">
                                 <Checkbox
                                     :id="`${preference.event_type}-mail`"
+                                    :aria-label="`Email notifications for ${labelFor(preference.event_type)}`"
                                     :model-value="preference.mail_enabled"
                                     @update:model-value="
                                         (value) =>
@@ -121,6 +124,7 @@ function submit(): void {
                             <td class="px-4 py-4">
                                 <Checkbox
                                     :id="`${preference.event_type}-database`"
+                                    :aria-label="`In-app notifications for ${labelFor(preference.event_type)}`"
                                     :model-value="preference.database_enabled"
                                     @update:model-value="
                                         (value) =>
@@ -132,6 +136,7 @@ function submit(): void {
                             <td class="px-4 py-4">
                                 <Checkbox
                                     :id="`${preference.event_type}-broadcast`"
+                                    :aria-label="`Realtime notifications for ${labelFor(preference.event_type)}`"
                                     :model-value="preference.broadcast_enabled"
                                     @update:model-value="
                                         (value) =>
@@ -164,7 +169,10 @@ function submit(): void {
                 </table>
             </div>
 
-            <InputError :message="form.errors.preferences" />
+            <InputError
+                id="notification-preferences-error"
+                :message="form.errors.preferences"
+            />
 
             <div class="flex items-center gap-3">
                 <Button

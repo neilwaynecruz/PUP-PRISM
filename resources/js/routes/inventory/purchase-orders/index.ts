@@ -267,7 +267,7 @@ generate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     generate.form = generateForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:311
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:315
  * @route '/inventory/purchase-orders/generate-from-forecasts'
  */
 export const generateFromForecasts = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -282,7 +282,7 @@ generateFromForecasts.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:311
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:315
  * @route '/inventory/purchase-orders/generate-from-forecasts'
  */
 generateFromForecasts.url = (options?: RouteQueryOptions) => {
@@ -291,7 +291,7 @@ generateFromForecasts.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:311
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:315
  * @route '/inventory/purchase-orders/generate-from-forecasts'
  */
 generateFromForecasts.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -301,7 +301,7 @@ generateFromForecasts.post = (options?: RouteQueryOptions): RouteDefinition<'pos
 
     /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:311
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:315
  * @route '/inventory/purchase-orders/generate-from-forecasts'
  */
     const generateFromForecastsForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -311,7 +311,7 @@ generateFromForecasts.post = (options?: RouteQueryOptions): RouteDefinition<'pos
 
             /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:311
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:315
  * @route '/inventory/purchase-orders/generate-from-forecasts'
  */
         generateFromForecastsForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

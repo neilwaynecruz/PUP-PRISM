@@ -44,8 +44,16 @@ const inputEmail = ref(props.email);
                     v-model="inputEmail"
                     class="mt-1 block w-full"
                     readonly
+                    :aria-invalid="Boolean(errors.email)"
+                    :aria-describedby="
+                        errors.email ? 'reset-email-error' : undefined
+                    "
                 />
-                <InputError :message="errors.email" class="mt-2" />
+                <InputError
+                    id="reset-email-error"
+                    :message="errors.email"
+                    class="mt-2"
+                />
             </div>
 
             <div class="grid gap-2">
@@ -57,8 +65,15 @@ const inputEmail = ref(props.email);
                     class="mt-1 block w-full"
                     autofocus
                     placeholder="Password"
+                    :aria-invalid="Boolean(errors.password)"
+                    :aria-describedby="
+                        errors.password ? 'reset-password-error' : undefined
+                    "
                 />
-                <InputError :message="errors.password" />
+                <InputError
+                    id="reset-password-error"
+                    :message="errors.password"
+                />
             </div>
 
             <div class="grid gap-2">
@@ -69,8 +84,17 @@ const inputEmail = ref(props.email);
                     autocomplete="new-password"
                     class="mt-1 block w-full"
                     placeholder="Confirm password"
+                    :aria-invalid="Boolean(errors.password_confirmation)"
+                    :aria-describedby="
+                        errors.password_confirmation
+                            ? 'reset-password-confirmation-error'
+                            : undefined
+                    "
                 />
-                <InputError :message="errors.password_confirmation" />
+                <InputError
+                    id="reset-password-confirmation-error"
+                    :message="errors.password_confirmation"
+                />
             </div>
 
             <Button

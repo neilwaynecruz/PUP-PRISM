@@ -11,7 +11,7 @@ defineOptions({
     layout: {
         title: 'Verify email',
         description:
-            'Please verify your email address by clicking on the link we just emailed to you.',
+            'Open the verification link we sent to your email address to continue.',
     },
 });
 
@@ -29,10 +29,12 @@ function handleLogout(): void {
 
     <div
         v-if="status === 'verification-link-sent'"
-        class="mb-4 text-center text-sm font-medium text-green-600"
+        role="status"
+        aria-live="polite"
+        class="mb-4 text-center text-sm font-medium text-emerald-700 dark:text-emerald-300"
     >
-        A new verification link has been sent to the email address you provided
-        during registration.
+        We sent a new verification link to your email address. Check your inbox
+        and spam folder.
     </div>
 
     <Form
@@ -43,7 +45,11 @@ function handleLogout(): void {
     >
         <Button :disabled="processing" variant="secondary">
             <Spinner v-if="processing" />
-            Resend verification email
+            {{
+                processing
+                    ? 'Sending Verification Email…'
+                    : 'Resend Verification Email'
+            }}
         </Button>
 
         <TextLink

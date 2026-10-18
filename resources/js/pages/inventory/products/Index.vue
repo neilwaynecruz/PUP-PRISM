@@ -150,6 +150,7 @@ const bulkCategoryDialogOpen = ref(false);
 const bulkCategoryId = ref<string>('');
 const bulkActionDialogOpen = ref(false);
 const pendingBulkAction = ref<'activate' | 'deactivate' | null>(null);
+const bulkActionProcessing = ref(false);
 const isRefreshing = ref(false);
 
 const {
@@ -178,9 +179,11 @@ function openBulkCategoryDialog(): void {
 }
 
 function confirmBulkCategory(): void {
-    if (!bulkCategoryId.value) {
+    if (!bulkCategoryId.value || bulkActionProcessing.value) {
         return;
     }
+
+    bulkActionProcessing.value = true;
 
     router.post(
         productsBulkChangeCategory().url,
@@ -194,12 +197,15 @@ function confirmBulkCategory(): void {
                 bulkCategoryId.value = '';
                 clearSelection();
             },
+            onFinish: () => {
+                bulkActionProcessing.value = false;
+            },
         },
     );
 }
 
 function confirmBulkAction(): void {
-    if (!pendingBulkAction.value) {
+    if (!pendingBulkAction.value || bulkActionProcessing.value) {
         return;
     }
 
@@ -207,6 +213,8 @@ function confirmBulkAction(): void {
         pendingBulkAction.value === 'activate'
             ? productsBulkActivate().url
             : productsBulkDeactivate().url;
+
+    bulkActionProcessing.value = true;
 
     router.post(
         endpoint,
@@ -218,6 +226,9 @@ function confirmBulkAction(): void {
                 clearSelection();
                 bulkActionDialogOpen.value = false;
                 pendingBulkAction.value = null;
+            },
+            onFinish: () => {
+                bulkActionProcessing.value = false;
             },
         },
     );
@@ -247,6 +258,38 @@ const supplierId = ref<string>(
 const active = ref<string>(
     props.filters.active === null ? '' : props.filters.active ? '1' : '0',
 );
+
+function stockLabel(product: ProductRow): string {
+    if (product.type !== 'consumable') {
+        return 'Not applicable';
+    }
+
+    const onHand = product.on_hand_qty ?? 0;
+
+    if (onHand <= 0) {
+        return 'Out of stock';
+    }
+
+    if (onHand <= product.reorder_threshold) {
+        return 'Low stock';
+    }
+
+    return 'In stock';
+}
+
+function stockToneClass(product: ProductRow): string {
+    const label = stockLabel(product);
+
+    if (label === 'Out of stock') {
+        return 'bg-rose-500/10 text-rose-700 dark:text-rose-300';
+    }
+
+    if (label === 'Low stock') {
+        return 'bg-amber-500/10 text-amber-700 dark:text-amber-300';
+    }
+
+    return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+}
 
 const query = computed(() => ({
     search: search.value || undefined,
@@ -303,40 +346,17 @@ onBeforeUnmount(() => {
             <Heading
                 variant="small"
                 title="Products"
-                description="Manage your catalog of assets and consumables."
+                description="Find assets and consumables, review stock levels, and manage product records."
             />
 
             <div class="flex flex-wrap items-center gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    as-child
-                    class="rounded-lg border-dashed"
-                >
-                    <a :href="props.exportUrls.csv">
-                        <span
-                            class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary"
-                        />Export CSV
-                    </a>
+                <Button variant="outline" size="sm" as-child class="rounded-lg">
+                    <a :href="props.exportUrls.csv">Download CSV</a>
                 </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    as-child
-                    class="rounded-lg border-dashed"
-                >
-                    <a :href="props.exportUrls.pdf">
-                        <span
-                            class="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-primary"
-                        />Export PDF
-                    </a>
+                <Button variant="outline" size="sm" as-child class="rounded-lg">
+                    <a :href="props.exportUrls.pdf">Download PDF</a>
                 </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    as-child
-                    class="rounded-lg border-dashed"
-                >
+                <Button variant="outline" size="sm" as-child class="rounded-lg">
                     <Link href="/inventory/products/trash">Trash</Link>
                 </Button>
                 <Button
@@ -354,77 +374,115 @@ onBeforeUnmount(() => {
         </div>
 
         <div class="flex flex-col gap-3">
-            <div
+            <fieldset
                 class="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
             >
-                <Input
-                    v-model="search"
-                    data-testid="product-search-input"
-                    data-shortcut="search"
-                    placeholder="Search by SKU or name…"
-                    class="h-10 rounded-lg"
-                />
-
-                <select
-                    v-model="type"
-                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
+                <legend class="sr-only">Filter products</legend>
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
                 >
-                    <option value="">All types</option>
-                    <option value="consumable">Consumables</option>
-                    <option value="asset">Assets</option>
-                </select>
+                    Search
+                    <Input
+                        v-model="search"
+                        name="product_search"
+                        data-testid="product-search-input"
+                        data-shortcut="search"
+                        autocomplete="off"
+                        placeholder="Enter a SKU or product name…"
+                        class="h-10 rounded-lg"
+                    />
+                </label>
 
-                <select
-                    v-model="categoryId"
-                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
                 >
-                    <option value="">All categories</option>
-                    <option
-                        v-for="c in categories"
-                        :key="c.id"
-                        :value="String(c.id)"
+                    Product type
+                    <select
+                        v-model="type"
+                        name="product_type"
+                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
                     >
-                        {{ c.name }}
-                    </option>
-                </select>
+                        <option value="">All types</option>
+                        <option value="consumable">Consumables</option>
+                        <option value="asset">Assets</option>
+                    </select>
+                </label>
 
-                <select
-                    v-model="originId"
-                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
                 >
-                    <option value="">All origins</option>
-                    <option
-                        v-for="s in origins"
-                        :key="s.id"
-                        :value="String(s.id)"
+                    Category
+                    <select
+                        v-model="categoryId"
+                        name="category_id"
+                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
                     >
-                        {{ s.name }}
-                    </option>
-                </select>
+                        <option value="">All categories</option>
+                        <option
+                            v-for="c in categories"
+                            :key="c.id"
+                            :value="String(c.id)"
+                        >
+                            {{ c.name }}
+                        </option>
+                    </select>
+                </label>
 
-                <select
-                    v-model="supplierId"
-                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
                 >
-                    <option value="">All suppliers</option>
-                    <option
-                        v-for="supplier in suppliers"
-                        :key="supplier.id"
-                        :value="String(supplier.id)"
+                    Origin
+                    <select
+                        v-model="originId"
+                        name="origin_id"
+                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
                     >
-                        {{ supplier.name }}
-                    </option>
-                </select>
+                        <option value="">All origins</option>
+                        <option
+                            v-for="s in origins"
+                            :key="s.id"
+                            :value="String(s.id)"
+                        >
+                            {{ s.name }}
+                        </option>
+                    </select>
+                </label>
 
-                <select
-                    v-model="active"
-                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus:border-ring focus:outline-none"
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
                 >
-                    <option value="">All statuses</option>
-                    <option value="1">Active</option>
-                    <option value="0">Inactive</option>
-                </select>
-            </div>
+                    Supplier
+                    <select
+                        v-model="supplierId"
+                        name="supplier_id"
+                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
+                    >
+                        <option value="">All suppliers</option>
+                        <option
+                            v-for="supplier in suppliers"
+                            :key="supplier.id"
+                            :value="String(supplier.id)"
+                        >
+                            {{ supplier.name }}
+                        </option>
+                    </select>
+                </label>
+
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
+                >
+                    Record status
+                    <select
+                        v-model="active"
+                        name="active"
+                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
+                    >
+                        <option value="">All statuses</option>
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </label>
+            </fieldset>
 
             <!-- Bulk action bar -->
             <div
@@ -472,7 +530,8 @@ onBeforeUnmount(() => {
                         v-if="products.data.length === 0"
                         class="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground"
                     >
-                        No products found.
+                        No products are available in this view. Try changing or
+                        clearing a search filter.
                     </div>
 
                     <div
@@ -568,11 +627,20 @@ onBeforeUnmount(() => {
                                 <span class="text-muted-foreground"
                                     >On hand</span
                                 >
-                                <span>{{
-                                    p.type === 'consumable'
-                                        ? (p.on_hand_qty ?? 0)
-                                        : '—'
-                                }}</span>
+                                <span class="text-right">
+                                    <span class="block">{{
+                                        p.type === 'consumable'
+                                            ? (p.on_hand_qty ?? 0)
+                                            : '—'
+                                    }}</span>
+                                    <span
+                                        v-if="p.type === 'consumable'"
+                                        class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium"
+                                        :class="stockToneClass(p)"
+                                    >
+                                        {{ stockLabel(p) }}
+                                    </span>
+                                </span>
                             </div>
                             <div
                                 class="flex items-center justify-between gap-3"
@@ -594,7 +662,9 @@ onBeforeUnmount(() => {
                                 data-test="view-product-button-mobile"
                                 data-testid="view-product-button-mobile"
                             >
-                                <Link :href="productsShow(p.id)">View</Link>
+                                <Link :href="productsShow(p.id)"
+                                    >View Details</Link
+                                >
                             </Button>
                             <Button
                                 variant="ghost"
@@ -612,7 +682,7 @@ onBeforeUnmount(() => {
                                 class="text-rose-600 hover:text-rose-700"
                                 @click="openDeleteDialog(p)"
                             >
-                                Delete
+                                Move to Trash
                             </Button>
                         </div>
                     </div>
@@ -622,6 +692,10 @@ onBeforeUnmount(() => {
                     class="hidden overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm md:block"
                 >
                     <table class="min-w-full text-sm">
+                        <caption class="sr-only">
+                            Products with stock levels, record status, and
+                            available actions
+                        </caption>
                         <thead class="bg-muted/40 text-left">
                             <tr
                                 class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
@@ -639,16 +713,16 @@ onBeforeUnmount(() => {
                                         aria-label="Select all products"
                                     />
                                 </th>
-                                <th>SKU</th>
-                                <th>Name</th>
-                                <th>Type</th>
-                                <th>Category</th>
-                                <th>Supplier</th>
-                                <th>Origin</th>
-                                <th class="text-right">On hand</th>
-                                <th class="text-right">Assets</th>
-                                <th class="text-right">Status</th>
-                                <th class="text-right">Actions</th>
+                                <th scope="col">SKU</th>
+                                <th scope="col">Name</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Category</th>
+                                <th scope="col">Supplier</th>
+                                <th scope="col">Origin</th>
+                                <th scope="col" class="text-right">On hand</th>
+                                <th scope="col" class="text-right">Assets</th>
+                                <th scope="col" class="text-right">Status</th>
+                                <th scope="col" class="text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-border/60/60 divide-y">
@@ -657,7 +731,8 @@ onBeforeUnmount(() => {
                                     class="px-4 py-8 text-center text-sm text-muted-foreground"
                                     :colspan="props.can.bulkUpdate ? 11 : 10"
                                 >
-                                    No products found.
+                                    No products are available in this view. Try
+                                    changing or clearing a search filter.
                                 </td>
                             </tr>
 
@@ -710,8 +785,15 @@ onBeforeUnmount(() => {
                                     <span
                                         v-if="p.type === 'consumable'"
                                         class="font-mono text-xs font-medium"
-                                        >{{ p.on_hand_qty ?? 0 }}</span
                                     >
+                                        {{ p.on_hand_qty ?? 0 }}
+                                        <span
+                                            class="mt-1 inline-flex rounded-full px-2 py-0.5 font-sans text-[11px] font-medium"
+                                            :class="stockToneClass(p)"
+                                        >
+                                            {{ stockLabel(p) }}
+                                        </span>
+                                    </span>
                                     <span v-else class="text-muted-foreground"
                                         >—</span
                                     >
@@ -761,7 +843,7 @@ onBeforeUnmount(() => {
                                             class="h-8 rounded-lg text-xs opacity-60 transition-opacity group-hover:opacity-100"
                                         >
                                             <Link :href="productsShow(p.id)"
-                                                >View</Link
+                                                >View Details</Link
                                             >
                                         </Button>
                                         <Button
@@ -783,7 +865,7 @@ onBeforeUnmount(() => {
                                             class="h-8 rounded-lg text-xs text-rose-600 opacity-60 transition-opacity group-hover:opacity-100 hover:text-rose-700"
                                             @click="openDeleteDialog(p)"
                                         >
-                                            Delete
+                                            Move to Trash
                                         </Button>
                                     </div>
                                 </td>
@@ -796,7 +878,7 @@ onBeforeUnmount(() => {
             <Dialog v-model:open="deleteDialogOpen">
                 <DialogContent>
                     <DialogHeader class="space-y-3">
-                        <DialogTitle>Delete product?</DialogTitle>
+                        <DialogTitle>Move product to trash?</DialogTitle>
                         <DialogDescription>
                             This will move
                             <strong>{{ selectedProduct?.name }}</strong> ({{
@@ -850,7 +932,7 @@ onBeforeUnmount(() => {
                             variant="destructive"
                             :disabled="!canConfirmDelete"
                             @click="confirmDelete"
-                            >Delete</Button
+                            >Move to Trash</Button
                         >
                     </DialogFooter>
                 </DialogContent>
@@ -865,7 +947,11 @@ onBeforeUnmount(() => {
                             Update the category for
                             <strong
                                 >{{ selectedIds.size }} selected
-                                product(s)</strong
+                                {{
+                                    selectedIds.size === 1
+                                        ? 'product'
+                                        : 'products'
+                                }}</strong
                             >.
                         </DialogDescription>
                     </DialogHeader>
@@ -895,12 +981,20 @@ onBeforeUnmount(() => {
                     </div>
                     <DialogFooter class="gap-2">
                         <DialogClose as-child>
-                            <Button variant="secondary">Cancel</Button>
+                            <Button
+                                variant="secondary"
+                                :disabled="bulkActionProcessing"
+                                >Cancel</Button
+                            >
                         </DialogClose>
                         <Button
-                            :disabled="!bulkCategoryId"
+                            :disabled="!bulkCategoryId || bulkActionProcessing"
                             @click="confirmBulkCategory"
-                            >Update</Button
+                            >{{
+                                bulkActionProcessing
+                                    ? 'Updating…'
+                                    : 'Update Category'
+                            }}</Button
                         >
                     </DialogFooter>
                 </DialogContent>
@@ -920,20 +1014,33 @@ onBeforeUnmount(() => {
                             This will update
                             <strong
                                 >{{ selectedIds.size }} selected
-                                product(s)</strong
+                                {{
+                                    selectedIds.size === 1
+                                        ? 'product'
+                                        : 'products'
+                                }}</strong
                             >
                             and keep the current filters and page state intact.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter class="gap-2">
                         <DialogClose as-child>
-                            <Button variant="secondary">Cancel</Button>
+                            <Button
+                                variant="secondary"
+                                :disabled="bulkActionProcessing"
+                                >Cancel</Button
+                            >
                         </DialogClose>
-                        <Button @click="confirmBulkAction">
+                        <Button
+                            :disabled="bulkActionProcessing"
+                            @click="confirmBulkAction"
+                        >
                             {{
-                                pendingBulkAction === 'activate'
-                                    ? 'Confirm activate'
-                                    : 'Confirm deactivate'
+                                bulkActionProcessing
+                                    ? 'Updating…'
+                                    : pendingBulkAction === 'activate'
+                                      ? 'Confirm activate'
+                                      : 'Confirm deactivate'
                             }}
                         </Button>
                     </DialogFooter>

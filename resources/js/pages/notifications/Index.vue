@@ -52,6 +52,7 @@ const readFilter = ref(props.filters.read ?? '');
 const category = ref(props.filters.category ?? '');
 const dateFrom = ref(props.filters.date_from ?? '');
 const dateTo = ref(props.filters.date_to ?? '');
+const markingAllRead = ref(false);
 
 let refreshTimer: number | undefined;
 
@@ -91,6 +92,53 @@ function markRead(notificationId: string): void {
         { preserveScroll: true },
     );
 }
+
+function markAllRead(): void {
+    if (markingAllRead.value || props.unreadCount === 0) {
+        return;
+    }
+
+    markingAllRead.value = true;
+
+    router.put(
+        readAll().url,
+        {},
+        {
+            preserveScroll: true,
+            onFinish: () => {
+                markingAllRead.value = false;
+            },
+        },
+    );
+}
+
+function unreadDescription(): string {
+    if (props.unreadCount === 0) {
+        return 'You have read all notifications.';
+    }
+
+    return `${props.unreadCount} unread ${props.unreadCount === 1 ? 'notification' : 'notifications'}`;
+}
+
+function formatLabel(value: string): string {
+    return value
+        .replace(/[_-]/g, ' ')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function severityToneClass(severity: string): string {
+    switch (severity.toLowerCase()) {
+        case 'critical':
+        case 'error':
+            return 'bg-rose-500/10 text-rose-700 dark:text-rose-300';
+        case 'warning':
+            return 'bg-amber-500/10 text-amber-700 dark:text-amber-300';
+        case 'success':
+            return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+        default:
+            return 'bg-blue-500/10 text-blue-700 dark:text-blue-300';
+    }
+}
 </script>
 
 <template>
@@ -103,50 +151,84 @@ function markRead(notificationId: string): void {
             <Heading
                 variant="small"
                 title="Notification history"
-                :description="`${unreadCount} unread notification(s)`"
+                :description="unreadDescription()"
             />
 
             <Button
                 variant="outline"
                 size="sm"
                 class="rounded-lg"
-                :disabled="unreadCount === 0"
-                @click="router.put(readAll().url, {}, { preserveScroll: true })"
+                :disabled="unreadCount === 0 || markingAllRead"
+                @click="markAllRead"
             >
-                Mark all read
+                {{ markingAllRead ? 'Marking as Read…' : 'Mark All as Read' }}
             </Button>
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            <Input
-                v-model="search"
-                placeholder="Search title or message..."
-                class="h-10 rounded-lg lg:col-span-2"
-            />
-            <select
-                v-model="readFilter"
-                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+        <fieldset
+            class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+        >
+            <legend class="sr-only">Filter notifications</legend>
+            <label
+                class="grid gap-1 text-xs font-medium text-muted-foreground lg:col-span-2"
             >
-                <option value="">All</option>
-                <option value="unread">Unread</option>
-                <option value="read">Read</option>
-            </select>
-            <select
-                v-model="category"
-                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
-            >
-                <option value="">All categories</option>
-                <option
-                    v-for="categoryOption in categories"
-                    :key="categoryOption"
-                    :value="categoryOption"
+                Search
+                <Input
+                    v-model="search"
+                    name="notification_search"
+                    autocomplete="off"
+                    placeholder="Title or message…"
+                    class="h-10 rounded-lg"
+                />
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Read status
+                <select
+                    v-model="readFilter"
+                    name="notification_read_status"
+                    class="h-11 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
                 >
-                    {{ categoryOption }}
-                </option>
-            </select>
-            <Input v-model="dateFrom" type="date" class="h-10 rounded-lg" />
-            <Input v-model="dateTo" type="date" class="h-10 rounded-lg" />
-        </div>
+                    <option value="">All</option>
+                    <option value="unread">Unread</option>
+                    <option value="read">Read</option>
+                </select>
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Category
+                <select
+                    v-model="category"
+                    name="notification_category"
+                    class="h-11 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
+                >
+                    <option value="">All categories</option>
+                    <option
+                        v-for="categoryOption in categories"
+                        :key="categoryOption"
+                        :value="categoryOption"
+                    >
+                        {{ formatLabel(categoryOption) }}
+                    </option>
+                </select>
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Received on or after
+                <Input
+                    v-model="dateFrom"
+                    name="notification_date_from"
+                    type="date"
+                    class="h-10 rounded-lg"
+                />
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Received on or before
+                <Input
+                    v-model="dateTo"
+                    name="notification_date_to"
+                    type="date"
+                    class="h-10 rounded-lg"
+                />
+            </label>
+        </fieldset>
 
         <div
             class="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm"
@@ -155,14 +237,16 @@ function markRead(notificationId: string): void {
                 v-if="notifications.data.length === 0"
                 class="px-4 py-10 text-center text-sm text-muted-foreground"
             >
-                No notifications found.
+                No notifications are available in this view. Try changing the
+                search, category, status, or dates.
             </div>
-            <div
+            <article
                 v-for="notification in notifications.data"
                 :key="notification.id"
                 class="flex items-start gap-4 border-b border-border/60 px-4 py-4 last:border-b-0"
             >
                 <span
+                    aria-hidden="true"
                     class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
                     :class="notification.readAt ? 'bg-border' : 'bg-primary'"
                 />
@@ -172,6 +256,9 @@ function markRead(notificationId: string): void {
                     >
                         <h2 class="text-sm font-semibold">
                             {{ notification.title }}
+                            <span class="sr-only">
+                                — {{ notification.readAt ? 'Read' : 'Unread' }}
+                            </span>
                         </h2>
                         <span class="text-xs text-muted-foreground">
                             {{ formatTimestamp(notification.createdAt) }}
@@ -186,12 +273,13 @@ function markRead(notificationId: string): void {
                         <span
                             class="rounded-full bg-muted px-2 py-0.5 capitalize"
                         >
-                            {{ notification.category }}
+                            {{ formatLabel(notification.category) }}
                         </span>
                         <span
-                            class="rounded-full bg-muted px-2 py-0.5 capitalize"
+                            class="rounded-full px-2 py-0.5"
+                            :class="severityToneClass(notification.severity)"
                         >
-                            {{ notification.severity }}
+                            {{ formatLabel(notification.severity) }}
                         </span>
                     </div>
                 </div>
@@ -203,7 +291,7 @@ function markRead(notificationId: string): void {
                         class="rounded-lg"
                         @click="markRead(notification.id)"
                     >
-                        Mark read
+                        Mark as Read
                     </Button>
                     <Button
                         v-if="notification.url"
@@ -212,14 +300,15 @@ function markRead(notificationId: string): void {
                         as-child
                         class="rounded-lg"
                     >
-                        <Link :href="notification.url">Open</Link>
+                        <Link :href="notification.url">View Details</Link>
                     </Button>
                 </div>
-            </div>
+            </article>
         </div>
 
         <div
             v-if="notifications.links.length"
+            aria-label="Notification pages"
             class="flex flex-wrap items-center justify-center gap-1"
         >
             <Button

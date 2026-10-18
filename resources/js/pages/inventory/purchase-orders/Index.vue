@@ -80,6 +80,7 @@ const supplierId = ref(
 );
 const dateFrom = ref(props.filters.date_from ?? '');
 const dateTo = ref(props.filters.date_to ?? '');
+const generatingSource = ref<'forecasts' | 'alerts' | null>(null);
 
 let refreshTimer: number | undefined;
 let isComponentActive = true;
@@ -118,11 +119,52 @@ onBeforeUnmount(() => {
 });
 
 function generateDrafts(): void {
-    router.post(PurchaseOrderController.generate().url);
+    if (generatingSource.value) {
+        return;
+    }
+
+    generatingSource.value = 'alerts';
+    router.post(
+        PurchaseOrderController.generate().url,
+        {},
+        {
+            onFinish: () => {
+                generatingSource.value = null;
+            },
+        },
+    );
 }
 
 function generateFromForecasts(): void {
-    router.post(PurchaseOrderController.generateFromForecasts().url);
+    if (generatingSource.value) {
+        return;
+    }
+
+    generatingSource.value = 'forecasts';
+    router.post(
+        PurchaseOrderController.generateFromForecasts().url,
+        {},
+        {
+            onFinish: () => {
+                generatingSource.value = null;
+            },
+        },
+    );
+}
+
+function statusToneClass(statusValue: string): string {
+    switch (statusValue.toLowerCase()) {
+        case 'received':
+            return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+        case 'sent':
+            return 'bg-blue-500/10 text-blue-700 dark:text-blue-300';
+        case 'partial':
+            return 'bg-amber-500/10 text-amber-700 dark:text-amber-300';
+        case 'cancelled':
+            return 'bg-rose-500/10 text-rose-700 dark:text-rose-300';
+        default:
+            return 'bg-muted text-muted-foreground';
+    }
 }
 
 function formatDate(iso: string | null): string {
@@ -151,7 +193,7 @@ function formatDate(iso: string | null): string {
             <Heading
                 variant="small"
                 title="Purchase orders"
-                description="Track supplier orders from draft through receiving."
+                description="Track supplier orders, expected deliveries, and how much has been received."
             />
 
             <div class="flex flex-wrap gap-2">
@@ -159,17 +201,27 @@ function formatDate(iso: string | null): string {
                     variant="outline"
                     size="sm"
                     class="rounded-lg"
+                    :disabled="generatingSource !== null"
                     @click="generateFromForecasts"
                 >
-                    Generate from forecasts
+                    {{
+                        generatingSource === 'forecasts'
+                            ? 'Creating Drafts…'
+                            : 'Create Drafts from Forecasts'
+                    }}
                 </Button>
                 <Button
                     variant="outline"
                     size="sm"
                     class="rounded-lg"
+                    :disabled="generatingSource !== null"
                     @click="generateDrafts"
                 >
-                    Generate from alerts
+                    {{
+                        generatingSource === 'alerts'
+                            ? 'Creating Drafts…'
+                            : 'Create Drafts from Alerts'
+                    }}
                 </Button>
                 <Button v-if="can.create" as-child size="sm" class="rounded-lg">
                     <Link :href="purchaseOrdersCreate()"
@@ -179,58 +231,184 @@ function formatDate(iso: string | null): string {
             </div>
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            <Input
-                v-model="search"
-                placeholder="Search PO number or supplier..."
-                class="h-10 rounded-lg"
-            />
-            <select
-                v-model="status"
-                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
-            >
-                <option value="">All statuses</option>
-                <option
-                    v-for="statusOption in statuses"
-                    :key="statusOption.value"
-                    :value="statusOption.value"
+        <fieldset class="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+            <legend class="sr-only">Filter purchase orders</legend>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Search
+                <Input
+                    v-model="search"
+                    name="purchase_order_search"
+                    autocomplete="off"
+                    placeholder="PO number or supplier…"
+                    class="h-10 rounded-lg"
+                />
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Status
+                <select
+                    v-model="status"
+                    name="purchase_order_status"
+                    class="h-11 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
                 >
-                    {{ statusOption.label }}
-                </option>
-            </select>
-            <select
-                v-model="supplierId"
-                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
-            >
-                <option value="">All suppliers</option>
-                <option
-                    v-for="supplier in suppliers"
-                    :key="supplier.id"
-                    :value="String(supplier.id)"
+                    <option value="">All statuses</option>
+                    <option
+                        v-for="statusOption in statuses"
+                        :key="statusOption.value"
+                        :value="statusOption.value"
+                    >
+                        {{ statusOption.label }}
+                    </option>
+                </select>
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Supplier
+                <select
+                    v-model="supplierId"
+                    name="purchase_order_supplier"
+                    class="h-11 rounded-lg border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
                 >
-                    {{ supplier.name }}
-                </option>
-            </select>
-            <Input v-model="dateFrom" type="date" class="h-10 rounded-lg" />
-            <Input v-model="dateTo" type="date" class="h-10 rounded-lg" />
+                    <option value="">All suppliers</option>
+                    <option
+                        v-for="supplier in suppliers"
+                        :key="supplier.id"
+                        :value="String(supplier.id)"
+                    >
+                        {{ supplier.name }}
+                    </option>
+                </select>
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Expected on or after
+                <Input
+                    v-model="dateFrom"
+                    name="expected_date_from"
+                    type="date"
+                    class="h-10 rounded-lg"
+                />
+            </label>
+            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
+                Expected on or before
+                <Input
+                    v-model="dateTo"
+                    name="expected_date_to"
+                    type="date"
+                    class="h-10 rounded-lg"
+                />
+            </label>
+        </fieldset>
+
+        <div class="grid gap-3 md:hidden">
+            <div
+                v-if="purchaseOrders.data.length === 0"
+                class="rounded-xl border border-dashed border-border/60 px-4 py-10 text-center"
+            >
+                <p class="text-sm font-medium">No purchase orders found</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Try changing the search, supplier, status, or expected
+                    delivery dates.
+                </p>
+            </div>
+            <article
+                v-for="purchaseOrder in purchaseOrders.data"
+                :key="purchaseOrder.id"
+                class="rounded-xl border border-border/60 bg-card p-4 shadow-sm"
+            >
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h2 class="font-semibold">
+                            {{ purchaseOrder.po_number }}
+                        </h2>
+                        <p class="truncate text-sm text-muted-foreground">
+                            {{
+                                purchaseOrder.supplier?.name ??
+                                'Supplier not listed'
+                            }}
+                        </p>
+                    </div>
+                    <span
+                        class="inline-flex shrink-0 rounded-full px-2.5 py-1 text-xs font-medium"
+                        :class="statusToneClass(purchaseOrder.status)"
+                    >
+                        {{ purchaseOrder.status_label }}
+                    </span>
+                </div>
+                <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                    <div>
+                        <dt class="text-muted-foreground">Expected delivery</dt>
+                        <dd class="font-medium">
+                            {{ formatDate(purchaseOrder.expected_delivery_at) }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-muted-foreground">Order total</dt>
+                        <dd class="font-medium tabular-nums">
+                            {{
+                                formatPhilippinePeso(purchaseOrder.total_amount)
+                            }}
+                        </dd>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <dt class="text-muted-foreground">
+                            Receiving progress
+                        </dt>
+                        <dd class="mt-1 flex items-center gap-2">
+                            <div
+                                class="h-2 flex-1 rounded-full bg-muted"
+                                role="progressbar"
+                                aria-label="Receiving progress"
+                                aria-valuemin="0"
+                                aria-valuemax="100"
+                                :aria-valuenow="purchaseOrder.progress_pct"
+                            >
+                                <div
+                                    class="h-2 rounded-full bg-primary"
+                                    :style="{
+                                        width: `${purchaseOrder.progress_pct}%`,
+                                    }"
+                                />
+                            </div>
+                            <span
+                                class="text-xs text-muted-foreground tabular-nums"
+                                >{{ purchaseOrder.progress_pct }}%</span
+                            >
+                        </dd>
+                    </div>
+                </dl>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    as-child
+                    class="mt-4 w-full"
+                >
+                    <Link :href="purchaseOrdersShow(purchaseOrder.id)"
+                        >View Details</Link
+                    >
+                </Button>
+            </article>
         </div>
 
         <div
-            class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm"
+            class="hidden overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm md:block"
         >
             <table class="min-w-full text-sm">
+                <caption class="sr-only">
+                    Purchase orders with suppliers, expected delivery dates,
+                    totals, statuses, and receiving progress
+                </caption>
                 <thead class="bg-muted/40 text-left">
                     <tr
                         class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
                     >
-                        <th>PO number</th>
-                        <th>Supplier</th>
-                        <th>Requester</th>
-                        <th>Expected delivery</th>
-                        <th>Status</th>
-                        <th class="text-right">Total</th>
-                        <th class="text-right">Progress</th>
-                        <th class="text-right">Actions</th>
+                        <th scope="col">PO number</th>
+                        <th scope="col">Supplier</th>
+                        <th scope="col">Requester</th>
+                        <th scope="col">Expected delivery</th>
+                        <th scope="col">Status</th>
+                        <th scope="col" class="text-right">Total</th>
+                        <th scope="col" class="text-right">
+                            Receiving progress
+                        </th>
+                        <th scope="col" class="text-right">Actions</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border/60">
@@ -239,7 +417,8 @@ function formatDate(iso: string | null): string {
                             colspan="8"
                             class="px-4 py-8 text-center text-sm text-muted-foreground"
                         >
-                            No purchase orders found.
+                            No purchase orders are available in this view. Try
+                            changing the search, supplier, status, or dates.
                         </td>
                     </tr>
 
@@ -261,6 +440,7 @@ function formatDate(iso: string | null): string {
                         <td>
                             <span
                                 class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium"
+                                :class="statusToneClass(purchaseOrder.status)"
                             >
                                 {{ purchaseOrder.status_label }}
                             </span>
@@ -274,7 +454,14 @@ function formatDate(iso: string | null): string {
                             <div
                                 class="inline-flex min-w-24 items-center gap-2"
                             >
-                                <div class="h-2 flex-1 rounded-full bg-muted">
+                                <div
+                                    class="h-2 flex-1 rounded-full bg-muted"
+                                    role="progressbar"
+                                    aria-label="Receiving progress"
+                                    aria-valuemin="0"
+                                    aria-valuemax="100"
+                                    :aria-valuenow="purchaseOrder.progress_pct"
+                                >
                                     <div
                                         class="h-2 rounded-full bg-primary"
                                         :style="{
@@ -292,7 +479,7 @@ function formatDate(iso: string | null): string {
                                 <Link
                                     :href="purchaseOrdersShow(purchaseOrder.id)"
                                 >
-                                    View
+                                    View Details
                                 </Link>
                             </Button>
                         </td>

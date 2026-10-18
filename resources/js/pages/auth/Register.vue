@@ -41,8 +41,12 @@ defineOptions({
                     name="name"
                     data-testid="register-name-input"
                     placeholder="Full name"
+                    :aria-invalid="Boolean(errors.name)"
+                    :aria-describedby="
+                        errors.name ? 'register-name-error' : undefined
+                    "
                 />
-                <InputError :message="errors.name" />
+                <InputError id="register-name-error" :message="errors.name" />
             </div>
 
             <div class="grid gap-2">
@@ -56,8 +60,12 @@ defineOptions({
                     name="email"
                     data-testid="register-email-input"
                     placeholder="email@example.com"
+                    :aria-invalid="Boolean(errors.email)"
+                    :aria-describedby="
+                        errors.email ? 'register-email-error' : undefined
+                    "
                 />
-                <InputError :message="errors.email" />
+                <InputError id="register-email-error" :message="errors.email" />
             </div>
 
             <div class="grid gap-2">
@@ -70,8 +78,15 @@ defineOptions({
                     name="password"
                     data-testid="register-password-input"
                     placeholder="Password"
+                    :aria-invalid="Boolean(errors.password)"
+                    :aria-describedby="
+                        errors.password ? 'register-password-error' : undefined
+                    "
                 />
-                <InputError :message="errors.password" />
+                <InputError
+                    id="register-password-error"
+                    :message="errors.password"
+                />
             </div>
 
             <div class="grid gap-2">
@@ -84,8 +99,17 @@ defineOptions({
                     name="password_confirmation"
                     data-testid="register-password-confirmation-input"
                     placeholder="Confirm password"
+                    :aria-invalid="Boolean(errors.password_confirmation)"
+                    :aria-describedby="
+                        errors.password_confirmation
+                            ? 'register-password-confirmation-error'
+                            : undefined
+                    "
                 />
-                <InputError :message="errors.password_confirmation" />
+                <InputError
+                    id="register-password-confirmation-error"
+                    :message="errors.password_confirmation"
+                />
             </div>
 
             <Button

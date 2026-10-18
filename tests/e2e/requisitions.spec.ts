@@ -3,7 +3,9 @@ import { expect, test } from './fixtures/test';
 import { getLatestRequisitionId, getProductOnHandQtyBySku } from './helpers/db';
 
 test.describe('Requisition Lifecycle', () => {
-    test('Submit -> Approve -> Issue -> Verify stock decrement', async ({ page }) => {
+    test('Submit -> Approve -> Issue -> Verify stock decrement', async ({
+        page,
+    }) => {
         const pageErrors: string[] = [];
         const consoleErrors: string[] = [];
 
@@ -36,19 +38,37 @@ test.describe('Requisition Lifecycle', () => {
         expect(requisitionId).toBeGreaterThan(0);
 
         await page.goto(`/inventory/requisitions/${requisitionId}`);
-        await expect(page.getByTestId('requisition-status-value')).toHaveText('Submitted');
+        await expect(page.getByTestId('requisition-status-value')).toHaveText(
+            'Submitted',
+        );
 
         await loginAs(page, 'supply@e2e.test');
 
         await page.goto(`/inventory/requisitions/${requisitionId}`);
         await expect(page.getByTestId('requisition-show-page')).toBeVisible();
 
-        await page.getByTestId('approve-requisition-button').click();
-        await expect(page.getByTestId('requisition-status-value')).toHaveText('Approved');
+        await page.getByLabel('Approval notes (optional)').press('Enter');
+        const approvalDialog = page.getByRole('dialog', {
+            name: 'Approve this requisition?',
+        });
+        await expect(approvalDialog).toBeVisible();
+        await expect(page.getByTestId('requisition-status-value')).toHaveText(
+            'Submitted',
+        );
+        await approvalDialog
+            .getByRole('button', { name: 'Approve Request' })
+            .click();
+        await expect(page.getByTestId('requisition-status-value')).toHaveText(
+            'Approved',
+        );
 
         await page.getByTestId('issue-requisition-button').click();
-        await expect(page.getByTestId('requisition-status-value')).toHaveText('Issued');
-        await expect(page.getByTestId('requisition-line-issued-CON-E2E-001')).toHaveText('10');
+        await expect(page.getByTestId('requisition-status-value')).toHaveText(
+            'Issued',
+        );
+        await expect(
+            page.getByTestId('requisition-line-issued-CON-E2E-001'),
+        ).toHaveText('10');
 
         expect(getProductOnHandQtyBySku('CON-E2E-001')).toBe(initialStock - 10);
     });

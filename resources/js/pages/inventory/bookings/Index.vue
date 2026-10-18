@@ -207,6 +207,7 @@ function confirmDelete(): void {
 // ── Bulk actions on approval queue ──
 const bulkActionDialogOpen = ref(false);
 const pendingBulkAction = ref<'approve' | 'reject' | null>(null);
+const bulkActionProcessing = ref(false);
 
 const {
     selectedIds,
@@ -229,7 +230,7 @@ function runBulkReject(): void {
 }
 
 function confirmBulkAction(): void {
-    if (!pendingBulkAction.value) {
+    if (!pendingBulkAction.value || bulkActionProcessing.value) {
         return;
     }
 
@@ -237,6 +238,8 @@ function confirmBulkAction(): void {
         pendingBulkAction.value === 'approve'
             ? bookingsBulkApprove().url
             : bookingsBulkReject().url;
+
+    bulkActionProcessing.value = true;
 
     router.post(
         endpoint,
@@ -248,6 +251,9 @@ function confirmBulkAction(): void {
                 clearSelection();
                 bulkActionDialogOpen.value = false;
                 pendingBulkAction.value = null;
+            },
+            onFinish: () => {
+                bulkActionProcessing.value = false;
             },
         },
     );
@@ -410,6 +416,12 @@ function applyScannedAsset(tagCode: string): void {
     selectedAssetId.value = String(match.id);
     assetScanFeedback.value = `Matched ${match.tag_code} to ${match.name ?? 'Asset'}.`;
 }
+
+function selectedBookingRequestLabel(): string {
+    const count = selectedIds.value.size;
+
+    return `${count} selected ${count === 1 ? 'booking request' : 'booking requests'}`;
+}
 </script>
 
 <template>
@@ -422,66 +434,17 @@ function applyScannedAsset(tagCode: string): void {
             <Heading
                 variant="small"
                 title="Asset booking calendar"
-                description="Reserve accountable assets with full traceability. Approved bookings block availability; pending requests await custodian review."
+                description="Request an accountable asset for specific dates. Approved bookings reserve the asset, while new requests wait for review."
             />
 
             <div class="flex flex-wrap items-center gap-2">
                 <Button variant="outline" size="sm" as-child class="rounded-lg">
-                    <a
-                        :href="props.exportUrls.csv"
-                        class="inline-flex items-center gap-1.5"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                            />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" x2="12" y1="15" y2="3" />
-                        </svg>
-                        Export CSV
-                    </a>
+                    <a :href="props.exportUrls.csv">Download CSV</a>
                 </Button>
                 <Button variant="outline" size="sm" as-child class="rounded-lg">
-                    <a
-                        :href="props.exportUrls.pdf"
-                        class="inline-flex items-center gap-1.5"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            width="14"
-                            height="14"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        >
-                            <path
-                                d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                            />
-                            <polyline points="7 10 12 15 17 10" />
-                            <line x1="12" x2="12" y1="15" y2="3" />
-                        </svg>
-                        Export PDF
-                    </a>
+                    <a :href="props.exportUrls.pdf">Download PDF</a>
                 </Button>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    as-child
-                    class="rounded-lg text-muted-foreground hover:text-foreground"
-                >
+                <Button variant="outline" size="sm" as-child class="rounded-lg">
                     <Link href="/inventory/bookings/trash">Trash</Link>
                 </Button>
             </div>
@@ -499,8 +462,8 @@ function applyScannedAsset(tagCode: string): void {
                             Calendar overview
                         </div>
                         <div class="text-xs text-muted-foreground/80">
-                            Green = approved &middot; Amber = requested &middot;
-                            Red = rejected
+                            Approved, requested, and rejected schedules are
+                            shown below.
                         </div>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
@@ -547,8 +510,8 @@ function applyScannedAsset(tagCode: string): void {
                         v-if="isCompactCalendar"
                         class="mt-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
                     >
-                        Mobile view uses a compact weekly calendar for faster
-                        field scheduling.
+                        On mobile, use the weekly view to review one week at a
+                        time.
                     </div>
                     <div
                         v-if="props.calendar_events.length === 0"
@@ -624,7 +587,8 @@ function applyScannedAsset(tagCode: string): void {
                             class="h-9 rounded-lg text-sm"
                         />
                         <div class="text-[11px] text-muted-foreground/70">
-                            Loads up to 25 matching available assets.
+                            Enter a property tag or product name. The list shows
+                            up to 25 matching assets.
                         </div>
                     </div>
 
@@ -681,7 +645,7 @@ function applyScannedAsset(tagCode: string): void {
                         <InputError :message="errors.asset_id" />
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid gap-3 sm:grid-cols-2">
                         <div class="grid gap-1.5">
                             <Label
                                 for="start_at"
@@ -695,10 +659,14 @@ function applyScannedAsset(tagCode: string): void {
                                 v-model="startAt"
                                 data-testid="booking-start-input"
                                 type="datetime-local"
+                                aria-describedby="booking-start-error"
                                 required
                                 class="h-9 rounded-lg text-sm"
                             />
-                            <InputError :message="errors.start_at" />
+                            <InputError
+                                id="booking-start-error"
+                                :message="errors.start_at"
+                            />
                         </div>
                         <div class="grid gap-1.5">
                             <Label
@@ -712,10 +680,14 @@ function applyScannedAsset(tagCode: string): void {
                                 v-model="endAt"
                                 data-testid="booking-end-input"
                                 type="datetime-local"
+                                aria-describedby="booking-end-error"
                                 required
                                 class="h-9 rounded-lg text-sm"
                             />
-                            <InputError :message="errors.end_at" />
+                            <InputError
+                                id="booking-end-error"
+                                :message="errors.end_at"
+                            />
                         </div>
                     </div>
 
@@ -746,7 +718,11 @@ function applyScannedAsset(tagCode: string): void {
                             data-testid="request-booking-button"
                             class="w-full rounded-lg font-semibold shadow-sm"
                         >
-                            Submit booking request
+                            {{
+                                processing
+                                    ? 'Submitting Request…'
+                                    : 'Submit Booking Request'
+                            }}
                         </Button>
                     </div>
                 </Form>
@@ -945,7 +921,7 @@ function applyScannedAsset(tagCode: string): void {
                                     size="sm"
                                     class="h-7 rounded-lg text-xs text-rose-600 hover:text-rose-700"
                                     @click="openDeleteDialog(booking)"
-                                    >Delete</Button
+                                    >Move to Trash</Button
                                 >
                             </div>
                         </div>
@@ -994,7 +970,7 @@ function applyScannedAsset(tagCode: string): void {
                             Booking records
                         </div>
                         <div class="text-xs text-muted-foreground/80">
-                            Full history with pagination.
+                            Search and review current and past booking requests.
                         </div>
                     </div>
                     <span
@@ -1004,39 +980,64 @@ function applyScannedAsset(tagCode: string): void {
                 </div>
 
                 <div class="px-5 py-4">
-                    <div class="mb-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-                        <Input
-                            v-model="listSearch"
-                            placeholder="Search booking, asset, requester..."
-                        />
-                        <Select v-model="listStatus">
-                            <SelectTrigger>
-                                <SelectValue placeholder="All statuses" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all"
-                                    >All statuses</SelectItem
-                                >
-                                <SelectItem
-                                    v-for="option in statusOptions"
-                                    :key="option.value"
-                                    :value="option.value"
-                                >
-                                    {{ option.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Input
-                            v-model="listDateFrom"
-                            type="date"
-                            aria-label="Start date from"
-                        />
-                        <Input
-                            v-model="listDateTo"
-                            type="date"
-                            aria-label="Start date to"
-                        />
-                    </div>
+                    <fieldset
+                        class="mb-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4"
+                    >
+                        <legend class="sr-only">Filter booking records</legend>
+                        <label
+                            class="grid gap-1 text-xs font-medium text-muted-foreground"
+                        >
+                            Search
+                            <Input
+                                v-model="listSearch"
+                                name="booking_search"
+                                autocomplete="off"
+                                placeholder="Booking, asset, or requester…"
+                            />
+                        </label>
+                        <label
+                            class="grid gap-1 text-xs font-medium text-muted-foreground"
+                        >
+                            Status
+                            <Select v-model="listStatus">
+                                <SelectTrigger aria-label="Booking status">
+                                    <SelectValue placeholder="All statuses" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all"
+                                        >All statuses</SelectItem
+                                    >
+                                    <SelectItem
+                                        v-for="option in statusOptions"
+                                        :key="option.value"
+                                        :value="option.value"
+                                    >
+                                        {{ option.label }}
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </label>
+                        <label
+                            class="grid gap-1 text-xs font-medium text-muted-foreground"
+                        >
+                            Starts on or after
+                            <Input
+                                v-model="listDateFrom"
+                                name="booking_date_from"
+                                type="date"
+                            />
+                        </label>
+                        <label
+                            class="grid gap-1 text-xs font-medium text-muted-foreground"
+                        >
+                            Starts on or before
+                            <Input
+                                v-model="listDateTo"
+                                name="booking_date_to"
+                                type="date"
+                            />
+                        </label>
+                    </fieldset>
 
                     <div v-if="bookings.data.length" class="grid gap-3">
                         <div
@@ -1113,7 +1114,7 @@ function applyScannedAsset(tagCode: string): void {
                                 >
                                     <Link
                                         :href="`/inventory/bookings/${booking.id}`"
-                                        >View</Link
+                                        >View Details</Link
                                     >
                                 </Button>
                                 <Button
@@ -1122,7 +1123,7 @@ function applyScannedAsset(tagCode: string): void {
                                     size="sm"
                                     class="h-7 rounded-lg text-xs text-rose-600 hover:text-rose-700"
                                     @click="openDeleteDialog(booking)"
-                                    >Delete</Button
+                                    >Move to Trash</Button
                                 >
                             </div>
                         </div>
@@ -1160,7 +1161,8 @@ function applyScannedAsset(tagCode: string): void {
                             No booking records
                         </div>
                         <div class="max-w-xs text-xs text-muted-foreground/70">
-                            Submitted bookings will appear here once processed.
+                            No bookings are available in this view. Try changing
+                            the search, status, or dates.
                         </div>
                     </div>
 
@@ -1211,7 +1213,10 @@ function applyScannedAsset(tagCode: string): void {
                 </DialogHeader>
                 <DialogFooter class="gap-2">
                     <DialogClose as-child>
-                        <Button variant="secondary" type="button"
+                        <Button
+                            variant="secondary"
+                            type="button"
+                            :disabled="bulkActionProcessing"
                             >Cancel</Button
                         >
                     </DialogClose>
@@ -1229,7 +1234,7 @@ function applyScannedAsset(tagCode: string): void {
                             name="action"
                             value="reject"
                             variant="destructive"
-                            >Confirm reject</Button
+                            >Reject Booking</Button
                         >
                     </Form>
                 </DialogFooter>
@@ -1248,10 +1253,7 @@ function applyScannedAsset(tagCode: string): void {
                     </DialogTitle>
                     <DialogDescription>
                         This will process
-                        <strong
-                            >{{ selectedIds.size }} selected booking
-                            request(s)</strong
-                        >
+                        <strong>{{ selectedBookingRequestLabel() }}</strong>
                         in the approval queue.
                     </DialogDescription>
                 </DialogHeader>
@@ -1267,12 +1269,15 @@ function applyScannedAsset(tagCode: string): void {
                                 ? 'destructive'
                                 : 'default'
                         "
+                        :disabled="bulkActionProcessing"
                         @click="confirmBulkAction"
                     >
                         {{
-                            pendingBulkAction === 'approve'
-                                ? 'Confirm approve'
-                                : 'Confirm reject'
+                            bulkActionProcessing
+                                ? 'Processing…'
+                                : pendingBulkAction === 'approve'
+                                  ? 'Approve Bookings'
+                                  : 'Reject Bookings'
                         }}
                     </Button>
                 </DialogFooter>
@@ -1282,7 +1287,7 @@ function applyScannedAsset(tagCode: string): void {
         <Dialog v-model:open="deleteDialogOpen">
             <DialogContent>
                 <DialogHeader class="space-y-3">
-                    <DialogTitle>Delete booking?</DialogTitle>
+                    <DialogTitle>Move booking to trash?</DialogTitle>
                     <DialogDescription>
                         This will move the booking for
                         <strong>{{ selectedBooking?.title }}</strong> to the
@@ -1297,7 +1302,7 @@ function applyScannedAsset(tagCode: string): void {
                         >
                         <Select v-model="deleteReason">
                             <SelectTrigger id="delete-reason">
-                                <SelectValue placeholder="Select a reason..." />
+                                <SelectValue placeholder="Select a reason…" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem
@@ -1318,7 +1323,7 @@ function applyScannedAsset(tagCode: string): void {
                         <textarea
                             id="delete-reason-custom"
                             v-model="deleteReasonCustom"
-                            placeholder="Enter your reason..."
+                            placeholder="Enter your reason…"
                             rows="3"
                             class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                         ></textarea>
@@ -1332,7 +1337,7 @@ function applyScannedAsset(tagCode: string): void {
                         variant="destructive"
                         :disabled="!canConfirmDelete"
                         @click="confirmDelete"
-                        >Delete</Button
+                        >Move to Trash</Button
                     >
                 </DialogFooter>
             </DialogContent>

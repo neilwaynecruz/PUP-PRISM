@@ -134,7 +134,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::trash
- * @see app/Http/Controllers/Inventory/RequisitionController.php:406
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:414
  * @route '/inventory/requisitions/trash'
  */
 export const trash = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -149,7 +149,7 @@ trash.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::trash
- * @see app/Http/Controllers/Inventory/RequisitionController.php:406
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:414
  * @route '/inventory/requisitions/trash'
  */
 trash.url = (options?: RouteQueryOptions) => {
@@ -158,7 +158,7 @@ trash.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::trash
- * @see app/Http/Controllers/Inventory/RequisitionController.php:406
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:414
  * @route '/inventory/requisitions/trash'
  */
 trash.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -167,7 +167,7 @@ trash.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::trash
- * @see app/Http/Controllers/Inventory/RequisitionController.php:406
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:414
  * @route '/inventory/requisitions/trash'
  */
 trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -177,7 +177,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::trash
- * @see app/Http/Controllers/Inventory/RequisitionController.php:406
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:414
  * @route '/inventory/requisitions/trash'
  */
     const trashForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -187,7 +187,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::trash
- * @see app/Http/Controllers/Inventory/RequisitionController.php:406
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:414
  * @route '/inventory/requisitions/trash'
  */
         trashForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -196,7 +196,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::trash
- * @see app/Http/Controllers/Inventory/RequisitionController.php:406
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:414
  * @route '/inventory/requisitions/trash'
  */
         trashForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -309,7 +309,7 @@ show.head = (args: { requisition: string | number } | [requisition: string | num
     show.form = showForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::destroy
- * @see app/Http/Controllers/Inventory/RequisitionController.php:390
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:398
  * @route '/inventory/requisitions/{requisition}'
  */
 export const destroy = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -324,7 +324,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::destroy
- * @see app/Http/Controllers/Inventory/RequisitionController.php:390
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:398
  * @route '/inventory/requisitions/{requisition}'
  */
 destroy.url = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -357,7 +357,7 @@ destroy.url = (args: { requisition: number | { id: number } } | [requisition: nu
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::destroy
- * @see app/Http/Controllers/Inventory/RequisitionController.php:390
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:398
  * @route '/inventory/requisitions/{requisition}'
  */
 destroy.delete = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -367,7 +367,7 @@ destroy.delete = (args: { requisition: number | { id: number } } | [requisition:
 
     /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::destroy
- * @see app/Http/Controllers/Inventory/RequisitionController.php:390
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:398
  * @route '/inventory/requisitions/{requisition}'
  */
     const destroyForm = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -382,7 +382,7 @@ destroy.delete = (args: { requisition: number | { id: number } } | [requisition:
 
             /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::destroy
- * @see app/Http/Controllers/Inventory/RequisitionController.php:390
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:398
  * @route '/inventory/requisitions/{requisition}'
  */
         destroyForm.delete = (args: { requisition: number | { id: number } } | [requisition: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -398,7 +398,7 @@ destroy.delete = (args: { requisition: number | { id: number } } | [requisition:
     destroy.form = destroyForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::restore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:456
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:464
  * @route '/inventory/requisitions/{requisition}/restore'
  */
 export const restore = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -413,7 +413,7 @@ restore.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::restore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:456
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:464
  * @route '/inventory/requisitions/{requisition}/restore'
  */
 restore.url = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -441,7 +441,7 @@ restore.url = (args: { requisition: string | number } | [requisition: string | n
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::restore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:456
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:464
  * @route '/inventory/requisitions/{requisition}/restore'
  */
 restore.put = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -451,7 +451,7 @@ restore.put = (args: { requisition: string | number } | [requisition: string | n
 
     /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::restore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:456
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:464
  * @route '/inventory/requisitions/{requisition}/restore'
  */
     const restoreForm = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -466,7 +466,7 @@ restore.put = (args: { requisition: string | number } | [requisition: string | n
 
             /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::restore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:456
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:464
  * @route '/inventory/requisitions/{requisition}/restore'
  */
         restoreForm.put = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -482,7 +482,7 @@ restore.put = (args: { requisition: string | number } | [requisition: string | n
     restore.form = restoreForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::forceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:472
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:480
  * @route '/inventory/requisitions/{requisition}/force'
  */
 export const forceDelete = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -497,7 +497,7 @@ forceDelete.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::forceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:472
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:480
  * @route '/inventory/requisitions/{requisition}/force'
  */
 forceDelete.url = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -525,7 +525,7 @@ forceDelete.url = (args: { requisition: string | number } | [requisition: string
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::forceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:472
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:480
  * @route '/inventory/requisitions/{requisition}/force'
  */
 forceDelete.delete = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -535,7 +535,7 @@ forceDelete.delete = (args: { requisition: string | number } | [requisition: str
 
     /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::forceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:472
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:480
  * @route '/inventory/requisitions/{requisition}/force'
  */
     const forceDeleteForm = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -550,7 +550,7 @@ forceDelete.delete = (args: { requisition: string | number } | [requisition: str
 
             /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::forceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:472
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:480
  * @route '/inventory/requisitions/{requisition}/force'
  */
         forceDeleteForm.delete = (args: { requisition: string | number } | [requisition: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -566,7 +566,7 @@ forceDelete.delete = (args: { requisition: string | number } | [requisition: str
     forceDelete.form = forceDeleteForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkRestore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:487
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:495
  * @route '/inventory/requisitions/bulk-restore'
  */
 export const bulkRestore = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -581,7 +581,7 @@ bulkRestore.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkRestore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:487
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:495
  * @route '/inventory/requisitions/bulk-restore'
  */
 bulkRestore.url = (options?: RouteQueryOptions) => {
@@ -590,7 +590,7 @@ bulkRestore.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkRestore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:487
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:495
  * @route '/inventory/requisitions/bulk-restore'
  */
 bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -600,7 +600,7 @@ bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkRestore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:487
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:495
  * @route '/inventory/requisitions/bulk-restore'
  */
     const bulkRestoreForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -610,7 +610,7 @@ bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkRestore
- * @see app/Http/Controllers/Inventory/RequisitionController.php:487
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:495
  * @route '/inventory/requisitions/bulk-restore'
  */
         bulkRestoreForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -621,7 +621,7 @@ bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     bulkRestore.form = bulkRestoreForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:515
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:527
  * @route '/inventory/requisitions/bulk-force-delete'
  */
 export const bulkForceDelete = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -636,7 +636,7 @@ bulkForceDelete.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:515
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:527
  * @route '/inventory/requisitions/bulk-force-delete'
  */
 bulkForceDelete.url = (options?: RouteQueryOptions) => {
@@ -645,7 +645,7 @@ bulkForceDelete.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:515
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:527
  * @route '/inventory/requisitions/bulk-force-delete'
  */
 bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -655,7 +655,7 @@ bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
     /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:515
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:527
  * @route '/inventory/requisitions/bulk-force-delete'
  */
     const bulkForceDeleteForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -665,7 +665,7 @@ bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
             /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/RequisitionController.php:515
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:527
  * @route '/inventory/requisitions/bulk-force-delete'
  */
         bulkForceDeleteForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -731,7 +731,7 @@ bulkApprove.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     bulkApprove.form = bulkApproveForm
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkIssue
- * @see app/Http/Controllers/Inventory/RequisitionController.php:329
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:333
  * @route '/inventory/requisitions/bulk-issue'
  */
 export const bulkIssue = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -746,7 +746,7 @@ bulkIssue.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkIssue
- * @see app/Http/Controllers/Inventory/RequisitionController.php:329
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:333
  * @route '/inventory/requisitions/bulk-issue'
  */
 bulkIssue.url = (options?: RouteQueryOptions) => {
@@ -755,7 +755,7 @@ bulkIssue.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkIssue
- * @see app/Http/Controllers/Inventory/RequisitionController.php:329
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:333
  * @route '/inventory/requisitions/bulk-issue'
  */
 bulkIssue.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -765,7 +765,7 @@ bulkIssue.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkIssue
- * @see app/Http/Controllers/Inventory/RequisitionController.php:329
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:333
  * @route '/inventory/requisitions/bulk-issue'
  */
     const bulkIssueForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -775,7 +775,7 @@ bulkIssue.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\RequisitionController::bulkIssue
- * @see app/Http/Controllers/Inventory/RequisitionController.php:329
+ * @see app/Http/Controllers/Inventory/RequisitionController.php:333
  * @route '/inventory/requisitions/bulk-issue'
  */
         bulkIssueForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

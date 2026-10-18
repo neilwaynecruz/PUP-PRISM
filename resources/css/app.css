@@ -191,6 +191,10 @@
         @apply bg-background text-foreground;
     }
 
+    :focus-visible {
+        scroll-margin: 5rem;
+    }
+
     input:is(
         [type='date'],
         [type='datetime-local'],
@@ -256,6 +260,17 @@
         background-color: var(--foreground);
         filter: none;
         opacity: 0.95;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }
 

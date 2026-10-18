@@ -21,6 +21,7 @@ defineOptions({
 const mode = ref<'single' | 'batch'>('single');
 const tagScanFeedback = ref('');
 const batchTagFeedback = ref<Record<number, string>>({});
+const isSubmittingBatch = ref(false);
 
 const form = useForm({
     sku: '',
@@ -141,6 +142,10 @@ function mergeTagCodeText(
 }
 
 function submitBatch() {
+    if (isSubmittingBatch.value) {
+        return;
+    }
+
     const lines = batchForm.lines.map((line) => ({
         sku: line.sku,
         qty: line.qty === '' ? null : Number(line.qty),
@@ -157,8 +162,14 @@ function submitBatch() {
         ReceivingController.storeBatch().url,
         { lines },
         {
-            onStart: () => batchForm.clearErrors(),
+            onStart: () => {
+                isSubmittingBatch.value = true;
+                batchForm.clearErrors();
+            },
             onError: (errors) => batchForm.setError(errors),
+            onFinish: () => {
+                isSubmittingBatch.value = false;
+            },
             preserveScroll: true,
         },
     );
@@ -169,7 +180,7 @@ function appendTagCode(value: string): void {
 
     form.tag_codes_text = merged.value;
     tagScanFeedback.value = merged.added
-        ? `Captured ${value.trim()}. ${merged.count} tag code(s) ready for receiving.`
+        ? `Captured ${value.trim()}. ${merged.count} ${merged.count === 1 ? 'tag code is' : 'tag codes are'} ready for receiving.`
         : `${value.trim()} is already in the list.`;
 }
 
@@ -184,7 +195,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
 
     line.tag_codes_text = merged.value;
     batchTagFeedback.value[index] = merged.added
-        ? `Captured ${value.trim()}. ${merged.count} tag code(s) on this line.`
+        ? `Captured ${value.trim()}. ${merged.count} ${merged.count === 1 ? 'tag code' : 'tag codes'} on this line.`
         : `${value.trim()} is already on this line.`;
 }
 </script>
@@ -199,10 +210,12 @@ function appendBatchLineTagCode(index: number, value: string): void {
             <Heading
                 variant="small"
                 title="Receiving"
-                description="Log inbound deliveries for consumables and tagged assets."
+                description="Record delivered consumables or tagged assets. Use single-item receiving for one product or batch receiving for a full delivery."
             />
 
             <div
+                role="group"
+                aria-label="Receiving mode"
                 class="flex gap-1 rounded-lg border border-border/60 bg-card p-1"
             >
                 <Button
@@ -210,6 +223,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                     variant="ghost"
                     size="sm"
                     class="h-7 rounded-md text-xs"
+                    :aria-pressed="mode === 'single'"
                     :class="
                         mode === 'single'
                             ? 'bg-primary/10 font-medium text-primary'
@@ -224,6 +238,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                     variant="ghost"
                     size="sm"
                     class="h-7 rounded-md text-xs"
+                    :aria-pressed="mode === 'batch'"
                     :class="
                         mode === 'batch'
                             ? 'bg-primary/10 font-medium text-primary'
@@ -231,7 +246,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                     "
                     @click="mode = 'batch'"
                 >
-                    Batch
+                    Batch delivery
                 </Button>
             </div>
         </div>
@@ -302,7 +317,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                             <Label
                                 for="qty"
                                 class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >Quantity (consumables)</Label
+                                >Quantity received (consumables)</Label
                             >
                             <Input
                                 id="qty"
@@ -310,7 +325,8 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                 data-testid="receiving-qty-input"
                                 type="number"
                                 min="1"
-                                placeholder="e.g. 12"
+                                inputmode="numeric"
+                                placeholder="Example: 12"
                                 class="rounded-lg"
                             />
                             <InputError :message="form.errors.qty" />
@@ -320,13 +336,13 @@ function appendBatchLineTagCode(index: number, value: string): void {
                             <Label
                                 for="reference_no"
                                 class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >Reference no.</Label
+                                >Delivery reference</Label
                             >
                             <Input
                                 id="reference_no"
                                 v-model="form.reference_no"
                                 data-testid="receiving-reference-input"
-                                placeholder="e.g. DR-000123"
+                                placeholder="Example: DR-000123"
                                 class="rounded-lg"
                             />
                             <InputError :message="form.errors.reference_no" />
@@ -336,7 +352,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                             <Label
                                 for="received_at"
                                 class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >Received at</Label
+                                >Date received</Label
                             >
                             <Input
                                 id="received_at"
@@ -350,7 +366,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                             <Label
                                 for="expires_at"
                                 class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >Expires at (optional)</Label
+                                >Expiration date (optional)</Label
                             >
                             <Input
                                 id="expires_at"
@@ -456,9 +472,8 @@ function appendBatchLineTagCode(index: number, value: string): void {
                         <p
                             class="mt-1 text-xs leading-normal text-muted-foreground"
                         >
-                            Make sure all details, references, and asset tag
-                            codes are filled and validated before receiving
-                            stock.
+                            Review the quantity, delivery reference, and asset
+                            tag codes before saving this receipt.
                         </p>
                     </div>
                     <Button
@@ -468,7 +483,11 @@ function appendBatchLineTagCode(index: number, value: string): void {
                         data-testid="receive-stock-button"
                         class="w-full rounded-lg shadow-sm"
                     >
-                        <Check class="mr-1.5 h-4 w-4" />Receive stock
+                        <Check aria-hidden="true" class="mr-1.5 h-4 w-4" />{{
+                            form.processing
+                                ? 'Receiving Items…'
+                                : 'Receive Items'
+                        }}
                     </Button>
                 </div>
             </div>
@@ -524,13 +543,14 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                 <Label
                                     class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
                                 >
-                                    Qty
+                                    Quantity received
                                 </Label>
                                 <Input
                                     v-model="line.qty"
                                     type="number"
                                     min="1"
-                                    placeholder="Qty"
+                                    inputmode="numeric"
+                                    placeholder="Quantity"
                                     class="rounded-lg"
                                 />
                             </div>
@@ -538,7 +558,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                 <Label
                                     class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
                                 >
-                                    Ref no.
+                                    Delivery reference
                                 </Label>
                                 <Input
                                     v-model="line.reference_no"
@@ -550,7 +570,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                 <Label
                                     class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
                                 >
-                                    Received
+                                    Date received
                                 </Label>
                                 <Input
                                     v-model="line.received_at"
@@ -562,7 +582,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                 <Label
                                     class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
                                 >
-                                    Expires
+                                    Expiration date
                                 </Label>
                                 <Input
                                     v-model="line.expires_at"
@@ -639,10 +659,10 @@ function appendBatchLineTagCode(index: number, value: string): void {
                             class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3.5"
                         >
                             <th>SKU</th>
-                            <th>Qty</th>
-                            <th>Ref no.</th>
-                            <th>Received</th>
-                            <th>Expires</th>
+                            <th>Quantity</th>
+                            <th>Delivery reference</th>
+                            <th>Date received</th>
+                            <th>Expiration date</th>
                             <th>Tags</th>
                             <th>Notes</th>
                             <th />
@@ -745,14 +765,19 @@ function appendBatchLineTagCode(index: number, value: string): void {
                     class="rounded-lg"
                     @click="addBatchLine"
                 >
-                    <Plus class="mr-1.5 h-4 w-4" />Add line
+                    <Plus aria-hidden="true" class="mr-1.5 h-4 w-4" />Add
+                    Delivery Line
                 </Button>
                 <Button
                     type="submit"
-                    :disabled="batchForm.processing"
+                    :disabled="isSubmittingBatch"
                     class="rounded-lg shadow-sm"
                 >
-                    <Check class="mr-1.5 h-4 w-4" />Receive batch
+                    <Check aria-hidden="true" class="mr-1.5 h-4 w-4" />{{
+                        isSubmittingBatch
+                            ? 'Receiving Delivery…'
+                            : 'Receive Batch Delivery'
+                    }}
                 </Button>
             </div>
 

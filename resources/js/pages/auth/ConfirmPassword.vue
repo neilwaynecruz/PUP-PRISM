@@ -34,9 +34,16 @@ defineOptions({
                     required
                     autocomplete="current-password"
                     autofocus
+                    :aria-invalid="Boolean(errors.password)"
+                    :aria-describedby="
+                        errors.password ? 'confirm-password-error' : undefined
+                    "
                 />
 
-                <InputError :message="errors.password" />
+                <InputError
+                    id="confirm-password-error"
+                    :message="errors.password"
+                />
             </div>
 
             <div class="flex items-center">

@@ -218,7 +218,7 @@ class BookingController extends Controller
             } catch (ValidationException $exception) {
                 Inertia::flash('toast', [
                     'type' => 'error',
-                    'message' => $exception->errors()['start_at'][0] ?? __('This asset is already booked for the selected schedule.'),
+                    'message' => $exception->errors()['start_at'][0] ?? __('This asset is already booked for part of the selected schedule. Choose different dates or select another asset.'),
                 ]);
 
                 return back()->withErrors($exception->errors());
@@ -279,7 +279,11 @@ class BookingController extends Controller
             }
         }
 
-        $message = "{$updated} booking(s) approved.";
+        $message = trans_choice(
+            '{1} :count booking approved.|[0,*] :count bookings approved.',
+            $updated,
+            ['count' => $updated],
+        );
 
         if ($conflicts > 0) {
             $message .= " {$conflicts} skipped due to schedule conflicts.";
@@ -330,7 +334,11 @@ class BookingController extends Controller
             }
         }
 
-        $message = "{$updated} booking(s) rejected.";
+        $message = trans_choice(
+            '{1} :count booking rejected.|[0,*] :count bookings rejected.',
+            $updated,
+            ['count' => $updated],
+        );
 
         if ($skipped > 0) {
             $message .= " {$skipped} skipped because they were no longer pending.";
@@ -465,7 +473,11 @@ class BookingController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __("{$restored} booking(s) restored."),
+            'message' => trans_choice(
+                '{1} :count booking restored.|[0,*] :count bookings restored.',
+                $restored,
+                ['count' => $restored],
+            ),
         ]);
 
         return back();
@@ -493,7 +505,11 @@ class BookingController extends Controller
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => __("{$deleted} booking(s) permanently deleted."),
+            'message' => trans_choice(
+                '{1} :count booking permanently deleted.|[0,*] :count bookings permanently deleted.',
+                $deleted,
+                ['count' => $deleted],
+            ),
         ]);
 
         return back();

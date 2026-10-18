@@ -60,6 +60,7 @@ const props = defineProps<{
 }>();
 
 const rejectDialogOpen = ref(false);
+const approveDialogOpen = ref(false);
 
 const workflowSteps = computed(() => {
     const currentStatus = requisitionStatus.value;
@@ -116,6 +117,13 @@ const workflowSteps = computed(() => {
 
 const requisitionStatus = computed(() => props.requisition.status);
 
+function formatStatusLabel(statusValue: string): string {
+    return statusValue
+        .replace(/_/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
 function formatDateTime(iso: string | null): string {
     if (!iso) {
         return '—';
@@ -158,11 +166,11 @@ defineOptions({
             <div class="flex items-center gap-3">
                 <span class="h-2 w-2 rounded-full bg-rose-500" />
                 <span class="font-medium text-rose-900 dark:text-rose-100"
-                    >This requisition has been deleted and is in trash.</span
+                    >This requisition is in Deleted Requisitions.</span
                 >
                 <Button variant="ghost" size="sm" as-child class="ml-auto">
                     <Link href="/inventory/requisitions/trash"
-                        >Go to Trash</Link
+                        >View Deleted Requisitions</Link
                     >
                 </Button>
             </div>
@@ -174,13 +182,13 @@ defineOptions({
             <Heading
                 variant="small"
                 :title="`Requisition #${requisition.id}`"
-                :description="`Status: ${requisition.status}`"
+                description="Review the request, approval history, and quantities issued."
             />
             <div
                 class="text-sm font-medium text-muted-foreground"
                 data-testid="requisition-status-value"
             >
-                {{ requisition.status }}
+                {{ formatStatusLabel(requisition.status) }}
             </div>
 
             <div class="flex items-center gap-2">
@@ -221,7 +229,7 @@ defineOptions({
             <div
                 class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
             >
-                <div class="text-sm text-muted-foreground">Audit trail</div>
+                <div class="text-sm text-muted-foreground">Request history</div>
                 <div class="mt-1 space-y-1 text-sm">
                     <div>
                         Requested IP:
@@ -248,7 +256,7 @@ defineOptions({
                     </div>
                 </div>
                 <div class="text-sm text-muted-foreground">
-                    Current status: {{ requisition.status }}
+                    Current status: {{ formatStatusLabel(requisition.status) }}
                 </div>
             </div>
 
@@ -356,15 +364,25 @@ defineOptions({
             >
                 <div class="text-sm text-muted-foreground">Timing</div>
                 <div class="mt-1 space-y-1 text-sm">
-                    <div>Approved at: {{ requisition.approved_at ?? '—' }}</div>
-                    <div>Issued at: {{ requisition.issued_at ?? '—' }}</div>
+                    <div>
+                        Approved: {{ formatDateTime(requisition.approved_at) }}
+                    </div>
+                    <div>
+                        Issued: {{ formatDateTime(requisition.issued_at) }}
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
             <div class="mb-3 flex items-center justify-between">
-                <div class="font-medium">Lines</div>
+                <div>
+                    <div class="font-medium">Requested items</div>
+                    <div class="text-sm text-muted-foreground">
+                        Requested, issued, and remaining quantities are shown
+                        for each item.
+                    </div>
+                </div>
             </div>
 
             <div class="grid gap-3 md:hidden">
@@ -403,16 +421,20 @@ defineOptions({
 
             <div class="hidden overflow-x-auto md:block">
                 <table class="w-full text-sm">
+                    <caption class="sr-only">
+                        Requisition item quantities requested, issued, and
+                        remaining
+                    </caption>
                     <thead
                         class="text-left text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase"
                     >
                         <tr class="border-b border-border/60">
-                            <th class="py-2 pr-3">SKU</th>
-                            <th class="py-2 pr-3">Name</th>
-                            <th class="py-2 pr-3">Type</th>
-                            <th class="py-2 pr-3">Requested</th>
-                            <th class="py-2 pr-3">Issued</th>
-                            <th class="py-2 pr-3">Remaining</th>
+                            <th scope="col" class="py-2 pr-3">SKU</th>
+                            <th scope="col" class="py-2 pr-3">Name</th>
+                            <th scope="col" class="py-2 pr-3">Type</th>
+                            <th scope="col" class="py-2 pr-3">Requested</th>
+                            <th scope="col" class="py-2 pr-3">Issued</th>
+                            <th scope="col" class="py-2 pr-3">Remaining</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -448,22 +470,68 @@ defineOptions({
                 v-bind="RequisitionController.approve.form(requisition.id)"
                 :preserve-state="false"
                 v-slot="{ errors, processing }"
+                id="approve-requisition-form"
+                @success="approveDialogOpen = false"
                 class="flex flex-1 items-end gap-2"
             >
                 <div class="grid flex-1 gap-1">
-                    <label class="text-sm font-medium"
+                    <label for="approval-notes" class="text-sm font-medium"
                         >Approval notes (optional)</label
                     >
-                    <Input name="notes" placeholder="Optional notes" />
-                    <InputError :message="errors.notes" />
+                    <Input
+                        id="approval-notes"
+                        name="notes"
+                        placeholder="Add a note for the requester…"
+                        :aria-invalid="Boolean(errors.notes)"
+                        :aria-describedby="
+                            errors.notes ? 'approval-notes-error' : undefined
+                        "
+                        @keydown.enter.prevent="approveDialogOpen = true"
+                    />
+                    <InputError
+                        id="approval-notes-error"
+                        :message="errors.notes"
+                    />
                 </div>
-                <Button
-                    type="submit"
-                    :disabled="processing"
-                    data-test="approve-requisition-button"
-                    data-testid="approve-requisition-button"
-                    >Approve</Button
-                >
+                <Dialog v-model:open="approveDialogOpen">
+                    <DialogTrigger as-child>
+                        <Button
+                            type="button"
+                            :disabled="processing"
+                            data-test="approve-requisition-button"
+                            data-testid="approve-requisition-button"
+                            >Approve Request</Button
+                        >
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader class="space-y-3">
+                            <DialogTitle>Approve this requisition?</DialogTitle>
+                            <DialogDescription>
+                                Approval allows authorized supply personnel to
+                                issue the requested items. Stock will be checked
+                                again during issuance.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter class="gap-2">
+                            <DialogClose as-child>
+                                <Button variant="secondary" type="button"
+                                    >Cancel</Button
+                                >
+                            </DialogClose>
+                            <Button
+                                type="submit"
+                                form="approve-requisition-form"
+                                :disabled="processing"
+                            >
+                                {{
+                                    processing
+                                        ? 'Approving…'
+                                        : 'Approve Request'
+                                }}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </Form>
 
             <Dialog v-if="can.reject" v-model:open="rejectDialogOpen">
@@ -508,7 +576,9 @@ defineOptions({
                                 type="submit"
                                 :disabled="processing"
                                 variant="destructive"
-                                >Confirm reject</Button
+                                >{{
+                                    processing ? 'Rejecting…' : 'Reject Request'
+                                }}</Button
                             >
                         </DialogFooter>
                     </Form>
@@ -523,9 +593,11 @@ defineOptions({
                 class="grid flex-1 gap-4"
             >
                 <div class="grid gap-3 rounded-xl border border-border/60 p-4">
-                    <div class="text-sm font-medium">
-                        Fulfillment quantities
-                    </div>
+                    <div class="text-sm font-medium">Items to issue</div>
+                    <p class="text-sm text-muted-foreground">
+                        Enter how many units to issue now. You cannot issue more
+                        than the remaining approved quantity.
+                    </p>
                     <div
                         v-for="(line, index) in requisition.lines"
                         :key="line.id"
@@ -555,6 +627,8 @@ defineOptions({
                                 type="number"
                                 min="0"
                                 :max="line.qty_remaining"
+                                inputmode="numeric"
+                                :aria-label="`Quantity to issue for ${line.name ?? line.sku ?? 'item'}`"
                                 :default-value="line.qty_remaining"
                             />
                         </div>
@@ -575,8 +649,8 @@ defineOptions({
                             class="mt-0.5 h-4 w-4 rounded border border-input"
                         />
                         <span class="text-sm text-muted-foreground">
-                            Mark remaining quantities as backordered after this
-                            fulfillment step.
+                            Mark any unissued quantity as backordered so it can
+                            be fulfilled when stock becomes available.
                         </span>
                     </label>
 
@@ -595,7 +669,7 @@ defineOptions({
                     data-test="issue-requisition-button"
                     data-testid="issue-requisition-button"
                     class="w-full md:w-auto"
-                    >Update fulfillment</Button
+                    >{{ processing ? 'Issuing Items…' : 'Issue Items' }}</Button
                 >
             </Form>
         </div>

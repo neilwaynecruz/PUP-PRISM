@@ -25,6 +25,7 @@ const passwordInput = useTemplateRef('passwordInput');
     <div class="space-y-6">
         <Heading
             variant="small"
+            :level="2"
             title="Delete account"
             description="Delete your account and all of its resources"
         />

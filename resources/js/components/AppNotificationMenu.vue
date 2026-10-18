@@ -62,11 +62,13 @@ function formatTimestamp(timestamp: string | null): string {
                 class="relative rounded-lg border-dashed"
                 aria-label="Open notifications"
             >
-                <Bell class="h-4 w-4" />
+                <Bell aria-hidden="true" class="h-4 w-4" />
                 <span
                     v-if="unreadCount > 0"
+                    aria-live="polite"
                     class="absolute -top-1.5 -right-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm"
                 >
+                    <span class="sr-only">Unread notifications: </span>
                     {{ unreadCount > 99 ? '99+' : unreadCount }}
                 </span>
             </Button>
@@ -75,7 +77,7 @@ function formatTimestamp(timestamp: string | null): string {
         <DropdownMenuContent
             align="end"
             :side-offset="10"
-            class="w-[24rem] rounded-2xl border border-border/70 p-0 shadow-2xl"
+            class="w-[calc(100vw-2rem)] max-w-[24rem] rounded-2xl border border-border/70 p-0 shadow-2xl"
         >
             <div class="flex items-center justify-between px-4 py-3">
                 <div>
@@ -91,7 +93,7 @@ function formatTimestamp(timestamp: string | null): string {
                     <span
                         class="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
                     >
-                        <Radio class="h-3 w-3" />
+                        <Radio aria-hidden="true" class="h-3 w-3" />
                         <span
                             :class="connectionTone"
                             class="h-2 w-2 rounded-full"
@@ -107,8 +109,11 @@ function formatTimestamp(timestamp: string | null): string {
                         :disabled="!hasUnread"
                         @click="markAllAsRead"
                     >
-                        <CheckCheck class="mr-1.5 h-3.5 w-3.5" />
-                        Read all
+                        <CheckCheck
+                            aria-hidden="true"
+                            class="mr-1.5 h-3.5 w-3.5"
+                        />
+                        Mark all as read
                     </Button>
                 </div>
             </div>
@@ -162,7 +167,10 @@ function formatTimestamp(timestamp: string | null): string {
                 <div
                     class="rounded-full border border-dashed border-border/70 bg-muted/40 p-3"
                 >
-                    <Bell class="h-5 w-5 text-muted-foreground" />
+                    <Bell
+                        aria-hidden="true"
+                        class="h-5 w-5 text-muted-foreground"
+                    />
                 </div>
                 <div>
                     <p class="text-sm font-medium text-foreground">
@@ -184,7 +192,7 @@ function formatTimestamp(timestamp: string | null): string {
                         :href="notificationsIndex().url"
                         class="font-medium text-primary hover:underline"
                     >
-                        View all
+                        View notification history
                     </Link>
                     <span>{{
                         hasUnread ? `${unreadCount} unread` : 'All caught up'
@@ -193,9 +201,10 @@ function formatTimestamp(timestamp: string | null): string {
                 <span class="inline-flex items-center gap-1.5">
                     <LoaderCircle
                         v-if="isSyncing"
-                        class="h-3.5 w-3.5 animate-spin"
+                        aria-hidden="true"
+                        class="h-3.5 w-3.5 animate-spin motion-reduce:animate-none"
                     />
-                    <span>{{ isSyncing ? 'Syncing' : 'Listening' }}</span>
+                    <span>{{ isSyncing ? 'Updating…' : 'Live updates' }}</span>
                 </span>
             </div>
         </DropdownMenuContent>

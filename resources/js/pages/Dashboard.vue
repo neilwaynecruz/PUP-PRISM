@@ -175,6 +175,17 @@ const isSupplyHead = computed(() => props.dashboardVariant === 'supply_head');
 const isCustodian = computed(() => props.dashboardVariant === 'custodian');
 const canViewProcurement = computed(() => isAdmin.value || isSupplyHead.value);
 const canUseDateRange = computed(() => isAdmin.value || isSupplyHead.value);
+const dashboardDescription = computed(() => {
+    if (isAdmin.value) {
+        return 'Review inventory activity, pending work, and items that may need attention.';
+    }
+
+    if (isSupplyHead.value) {
+        return 'Track stock activity, requisitions, bookings, and open purchase orders.';
+    }
+
+    return 'Review your requisitions, bookings, assigned assets, and pending handovers.';
+});
 
 const pendingRequisitionsCount = computed(
     () =>
@@ -249,6 +260,48 @@ function setPreset(preset: 'today' | 'week' | 'month'): void {
 
 function formatDate(d: Date): string {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function formatDayCount(value: number | null): string {
+    if (value === null) {
+        return '—';
+    }
+
+    return `${value} ${value === 1 ? 'day' : 'days'}`;
+}
+
+function formatStatusLabel(value: string): string {
+    return value
+        .replace(/_/g, ' ')
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
+        .replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function chartAriaLabel(trend: TrendData, metric: string): string {
+    if (trend.labels.length === 0 || trend.data.every((value) => value === 0)) {
+        return `${metric}: no activity in the selected date range.`;
+    }
+
+    return `${metric}: ${trend.labels
+        .map((label, index) => `${label}, ${trend.data[index] ?? 0}`)
+        .join('; ')}.`;
+}
+
+function assetConditionChartLabel(): string {
+    if (props.assetStatusCounts.labels.length === 0) {
+        return 'Asset conditions: no asset condition data is available.';
+    }
+
+    return `Asset conditions: ${props.assetStatusCounts.labels
+        .map(
+            (label, index) =>
+                `${formatStatusLabel(label)}, ${props.assetStatusCounts.data[index] ?? 0}`,
+        )
+        .join('; ')}.`;
+}
+
+function pluralize(count: number, singular: string, plural: string): string {
+    return `${count} ${count === 1 ? singular : plural}`;
 }
 
 const assetStatusCanvas = ref<HTMLCanvasElement | null>(null);
@@ -696,22 +749,21 @@ function restoreItem(url: string): void {
 
     <div
         data-testid="dashboard-page"
-        class="flex h-full flex-1 flex-col gap-6 overflow-x-auto bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.10),transparent_34%),radial-gradient(circle_at_18%_0%,rgba(20,184,166,0.08),transparent_28%)] p-4 sm:p-6"
+        class="flex h-full flex-1 flex-col gap-6 overflow-x-hidden bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.10),transparent_34%),radial-gradient(circle_at_18%_0%,rgba(20,184,166,0.08),transparent_28%)] p-4 sm:p-6"
     >
         <div
             class="flex flex-col gap-4 rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur sm:flex-row sm:items-start sm:justify-between"
         >
             <div>
                 <div
-                    class="mb-3 inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/10 px-3 py-1 text-[11px] font-semibold tracking-[0.22em] text-blue-700 uppercase dark:text-blue-300"
+                    class="mb-2 text-xs font-medium tracking-wide text-muted-foreground"
                 >
-                    <Activity class="h-3.5 w-3.5" />
-                    Live command center
+                    Operational overview
                 </div>
                 <Heading
                     variant="small"
                     title="Dashboard"
-                    description="Overview, risk signals, and decision support for inventory operations."
+                    :description="dashboardDescription"
                 />
             </div>
 
@@ -726,8 +778,8 @@ function restoreItem(url: string): void {
                         :href="props.exportUrls.assetConditionsCsv"
                         class="gap-2"
                     >
-                        <Download class="h-3.5 w-3.5" />
-                        Asset report CSV
+                        <Download aria-hidden="true" class="h-3.5 w-3.5" />
+                        Download Asset Report (CSV)
                     </a>
                 </Button>
                 <Button
@@ -740,25 +792,27 @@ function restoreItem(url: string): void {
                         :href="props.exportUrls.assetConditionsPdf"
                         class="gap-2"
                     >
-                        <Download class="h-3.5 w-3.5" />
-                        Asset report PDF
+                        <Download aria-hidden="true" class="h-3.5 w-3.5" />
+                        Download Asset Report (PDF)
                     </a>
                 </Button>
             </div>
         </div>
 
         <!-- Date Range Filter -->
-        <div
+        <fieldset
             v-if="canUseDateRange"
             class="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur xl:flex-row xl:items-center xl:justify-between"
         >
+            <legend class="sr-only">Dashboard date range</legend>
             <div class="flex flex-wrap gap-2">
                 <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    class="h-9 rounded-xl px-3 text-xs transition-all"
+                    class="rounded-xl px-3 text-xs transition-colors"
                     :class="presetButtonClass('today')"
+                    :aria-pressed="isPresetActive('today')"
                     @click="setPreset('today')"
                     >Today</Button
                 >
@@ -766,8 +820,9 @@ function restoreItem(url: string): void {
                     type="button"
                     variant="outline"
                     size="sm"
-                    class="h-9 rounded-xl px-3 text-xs transition-all"
+                    class="rounded-xl px-3 text-xs transition-colors"
                     :class="presetButtonClass('week')"
+                    :aria-pressed="isPresetActive('week')"
                     @click="setPreset('week')"
                     >This week</Button
                 >
@@ -775,36 +830,46 @@ function restoreItem(url: string): void {
                     type="button"
                     variant="outline"
                     size="sm"
-                    class="h-9 rounded-xl px-3 text-xs transition-all"
+                    class="rounded-xl px-3 text-xs transition-colors"
                     :class="presetButtonClass('month')"
+                    :aria-pressed="isPresetActive('month')"
                     @click="setPreset('month')"
                     >This month</Button
                 >
             </div>
-            <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-                <input
-                    v-model="fromDate"
-                    type="date"
-                    class="h-10 rounded-xl border border-border/70 bg-background/80 px-3 text-xs text-foreground shadow-inner shadow-black/5 transition-colors hover:border-blue-400/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                />
-                <span class="text-xs font-medium text-muted-foreground"
-                    >to</span
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
                 >
-                <input
-                    v-model="toDate"
-                    type="date"
-                    class="h-10 rounded-xl border border-border/70 bg-background/80 px-3 text-xs text-foreground shadow-inner shadow-black/5 transition-colors hover:border-blue-400/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                />
+                    From
+                    <input
+                        v-model="fromDate"
+                        name="dashboard_from"
+                        type="date"
+                        class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm text-foreground shadow-inner shadow-black/5 transition-colors hover:border-blue-400/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none sm:h-10 sm:text-xs"
+                    />
+                </label>
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
+                >
+                    To
+                    <input
+                        v-model="toDate"
+                        name="dashboard_to"
+                        type="date"
+                        class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm text-foreground shadow-inner shadow-black/5 transition-colors hover:border-blue-400/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none sm:h-10 sm:text-xs"
+                    />
+                </label>
                 <Button
                     type="button"
                     variant="default"
                     size="sm"
-                    class="h-10 rounded-xl bg-blue-600 px-5 text-xs font-semibold shadow-lg shadow-blue-950/20 transition-all hover:bg-blue-500"
+                    class="h-10 rounded-xl bg-blue-600 px-5 text-xs font-semibold shadow-lg shadow-blue-950/20 transition-colors hover:bg-blue-500"
                     @click="applyDateRange"
-                    >Apply</Button
+                    >Apply Date Range</Button
                 >
             </div>
-        </div>
+        </fieldset>
 
         <!-- KPI Stats Row -->
         <div
@@ -891,7 +956,7 @@ function restoreItem(url: string): void {
                 <div class="flex items-center justify-between">
                     <span
                         class="text-xs font-semibold tracking-wider text-violet-700 uppercase dark:text-violet-300"
-                        >Pending Reqs</span
+                        >Pending Requisitions</span
                     >
                     <div :class="iconBubbleClass('purple')">
                         <FileText class="h-4.5 w-4.5" />
@@ -927,7 +992,7 @@ function restoreItem(url: string): void {
                     {{ pendingBookingsCount }}
                 </div>
                 <div class="mt-1 text-xs text-muted-foreground">
-                    Awaiting allocation
+                    Awaiting review
                 </div>
             </div>
 
@@ -939,7 +1004,7 @@ function restoreItem(url: string): void {
                 <div class="flex items-center justify-between">
                     <span
                         class="text-xs font-semibold tracking-wider text-rose-700 uppercase dark:text-rose-300"
-                        >System Alerts</span
+                        >Active Alerts</span
                     >
                     <div :class="iconBubbleClass('rose')">
                         <AlertOctagon class="h-4.5 w-4.5" />
@@ -951,7 +1016,7 @@ function restoreItem(url: string): void {
                     {{ alerts.length }}
                 </div>
                 <div class="mt-1 text-xs text-muted-foreground">
-                    Attention required
+                    Operational warnings to review
                 </div>
             </div>
         </div>
@@ -977,25 +1042,19 @@ function restoreItem(url: string): void {
                         <Sparkles class="h-5 w-5" />
                     </div>
                     <div>
-                        <h3
-                            class="flex items-center gap-2 text-base font-semibold text-foreground"
-                        >
-                            PRISM Intelligence
-                            <span
-                                class="inline-flex items-center rounded-full border border-violet-500/25 bg-violet-500/10 px-2.5 py-0.5 text-[10px] font-semibold tracking-[0.18em] text-violet-700 uppercase dark:text-violet-300"
-                                >Decision support</span
-                            >
-                        </h3>
+                        <h2 class="text-base font-semibold text-foreground">
+                            Recommended actions
+                        </h2>
                         <p class="mt-1 text-sm text-muted-foreground">
-                            Smart suggestions compiled from thresholds, workflow
-                            queues, and inventory risk signals.
+                            Review items that may need action based on stock
+                            levels and pending work.
                         </p>
                     </div>
                 </div>
                 <div
                     class="rounded-2xl border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-xs text-blue-700 dark:text-blue-200"
                 >
-                    Updated from live operational data
+                    Based on current system records
                 </div>
             </div>
 
@@ -1245,7 +1304,7 @@ function restoreItem(url: string): void {
                         class="flex items-center justify-between rounded-lg border border-border/40 p-2"
                     >
                         <span class="text-muted-foreground capitalize">{{
-                            entry.key
+                            formatStatusLabel(entry.key)
                         }}</span>
                         <span class="font-mono text-xs font-semibold">{{
                             entry.value
@@ -1272,7 +1331,7 @@ function restoreItem(url: string): void {
                         class="flex items-center justify-between rounded-lg border border-border/40 p-2"
                     >
                         <span class="text-muted-foreground capitalize">{{
-                            entry.key
+                            formatStatusLabel(entry.key)
                         }}</span>
                         <span class="font-mono text-xs font-semibold">{{
                             entry.value
@@ -1319,10 +1378,16 @@ function restoreItem(url: string): void {
                     "
                     class="rounded-2xl border border-dashed border-emerald-500/20 bg-emerald-500/5 px-5 py-8 text-center text-sm text-muted-foreground"
                 >
-                    No receiving activity in selected range.
+                    No receiving activity was recorded in this date range.
                 </div>
                 <div v-else class="h-48">
-                    <canvas ref="receivingCanvas" />
+                    <canvas
+                        ref="receivingCanvas"
+                        role="img"
+                        :aria-label="
+                            chartAriaLabel(receivingTrends, 'Units received')
+                        "
+                    />
                 </div>
             </div>
 
@@ -1358,10 +1423,16 @@ function restoreItem(url: string): void {
                     "
                     class="rounded-2xl border border-dashed border-blue-500/20 bg-blue-500/5 px-5 py-8 text-center text-sm text-muted-foreground"
                 >
-                    No issuing activity in selected range.
+                    No issuance activity was recorded in this date range.
                 </div>
                 <div v-else class="h-48">
-                    <canvas ref="issuingCanvas" />
+                    <canvas
+                        ref="issuingCanvas"
+                        role="img"
+                        :aria-label="
+                            chartAriaLabel(issuingTrends, 'Units issued')
+                        "
+                    />
                 </div>
             </div>
         </div>
@@ -1392,7 +1463,7 @@ function restoreItem(url: string): void {
                     v-if="summaryEntries(requisitionSummary).length === 0"
                     class="rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground"
                 >
-                    No data.
+                    No requisitions were recorded in this date range.
                 </div>
                 <ul v-else class="space-y-2 text-sm">
                     <li
@@ -1401,7 +1472,7 @@ function restoreItem(url: string): void {
                         class="flex items-center justify-between rounded-xl border border-border/40 bg-background/50 p-3 transition-colors hover:border-violet-500/25 hover:bg-violet-500/5"
                     >
                         <span class="font-medium text-foreground capitalize">{{
-                            entry.key
+                            formatStatusLabel(entry.key)
                         }}</span>
                         <span
                             class="rounded-full border px-2.5 py-1 font-mono text-xs font-semibold"
@@ -1436,7 +1507,7 @@ function restoreItem(url: string): void {
                     v-if="summaryEntries(bookingSummary).length === 0"
                     class="rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground"
                 >
-                    No data.
+                    No bookings were recorded in this date range.
                 </div>
                 <ul v-else class="space-y-2 text-sm">
                     <li
@@ -1445,7 +1516,7 @@ function restoreItem(url: string): void {
                         class="flex items-center justify-between rounded-xl border border-border/40 bg-background/50 p-3 transition-colors hover:border-amber-500/25 hover:bg-amber-500/5"
                     >
                         <span class="font-medium text-foreground capitalize">{{
-                            entry.key
+                            formatStatusLabel(entry.key)
                         }}</span>
                         <span
                             class="rounded-full border px-2.5 py-1 font-mono text-xs font-semibold"
@@ -1480,7 +1551,7 @@ function restoreItem(url: string): void {
                     v-if="summaryEntries(assetConditionSummary).length === 0"
                     class="rounded-2xl border border-dashed border-border/60 bg-muted/20 px-4 py-6 text-center text-sm text-muted-foreground"
                 >
-                    No data.
+                    No asset condition records are available.
                 </div>
                 <ul v-else class="space-y-2 text-sm">
                     <li
@@ -1489,7 +1560,7 @@ function restoreItem(url: string): void {
                         class="flex items-center justify-between rounded-xl border border-border/40 bg-background/50 p-3 transition-colors hover:border-rose-500/25 hover:bg-rose-500/5"
                     >
                         <span class="font-medium text-foreground capitalize">{{
-                            entry.key
+                            formatStatusLabel(entry.key)
                         }}</span>
                         <span
                             class="rounded-full border px-2.5 py-1 font-mono text-xs font-semibold"
@@ -1601,7 +1672,13 @@ function restoreItem(url: string): void {
                             <div
                                 class="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300"
                             >
-                                {{ supplier.total_pos }} PO(s)
+                                {{
+                                    pluralize(
+                                        supplier.total_pos,
+                                        'purchase order',
+                                        'purchase orders',
+                                    )
+                                }}
                             </div>
                         </div>
                         <div
@@ -1616,9 +1693,7 @@ function restoreItem(url: string): void {
                             <div class="rounded-xl bg-muted/30 p-3">
                                 Avg lead time:
                                 <span class="font-semibold text-foreground">{{
-                                    supplier.avg_lead_time_days !== null
-                                        ? `${supplier.avg_lead_time_days} day(s)`
-                                        : '—'
+                                    formatDayCount(supplier.avg_lead_time_days)
                                 }}</span>
                             </div>
                         </div>
@@ -1650,7 +1725,11 @@ function restoreItem(url: string): void {
                     </div>
                 </div>
                 <div class="h-64">
-                    <canvas ref="assetStatusCanvas" />
+                    <canvas
+                        ref="assetStatusCanvas"
+                        role="img"
+                        :aria-label="assetConditionChartLabel()"
+                    />
                 </div>
             </div>
 
