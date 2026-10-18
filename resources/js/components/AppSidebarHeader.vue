@@ -52,7 +52,11 @@ function openGlobalSearch(): void {
             >
                 <LoaderCircle class="h-3.5 w-3.5 animate-spin text-primary" />
                 <span>
-                    {{ pendingLabel ? `Opening ${pendingLabel}...` : 'Loading module...' }}
+                    {{
+                        pendingLabel
+                            ? `Opening ${pendingLabel}...`
+                            : 'Loading module...'
+                    }}
                 </span>
             </div>
 

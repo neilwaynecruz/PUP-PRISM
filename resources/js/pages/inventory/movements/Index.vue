@@ -6,8 +6,8 @@ import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { Label } from '@/components/ui/label';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
 
@@ -99,7 +99,10 @@ let isComponentActive = true;
 watch([type, search, dateFrom, dateTo, performedBy], () => {
     window.clearTimeout(timer);
     timer = window.setTimeout(() => {
-        if (!isComponentActive || !shouldApplyDebouncedVisit('/inventory/movements')) {
+        if (
+            !isComponentActive ||
+            !shouldApplyDebouncedVisit('/inventory/movements')
+        ) {
             return;
         }
 
@@ -246,11 +249,14 @@ function humanizeReasonCode(value: string | null): string {
         />
 
         <div class="grid gap-4 xl:grid-cols-2">
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4">
                     <div class="font-medium">Manual stock adjustment</div>
                     <div class="text-sm text-muted-foreground">
-                        Record audited inventory increases or decreases with a structured reason code.
+                        Record audited inventory increases or decreases with a
+                        structured reason code.
                     </div>
                 </div>
 
@@ -267,8 +273,14 @@ function humanizeReasonCode(value: string | null): string {
                             class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
                             required
                         >
-                            <option value="" disabled selected>Select a product</option>
-                            <option v-for="product in products" :key="product.id" :value="product.id">
+                            <option value="" disabled selected>
+                                Select a product
+                            </option>
+                            <option
+                                v-for="product in products"
+                                :key="product.id"
+                                :value="product.id"
+                            >
                                 {{ product.name }} ({{ product.sku }})
                             </option>
                         </select>
@@ -278,7 +290,13 @@ function humanizeReasonCode(value: string | null): string {
                     <div class="grid gap-1.5 md:grid-cols-2">
                         <div class="grid gap-1.5">
                             <Label for="adjust-qty">Quantity delta</Label>
-                            <Input id="adjust-qty" name="qty_delta" type="number" placeholder="-3 or 5" required />
+                            <Input
+                                id="adjust-qty"
+                                name="qty_delta"
+                                type="number"
+                                placeholder="-3 or 5"
+                                required
+                            />
                             <InputError :message="errors.qty_delta" />
                         </div>
                         <div class="grid gap-1.5">
@@ -289,8 +307,14 @@ function humanizeReasonCode(value: string | null): string {
                                 class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
                                 required
                             >
-                                <option value="" disabled selected>Select a reason</option>
-                                <option v-for="reason in adjustmentReasonCodes" :key="reason.value" :value="reason.value">
+                                <option value="" disabled selected>
+                                    Select a reason
+                                </option>
+                                <option
+                                    v-for="reason in adjustmentReasonCodes"
+                                    :key="reason.value"
+                                    :value="reason.value"
+                                >
                                     {{ reason.label }}
                                 </option>
                             </select>
@@ -310,17 +334,24 @@ function humanizeReasonCode(value: string | null): string {
                         <InputError :message="errors.notes" />
                     </div>
 
-                    <Button type="submit" :disabled="processing" class="w-full sm:w-auto">
+                    <Button
+                        type="submit"
+                        :disabled="processing"
+                        class="w-full sm:w-auto"
+                    >
                         Save adjustment
                     </Button>
                 </Form>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4">
                     <div class="font-medium">Cycle count</div>
                     <div class="text-sm text-muted-foreground">
-                        Capture a physical count and let the system write any resulting variance to stock history.
+                        Capture a physical count and let the system write any
+                        resulting variance to stock history.
                     </div>
                 </div>
 
@@ -337,8 +368,14 @@ function humanizeReasonCode(value: string | null): string {
                             class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
                             required
                         >
-                            <option value="" disabled selected>Select a product</option>
-                            <option v-for="product in products" :key="product.id" :value="product.id">
+                            <option value="" disabled selected>
+                                Select a product
+                            </option>
+                            <option
+                                v-for="product in products"
+                                :key="product.id"
+                                :value="product.id"
+                            >
                                 {{ product.name }} ({{ product.sku }})
                             </option>
                         </select>
@@ -348,7 +385,13 @@ function humanizeReasonCode(value: string | null): string {
                     <div class="grid gap-1.5 md:grid-cols-2">
                         <div class="grid gap-1.5">
                             <Label for="counted-qty">Counted quantity</Label>
-                            <Input id="counted-qty" name="counted_qty" type="number" min="0" required />
+                            <Input
+                                id="counted-qty"
+                                name="counted_qty"
+                                type="number"
+                                min="0"
+                                required
+                            />
                             <InputError :message="errors.counted_qty" />
                         </div>
                         <div class="grid gap-1.5">
@@ -359,8 +402,14 @@ function humanizeReasonCode(value: string | null): string {
                                 class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
                                 required
                             >
-                                <option value="" disabled selected>Select a reason</option>
-                                <option v-for="reason in cycleCountReasonCodes" :key="reason.value" :value="reason.value">
+                                <option value="" disabled selected>
+                                    Select a reason
+                                </option>
+                                <option
+                                    v-for="reason in cycleCountReasonCodes"
+                                    :key="reason.value"
+                                    :value="reason.value"
+                                >
                                     {{ reason.label }}
                                 </option>
                             </select>
@@ -380,7 +429,11 @@ function humanizeReasonCode(value: string | null): string {
                         <InputError :message="errors.notes" />
                     </div>
 
-                    <Button type="submit" :disabled="processing" class="w-full sm:w-auto">
+                    <Button
+                        type="submit"
+                        :disabled="processing"
+                        class="w-full sm:w-auto"
+                    >
                         Save cycle count
                     </Button>
                 </Form>
@@ -575,7 +628,8 @@ function humanizeReasonCode(value: string | null): string {
                     </div>
                     <div>Reason: {{ humanizeReasonCode(m.reason_code) }}</div>
                     <div v-if="m.counted_qty !== null">
-                        Counted: {{ m.counted_qty }} (variance {{ m.variance_qty ?? 0 }})
+                        Counted: {{ m.counted_qty }} (variance
+                        {{ m.variance_qty ?? 0 }})
                     </div>
                     <div v-if="m.notes">Notes: {{ m.notes }}</div>
                     <div class="text-xs text-muted-foreground/70">
@@ -695,8 +749,12 @@ function humanizeReasonCode(value: string | null): string {
                             <div class="font-medium">
                                 {{ humanizeReasonCode(m.reason_code) }}
                             </div>
-                            <div v-if="m.counted_qty !== null" class="text-xs text-muted-foreground">
-                                Counted {{ m.counted_qty }}, variance {{ m.variance_qty ?? 0 }}
+                            <div
+                                v-if="m.counted_qty !== null"
+                                class="text-xs text-muted-foreground"
+                            >
+                                Counted {{ m.counted_qty }}, variance
+                                {{ m.variance_qty ?? 0 }}
                             </div>
                         </td>
                         <td>

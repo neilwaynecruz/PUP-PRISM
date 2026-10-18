@@ -16,10 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    edit as usersEdit,
-    index as usersIndex,
-} from '@/routes/admin/users';
+import { edit as usersEdit, index as usersIndex } from '@/routes/admin/users';
 
 type PositionOption = {
     id: number;
@@ -63,7 +60,8 @@ const form = useForm({
     name: props.user.name,
     email: props.user.email,
     role: props.user.role ?? '',
-    position_id: props.user.position_id !== null ? String(props.user.position_id) : '',
+    position_id:
+        props.user.position_id !== null ? String(props.user.position_id) : '',
 });
 
 const deactivateDialogOpen = ref(false);
@@ -92,12 +90,16 @@ function submit(): void {
 function deactivateUser(): void {
     deactivating.value = true;
 
-    router.patch(UserManagementController.deactivate(props.user.id).url, undefined, {
-        onFinish: () => {
-            deactivating.value = false;
-            deactivateDialogOpen.value = false;
+    router.patch(
+        UserManagementController.deactivate(props.user.id).url,
+        undefined,
+        {
+            onFinish: () => {
+                deactivating.value = false;
+                deactivateDialogOpen.value = false;
+            },
         },
-    });
+    );
 }
 </script>
 
@@ -105,11 +107,7 @@ function deactivateUser(): void {
     <Head :title="`Edit ${user.name}`" />
 
     <div class="flex flex-col gap-6 p-4 sm:p-6">
-        <Heading
-            variant="small"
-            title="Edit user"
-            :description="user.email"
-        />
+        <Heading variant="small" title="Edit user" :description="user.email" />
 
         <div
             v-if="deactivateHint"
@@ -128,7 +126,12 @@ function deactivateUser(): void {
 
                 <div class="grid gap-2">
                     <Label for="email">Email address</Label>
-                    <Input id="email" v-model="form.email" type="email" required />
+                    <Input
+                        id="email"
+                        v-model="form.email"
+                        type="email"
+                        required
+                    />
                     <InputError :message="form.errors.email" />
                 </div>
 
@@ -141,11 +144,7 @@ function deactivateUser(): void {
                         required
                     >
                         <option value="">Select role</option>
-                        <option
-                            v-for="role in roles"
-                            :key="role"
-                            :value="role"
-                        >
+                        <option v-for="role in roles" :key="role" :value="role">
                             {{ role }}
                         </option>
                     </select>
@@ -196,11 +195,14 @@ function deactivateUser(): void {
             <DialogHeader>
                 <DialogTitle>Deactivate user account?</DialogTitle>
                 <DialogDescription>
-                    This keeps the user record for audit history but blocks future logins.
+                    This keeps the user record for audit history but blocks
+                    future logins.
                 </DialogDescription>
             </DialogHeader>
 
-            <div class="rounded-lg border border-border/60 bg-muted/20 px-4 py-3 text-sm">
+            <div
+                class="rounded-lg border border-border/60 bg-muted/20 px-4 py-3 text-sm"
+            >
                 <div class="font-medium">{{ user.name }}</div>
                 <div class="text-muted-foreground">{{ user.email }}</div>
             </div>

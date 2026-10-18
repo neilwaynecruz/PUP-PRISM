@@ -16,6 +16,13 @@ import {
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { dashboard } from '@/routes';
+import { index as adminAlertsIndex } from '@/routes/admin/alerts';
+import { index as categoriesIndex } from '@/routes/admin/categories';
+import { index as departmentsIndex } from '@/routes/admin/departments';
+import { health as operationsHealthIndex } from '@/routes/admin/operations';
+import { index as originsIndex } from '@/routes/admin/origins';
+import { index as positionsIndex } from '@/routes/admin/positions';
+import { index as adminUsersIndex } from '@/routes/admin/users';
 import { index as auditLogsIndex } from '@/routes/inventory/audit-logs';
 import { index as bookingsIndex } from '@/routes/inventory/bookings';
 import { index as forecastingIndex } from '@/routes/inventory/forecasting';
@@ -35,13 +42,6 @@ import {
     create as suppliersCreate,
     index as suppliersIndex,
 } from '@/routes/inventory/suppliers';
-import { index as adminAlertsIndex } from '@/routes/admin/alerts';
-import { index as categoriesIndex } from '@/routes/admin/categories';
-import { index as departmentsIndex } from '@/routes/admin/departments';
-import { health as operationsHealthIndex } from '@/routes/admin/operations';
-import { index as originsIndex } from '@/routes/admin/origins';
-import { index as positionsIndex } from '@/routes/admin/positions';
-import { index as adminUsersIndex } from '@/routes/admin/users';
 import { index as notificationsIndex } from '@/routes/notifications';
 import type { Auth, AuthPermissions, NavItem } from '@/types';
 
@@ -293,7 +293,13 @@ const searchNavigationItems: InventorySearchItem[] = [
         href: forecastingIndex(),
         icon: Radar,
         description: 'Review demand forecasts and tune replenishment models',
-        keywords: ['forecasting', 'demand', 'stockout', 'reorder', 'predictive'],
+        keywords: [
+            'forecasting',
+            'demand',
+            'stockout',
+            'reorder',
+            'predictive',
+        ],
         permission: 'viewForecasting',
     },
     {
@@ -328,7 +334,7 @@ const searchNavigationItems: InventorySearchItem[] = [
     },
 ];
 
-function filterByPermission<T extends { permission?: keyof AuthPermissions }>(
+function filterByPermission<T extends InventoryNavItem>(
     items: T[],
     permissions: AuthPermissions,
 ): T[] {
@@ -358,148 +364,165 @@ export function useInventoryNavigation() {
         filterByPermission(searchNavigationItems, permissions.value),
     );
 
-    const groupedNavItems = computed(() => {
+    const groupedNavItems = computed<
+        Array<{ group: string; items: NavItem[] }>
+    >(() => {
         const perms = permissions.value;
 
         return [
             {
                 group: 'Overview',
-                items: filterByPermission([
-                    {
-                        title: 'Dashboard',
-                        href: dashboard(),
-                        icon: LayoutGrid,
-                    }
-                ], perms)
+                items: filterByPermission<InventoryNavItem>(
+                    [
+                        {
+                            title: 'Dashboard',
+                            href: dashboard(),
+                            icon: LayoutGrid,
+                        },
+                    ],
+                    perms,
+                ),
             },
             {
                 group: 'Inventory',
-                items: filterByPermission([
-                    {
-                        title: 'Products',
-                        href: productsIndex(),
-                        icon: Package,
-                        permission: 'viewProducts',
-                    },
-                    {
-                        title: 'Suppliers',
-                        href: suppliersIndex(),
-                        icon: ShieldCheck,
-                        permission: 'viewSuppliers',
-                    },
-                    {
-                        title: 'Purchase Orders',
-                        href: purchaseOrdersIndex(),
-                        icon: ReceiptText,
-                        permission: 'viewPurchaseOrders',
-                    },
-                    {
-                        title: 'Receiving',
-                        href: receivingIndex(),
-                        icon: Truck,
-                        permission: 'viewReceiving',
-                    },
-                    {
-                        title: 'Stock Movements',
-                        href: movementsIndex(),
-                        icon: BarChart3,
-                        permission: 'viewMovements',
-                    },
-                    {
-                        title: 'Forecasting',
-                        href: forecastingIndex(),
-                        icon: Radar,
-                        permission: 'viewForecasting',
-                    }
-                ], perms)
+                items: filterByPermission(
+                    [
+                        {
+                            title: 'Products',
+                            href: productsIndex(),
+                            icon: Package,
+                            permission: 'viewProducts',
+                        },
+                        {
+                            title: 'Suppliers',
+                            href: suppliersIndex(),
+                            icon: ShieldCheck,
+                            permission: 'viewSuppliers',
+                        },
+                        {
+                            title: 'Purchase Orders',
+                            href: purchaseOrdersIndex(),
+                            icon: ReceiptText,
+                            permission: 'viewPurchaseOrders',
+                        },
+                        {
+                            title: 'Receiving',
+                            href: receivingIndex(),
+                            icon: Truck,
+                            permission: 'viewReceiving',
+                        },
+                        {
+                            title: 'Stock Movements',
+                            href: movementsIndex(),
+                            icon: BarChart3,
+                            permission: 'viewMovements',
+                        },
+                        {
+                            title: 'Forecasting',
+                            href: forecastingIndex(),
+                            icon: Radar,
+                            permission: 'viewForecasting',
+                        },
+                    ],
+                    perms,
+                ),
             },
             {
                 group: 'Operations',
-                items: filterByPermission([
-                    {
-                        title: 'Handover',
-                        href: handoverIndex(),
-                        icon: ArrowLeftRight,
-                        permission: 'viewHandover',
-                    },
-                    {
-                        title: 'Bookings',
-                        href: bookingsIndex(),
-                        icon: BookOpen,
-                        permission: 'viewBookings',
-                    },
-                    {
-                        title: 'Requisitions',
-                        href: requisitionsIndex(),
-                        icon: FileText,
-                        permission: 'viewRequisitions',
-                    }
-                ], perms)
+                items: filterByPermission(
+                    [
+                        {
+                            title: 'Handover',
+                            href: handoverIndex(),
+                            icon: ArrowLeftRight,
+                            permission: 'viewHandover',
+                        },
+                        {
+                            title: 'Bookings',
+                            href: bookingsIndex(),
+                            icon: BookOpen,
+                            permission: 'viewBookings',
+                        },
+                        {
+                            title: 'Requisitions',
+                            href: requisitionsIndex(),
+                            icon: FileText,
+                            permission: 'viewRequisitions',
+                        },
+                    ],
+                    perms,
+                ),
             },
             {
                 group: 'Monitoring',
-                items: filterByPermission([
-                    {
-                        title: 'Audit Logs',
-                        href: auditLogsIndex(),
-                        icon: History,
-                        permission: 'viewAuditLogs',
-                    },
-                    {
-                        title: 'Alerts',
-                        href: adminAlertsIndex(),
-                        icon: Radar,
-                        permission: 'viewAlerts',
-                    },
-                    {
-                        title: 'Operations health',
-                        href: operationsHealthIndex(),
-                        icon: BarChart3,
-                        permission: 'viewOperationsHealth',
-                    },
-                ], perms)
+                items: filterByPermission(
+                    [
+                        {
+                            title: 'Audit Logs',
+                            href: auditLogsIndex(),
+                            icon: History,
+                            permission: 'viewAuditLogs',
+                        },
+                        {
+                            title: 'Alerts',
+                            href: adminAlertsIndex(),
+                            icon: Radar,
+                            permission: 'viewAlerts',
+                        },
+                        {
+                            title: 'Operations health',
+                            href: operationsHealthIndex(),
+                            icon: BarChart3,
+                            permission: 'viewOperationsHealth',
+                        },
+                    ],
+                    perms,
+                ),
             },
             {
                 group: 'System',
-                items: filterByPermission([
-                    {
-                        title: 'Users',
-                        href: adminUsersIndex(),
-                        icon: ShieldCheck,
-                        permission: 'viewUsers',
-                    },
-                    {
-                        title: 'Departments',
-                        href: departmentsIndex(),
-                        icon: ShieldCheck,
-                        permission: 'viewMasterData',
-                    },
-                    {
-                        title: 'Positions',
-                        href: positionsIndex(),
-                        icon: ShieldCheck,
-                        permission: 'viewMasterData',
-                    },
-                    {
-                        title: 'Categories',
-                        href: categoriesIndex(),
-                        icon: Package,
-                        permission: 'viewMasterData',
-                    },
-                    {
-                        title: 'Origins',
-                        href: originsIndex(),
-                        icon: Package,
-                        permission: 'viewMasterData',
-                    },
-                    {
-                        title: 'Settings',
-                        href: '/settings/profile',
-                        icon: Settings,
-                    }
-                ], perms)
-            }
-        ].filter(g => g.items.length > 0);
+                items: filterByPermission(
+                    [
+                        {
+                            title: 'Users',
+                            href: adminUsersIndex(),
+                            icon: ShieldCheck,
+                            permission: 'viewUsers',
+                        },
+                        {
+                            title: 'Departments',
+                            href: departmentsIndex(),
+                            icon: ShieldCheck,
+                            permission: 'viewMasterData',
+                        },
+                        {
+                            title: 'Positions',
+                            href: positionsIndex(),
+                            icon: ShieldCheck,
+                            permission: 'viewMasterData',
+                        },
+                        {
+                            title: 'Categories',
+                            href: categoriesIndex(),
+                            icon: Package,
+                            permission: 'viewMasterData',
+                        },
+                        {
+                            title: 'Origins',
+                            href: originsIndex(),
+                            icon: Package,
+                            permission: 'viewMasterData',
+                        },
+                        {
+                            title: 'Settings',
+                            href: '/settings/profile',
+                            icon: Settings,
+                        },
+                    ],
+                    perms,
+                ),
+            },
+        ].filter((g) => g.items.length > 0);
     });
 
     return {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, setLayoutProps } from '@inertiajs/vue3';
-import { onMounted } from 'vue';
 import { CheckCircle2 } from 'lucide-vue-next';
+import { onMounted } from 'vue';
 import InputError from '@/components/InputError.vue';
 import PasswordInput from '@/components/PasswordInput.vue';
 import TextLink from '@/components/TextLink.vue';

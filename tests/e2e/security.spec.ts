@@ -1,6 +1,6 @@
-import { beginTwoFactorSetup } from './helpers/db';
 import { loginAs } from './fixtures/auth';
 import { expect, test } from './fixtures/test';
+import { beginTwoFactorSetup } from './helpers/db';
 
 const REQUESTER_USER = {
     email: 'requester@e2e.test',

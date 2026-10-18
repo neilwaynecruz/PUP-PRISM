@@ -210,9 +210,7 @@ function submitResolve(): void {
 <template>
     <Head title="Alerts" />
 
-    <div
-        class="mx-auto flex w-full max-w-400 flex-col gap-6 p-4 sm:p-6 lg:p-8"
-    >
+    <div class="mx-auto flex w-full max-w-400 flex-col gap-6 p-4 sm:p-6 lg:p-8">
         <div
             class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
         >

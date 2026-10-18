@@ -1,5 +1,5 @@
-import {   computed, ref } from 'vue';
-import type {Ref, ComputedRef} from 'vue';
+import { computed, ref } from 'vue';
+import type { Ref, ComputedRef } from 'vue';
 
 export interface UseBulkSelectionReturn {
     selectedIds: Ref<Set<number>>;

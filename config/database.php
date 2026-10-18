@@ -99,6 +99,20 @@ return [
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 
+        'pgsql_testing' => [
+            'driver' => 'pgsql',
+            'host' => env('DB_TEST_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('DB_TEST_PORT', env('DB_PORT', '5433')),
+            'database' => env('DB_TEST_DATABASE', 'pup_prism_test'),
+            'username' => env('DB_TEST_USERNAME', env('DB_USERNAME', 'postgres')),
+            'password' => env('DB_TEST_PASSWORD', env('DB_PASSWORD', 'root')),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => 'public',
+            'sslmode' => 'prefer',
+        ],
+
         'sqlsrv' => [
             'driver' => 'sqlsrv',
             'url' => env('DB_URL'),

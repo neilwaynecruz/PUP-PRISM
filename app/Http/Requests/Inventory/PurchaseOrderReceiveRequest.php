@@ -37,6 +37,7 @@ class PurchaseOrderReceiveRequest extends FormRequest
             'lines.*.tag_codes' => ['nullable', 'array', 'min:1'],
             'lines.*.tag_codes.*' => ['string', 'max:64', 'distinct'],
             'lines.*.notes' => ['nullable', 'string', 'max:2000'],
+            'idempotency_key' => ['nullable', 'string', 'max:64'],
         ];
     }
 

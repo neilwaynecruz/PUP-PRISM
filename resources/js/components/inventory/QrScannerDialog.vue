@@ -92,7 +92,9 @@ watch(isOpen, async (open) => {
     </Button>
 
     <Dialog :open="isOpen" @update:open="isOpen = $event">
-        <DialogContent class="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-lg">
+        <DialogContent
+            class="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-lg"
+        >
             <DialogHeader>
                 <DialogTitle>{{ props.title }}</DialogTitle>
                 <DialogDescription>{{ props.description }}</DialogDescription>
@@ -128,7 +130,8 @@ watch(isOpen, async (open) => {
                         v-if="lastDetectedValue"
                         class="mt-1 text-xs text-muted-foreground"
                     >
-                        Last captured: <span class="font-mono">{{ lastDetectedValue }}</span>
+                        Last captured:
+                        <span class="font-mono">{{ lastDetectedValue }}</span>
                     </div>
                 </div>
 
@@ -198,7 +201,9 @@ watch(isOpen, async (open) => {
                         type="button"
                         variant="ghost"
                         @click="isOpen = false"
-                        >{{ props.continuous ? 'Done scanning' : 'Close' }}</Button
+                        >{{
+                            props.continuous ? 'Done scanning' : 'Close'
+                        }}</Button
                     >
                 </div>
             </div>

@@ -17,7 +17,7 @@ type PositionOption = {
     label: string;
 };
 
-const props = defineProps<{
+defineProps<{
     roles: string[];
     positions: PositionOption[];
 }>();
@@ -67,7 +67,12 @@ function submit(): void {
 
                 <div class="grid gap-2">
                     <Label for="email">Email address</Label>
-                    <Input id="email" v-model="form.email" type="email" required />
+                    <Input
+                        id="email"
+                        v-model="form.email"
+                        type="email"
+                        required
+                    />
                     <InputError :message="form.errors.email" />
                 </div>
 
@@ -80,11 +85,7 @@ function submit(): void {
                         required
                     >
                         <option value="">Select role</option>
-                        <option
-                            v-for="role in roles"
-                            :key="role"
-                            :value="role"
-                        >
+                        <option v-for="role in roles" :key="role" :value="role">
                             {{ role }}
                         </option>
                     </select>

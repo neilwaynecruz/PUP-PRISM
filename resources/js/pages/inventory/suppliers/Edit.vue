@@ -67,7 +67,12 @@ function destroySupplier(): void {
             <div class="grid gap-4 md:grid-cols-2">
                 <div class="grid gap-2">
                     <Label for="name">Supplier name</Label>
-                    <Input id="name" name="name" :default-value="supplier.name" required />
+                    <Input
+                        id="name"
+                        name="name"
+                        :default-value="supplier.name"
+                        required
+                    />
                     <InputError :message="errors.name" />
                 </div>
                 <div class="grid gap-2">
@@ -81,22 +86,39 @@ function destroySupplier(): void {
                 </div>
                 <div class="grid gap-2">
                     <Label for="email">Email</Label>
-                    <Input id="email" name="email" type="email" :default-value="supplier.email ?? ''" />
+                    <Input
+                        id="email"
+                        name="email"
+                        type="email"
+                        :default-value="supplier.email ?? ''"
+                    />
                     <InputError :message="errors.email" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="phone">Phone</Label>
-                    <Input id="phone" name="phone" :default-value="supplier.phone ?? ''" />
+                    <Input
+                        id="phone"
+                        name="phone"
+                        :default-value="supplier.phone ?? ''"
+                    />
                     <InputError :message="errors.phone" />
                 </div>
                 <div class="grid gap-2 md:col-span-2">
                     <Label for="address">Address</Label>
-                    <Input id="address" name="address" :default-value="supplier.address ?? ''" />
+                    <Input
+                        id="address"
+                        name="address"
+                        :default-value="supplier.address ?? ''"
+                    />
                     <InputError :message="errors.address" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="website">Website</Label>
-                    <Input id="website" name="website" :default-value="supplier.website ?? ''" />
+                    <Input
+                        id="website"
+                        name="website"
+                        :default-value="supplier.website ?? ''"
+                    />
                     <InputError :message="errors.website" />
                 </div>
                 <div class="grid gap-2">

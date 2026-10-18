@@ -54,6 +54,7 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
         <template v-if="!showRecoveryInput">
             <Form
                 v-bind="store.form()"
+                replace
                 class="space-y-4"
                 reset-on-error
                 @error="code = ''"
@@ -101,6 +102,7 @@ const toggleRecoveryMode = (clearErrors: () => void): void => {
         <template v-else>
             <Form
                 v-bind="store.form()"
+                replace
                 class="space-y-4"
                 reset-on-error
                 #default="{ errors, processing, clearErrors }"

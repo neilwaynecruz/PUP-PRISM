@@ -219,7 +219,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
             action: store.url(options),
             method: 'post',
         })
-
+    
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::trash
@@ -297,7 +297,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
                     }),
             method: 'get',
         })
-
+    
     trash.form = trashForm
 /**
 * @see \App\Http\Controllers\Inventory\BookingController::show

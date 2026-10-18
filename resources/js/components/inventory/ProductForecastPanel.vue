@@ -78,7 +78,8 @@ const chartCoordinates = computed(() => {
         const y =
             chartHeight -
             chartPadding -
-            ((point.value - minValue) / spread) * (chartHeight - chartPadding * 2);
+            ((point.value - minValue) / spread) *
+                (chartHeight - chartPadding * 2);
 
         return { ...point, x, y };
     });
@@ -93,7 +94,9 @@ const historyLine = computed(() =>
 
 const forecastLine = computed(() => {
     const coordinates = chartCoordinates.value;
-    const forecastStart = coordinates.findIndex((point) => point.type === 'forecast');
+    const forecastStart = coordinates.findIndex(
+        (point) => point.type === 'forecast',
+    );
 
     if (forecastStart === -1) {
         return '';
@@ -105,7 +108,9 @@ const forecastLine = computed(() => {
 });
 
 const forecastDividerX = computed(() => {
-    const forecastStart = chartCoordinates.value.find((point) => point.type === 'forecast');
+    const forecastStart = chartCoordinates.value.find(
+        (point) => point.type === 'forecast',
+    );
 
     return forecastStart ? forecastStart.x : null;
 });
@@ -174,7 +179,11 @@ function methodLabel(method: string): string {
                     <span
                         class="rounded-full border border-border/60 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground"
                     >
-                        {{ forecast?.source === 'live' ? 'Live preview' : 'Daily snapshot' }}
+                        {{
+                            forecast?.source === 'live'
+                                ? 'Live preview'
+                                : 'Daily snapshot'
+                        }}
                     </span>
                     <span
                         class="rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
@@ -200,7 +209,9 @@ function methodLabel(method: string): string {
             </div>
 
             <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div class="rounded-2xl border border-border/50 bg-background/70 p-4">
+                <div
+                    class="rounded-2xl border border-border/50 bg-background/70 p-4"
+                >
                     <div
                         class="flex items-center justify-between text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase"
                     >
@@ -211,11 +222,14 @@ function methodLabel(method: string): string {
                         {{ forecast.predicted_daily_consumption.toFixed(2) }}
                     </div>
                     <div class="mt-1 text-xs text-muted-foreground">
-                        Based on {{ forecast.history_window_days }} days of history
+                        Based on {{ forecast.history_window_days }} days of
+                        history
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-border/50 bg-background/70 p-4">
+                <div
+                    class="rounded-2xl border border-border/50 bg-background/70 p-4"
+                >
                     <div
                         class="flex items-center justify-between text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase"
                     >
@@ -238,7 +252,9 @@ function methodLabel(method: string): string {
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-border/50 bg-background/70 p-4">
+                <div
+                    class="rounded-2xl border border-border/50 bg-background/70 p-4"
+                >
                     <div
                         class="flex items-center justify-between text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase"
                     >
@@ -253,7 +269,9 @@ function methodLabel(method: string): string {
                     </div>
                 </div>
 
-                <div class="rounded-2xl border border-border/50 bg-background/70 p-4">
+                <div
+                    class="rounded-2xl border border-border/50 bg-background/70 p-4"
+                >
                     <div
                         class="text-[11px] font-semibold tracking-[0.22em] text-muted-foreground uppercase"
                     >
@@ -269,7 +287,9 @@ function methodLabel(method: string): string {
             </div>
 
             <div class="mt-5 grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
-                <div class="rounded-2xl border border-border/50 bg-background/70 p-4">
+                <div
+                    class="rounded-2xl border border-border/50 bg-background/70 p-4"
+                >
                     <div class="mb-4 flex items-center justify-between gap-3">
                         <div>
                             <div class="text-sm font-semibold tracking-tight">
@@ -279,9 +299,13 @@ function methodLabel(method: string): string {
                                 Last 21 history points and next 14 forecast days
                             </div>
                         </div>
-                        <div class="flex items-center gap-3 text-xs text-muted-foreground">
+                        <div
+                            class="flex items-center gap-3 text-xs text-muted-foreground"
+                        >
                             <span class="inline-flex items-center gap-1.5">
-                                <span class="h-2 w-2 rounded-full bg-slate-400" />
+                                <span
+                                    class="h-2 w-2 rounded-full bg-slate-400"
+                                />
                                 History
                             </span>
                             <span class="inline-flex items-center gap-1.5">
@@ -291,7 +315,9 @@ function methodLabel(method: string): string {
                         </div>
                     </div>
 
-                    <div class="overflow-hidden rounded-xl border border-border/40 bg-card/80 p-3">
+                    <div
+                        class="overflow-hidden rounded-xl border border-border/40 bg-card/80 p-3"
+                    >
                         <svg
                             :viewBox="`0 0 ${chartWidth} ${chartHeight}`"
                             class="h-52 w-full"
@@ -303,8 +329,14 @@ function methodLabel(method: string): string {
                                 :key="guide"
                                 :x1="chartPadding"
                                 :x2="chartWidth - chartPadding"
-                                :y1="chartPadding + (chartHeight - chartPadding * 2) * guide"
-                                :y2="chartPadding + (chartHeight - chartPadding * 2) * guide"
+                                :y1="
+                                    chartPadding +
+                                    (chartHeight - chartPadding * 2) * guide
+                                "
+                                :y2="
+                                    chartPadding +
+                                    (chartHeight - chartPadding * 2) * guide
+                                "
                                 stroke="currentColor"
                                 class="text-border/50"
                                 stroke-dasharray="4 6"
@@ -347,31 +379,49 @@ function methodLabel(method: string): string {
                 </div>
 
                 <div class="grid gap-4">
-                    <div class="rounded-2xl border border-border/50 bg-background/70 p-4">
+                    <div
+                        class="rounded-2xl border border-border/50 bg-background/70 p-4"
+                    >
                         <div class="text-sm font-semibold tracking-tight">
                             Inventory posture
                         </div>
                         <div class="mt-4 grid gap-3 text-sm">
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="text-muted-foreground">On hand</span>
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <span class="text-muted-foreground"
+                                    >On hand</span
+                                >
                                 <span class="font-semibold">
                                     {{ forecast.current_on_hand_qty }}
                                 </span>
                             </div>
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="text-muted-foreground">Reorder point</span>
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <span class="text-muted-foreground"
+                                    >Reorder point</span
+                                >
                                 <span class="font-semibold">
                                     {{ forecast.reorder_point_qty }}
                                 </span>
                             </div>
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="text-muted-foreground">Lead time buffer</span>
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <span class="text-muted-foreground"
+                                    >Lead time buffer</span
+                                >
                                 <span class="font-semibold">
                                     {{ forecast.lead_time_days }} days
                                 </span>
                             </div>
-                            <div class="flex items-center justify-between gap-3">
-                                <span class="text-muted-foreground">Safety stock</span>
+                            <div
+                                class="flex items-center justify-between gap-3"
+                            >
+                                <span class="text-muted-foreground"
+                                    >Safety stock</span
+                                >
                                 <span class="font-semibold">
                                     {{ forecast.safety_stock_days }} days
                                 </span>
@@ -379,14 +429,18 @@ function methodLabel(method: string): string {
                         </div>
                     </div>
 
-                    <div class="rounded-2xl border border-border/50 bg-background/70 p-4">
+                    <div
+                        class="rounded-2xl border border-border/50 bg-background/70 p-4"
+                    >
                         <div class="text-sm font-semibold tracking-tight">
                             Analyst note
                         </div>
                         <p class="mt-3 text-sm leading-6 text-muted-foreground">
                             {{
-                                forecast.predicted_days_until_stockout !== null &&
-                                forecast.predicted_days_until_stockout <= forecast.lead_time_days
+                                forecast.predicted_days_until_stockout !==
+                                    null &&
+                                forecast.predicted_days_until_stockout <=
+                                    forecast.lead_time_days
                                     ? 'Demand is projected to outrun current stock before the normal replenishment lead time closes. Prioritize this item in the next purchasing cycle.'
                                     : 'Current stock still covers the projected lead time window, but the reorder target helps avoid a reactive stockout later in the month.'
                             }}

@@ -29,8 +29,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { useBulkSelection } from '@/composables/useBulkSelection';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {
     index as bookingsIndex,
     destroy as bookingsDestroy,
@@ -306,7 +306,9 @@ const calendarOptions = computed<CalendarOptions>(() => ({
     headerToolbar: {
         left: isCompactCalendar.value ? 'prev,next' : 'prev,next today',
         center: 'title',
-        right: isCompactCalendar.value ? '' : 'dayGridMonth,dayGridWeek,dayGridDay',
+        right: isCompactCalendar.value
+            ? ''
+            : 'dayGridMonth,dayGridWeek,dayGridDay',
     },
     events: events.value,
     height: isCompactCalendar.value ? 420 : 520,
@@ -329,7 +331,10 @@ let isComponentActive = true;
 watch([assetSearch, listSearch, listStatus, listDateFrom, listDateTo], () => {
     window.clearTimeout(assetSearchTimer);
     assetSearchTimer = window.setTimeout(() => {
-        if (!isComponentActive || !shouldApplyDebouncedVisit('/inventory/bookings')) {
+        if (
+            !isComponentActive ||
+            !shouldApplyDebouncedVisit('/inventory/bookings')
+        ) {
             return;
         }
 
@@ -362,7 +367,10 @@ onMounted(() => {
 
     compactCalendarMediaQuery = window.matchMedia('(max-width: 767px)');
     syncCompactCalendarMode();
-    compactCalendarMediaQuery.addEventListener('change', syncCompactCalendarMode);
+    compactCalendarMediaQuery.addEventListener(
+        'change',
+        syncCompactCalendarMode,
+    );
 });
 
 watch(
@@ -480,7 +488,9 @@ function applyScannedAsset(tagCode: string): void {
         </div>
 
         <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_400px]">
-            <div class="order-2 rounded-xl border border-border/50 bg-card shadow-sm lg:order-1">
+            <div
+                class="order-2 rounded-xl border border-border/50 bg-card shadow-sm lg:order-1"
+            >
                 <div
                     class="flex flex-col gap-3 border-b border-border/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
                 >
@@ -537,7 +547,8 @@ function applyScannedAsset(tagCode: string): void {
                         v-if="isCompactCalendar"
                         class="mt-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
                     >
-                        Mobile view uses a compact weekly calendar for faster field scheduling.
+                        Mobile view uses a compact weekly calendar for faster
+                        field scheduling.
                     </div>
                     <div
                         v-if="props.calendar_events.length === 0"
@@ -618,7 +629,9 @@ function applyScannedAsset(tagCode: string): void {
                     </div>
 
                     <div class="grid gap-1.5">
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div
+                            class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                        >
                             <Label
                                 for="asset_id"
                                 class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
@@ -765,7 +778,13 @@ function applyScannedAsset(tagCode: string): void {
                         </span>
                         <Checkbox
                             v-if="approval_queue.length > 0"
-                            :model-value="allQueueSelected ? true : someQueueSelected ? 'indeterminate' : false"
+                            :model-value="
+                                allQueueSelected
+                                    ? true
+                                    : someQueueSelected
+                                      ? 'indeterminate'
+                                      : false
+                            "
                             @update:model-value="toggleSelectAllQueue"
                             aria-label="Select all pending bookings"
                         />
@@ -804,14 +823,18 @@ function applyScannedAsset(tagCode: string): void {
                             v-for="booking in approval_queue"
                             :key="booking.id"
                             class="group relative rounded-xl border border-border/40 bg-card p-4 transition-all hover:border-border/60 hover:shadow-sm"
-                            :class="{ 'bg-primary/5': selectedIds.has(booking.id) }"
+                            :class="{
+                                'bg-primary/5': selectedIds.has(booking.id),
+                            }"
                         >
                             <div
                                 class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
                             >
                                 <div class="flex items-start gap-3">
                                     <Checkbox
-                                        :model-value="selectedIds.has(booking.id)"
+                                        :model-value="
+                                            selectedIds.has(booking.id)
+                                        "
                                         @update:model-value="
                                             () => toggleSelectQueue(booking.id)
                                         "
@@ -866,9 +889,7 @@ function applyScannedAsset(tagCode: string): void {
                                         <div
                                             class="text-[11px] text-muted-foreground/70 tabular-nums"
                                         >
-                                            {{
-                                                formatDateTime(booking.start)
-                                            }}
+                                            {{ formatDateTime(booking.start) }}
                                             — {{ formatDateTime(booking.end) }}
                                         </div>
                                     </div>
@@ -983,9 +1004,7 @@ function applyScannedAsset(tagCode: string): void {
                 </div>
 
                 <div class="px-5 py-4">
-                    <div
-                        class="mb-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4"
-                    >
+                    <div class="mb-4 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
                         <Input
                             v-model="listSearch"
                             placeholder="Search booking, asset, requester..."
@@ -995,7 +1014,9 @@ function applyScannedAsset(tagCode: string): void {
                                 <SelectValue placeholder="All statuses" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All statuses</SelectItem>
+                                <SelectItem value="all"
+                                    >All statuses</SelectItem
+                                >
                                 <SelectItem
                                     v-for="option in statusOptions"
                                     :key="option.value"
@@ -1048,9 +1069,7 @@ function applyScannedAsset(tagCode: string): void {
                                             <span
                                                 class="h-1 w-1 rounded-full bg-primary/40"
                                             />
-                                            {{
-                                                formatDateTime(booking.start)
-                                            }}
+                                            {{ formatDateTime(booking.start) }}
                                             — {{ formatDateTime(booking.end) }}
                                         </span>
                                     </div>

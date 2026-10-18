@@ -18,6 +18,7 @@ use App\Notifications\PurchaseOrderSentNotification;
 use App\Services\AuditLogService;
 use App\Services\Inventory\InventoryService;
 use App\Services\Procurement\PurchaseOrderGenerator;
+use App\Services\Procurement\PurchaseOrderNumberGenerator;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +29,10 @@ use Inertia\Response;
 
 class PurchaseOrderController extends Controller
 {
+    public function __construct(
+        private readonly PurchaseOrderNumberGenerator $numberGenerator,
+    ) {}
+
     public function index(Request $request): Response
     {
         $this->authorize('viewAny', PurchaseOrder::class);
@@ -97,7 +102,7 @@ class PurchaseOrderController extends Controller
         $purchaseOrder = DB::transaction(function () use ($request, $validated): PurchaseOrder {
             $purchaseOrder = PurchaseOrder::query()->create([
                 'supplier_id' => $validated['supplier_id'],
-                'po_number' => $this->nextPoNumber(),
+                'po_number' => $this->numberGenerator->nextNumber(),
                 'status' => PurchaseOrderStatus::Draft,
                 'subtotal' => 0,
                 'tax' => round((float) ($validated['tax'] ?? 0), 2),
@@ -220,28 +225,26 @@ class PurchaseOrderController extends Controller
 
         $validatedLines = $request->validatedLines();
 
-        foreach ($validatedLines as $line) {
-            $purchaseOrderLine = PurchaseOrderLine::query()->findOrFail($line['purchase_order_line_id']);
-
-            $inventory->receiveAgainstPurchaseOrderLine(
+        try {
+            $updatedPo = $inventory->receivePurchaseOrder(
                 $request->user(),
-                $purchaseOrderLine,
-                $line,
+                $purchaseOrder,
+                $validatedLines,
                 ipAddress: $request->ip(),
+                idempotencyKey: $request->string('idempotency_key')->trim()->toString() ?: null,
             );
+        } catch (\RuntimeException $e) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => $e->getMessage(),
+            ]);
+
+            return back();
         }
-
-        $purchaseOrder->refresh();
-        $purchaseOrder->load(['lines.product', 'supplier']);
-
-        AuditLogService::logUpdated($purchaseOrder, [
-            'status' => $purchaseOrder->getOriginal('status'),
-            'received_at' => $purchaseOrder->getOriginal('received_at'),
-        ]);
 
         Inertia::flash('toast', [
             'type' => 'success',
-            'message' => $purchaseOrder->status === PurchaseOrderStatus::Received
+            'message' => $updatedPo->status === PurchaseOrderStatus::Received
                 ? __('Purchase order fully received.')
                 : __('Purchase order receipt recorded.'),
         ]);
@@ -364,21 +367,6 @@ class PurchaseOrderController extends Controller
                 'unit_price' => $product->unit_price,
             ])
             ->all();
-    }
-
-    private function nextPoNumber(): string
-    {
-        $datePrefix = now()->format('Ymd');
-        $latest = PurchaseOrder::query()
-            ->where('po_number', 'like', "PO-{$datePrefix}-%")
-            ->orderByDesc('po_number')
-            ->value('po_number');
-
-        $nextSequence = $latest !== null
-            ? ((int) substr($latest, -4)) + 1
-            : 1;
-
-        return sprintf('PO-%s-%04d', $datePrefix, $nextSequence);
     }
 
     private function mergeNotes(?string $existingNotes, ?string $nextNote): ?string

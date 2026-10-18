@@ -30,7 +30,10 @@ export function clearSessionClientState(): void {
 }
 
 export async function verifyAuthenticatedSession(): Promise<boolean> {
-    if (typeof window === 'undefined' || isPublicPath(window.location.pathname)) {
+    if (
+        typeof window === 'undefined' ||
+        isPublicPath(window.location.pathname)
+    ) {
         return true;
     }
 
@@ -65,10 +68,12 @@ export async function verifyAuthenticatedSession(): Promise<boolean> {
     }
 }
 
-export function initializeSessionGuard(options: {
-    loginUrl?: string;
-    statusUrl?: string;
-} = {}): void {
+export function initializeSessionGuard(
+    options: {
+        loginUrl?: string;
+        statusUrl?: string;
+    } = {},
+): void {
     if (typeof window === 'undefined') {
         return;
     }

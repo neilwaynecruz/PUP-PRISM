@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import ProductForecastPanel from '@/components/inventory/ProductForecastPanel.vue';
 import ForecastController from '@/actions/App/Http/Controllers/Inventory/ForecastController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import ProductForecastPanel from '@/components/inventory/ProductForecastPanel.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    index as forecastingIndex,
-} from '@/routes/inventory/forecasting';
+import { index as forecastingIndex } from '@/routes/inventory/forecasting';
 
 type ForecastPoint = {
     date: string;
@@ -111,7 +109,9 @@ function submitProfile(): void {
         <ProductForecastPanel :forecast="forecast" />
 
         <section class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <div class="rounded-2xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-2xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <h2 class="text-sm font-semibold tracking-tight">
                     Confidence guidance
                 </h2>
@@ -122,13 +122,19 @@ function submitProfile(): void {
                     v-if="forecast"
                     class="mt-4 grid gap-3 text-sm sm:grid-cols-2"
                 >
-                    <div class="rounded-xl border border-border/50 bg-background/70 p-4">
-                        <div class="text-muted-foreground">Reorder threshold</div>
+                    <div
+                        class="rounded-xl border border-border/50 bg-background/70 p-4"
+                    >
+                        <div class="text-muted-foreground">
+                            Reorder threshold
+                        </div>
                         <div class="mt-1 font-semibold">
                             {{ product.reorder_threshold ?? 'Not set' }}
                         </div>
                     </div>
-                    <div class="rounded-xl border border-border/50 bg-background/70 p-4">
+                    <div
+                        class="rounded-xl border border-border/50 bg-background/70 p-4"
+                    >
                         <div class="text-muted-foreground">Forecast source</div>
                         <div class="mt-1 font-semibold capitalize">
                             {{ forecast.source }}
@@ -181,7 +187,9 @@ function submitProfile(): void {
                     </div>
 
                     <div class="grid gap-2">
-                        <Label for="forecast_horizon_days">Forecast horizon days</Label>
+                        <Label for="forecast_horizon_days"
+                            >Forecast horizon days</Label
+                        >
                         <Input
                             id="forecast_horizon_days"
                             v-model.number="form.forecast_horizon_days"
@@ -189,7 +197,9 @@ function submitProfile(): void {
                             min="7"
                             max="90"
                         />
-                        <InputError :message="form.errors.forecast_horizon_days" />
+                        <InputError
+                            :message="form.errors.forecast_horizon_days"
+                        />
                     </div>
 
                     <div class="grid gap-2">

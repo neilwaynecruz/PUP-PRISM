@@ -62,7 +62,10 @@ let isComponentActive = true;
 watch([search, active], () => {
     window.clearTimeout(refreshTimer);
     refreshTimer = window.setTimeout(() => {
-        if (!isComponentActive || !shouldApplyDebouncedVisit('/inventory/suppliers')) {
+        if (
+            !isComponentActive ||
+            !shouldApplyDebouncedVisit('/inventory/suppliers')
+        ) {
             return;
         }
 
@@ -191,9 +194,7 @@ onBeforeUnmount(() => {
                                         : 'bg-muted text-muted-foreground'
                                 "
                             >
-                                {{
-                                    supplier.is_active ? 'Active' : 'Inactive'
-                                }}
+                                {{ supplier.is_active ? 'Active' : 'Inactive' }}
                             </span>
                         </td>
                         <td class="text-right">

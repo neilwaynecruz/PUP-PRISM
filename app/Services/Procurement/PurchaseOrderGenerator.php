@@ -9,12 +9,15 @@ use App\Models\InventoryAlert;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\User;
-use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderGenerator
 {
+    public function __construct(
+        private readonly PurchaseOrderNumberGenerator $numberGenerator,
+    ) {}
+
     /**
      * @return Collection<int, PurchaseOrder>
      */
@@ -142,7 +145,7 @@ class PurchaseOrderGenerator
 
         $purchaseOrder = PurchaseOrder::create([
             'supplier_id' => $firstProduct->supplier_id,
-            'po_number' => $this->nextPoNumber(),
+            'po_number' => $this->numberGenerator->nextNumber(),
             'status' => PurchaseOrderStatus::Draft,
             'subtotal' => round($subtotal, 2),
             'tax' => 0,
@@ -176,20 +179,5 @@ class PurchaseOrderGenerator
         }
 
         return max($fallbackQty, (int) $snapshot->recommended_reorder_qty);
-    }
-
-    private function nextPoNumber(): string
-    {
-        $prefix = 'PO-'.CarbonImmutable::now()->format('Ymd').'-';
-        $lastPoNumber = PurchaseOrder::withTrashed()
-            ->where('po_number', 'like', "{$prefix}%")
-            ->orderByDesc('id')
-            ->value('po_number');
-
-        $sequence = $lastPoNumber !== null
-            ? ((int) substr($lastPoNumber, -4)) + 1
-            : 1;
-
-        return sprintf('%s%04d', $prefix, $sequence);
     }
 }

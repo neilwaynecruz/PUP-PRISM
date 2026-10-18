@@ -111,7 +111,7 @@ test('admin users see dashboard alerts, low stock, and asset details', function 
             ->where('lowStock.0.reorder_threshold', 10)
             ->has('unserviceableAssets', 1)
             ->where('unserviceableAssets.0.name', 'Department Laptop')
-            ->where('unserviceableAssets.0.status', 'Unserviceable')
+            ->where('unserviceableAssets.0.status', AssetStatus::Unserviceable->name)
             ->where('unserviceableAssets.0.tag_code', 'AST-00000001')
             ->where('assetStatusCounts.labels', ['Unserviceable', 'Condemned'])
             ->where('assetStatusCounts.data', [1, 0]));
@@ -134,5 +134,5 @@ test('supply head dashboard includes supplier performance and purchase order sum
         ->assertInertia(fn (Assert $page) => $page
             ->component('Dashboard')
             ->where('purchaseOrderSummary.sent', 2)
-            ->where('supplierPerformance.0.name', 'Acme' . ' Supply'));
+            ->where('supplierPerformance.0.name', 'Acme'.' Supply'));
 });

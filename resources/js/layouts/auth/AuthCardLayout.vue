@@ -21,10 +21,7 @@ defineProps<{
         class="flex min-h-svh flex-col items-center justify-center gap-6 bg-muted p-6 md:p-10"
     >
         <div class="flex w-full max-w-md flex-col gap-6">
-            <Link
-                :href="home()"
-                class="flex items-center gap-3 self-center"
-            >
+            <Link :href="home()" class="flex items-center gap-3 self-center">
                 <AppLogoIcon class="size-12 shrink-0" />
                 <div class="grid text-left">
                     <span

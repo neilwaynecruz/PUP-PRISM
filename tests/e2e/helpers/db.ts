@@ -1,6 +1,6 @@
 import { execFileSync } from 'child_process';
-import { dirname, resolve } from 'path';
 import { DatabaseSync } from 'node:sqlite';
+import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -72,7 +72,7 @@ export function preparePendingHandoverVerification(
 }
 
 export function getProductOnHandQtyBySku(sku: string): number {
-    const database = new DatabaseSync(E2E_DATABASE, { readonly: true });
+    const database = new DatabaseSync(E2E_DATABASE, { readOnly: true });
 
     try {
         const row = database
