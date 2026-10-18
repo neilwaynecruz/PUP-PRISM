@@ -2,9 +2,7 @@ import { HttpResponseError } from '@inertiajs/core';
 import { useHttp } from '@inertiajs/vue3';
 import type { ComputedRef, Ref } from 'vue';
 import { computed, ref } from 'vue';
-import {
-    setupData as securitySetupData,
-} from '@/actions/App/Http/Controllers/Settings/SecurityController';
+import { setupData as securitySetupData } from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import { recoveryCodes } from '@/routes/two-factor';
 
 export type UseTwoFactorAuthReturn = {
@@ -35,10 +33,7 @@ const resolveErrorMessage = (
     error: unknown,
     fallbackMessage: string,
 ): string => {
-    if (
-        error instanceof HttpResponseError &&
-        error.response.status === 423
-    ) {
+    if (error instanceof HttpResponseError && error.response.status === 423) {
         return 'Password confirmation expired. Please confirm your password again and retry two-factor setup.';
     }
 
@@ -94,7 +89,10 @@ export const useTwoFactorAuth = (): UseTwoFactorAuthReturn => {
             manualSetupKey.value = response.secretKey;
         } catch (error: unknown) {
             errors.value.push(
-                resolveErrorMessage(error, 'Failed to load two-factor setup data'),
+                resolveErrorMessage(
+                    error,
+                    'Failed to load two-factor setup data',
+                ),
             );
             qrCodeSvg.value = null;
             manualSetupKey.value = null;

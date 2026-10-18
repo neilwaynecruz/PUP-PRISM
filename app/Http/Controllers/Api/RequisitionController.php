@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreRequisitionRequest;
 use App\Http\Resources\RequisitionResource;
 use App\Models\Requisition;
+use App\Services\AuditLogService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +17,10 @@ use Illuminate\Support\Facades\DB;
 class RequisitionController extends Controller
 {
     use PaginatesApiResources;
+
+    public function __construct(
+        private readonly NotificationService $notifications,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -79,6 +85,10 @@ class RequisitionController extends Controller
         });
 
         $requisition->load(['requester:id,name,email', 'lines.product:id,sku,name']);
+
+        AuditLogService::logCreated($requisition, "Requisition #{$requisition->id} submitted via API.");
+
+        $this->notifications->requisitionSubmitted($requisition);
 
         return response()->json([
             'data' => new RequisitionResource($requisition),

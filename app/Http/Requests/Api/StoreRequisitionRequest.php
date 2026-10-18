@@ -19,7 +19,7 @@ class StoreRequisitionRequest extends FormRequest
         return [
             'notes' => ['nullable', 'string', 'max:2000'],
             'lines' => ['required', 'array', 'min:1', 'max:50'],
-            'lines.*.product_id' => ['required', 'integer', 'exists:products,id'],
+            'lines.*.product_id' => ['required', 'integer', 'distinct', 'exists:products,id'],
             'lines.*.qty_requested' => ['required', 'integer', 'min:1', 'max:99999'],
         ];
     }

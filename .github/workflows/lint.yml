@@ -15,35 +15,43 @@ on:
       - workos
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout code
+        uses: actions/checkout@v6
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.4'
+          tools: composer:v2
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, pdo_pgsql, pgsql
+          coverage: none
 
-      - name: Install Dependencies
-        run: |
-          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist
-          npm install
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: 'npm'
 
-      - name: Run Pint
-        run: composer lint
+      - name: Install Composer Dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist --optimize-autoloader
 
-      - name: Format Frontend
-        run: npm run format
+      - name: Install Node Dependencies
+        run: npm ci
 
-      - name: Lint Frontend
-        run: npm run lint
+      - name: Check PHP Code Style (Pint)
+        run: composer lint:check
 
-      # - name: Commit Changes
-      #   uses: stefanzweifel/git-auto-commit-action@v7
-      #   with:
-      #     commit_message: fix code style
-      #     commit_options: '--no-verify'
+      - name: Check Frontend Formatting (Prettier)
+        run: npm run format:check
+
+      - name: Check Frontend Lint (ESLint)
+        run: npm run lint:check
+
+      - name: Check TypeScript Types
+        run: npm run types:check

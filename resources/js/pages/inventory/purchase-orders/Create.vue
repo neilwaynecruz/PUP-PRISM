@@ -184,10 +184,19 @@ function submit(): void {
                 </div>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4 flex items-center justify-between">
-                    <div class="text-sm font-semibold tracking-tight">Line items</div>
-                    <Button type="button" variant="outline" size="sm" @click="addLine">
+                    <div class="text-sm font-semibold tracking-tight">
+                        Line items
+                    </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        @click="addLine"
+                    >
                         Add line
                     </Button>
                 </div>
@@ -199,7 +208,9 @@ function submit(): void {
                         class="grid gap-3 rounded-lg border border-border/50 p-4 lg:grid-cols-[2fr_0.8fr_0.8fr_auto]"
                     >
                         <div class="grid gap-2">
-                            <Label :for="`line-product-${index}`">Product</Label>
+                            <Label :for="`line-product-${index}`"
+                                >Product</Label
+                            >
                             <select
                                 :id="`line-product-${index}`"
                                 v-model="line.product_id"
@@ -240,7 +251,9 @@ function submit(): void {
                         </div>
 
                         <div class="grid gap-2">
-                            <Label :for="`line-price-${index}`">Unit price</Label>
+                            <Label :for="`line-price-${index}`"
+                                >Unit price</Label
+                            >
                             <Input
                                 :id="`line-price-${index}`"
                                 v-model="line.unit_price"

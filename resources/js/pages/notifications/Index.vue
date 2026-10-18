@@ -4,7 +4,11 @@ import { onBeforeUnmount, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { index as notificationsIndex, read as markNotificationRead, readAll } from '@/routes/notifications';
+import {
+    index as notificationsIndex,
+    read as markNotificationRead,
+    readAll,
+} from '@/routes/notifications';
 
 type NotificationRow = {
     id: string;
@@ -39,9 +43,7 @@ const props = defineProps<{
 defineOptions({
     name: 'NotificationsIndexPage',
     layout: {
-        breadcrumbs: [
-            { title: 'Notifications', href: notificationsIndex() },
-        ],
+        breadcrumbs: [{ title: 'Notifications', href: notificationsIndex() }],
     },
 });
 
@@ -83,7 +85,11 @@ function formatTimestamp(value: string | null): string {
 }
 
 function markRead(notificationId: string): void {
-    router.put(markNotificationRead(notificationId).url, {}, { preserveScroll: true });
+    router.put(
+        markNotificationRead(notificationId).url,
+        {},
+        { preserveScroll: true },
+    );
 }
 </script>
 
@@ -91,7 +97,9 @@ function markRead(notificationId: string): void {
     <Head title="Notifications" />
 
     <div class="flex flex-col gap-6 p-4 sm:p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        >
             <Heading
                 variant="small"
                 title="Notification history"
@@ -140,8 +148,13 @@ function markRead(notificationId: string): void {
             <Input v-model="dateTo" type="date" class="h-10 rounded-lg" />
         </div>
 
-        <div class="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm">
-            <div v-if="notifications.data.length === 0" class="px-4 py-10 text-center text-sm text-muted-foreground">
+        <div
+            class="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm"
+        >
+            <div
+                v-if="notifications.data.length === 0"
+                class="px-4 py-10 text-center text-sm text-muted-foreground"
+            >
                 No notifications found.
             </div>
             <div
@@ -154,18 +167,30 @@ function markRead(notificationId: string): void {
                     :class="notification.readAt ? 'bg-border' : 'bg-primary'"
                 />
                 <div class="min-w-0 flex-1">
-                    <div class="flex flex-wrap items-center justify-between gap-2">
-                        <h2 class="text-sm font-semibold">{{ notification.title }}</h2>
+                    <div
+                        class="flex flex-wrap items-center justify-between gap-2"
+                    >
+                        <h2 class="text-sm font-semibold">
+                            {{ notification.title }}
+                        </h2>
                         <span class="text-xs text-muted-foreground">
                             {{ formatTimestamp(notification.createdAt) }}
                         </span>
                     </div>
-                    <p class="mt-1 text-sm text-muted-foreground">{{ notification.message }}</p>
-                    <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                        <span class="rounded-full bg-muted px-2 py-0.5 capitalize">
+                    <p class="mt-1 text-sm text-muted-foreground">
+                        {{ notification.message }}
+                    </p>
+                    <div
+                        class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground"
+                    >
+                        <span
+                            class="rounded-full bg-muted px-2 py-0.5 capitalize"
+                        >
                             {{ notification.category }}
                         </span>
-                        <span class="rounded-full bg-muted px-2 py-0.5 capitalize">
+                        <span
+                            class="rounded-full bg-muted px-2 py-0.5 capitalize"
+                        >
                             {{ notification.severity }}
                         </span>
                     </div>

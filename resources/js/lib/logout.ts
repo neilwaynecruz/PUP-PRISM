@@ -6,9 +6,13 @@ export function performLogout(): void {
     router.flushAll();
     clearSessionClientState();
 
-    router.post(logout.url(), {}, {
-        replace: true,
-        preserveScroll: false,
-        preserveState: false,
-    });
+    router.post(
+        logout.url(),
+        {},
+        {
+            replace: true,
+            preserveScroll: false,
+            preserveState: false,
+        },
+    );
 }

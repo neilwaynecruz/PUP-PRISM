@@ -172,7 +172,9 @@ function formatDate(iso: string | null): string {
                     Generate from alerts
                 </Button>
                 <Button v-if="can.create" as-child size="sm" class="rounded-lg">
-                    <Link :href="purchaseOrdersCreate()">New purchase order</Link>
+                    <Link :href="purchaseOrdersCreate()"
+                        >New purchase order</Link
+                    >
                 </Button>
             </div>
         </div>
@@ -209,16 +211,8 @@ function formatDate(iso: string | null): string {
                     {{ supplier.name }}
                 </option>
             </select>
-            <Input
-                v-model="dateFrom"
-                type="date"
-                class="h-10 rounded-lg"
-            />
-            <Input
-                v-model="dateTo"
-                type="date"
-                class="h-10 rounded-lg"
-            />
+            <Input v-model="dateFrom" type="date" class="h-10 rounded-lg" />
+            <Input v-model="dateTo" type="date" class="h-10 rounded-lg" />
         </div>
 
         <div
@@ -254,7 +248,9 @@ function formatDate(iso: string | null): string {
                         :key="purchaseOrder.id"
                         class="transition-colors hover:bg-muted/30 [&>td]:px-4 [&>td]:py-3"
                     >
-                        <td class="font-medium">{{ purchaseOrder.po_number }}</td>
+                        <td class="font-medium">
+                            {{ purchaseOrder.po_number }}
+                        </td>
                         <td>{{ purchaseOrder.supplier?.name ?? '—' }}</td>
                         <td class="text-muted-foreground">
                             {{ purchaseOrder.requester?.name ?? '—' }}
@@ -270,10 +266,14 @@ function formatDate(iso: string | null): string {
                             </span>
                         </td>
                         <td class="text-right font-mono">
-                            {{ formatPhilippinePeso(purchaseOrder.total_amount) }}
+                            {{
+                                formatPhilippinePeso(purchaseOrder.total_amount)
+                            }}
                         </td>
                         <td class="text-right">
-                            <div class="inline-flex min-w-24 items-center gap-2">
+                            <div
+                                class="inline-flex min-w-24 items-center gap-2"
+                            >
                                 <div class="h-2 flex-1 rounded-full bg-muted">
                                     <div
                                         class="h-2 rounded-full bg-primary"
@@ -289,7 +289,9 @@ function formatDate(iso: string | null): string {
                         </td>
                         <td class="text-right">
                             <Button variant="ghost" size="sm" as-child>
-                                <Link :href="purchaseOrdersShow(purchaseOrder.id)">
+                                <Link
+                                    :href="purchaseOrdersShow(purchaseOrder.id)"
+                                >
                                     View
                                 </Link>
                             </Button>

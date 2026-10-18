@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
+import { Plus, Check, Trash2 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ReceivingController from '@/actions/App/Http/Controllers/Inventory/ReceivingController';
 import Heading from '@/components/Heading.vue';
@@ -8,7 +9,6 @@ import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Check, Trash2 } from 'lucide-vue-next';
 
 defineOptions({
     layout: {
@@ -432,8 +432,8 @@ function appendBatchLineTagCode(index: number, value: string): void {
                             placeholder="AST-00000001&#10;AST-00000002"
                         />
                         <div class="text-xs text-muted-foreground">
-                            Asset scans are appended automatically. You can still
-                            paste or type multiple tag codes here.
+                            Asset scans are appended automatically. You can
+                            still paste or type multiple tag codes here.
                         </div>
                         <div
                             v-if="tagScanFeedback"
@@ -447,12 +447,18 @@ function appendBatchLineTagCode(index: number, value: string): void {
 
                 <!-- Confirm Transaction Card -->
                 <div
-                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm space-y-4"
+                    class="space-y-4 rounded-xl border border-border/60 bg-card p-5 shadow-sm"
                 >
                     <div>
-                        <h4 class="text-sm font-semibold tracking-tight">Confirm receiving</h4>
-                        <p class="mt-1 text-xs text-muted-foreground leading-normal">
-                            Make sure all details, references, and asset tag codes are filled and validated before receiving stock.
+                        <h4 class="text-sm font-semibold tracking-tight">
+                            Confirm receiving
+                        </h4>
+                        <p
+                            class="mt-1 text-xs leading-normal text-muted-foreground"
+                        >
+                            Make sure all details, references, and asset tag
+                            codes are filled and validated before receiving
+                            stock.
                         </p>
                     </div>
                     <Button
@@ -480,9 +486,12 @@ function appendBatchLineTagCode(index: number, value: string): void {
                 >
                     <div class="mb-4 flex items-center justify-between gap-3">
                         <div>
-                            <div class="text-sm font-semibold">Batch line {{ i + 1 }}</div>
+                            <div class="text-sm font-semibold">
+                                Batch line {{ i + 1 }}
+                            </div>
                             <div class="text-xs text-muted-foreground">
-                                Capture item details and asset tags for this entry.
+                                Capture item details and asset tags for this
+                                entry.
                             </div>
                         </div>
                         <Button
@@ -498,7 +507,9 @@ function appendBatchLineTagCode(index: number, value: string): void {
 
                     <div class="grid gap-4">
                         <div class="grid gap-2">
-                            <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                            <Label
+                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                            >
                                 SKU
                             </Label>
                             <Input
@@ -510,7 +521,9 @@ function appendBatchLineTagCode(index: number, value: string): void {
 
                         <div class="grid gap-4 sm:grid-cols-2">
                             <div class="grid gap-2">
-                                <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                <Label
+                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >
                                     Qty
                                 </Label>
                                 <Input
@@ -522,7 +535,9 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                 />
                             </div>
                             <div class="grid gap-2">
-                                <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                <Label
+                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >
                                     Ref no.
                                 </Label>
                                 <Input
@@ -532,7 +547,9 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                 />
                             </div>
                             <div class="grid gap-2">
-                                <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                <Label
+                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >
                                     Received
                                 </Label>
                                 <Input
@@ -542,7 +559,9 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                 />
                             </div>
                             <div class="grid gap-2">
-                                <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                                <Label
+                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >
                                     Expires
                                 </Label>
                                 <Input
@@ -554,8 +573,12 @@ function appendBatchLineTagCode(index: number, value: string): void {
                         </div>
 
                         <div class="grid gap-2">
-                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                            <div
+                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                                <Label
+                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                >
                                     Asset tags
                                 </Label>
                                 <QrScannerDialog
@@ -580,7 +603,9 @@ function appendBatchLineTagCode(index: number, value: string): void {
                         </div>
 
                         <div class="grid gap-2">
-                            <Label class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase">
+                            <Label
+                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                            >
                                 Notes
                             </Label>
                             <Input
@@ -607,7 +632,9 @@ function appendBatchLineTagCode(index: number, value: string): void {
                         <col class="w-[12%]" />
                         <col class="w-[4%]" />
                     </colgroup>
-                    <thead class="bg-muted/50 border-b border-border/60 text-left">
+                    <thead
+                        class="border-b border-border/60 bg-muted/50 text-left"
+                    >
                         <tr
                             class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3.5"
                         >
@@ -679,7 +706,7 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                 />
                                 <div
                                     v-if="batchTagFeedback[i]"
-                                    class="max-w-full text-[11px] text-muted-foreground leading-normal"
+                                    class="max-w-full text-[11px] leading-normal text-muted-foreground"
                                 >
                                     {{ batchTagFeedback[i] }}
                                 </div>

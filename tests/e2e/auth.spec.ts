@@ -32,6 +32,10 @@ test.describe('Authentication Flow', () => {
 
         await page.goBack();
 
+        await expect(page).toHaveURL(/\/(login|two-factor-challenge)$/);
+        await expect(page.getByTestId('dashboard-page')).toHaveCount(0);
+
+        await page.goto('/dashboard');
         await expect(page).toHaveURL(/\/login$/);
         await expect(page.getByTestId('login-page')).toBeVisible();
         await expect(page.getByTestId('dashboard-page')).toHaveCount(0);

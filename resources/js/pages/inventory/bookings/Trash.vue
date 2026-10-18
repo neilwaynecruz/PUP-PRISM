@@ -206,7 +206,9 @@ function confirmBulkForceDelete(): void {
         <div class="rounded-xl border border-border/50 bg-card shadow-sm">
             <div class="border-b border-border/40 px-5 py-4">
                 <div class="text-sm font-semibold tracking-tight">Filters</div>
-                <div class="text-xs text-muted-foreground/80">Narrow deleted bookings by date range, deleter, or keyword.</div>
+                <div class="text-xs text-muted-foreground/80">
+                    Narrow deleted bookings by date range, deleter, or keyword.
+                </div>
             </div>
             <div class="grid gap-4 px-5 py-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div class="grid gap-2">
@@ -275,124 +277,155 @@ function confirmBulkForceDelete(): void {
             v-if="hasSelection"
             class="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm"
         >
-            <span class="font-medium text-primary">{{ selectedIds.size }} selected</span>
+            <span class="font-medium text-primary"
+                >{{ selectedIds.size }} selected</span
+            >
             <div class="ml-auto flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" @click="openBulkRestoreDialog">Restore</Button>
-                <Button variant="destructive" size="sm" @click="openBulkForceDeleteDialog">Delete forever</Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    @click="openBulkRestoreDialog"
+                    >Restore</Button
+                >
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    @click="openBulkForceDeleteDialog"
+                    >Delete forever</Button
+                >
             </div>
         </div>
 
         <div class="rounded-xl border border-border/50 bg-card shadow-sm">
-            <div class="flex items-center justify-between border-b border-border/40 px-5 py-4">
-                <div class="text-sm font-semibold tracking-tight">Deleted bookings</div>
-                <span class="inline-flex items-center rounded-full border border-border/40 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">{{ bookings.data.length }} total</span>
+            <div
+                class="flex items-center justify-between border-b border-border/40 px-5 py-4"
+            >
+                <div class="text-sm font-semibold tracking-tight">
+                    Deleted bookings
+                </div>
+                <span
+                    class="inline-flex items-center rounded-full border border-border/40 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+                    >{{ bookings.data.length }} total</span
+                >
             </div>
             <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left">
-                    <tr
-                        class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
-                    >
-                        <th class="w-10">
-                            <Checkbox
-                                :model-value="allSelected ? true : someSelected ? 'indeterminate' : false"
-                                @update:model-value="toggleSelectAll"
-                                aria-label="Select all"
-                            />
-                        </th>
-                        <th>Asset</th>
-                        <th>Status</th>
-                        <th>Requester</th>
-                        <th>Start</th>
-                        <th>End</th>
-                        <th>Deleted at</th>
-                        <th>Deleted by</th>
-                        <th>Reason</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border/60">
-                    <tr v-if="bookings.data.length === 0">
-                        <td colspan="9" class="p-0">
-                            <EmptyState
-                                icon="booking"
-                                title="Trash is empty"
-                                description="Deleted bookings will appear here. You have 30 days to restore them before they are permanently removed."
-                                action-label="Back to Bookings"
-                                action-href="/inventory/bookings"
-                            />
-                        </td>
-                    </tr>
-                    <tr
-                        v-for="b in bookings.data"
-                        :key="b.id"
-                        class="transition-colors [&>td]:px-4 [&>td]:py-3"
-                        :class="{ 'bg-primary/5': selectedIds.has(b.id) }"
-                    >
-                        <td>
-                            <Checkbox
-                                :model-value="selectedIds.has(b.id)"
-                                @update:model-value="() => toggleSelect(b.id)"
-                                aria-label="Select booking"
-                            />
-                        </td>
-                        <td class="font-medium">{{ b.asset_label ?? '—' }}</td>
-                        <td>
-                            <span
-                                class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
-                                :class="
-                                    b.status === 'approved'
-                                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                                        : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                                "
-                            >
-                                {{ b.status }}
-                            </span>
-                        </td>
-                        <td class="text-muted-foreground">
-                            {{ b.requester?.name ?? '—' }}
-                        </td>
-                        <td class="text-muted-foreground">
-                            {{ formatDateTime(b.start) }}
-                        </td>
-                        <td class="text-muted-foreground">
-                            {{ formatDateTime(b.end) }}
-                        </td>
-                        <td class="text-muted-foreground">
-                            {{ formatDateTime(b.deleted_at) }}
-                        </td>
-                        <td class="text-muted-foreground">
-                            {{ b.deleted_by?.name ?? '—' }}
-                        </td>
-                        <td
-                            class="max-w-[200px] truncate text-muted-foreground"
-                            :title="b.deletion_reason ?? undefined"
+                <table class="min-w-full text-sm">
+                    <thead class="bg-muted/40 text-left">
+                        <tr
+                            class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
                         >
-                            {{ b.deletion_reason ?? '—' }}
-                        </td>
-                        <td class="text-right">
-                            <div class="flex items-center justify-end gap-1">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    class="h-8 rounded-lg text-xs"
-                                    @click="openRestoreDialog(b)"
+                            <th class="w-10">
+                                <Checkbox
+                                    :model-value="
+                                        allSelected
+                                            ? true
+                                            : someSelected
+                                              ? 'indeterminate'
+                                              : false
+                                    "
+                                    @update:model-value="toggleSelectAll"
+                                    aria-label="Select all"
+                                />
+                            </th>
+                            <th>Asset</th>
+                            <th>Status</th>
+                            <th>Requester</th>
+                            <th>Start</th>
+                            <th>End</th>
+                            <th>Deleted at</th>
+                            <th>Deleted by</th>
+                            <th>Reason</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border/60">
+                        <tr v-if="bookings.data.length === 0">
+                            <td colspan="9" class="p-0">
+                                <EmptyState
+                                    icon="booking"
+                                    title="Trash is empty"
+                                    description="Deleted bookings will appear here. You have 30 days to restore them before they are permanently removed."
+                                    action-label="Back to Bookings"
+                                    action-href="/inventory/bookings"
+                                />
+                            </td>
+                        </tr>
+                        <tr
+                            v-for="b in bookings.data"
+                            :key="b.id"
+                            class="transition-colors [&>td]:px-4 [&>td]:py-3"
+                            :class="{ 'bg-primary/5': selectedIds.has(b.id) }"
+                        >
+                            <td>
+                                <Checkbox
+                                    :model-value="selectedIds.has(b.id)"
+                                    @update:model-value="
+                                        () => toggleSelect(b.id)
+                                    "
+                                    aria-label="Select booking"
+                                />
+                            </td>
+                            <td class="font-medium">
+                                {{ b.asset_label ?? '—' }}
+                            </td>
+                            <td>
+                                <span
+                                    class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
+                                    :class="
+                                        b.status === 'approved'
+                                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                    "
                                 >
-                                    Restore
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
-                                    @click="openForceDeleteDialog(b)"
+                                    {{ b.status }}
+                                </span>
+                            </td>
+                            <td class="text-muted-foreground">
+                                {{ b.requester?.name ?? '—' }}
+                            </td>
+                            <td class="text-muted-foreground">
+                                {{ formatDateTime(b.start) }}
+                            </td>
+                            <td class="text-muted-foreground">
+                                {{ formatDateTime(b.end) }}
+                            </td>
+                            <td class="text-muted-foreground">
+                                {{ formatDateTime(b.deleted_at) }}
+                            </td>
+                            <td class="text-muted-foreground">
+                                {{ b.deleted_by?.name ?? '—' }}
+                            </td>
+                            <td
+                                class="max-w-[200px] truncate text-muted-foreground"
+                                :title="b.deletion_reason ?? undefined"
+                            >
+                                {{ b.deletion_reason ?? '—' }}
+                            </td>
+                            <td class="text-right">
+                                <div
+                                    class="flex items-center justify-end gap-1"
                                 >
-                                    Delete Forever
-                                </Button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-8 rounded-lg text-xs"
+                                        @click="openRestoreDialog(b)"
+                                    >
+                                        Restore
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                                        @click="openForceDeleteDialog(b)"
+                                    >
+                                        Delete Forever
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 

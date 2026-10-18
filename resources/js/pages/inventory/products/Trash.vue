@@ -206,7 +206,9 @@ function confirmBulkForceDelete(): void {
         <div class="rounded-xl border border-border/50 bg-card shadow-sm">
             <div class="border-b border-border/40 px-5 py-4">
                 <div class="text-sm font-semibold tracking-tight">Filters</div>
-                <div class="text-xs text-muted-foreground/80">Narrow deleted products by date range, deleter, or keyword.</div>
+                <div class="text-xs text-muted-foreground/80">
+                    Narrow deleted products by date range, deleter, or keyword.
+                </div>
             </div>
             <div class="grid gap-4 px-5 py-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div class="grid gap-2">
@@ -275,124 +277,155 @@ function confirmBulkForceDelete(): void {
             v-if="hasSelection"
             class="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm"
         >
-            <span class="font-medium text-primary">{{ selectedIds.size }} selected</span>
+            <span class="font-medium text-primary"
+                >{{ selectedIds.size }} selected</span
+            >
             <div class="ml-auto flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" @click="openBulkRestoreDialog">Restore</Button>
-                <Button variant="destructive" size="sm" @click="openBulkForceDeleteDialog">Delete forever</Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    @click="openBulkRestoreDialog"
+                    >Restore</Button
+                >
+                <Button
+                    variant="destructive"
+                    size="sm"
+                    @click="openBulkForceDeleteDialog"
+                    >Delete forever</Button
+                >
             </div>
         </div>
 
         <div class="rounded-xl border border-border/50 bg-card shadow-sm">
-            <div class="flex items-center justify-between border-b border-border/40 px-5 py-4">
-                <div class="text-sm font-semibold tracking-tight">Deleted products</div>
-                <span class="inline-flex items-center rounded-full border border-border/40 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">{{ products.data.length }} total</span>
+            <div
+                class="flex items-center justify-between border-b border-border/40 px-5 py-4"
+            >
+                <div class="text-sm font-semibold tracking-tight">
+                    Deleted products
+                </div>
+                <span
+                    class="inline-flex items-center rounded-full border border-border/40 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+                    >{{ products.data.length }} total</span
+                >
             </div>
             <div class="overflow-x-auto">
-            <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left">
-                    <tr
-                        class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
-                    >
-                        <th class="w-10">
-                            <Checkbox
-                                :model-value="allSelected ? true : someSelected ? 'indeterminate' : false"
-                                @update:model-value="toggleSelectAll"
-                                aria-label="Select all"
-                            />
-                        </th>
-                        <th>SKU</th>
-                        <th>Name</th>
-                        <th>Type</th>
-                        <th>Category</th>
-                        <th>Origin</th>
-                        <th>Deleted at</th>
-                        <th>Deleted by</th>
-                        <th>Reason</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border/60">
-                    <tr v-if="products.data.length === 0">
-                        <td colspan="9" class="p-0">
-                            <EmptyState
-                                icon="product"
-                                title="Trash is empty"
-                                description="Deleted products will appear here. You have 30 days to restore them before they are permanently removed."
-                                action-label="Back to Products"
-                                action-href="/inventory/products"
-                            />
-                        </td>
-                    </tr>
-                    <tr
-                        v-for="p in products.data"
-                        :key="p.id"
-                        class="transition-colors [&>td]:px-4 [&>td]:py-3"
-                        :class="{ 'bg-primary/5': selectedIds.has(p.id) }"
-                    >
-                        <td>
-                            <Checkbox
-                                :model-value="selectedIds.has(p.id)"
-                                @update:model-value="() => toggleSelect(p.id)"
-                                aria-label="Select product"
-                            />
-                        </td>
-                        <td class="font-mono text-[11px] text-muted-foreground">
-                            {{ p.sku }}
-                        </td>
-                        <td class="font-medium">{{ p.name }}</td>
-                        <td>
-                            <span
-                                class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
-                                :class="
-                                    p.type === 'consumable'
-                                        ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                                        : 'bg-sky-500/10 text-sky-700 dark:text-sky-400'
-                                "
-                            >
-                                {{ p.type }}
-                            </span>
-                        </td>
-                        <td class="text-muted-foreground">
-                            {{ p.category ?? '—' }}
-                        </td>
-                        <td class="text-muted-foreground">
-                            {{ p.origin ?? '—' }}
-                        </td>
-                        <td class="text-muted-foreground">
-                            {{ formatDateTime(p.deleted_at) }}
-                        </td>
-                        <td class="text-muted-foreground">
-                            {{ p.deleted_by?.name ?? '—' }}
-                        </td>
-                        <td
-                            class="max-w-[200px] truncate text-muted-foreground"
-                            :title="p.deletion_reason ?? undefined"
+                <table class="min-w-full text-sm">
+                    <thead class="bg-muted/40 text-left">
+                        <tr
+                            class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
                         >
-                            {{ p.deletion_reason ?? '—' }}
-                        </td>
-                        <td class="text-right">
-                            <div class="flex items-center justify-end gap-1">
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    class="h-8 rounded-lg text-xs"
-                                    @click="openRestoreDialog(p)"
+                            <th class="w-10">
+                                <Checkbox
+                                    :model-value="
+                                        allSelected
+                                            ? true
+                                            : someSelected
+                                              ? 'indeterminate'
+                                              : false
+                                    "
+                                    @update:model-value="toggleSelectAll"
+                                    aria-label="Select all"
+                                />
+                            </th>
+                            <th>SKU</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Category</th>
+                            <th>Origin</th>
+                            <th>Deleted at</th>
+                            <th>Deleted by</th>
+                            <th>Reason</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border/60">
+                        <tr v-if="products.data.length === 0">
+                            <td colspan="9" class="p-0">
+                                <EmptyState
+                                    icon="product"
+                                    title="Trash is empty"
+                                    description="Deleted products will appear here. You have 30 days to restore them before they are permanently removed."
+                                    action-label="Back to Products"
+                                    action-href="/inventory/products"
+                                />
+                            </td>
+                        </tr>
+                        <tr
+                            v-for="p in products.data"
+                            :key="p.id"
+                            class="transition-colors [&>td]:px-4 [&>td]:py-3"
+                            :class="{ 'bg-primary/5': selectedIds.has(p.id) }"
+                        >
+                            <td>
+                                <Checkbox
+                                    :model-value="selectedIds.has(p.id)"
+                                    @update:model-value="
+                                        () => toggleSelect(p.id)
+                                    "
+                                    aria-label="Select product"
+                                />
+                            </td>
+                            <td
+                                class="font-mono text-[11px] text-muted-foreground"
+                            >
+                                {{ p.sku }}
+                            </td>
+                            <td class="font-medium">{{ p.name }}</td>
+                            <td>
+                                <span
+                                    class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
+                                    :class="
+                                        p.type === 'consumable'
+                                            ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                            : 'bg-sky-500/10 text-sky-700 dark:text-sky-400'
+                                    "
                                 >
-                                    Restore
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
-                                    @click="openForceDeleteDialog(p)"
+                                    {{ p.type }}
+                                </span>
+                            </td>
+                            <td class="text-muted-foreground">
+                                {{ p.category ?? '—' }}
+                            </td>
+                            <td class="text-muted-foreground">
+                                {{ p.origin ?? '—' }}
+                            </td>
+                            <td class="text-muted-foreground">
+                                {{ formatDateTime(p.deleted_at) }}
+                            </td>
+                            <td class="text-muted-foreground">
+                                {{ p.deleted_by?.name ?? '—' }}
+                            </td>
+                            <td
+                                class="max-w-[200px] truncate text-muted-foreground"
+                                :title="p.deletion_reason ?? undefined"
+                            >
+                                {{ p.deletion_reason ?? '—' }}
+                            </td>
+                            <td class="text-right">
+                                <div
+                                    class="flex items-center justify-end gap-1"
                                 >
-                                    Delete Forever
-                                </Button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-8 rounded-lg text-xs"
+                                        @click="openRestoreDialog(p)"
+                                    >
+                                        Restore
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                                        @click="openForceDeleteDialog(p)"
+                                    >
+                                        Delete Forever
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 

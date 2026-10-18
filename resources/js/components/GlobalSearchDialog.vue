@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { BookOpen, FileText, LoaderCircle, Search } from 'lucide-vue-next';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+} from 'vue';
 import {
     Dialog,
     DialogContent,
@@ -13,9 +20,9 @@ import { useAppNavigation } from '@/composables/useAppNavigation';
 import { useInventoryNavigation } from '@/lib/inventoryNavigation';
 import type { InventorySearchItem } from '@/lib/inventoryNavigation';
 import { toUrl } from '@/lib/utils';
+import { search as globalSearchRoute } from '@/routes';
 import { index as bookingsIndex } from '@/routes/inventory/bookings';
 import { index as requisitionsIndex } from '@/routes/inventory/requisitions';
-import { search as globalSearchRoute } from '@/routes';
 
 type EntityResult = {
     type: string;
@@ -243,14 +250,14 @@ onBeforeUnmount(() => {
                     Searching records...
                 </div>
 
-                <div
-                    v-if="entityError"
-                    class="px-3 py-2 text-sm text-rose-600"
-                >
+                <div v-if="entityError" class="px-3 py-2 text-sm text-rose-600">
                     {{ entityError }}
                 </div>
 
-                <div v-if="showEntityResults && entityResults.length > 0" class="mb-3">
+                <div
+                    v-if="showEntityResults && entityResults.length > 0"
+                    class="mb-3"
+                >
                     <div
                         class="px-3 py-2 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
                     >
@@ -270,11 +277,15 @@ onBeforeUnmount(() => {
                         </div>
                         <div class="min-w-0 flex-1">
                             <div class="flex items-center gap-2">
-                                <span class="font-medium">{{ item.title }}</span>
+                                <span class="font-medium">{{
+                                    item.title
+                                }}</span>
                                 <span
                                     class="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase"
                                 >
-                                    {{ entityTypeLabel[item.type] ?? item.type }}
+                                    {{
+                                        entityTypeLabel[item.type] ?? item.type
+                                    }}
                                 </span>
                             </div>
                             <div
@@ -288,7 +299,11 @@ onBeforeUnmount(() => {
                 </div>
 
                 <div
-                    v-if="showEntityResults && entityResults.length === 0 && !entityError"
+                    v-if="
+                        showEntityResults &&
+                        entityResults.length === 0 &&
+                        !entityError
+                    "
                     class="px-3 py-2 text-sm text-muted-foreground"
                 >
                     No matching records found.

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Bell, CheckCheck, LoaderCircle, Radio } from 'lucide-vue-next';
 import { Link } from '@inertiajs/vue3';
+import { Bell, CheckCheck, LoaderCircle, Radio } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,7 +65,7 @@ function formatTimestamp(timestamp: string | null): string {
                 <Bell class="h-4 w-4" />
                 <span
                     v-if="unreadCount > 0"
-                    class="absolute -right-1.5 -top-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm"
+                    class="absolute -top-1.5 -right-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground shadow-sm"
                 >
                     {{ unreadCount > 99 ? '99+' : unreadCount }}
                 </span>
@@ -92,7 +92,10 @@ function formatTimestamp(timestamp: string | null): string {
                         class="inline-flex items-center gap-1.5 rounded-full border border-border/70 bg-muted/60 px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
                     >
                         <Radio class="h-3 w-3" />
-                        <span :class="connectionTone" class="h-2 w-2 rounded-full" />
+                        <span
+                            :class="connectionTone"
+                            class="h-2 w-2 rounded-full"
+                        />
                         {{ connectionLabel }}
                     </span>
 
@@ -112,7 +115,10 @@ function formatTimestamp(timestamp: string | null): string {
 
             <DropdownMenuSeparator />
 
-            <div v-if="hasNotifications" class="max-h-[26rem] overflow-y-auto p-2">
+            <div
+                v-if="hasNotifications"
+                class="max-h-[26rem] overflow-y-auto p-2"
+            >
                 <button
                     v-for="notification in notifications"
                     :key="notification.id"
@@ -122,19 +128,27 @@ function formatTimestamp(timestamp: string | null): string {
                 >
                     <span
                         class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
-                        :class="notification.readAt ? 'bg-border' : 'bg-primary'"
+                        :class="
+                            notification.readAt ? 'bg-border' : 'bg-primary'
+                        "
                     />
 
                     <span class="min-w-0 flex-1">
                         <span class="flex items-center justify-between gap-3">
-                            <span class="truncate text-sm font-semibold text-foreground">
+                            <span
+                                class="truncate text-sm font-semibold text-foreground"
+                            >
                                 {{ notification.title }}
                             </span>
-                            <span class="shrink-0 text-[11px] text-muted-foreground">
+                            <span
+                                class="shrink-0 text-[11px] text-muted-foreground"
+                            >
                                 {{ formatTimestamp(notification.createdAt) }}
                             </span>
                         </span>
-                        <span class="mt-1 line-clamp-2 block text-xs leading-5 text-muted-foreground">
+                        <span
+                            class="mt-1 line-clamp-2 block text-xs leading-5 text-muted-foreground"
+                        >
                             {{ notification.message }}
                         </span>
                     </span>
@@ -145,11 +159,15 @@ function formatTimestamp(timestamp: string | null): string {
                 v-else
                 class="flex flex-col items-center justify-center gap-3 px-6 py-10 text-center"
             >
-                <div class="rounded-full border border-dashed border-border/70 bg-muted/40 p-3">
+                <div
+                    class="rounded-full border border-dashed border-border/70 bg-muted/40 p-3"
+                >
                     <Bell class="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div>
-                    <p class="text-sm font-medium text-foreground">No notifications yet</p>
+                    <p class="text-sm font-medium text-foreground">
+                        No notifications yet
+                    </p>
                     <p class="mt-1 text-xs text-muted-foreground">
                         New requests and workflow updates will appear here.
                     </p>
@@ -158,7 +176,9 @@ function formatTimestamp(timestamp: string | null): string {
 
             <DropdownMenuSeparator />
 
-            <div class="flex items-center justify-between px-4 py-2.5 text-[11px] text-muted-foreground">
+            <div
+                class="flex items-center justify-between px-4 py-2.5 text-[11px] text-muted-foreground"
+            >
                 <div class="flex items-center gap-3">
                     <Link
                         :href="notificationsIndex().url"
@@ -166,10 +186,15 @@ function formatTimestamp(timestamp: string | null): string {
                     >
                         View all
                     </Link>
-                    <span>{{ hasUnread ? `${unreadCount} unread` : 'All caught up' }}</span>
+                    <span>{{
+                        hasUnread ? `${unreadCount} unread` : 'All caught up'
+                    }}</span>
                 </div>
                 <span class="inline-flex items-center gap-1.5">
-                    <LoaderCircle v-if="isSyncing" class="h-3.5 w-3.5 animate-spin" />
+                    <LoaderCircle
+                        v-if="isSyncing"
+                        class="h-3.5 w-3.5 animate-spin"
+                    />
                     <span>{{ isSyncing ? 'Syncing' : 'Listening' }}</span>
                 </span>
             </div>

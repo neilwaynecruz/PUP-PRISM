@@ -135,10 +135,13 @@ function revokeSelectedToken(): void {
         return;
     }
 
-    revokeTokenForm.delete(ApiTokenController.destroy(selectedToken.value.id).url, {
-        preserveScroll: true,
-        onSuccess: () => closeRevokeDialog(),
-    });
+    revokeTokenForm.delete(
+        ApiTokenController.destroy(selectedToken.value.id).url,
+        {
+            preserveScroll: true,
+            onSuccess: () => closeRevokeDialog(),
+        },
+    );
 }
 </script>
 
@@ -174,7 +177,9 @@ function revokeSelectedToken(): void {
                     </p>
                 </div>
 
-                <div class="grid gap-3 rounded-xl border border-border/60 bg-card p-4">
+                <div
+                    class="grid gap-3 rounded-xl border border-border/60 bg-card p-4"
+                >
                     <label
                         v-for="option in abilityOptions"
                         :key="option.value"
@@ -251,7 +256,10 @@ function revokeSelectedToken(): void {
         </div>
 
         <div class="grid gap-2 text-sm text-muted-foreground">
-            <p><span class="font-medium text-foreground">Name:</span> {{ newToken.name }}</p>
+            <p>
+                <span class="font-medium text-foreground">Name:</span>
+                {{ newToken.name }}
+            </p>
             <p>
                 <span class="font-medium text-foreground">Abilities:</span>
                 {{ newToken.ability_labels.join(', ') }}
@@ -321,7 +329,11 @@ function revokeSelectedToken(): void {
                     </div>
                     <div class="space-y-1">
                         <dt class="text-muted-foreground">Expires</dt>
-                        <dd>{{ formatDate(token.expires_at, 'Does not expire') }}</dd>
+                        <dd>
+                            {{
+                                formatDate(token.expires_at, 'Does not expire')
+                            }}
+                        </dd>
                     </div>
                 </dl>
             </div>
@@ -334,14 +346,19 @@ function revokeSelectedToken(): void {
                 <DialogTitle>Revoke API token?</DialogTitle>
                 <DialogDescription>
                     <span v-if="selectedToken">
-                        {{ selectedToken.name }} will stop working immediately for any integration using it.
+                        {{ selectedToken.name }} will stop working immediately
+                        for any integration using it.
                     </span>
                 </DialogDescription>
             </DialogHeader>
 
             <DialogFooter class="gap-2">
                 <DialogClose as-child>
-                    <Button variant="secondary" type="button" @click="closeRevokeDialog">
+                    <Button
+                        variant="secondary"
+                        type="button"
+                        @click="closeRevokeDialog"
+                    >
                         Cancel
                     </Button>
                 </DialogClose>

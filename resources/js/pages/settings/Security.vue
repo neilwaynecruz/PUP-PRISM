@@ -54,10 +54,7 @@ defineOptions({
     },
 });
 
-const {
-    hasSetupData,
-    clearTwoFactorAuthData,
-} = useTwoFactorAuth();
+const { hasSetupData, clearTwoFactorAuthData } = useTwoFactorAuth();
 const showSetupModal = ref<boolean>(false);
 const shouldShowMandatoryTwoFactorNotice = computed<boolean>(
     () => props.requiresPrivilegedTwoFactor && !props.twoFactorConfirmed,

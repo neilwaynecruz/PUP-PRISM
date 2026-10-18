@@ -88,7 +88,9 @@ function submit(): void {
                             <th class="px-4 py-3 font-medium">Mail</th>
                             <th class="px-4 py-3 font-medium">In-app</th>
                             <th class="px-4 py-3 font-medium">Realtime</th>
-                            <th class="px-4 py-3 font-medium">Email frequency</th>
+                            <th class="px-4 py-3 font-medium">
+                                Email frequency
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -151,7 +153,9 @@ function submit(): void {
                                     v-model="preference.digest_frequency"
                                     class="h-9 w-full min-w-32 rounded-lg border border-input bg-background px-3 text-sm"
                                 >
-                                    <option value="instant">Instant email</option>
+                                    <option value="instant">
+                                        Instant email
+                                    </option>
                                     <option value="daily">Daily digest</option>
                                 </select>
                             </td>

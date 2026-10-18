@@ -255,10 +255,7 @@ watch(isNavigating, (navigating) => {
 <template>
     <Head title="Audit Log" />
 
-    <div
-        class="flex flex-col gap-6 p-4 sm:p-6"
-        data-testid="audit-logs-page"
-    >
+    <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="audit-logs-page">
         <div
             class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
         >

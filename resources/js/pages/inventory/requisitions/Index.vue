@@ -24,8 +24,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { useBulkSelection } from '@/composables/useBulkSelection';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {
     destroy as requisitionTemplatesDestroy,
     duplicate as requisitionTemplatesDuplicate,
@@ -122,7 +122,10 @@ let isComponentActive = true;
 watch([search, status, dateFrom, dateTo], () => {
     window.clearTimeout(listFilterTimer);
     listFilterTimer = window.setTimeout(() => {
-        if (!isComponentActive || !shouldApplyDebouncedVisit('/inventory/requisitions')) {
+        if (
+            !isComponentActive ||
+            !shouldApplyDebouncedVisit('/inventory/requisitions')
+        ) {
             return;
         }
 
@@ -139,12 +142,13 @@ onBeforeUnmount(() => {
     window.clearTimeout(listFilterTimer);
 });
 
+let nextDraftKey = 0;
+
 function makeDraftLine(line?: Partial<TemplateLine>): DraftLine {
+    nextDraftKey += 1;
+
     return {
-        key:
-            typeof crypto !== 'undefined' && 'randomUUID' in crypto
-                ? crypto.randomUUID()
-                : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        key: `draft-line-${nextDraftKey}`,
         sku: line?.sku ?? '',
         qty_requested: line?.qty_requested ? String(line.qty_requested) : '1',
         name: line?.name ?? null,
@@ -158,11 +162,13 @@ function buildPayloadLines(
     return lines
         .filter(
             (line) =>
-                line.sku.trim() !== '' || line.qty_requested.trim() !== '',
+                String(line.sku ?? '').trim() !== '' ||
+                String(line.qty_requested ?? '').trim() !== '',
         )
         .map((line) => ({
-            sku: line.sku.trim(),
-            qty_requested: Number.parseInt(line.qty_requested, 10) || 0,
+            sku: String(line.sku ?? '').trim(),
+            qty_requested:
+                Number.parseInt(String(line.qty_requested ?? '0'), 10) || 0,
         }));
 }
 
@@ -271,9 +277,9 @@ const canConfirmDelete = computed(() => {
 const hasIncompleteLines = computed(() =>
     requisitionForm.lines.some(
         (line) =>
-            line.sku.trim() === '' ||
-            line.qty_requested.trim() === '' ||
-            Number.parseInt(line.qty_requested, 10) < 1,
+            String(line.sku ?? '').trim() === '' ||
+            String(line.qty_requested ?? '').trim() === '' ||
+            Number.parseInt(String(line.qty_requested ?? '0'), 10) < 1,
     ),
 );
 
@@ -614,7 +620,9 @@ function confirmBulkAction(): void {
                                         props.can.bulkIssue
                                     "
                                     :model-value="selectedIds.has(r.id)"
-                                    @update:model-value="() => toggleSelect(r.id)"
+                                    @update:model-value="
+                                        () => toggleSelect(r.id)
+                                    "
                                     aria-label="Select requisition"
                                 />
                                 <span class="font-medium">#{{ r.id }}</span>
@@ -674,7 +682,13 @@ function confirmBulkAction(): void {
                                     class="w-8 py-2 pr-2"
                                 >
                                     <Checkbox
-                                        :model-value="allSelected ? true : someSelected ? 'indeterminate' : false"
+                                        :model-value="
+                                            allSelected
+                                                ? true
+                                                : someSelected
+                                                  ? 'indeterminate'
+                                                  : false
+                                        "
                                         @update:model-value="toggleSelectAll"
                                         aria-label="Select all requisitions"
                                     />
@@ -691,7 +705,9 @@ function confirmBulkAction(): void {
                                 v-for="r in requisitions.data"
                                 :key="r.id"
                                 class="border-b border-border/40 transition-colors"
-                                :class="{ 'bg-primary/5': selectedIds.has(r.id) }"
+                                :class="{
+                                    'bg-primary/5': selectedIds.has(r.id),
+                                }"
                             >
                                 <td
                                     v-if="

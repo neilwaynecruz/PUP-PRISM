@@ -263,7 +263,10 @@ let isComponentActive = true;
 watch([search, type, categoryId, originId, supplierId, active], () => {
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => {
-        if (!isComponentActive || !shouldApplyDebouncedVisit('/inventory/products')) {
+        if (
+            !isComponentActive ||
+            !shouldApplyDebouncedVisit('/inventory/products')
+        ) {
             return;
         }
 
@@ -477,14 +480,16 @@ onBeforeUnmount(() => {
                         :key="p.id"
                         :data-testid="`product-mobile-row-${p.sku}`"
                         class="rounded-xl border border-border/60 bg-card p-4 shadow-sm transition-colors"
-                    :class="{ 'bg-primary/5': selectedIds.has(p.id) }"
+                        :class="{ 'bg-primary/5': selectedIds.has(p.id) }"
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div class="flex items-start gap-3">
                                 <Checkbox
                                     v-if="props.can.bulkUpdate"
                                     :model-value="selectedIds.has(p.id)"
-                                    @update:model-value="() => toggleSelect(p.id)"
+                                    @update:model-value="
+                                        () => toggleSelect(p.id)
+                                    "
                                     aria-label="Select product"
                                     class="mt-1"
                                 />
@@ -623,7 +628,13 @@ onBeforeUnmount(() => {
                             >
                                 <th v-if="props.can.bulkUpdate" class="w-10">
                                     <Checkbox
-                                        :model-value="allSelected ? true : someSelected ? 'indeterminate' : false"
+                                        :model-value="
+                                            allSelected
+                                                ? true
+                                                : someSelected
+                                                  ? 'indeterminate'
+                                                  : false
+                                        "
                                         @update:model-value="toggleSelectAll"
                                         aria-label="Select all products"
                                     />
@@ -655,7 +666,9 @@ onBeforeUnmount(() => {
                                 :key="p.id"
                                 :data-testid="`product-row-${p.sku}`"
                                 class="group transition-colors hover:bg-muted/40 [&>td]:px-4 [&>td]:py-3"
-                                :class="{ 'bg-primary/5': selectedIds.has(p.id) }"
+                                :class="{
+                                    'bg-primary/5': selectedIds.has(p.id),
+                                }"
                             >
                                 <td v-if="props.can.bulkUpdate">
                                     <Checkbox

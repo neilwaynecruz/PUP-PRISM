@@ -3,6 +3,7 @@ import { echo, echoIsConfigured, useConnectionStatus } from '@laravel/echo-vue';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { isAppNavigating } from '@/composables/useAppNavigation';
+import { read, readAll } from '@/routes/notifications';
 import type {
     Auth,
     RealtimeNotificationItem,
@@ -47,9 +48,14 @@ export function useRealtimeNotifications() {
     let pageReloadTimer: number | null = null;
     const cleanups: Array<() => void> = [];
 
-    const auth = computed<Auth | undefined>(() => page.props.auth as Auth | undefined);
+    const auth = computed<Auth | undefined>(
+        () => page.props.auth as Auth | undefined,
+    );
     const sharedNotifications = computed<SharedNotifications>(() => {
-        return (page.props.notifications as SharedNotifications | undefined) ?? defaultNotifications;
+        return (
+            (page.props.notifications as SharedNotifications | undefined) ??
+            defaultNotifications
+        );
     });
 
     const hasUnread = computed(() => unreadCount.value > 0);
@@ -116,10 +122,7 @@ export function useRealtimeNotifications() {
                 return;
             }
 
-            router.reload({
-                preserveScroll: true,
-                preserveState: true,
-            });
+            router.reload();
         }, 180);
     }
 
@@ -132,8 +135,6 @@ export function useRealtimeNotifications() {
 
         router.reload({
             only: ['notifications'],
-            preserveScroll: true,
-            preserveState: true,
             onFinish: () => {
                 isSyncing.value = false;
             },
@@ -213,7 +214,9 @@ export function useRealtimeNotifications() {
         return null;
     }
 
-    function modulesForNotification(notification: BroadcastNotificationPayload): string[] {
+    function modulesForNotification(
+        notification: BroadcastNotificationPayload,
+    ): string[] {
         switch (notification.category) {
             case 'booking':
                 return ['dashboard', 'bookings'];
@@ -260,7 +263,9 @@ export function useRealtimeNotifications() {
             return notification;
         });
 
-        unreadCount.value = notifications.value.filter((item) => item.readAt === null).length;
+        unreadCount.value = notifications.value.filter(
+            (item) => item.readAt === null,
+        ).length;
     }
 
     function markAllReadLocally(): void {

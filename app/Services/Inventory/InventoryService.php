@@ -16,10 +16,12 @@ use App\Models\RequisitionLine;
 use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\User;
+use App\Services\AuditLogService;
 use App\Services\InventoryRealtimeService;
 use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class InventoryService
@@ -90,54 +92,157 @@ class InventoryService
         $this->dispatchReceiptRealtime($result);
     }
 
+    /**
+     * Atomically receive multiple lines against a purchase order.
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     */
+    public function receivePurchaseOrder(
+        User $user,
+        PurchaseOrder $purchaseOrder,
+        array $lines,
+        ?string $ipAddress = null,
+        ?string $idempotencyKey = null,
+    ): PurchaseOrder {
+        if ($lines === []) {
+            throw new \InvalidArgumentException('No line items provided for receipt.');
+        }
+
+        // Idempotency check: prevent duplicate processing within 60 seconds
+        $cacheKey = 'po_receive_idempotency:'.$purchaseOrder->id.':'.($idempotencyKey ?: sha1(json_encode($lines)));
+        if (Cache::has($cacheKey)) {
+            return $purchaseOrder->fresh(['supplier', 'requester', 'approver', 'lines.product']) ?? $purchaseOrder;
+        }
+
+        /** @var array{0: PurchaseOrder, 1: array<int, array{product: Product, on_hand_qty: int|null, delta: int}>} $transactionResult */
+        $transactionResult = DB::transaction(function () use ($user, $purchaseOrder, $lines, $ipAddress): array {
+            // 1. Lock the PurchaseOrder first to serialize receipt attempts and prevent concurrent race conditions
+            /** @var PurchaseOrder $lockedPo */
+            $lockedPo = PurchaseOrder::query()
+                ->lockForUpdate()
+                ->findOrFail($purchaseOrder->id);
+
+            if (! $lockedPo->canReceive()) {
+                throw new \RuntimeException('Only sent or partially received purchase orders can accept receipts.');
+            }
+
+            // 2. Lock all affected purchase order lines in strictly ascending ID order to avoid deadlocks
+            $submittedLineIds = collect($lines)->pluck('purchase_order_line_id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+
+            $lockedLines = PurchaseOrderLine::query()
+                ->where('purchase_order_id', $lockedPo->id)
+                ->whereIn('id', $submittedLineIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            // 3. Lock all affected products in strictly ascending ID order
+            $productIds = $lockedLines->pluck('product_id')->unique()->sort()->values()->all();
+            $lockedProducts = Product::query()
+                ->whereIn('id', $productIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            $events = [];
+
+            // 4. Validate and process each line
+            foreach ($lines as $linePayload) {
+                $lineId = (int) $linePayload['purchase_order_line_id'];
+                /** @var PurchaseOrderLine|null $line */
+                $line = $lockedLines->get($lineId);
+
+                if (! $line) {
+                    throw new \RuntimeException("Purchase order line #{$lineId} does not belong to this purchase order.");
+                }
+
+                $product = $lockedProducts->get($line->product_id);
+                if (! $product) {
+                    throw new \RuntimeException("Product #{$line->product_id} not found.");
+                }
+
+                $remainingQty = $line->remainingQty();
+                $receivedQuantity = $this->resolveReceivedQuantity($line, $linePayload);
+
+                if ($receivedQuantity <= 0) {
+                    throw new \RuntimeException("Received quantity must be greater than zero for product {$product->sku}.");
+                }
+
+                if ($receivedQuantity > $remainingQty) {
+                    throw new \RuntimeException("Receipt exceeds remaining quantity for product {$product->sku}.");
+                }
+
+                // If asset, check tag uniqueness against database
+                if ($product->type === ProductType::Asset) {
+                    /** @var array<int, string> $tagCodes */
+                    $tagCodes = $linePayload['tag_codes'] ?? [];
+                    if (Asset::query()->whereIn('tag_code', $tagCodes)->exists()) {
+                        throw new \RuntimeException('One or more asset tag codes have already been registered.');
+                    }
+                }
+
+                // Execute receipt
+                $receiptResult = $this->performReceipt(
+                    user: $user,
+                    product: $product,
+                    payload: [
+                        ...$linePayload,
+                        'reference_no' => $linePayload['reference_no'] ?? $lockedPo->po_number,
+                        'notes' => $linePayload['notes'] ?? "Received against {$lockedPo->po_number}.",
+                    ],
+                    ipAddress: $ipAddress,
+                );
+
+                $line->forceFill([
+                    'qty_received' => $line->qty_received + $receivedQuantity,
+                ])->save();
+
+                $events[] = $receiptResult;
+            }
+
+            // 5. Update purchase order receipt status and audit log atomically
+            $oldValues = [
+                'status' => $lockedPo->status->value,
+                'received_at' => $lockedPo->received_at?->toIso8601String(),
+            ];
+
+            $lockedPo->refreshReceiptStatus();
+
+            AuditLogService::logUpdated($lockedPo, $oldValues);
+
+            return [$lockedPo->fresh(['lines.product', 'supplier']) ?? $lockedPo, $events];
+        });
+
+        [$updatedPo, $realtimeEvents] = $transactionResult;
+
+        // 6. Record idempotency token for 60 seconds
+        Cache::put($cacheKey, true, now()->addSeconds(60));
+
+        // 7. Dispatch realtime events strictly after transaction has committed
+        foreach ($realtimeEvents as $event) {
+            $this->dispatchReceiptRealtime($event);
+        }
+
+        return $updatedPo;
+    }
+
     public function receiveAgainstPurchaseOrderLine(
         User $user,
         PurchaseOrderLine $purchaseOrderLine,
         array $payload,
         ?string $ipAddress = null,
     ): void {
-        $result = DB::transaction(function () use ($user, $purchaseOrderLine, $payload, $ipAddress): array {
-            $line = PurchaseOrderLine::query()
-                ->with(['product:id,sku,name,type', 'purchaseOrder'])
-                ->lockForUpdate()
-                ->findOrFail($purchaseOrderLine->id);
+        $purchaseOrder = $purchaseOrderLine->purchaseOrder
+            ?? PurchaseOrder::query()->findOrFail($purchaseOrderLine->purchase_order_id);
 
-            /** @var PurchaseOrder $purchaseOrder */
-            $purchaseOrder = PurchaseOrder::query()
-                ->lockForUpdate()
-                ->findOrFail($line->purchase_order_id);
-
-            if (! $purchaseOrder->canReceive()) {
-                throw new \RuntimeException('Only sent or partially received purchase orders can accept receipts.');
-            }
-
-            $receivedQuantity = $this->resolveReceivedQuantity($line, $payload);
-
-            if ($receivedQuantity > $line->remainingQty()) {
-                throw new \RuntimeException("Receipt exceeds remaining quantity for product {$line->product?->sku}.");
-            }
-
-            $result = $this->performReceipt(
-                user: $user,
-                product: $line->product ?? Product::query()->findOrFail($line->product_id),
-                payload: [
-                    ...$payload,
-                    'reference_no' => $payload['reference_no'] ?? $purchaseOrder->po_number,
-                    'notes' => $payload['notes'] ?? "Received against {$purchaseOrder->po_number}.",
-                ],
-                ipAddress: $ipAddress,
-            );
-
-            $line->forceFill([
-                'qty_received' => $line->qty_received + $receivedQuantity,
-            ])->save();
-
-            $purchaseOrder->refreshReceiptStatus();
-
-            return $result;
-        });
-
-        $this->dispatchReceiptRealtime($result);
+        $this->receivePurchaseOrder($user, $purchaseOrder, [
+            [
+                ...$payload,
+                'purchase_order_line_id' => $purchaseOrderLine->id,
+            ],
+        ], $ipAddress);
     }
 
     /**
@@ -495,6 +600,7 @@ class InventoryService
             ['product_id' => $product->id],
             ['on_hand_qty' => 0],
         );
+        $stock = ProductStock::query()->whereKey($stock->id)->lockForUpdate()->firstOrFail();
 
         $qtyBefore = (int) $stock->on_hand_qty;
         $stock->increment('on_hand_qty', $qty);

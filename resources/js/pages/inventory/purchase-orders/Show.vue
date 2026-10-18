@@ -193,23 +193,35 @@ function submitReceipts(): void {
         </div>
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Status</div>
-                <div class="mt-1 font-medium">{{ purchaseOrder.status_label }}</div>
+                <div class="mt-1 font-medium">
+                    {{ purchaseOrder.status_label }}
+                </div>
             </div>
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
-                <div class="text-sm text-muted-foreground">Expected delivery</div>
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
+                <div class="text-sm text-muted-foreground">
+                    Expected delivery
+                </div>
                 <div class="mt-1 font-medium">
                     {{ formatDateTime(purchaseOrder.expected_delivery_at) }}
                 </div>
             </div>
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Sent at</div>
                 <div class="mt-1 font-medium">
                     {{ formatDateTime(purchaseOrder.sent_at) }}
                 </div>
             </div>
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Received at</div>
                 <div class="mt-1 font-medium">
                     {{ formatDateTime(purchaseOrder.received_at) }}
@@ -218,8 +230,12 @@ function submitReceipts(): void {
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[1.25fr_0.75fr]">
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
-                <div class="mb-4 text-sm font-semibold tracking-tight">Line items</div>
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
+                <div class="mb-4 text-sm font-semibold tracking-tight">
+                    Line items
+                </div>
 
                 <div class="grid gap-4">
                     <div
@@ -230,9 +246,13 @@ function submitReceipts(): void {
                         <div class="flex items-start justify-between gap-3">
                             <div>
                                 <div class="font-medium">
-                                    {{ line.product?.name ?? 'Unknown product' }}
+                                    {{
+                                        line.product?.name ?? 'Unknown product'
+                                    }}
                                 </div>
-                                <div class="font-mono text-xs text-muted-foreground">
+                                <div
+                                    class="font-mono text-xs text-muted-foreground"
+                                >
                                     {{ line.product?.sku ?? '—' }}
                                 </div>
                             </div>
@@ -246,11 +266,16 @@ function submitReceipts(): void {
                             </Button>
                         </div>
 
-                        <div class="mt-3 grid gap-2 text-sm text-muted-foreground md:grid-cols-2">
+                        <div
+                            class="mt-3 grid gap-2 text-sm text-muted-foreground md:grid-cols-2"
+                        >
                             <div>Ordered: {{ line.qty_ordered }}</div>
                             <div>Received: {{ line.qty_received }}</div>
                             <div>Remaining: {{ line.qty_remaining }}</div>
-                            <div>Unit price: {{ formatPhilippinePeso(line.unit_price) }}</div>
+                            <div>
+                                Unit price:
+                                {{ formatPhilippinePeso(line.unit_price) }}
+                            </div>
                         </div>
 
                         <div class="mt-3 h-2 rounded-full bg-muted">
@@ -264,34 +289,60 @@ function submitReceipts(): void {
             </div>
 
             <div class="grid gap-6">
-                <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+                <div
+                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                >
                     <div class="mb-4 text-sm font-semibold tracking-tight">
                         Order summary
                     </div>
                     <div class="grid gap-2 text-sm">
                         <div class="flex items-center justify-between">
                             <span class="text-muted-foreground">Subtotal</span>
-                            <span class="font-mono">{{ formatPhilippinePeso(purchaseOrder.subtotal) }}</span>
+                            <span class="font-mono">{{
+                                formatPhilippinePeso(purchaseOrder.subtotal)
+                            }}</span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-muted-foreground">Tax / adjustments</span>
-                            <span class="font-mono">{{ formatPhilippinePeso(purchaseOrder.tax) }}</span>
+                            <span class="text-muted-foreground"
+                                >Tax / adjustments</span
+                            >
+                            <span class="font-mono">{{
+                                formatPhilippinePeso(purchaseOrder.tax)
+                            }}</span>
                         </div>
-                        <div class="flex items-center justify-between text-base font-semibold">
+                        <div
+                            class="flex items-center justify-between text-base font-semibold"
+                        >
                             <span>Total</span>
-                            <span class="font-mono">{{ formatPhilippinePeso(purchaseOrder.total_amount) }}</span>
+                            <span class="font-mono">{{
+                                formatPhilippinePeso(purchaseOrder.total_amount)
+                            }}</span>
                         </div>
                     </div>
 
-                    <div class="mt-4 rounded-lg border border-border/50 p-4 text-sm text-muted-foreground">
-                        <div>Requester: {{ purchaseOrder.requester?.name ?? '—' }}</div>
-                        <div>Approver: {{ purchaseOrder.approver?.name ?? '—' }}</div>
-                        <div>Supplier email: {{ purchaseOrder.supplier?.email ?? '—' }}</div>
+                    <div
+                        class="mt-4 rounded-lg border border-border/50 p-4 text-sm text-muted-foreground"
+                    >
+                        <div>
+                            Requester:
+                            {{ purchaseOrder.requester?.name ?? '—' }}
+                        </div>
+                        <div>
+                            Approver: {{ purchaseOrder.approver?.name ?? '—' }}
+                        </div>
+                        <div>
+                            Supplier email:
+                            {{ purchaseOrder.supplier?.email ?? '—' }}
+                        </div>
                     </div>
                 </div>
 
                 <div
-                    v-if="can.cancel && purchaseOrder.status !== 'cancelled' && purchaseOrder.status !== 'received'"
+                    v-if="
+                        can.cancel &&
+                        purchaseOrder.status !== 'cancelled' &&
+                        purchaseOrder.status !== 'received'
+                    "
                     class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
                 >
                     <div class="mb-3 text-sm font-semibold tracking-tight">
@@ -320,7 +371,10 @@ function submitReceipts(): void {
         </div>
 
         <div
-            v-if="can.receive && ['sent', 'partial'].includes(purchaseOrder.status)"
+            v-if="
+                can.receive &&
+                ['sent', 'partial'].includes(purchaseOrder.status)
+            "
             class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
         >
             <div class="mb-4 text-sm font-semibold tracking-tight">
@@ -347,7 +401,9 @@ function submitReceipts(): void {
                         class="grid gap-4 md:grid-cols-4"
                     >
                         <div class="grid gap-2">
-                            <Label :for="`receive-qty-${index}`">Qty received</Label>
+                            <Label :for="`receive-qty-${index}`"
+                                >Qty received</Label
+                            >
                             <Input
                                 :id="`receive-qty-${index}`"
                                 v-model="receiveForm.lines[index].qty_received"
@@ -356,19 +412,25 @@ function submitReceipts(): void {
                             />
                             <InputError
                                 :message="
-                                    receiveForm.errors[`lines.${index}.qty_received`]
+                                    receiveForm.errors[
+                                        `lines.${index}.qty_received`
+                                    ]
                                 "
                             />
                         </div>
                         <div class="grid gap-2">
-                            <Label :for="`receive-ref-${index}`">Reference</Label>
+                            <Label :for="`receive-ref-${index}`"
+                                >Reference</Label
+                            >
                             <Input
                                 :id="`receive-ref-${index}`"
                                 v-model="receiveForm.lines[index].reference_no"
                             />
                         </div>
                         <div class="grid gap-2">
-                            <Label :for="`receive-at-${index}`">Received at</Label>
+                            <Label :for="`receive-at-${index}`"
+                                >Received at</Label
+                            >
                             <Input
                                 :id="`receive-at-${index}`"
                                 v-model="receiveForm.lines[index].received_at"
@@ -376,7 +438,9 @@ function submitReceipts(): void {
                             />
                         </div>
                         <div class="grid gap-2">
-                            <Label :for="`receive-exp-${index}`">Expires at</Label>
+                            <Label :for="`receive-exp-${index}`"
+                                >Expires at</Label
+                            >
                             <Input
                                 :id="`receive-exp-${index}`"
                                 v-model="receiveForm.lines[index].expires_at"
@@ -392,19 +456,28 @@ function submitReceipts(): void {
                             </Label>
                             <textarea
                                 :id="`receive-tags-${index}`"
-                                v-model="receiveForm.lines[index].tag_codes_text"
+                                v-model="
+                                    receiveForm.lines[index].tag_codes_text
+                                "
                                 rows="4"
                                 class="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm"
                                 placeholder="One tag per line"
                             />
                             <InputError
                                 :message="
-                                    receiveForm.errors[`lines.${index}.tag_codes`]
+                                    (
+                                        receiveForm.errors as Record<
+                                            string,
+                                            string | undefined
+                                        >
+                                    )[`lines.${index}.tag_codes`]
                                 "
                             />
                         </div>
                         <div class="grid gap-2">
-                            <Label :for="`receive-at-asset-${index}`">Received at</Label>
+                            <Label :for="`receive-at-asset-${index}`"
+                                >Received at</Label
+                            >
                             <Input
                                 :id="`receive-at-asset-${index}`"
                                 v-model="receiveForm.lines[index].received_at"
@@ -423,7 +496,10 @@ function submitReceipts(): void {
                 </div>
 
                 <div class="flex justify-end">
-                    <Button :disabled="receiveForm.processing" @click="submitReceipts">
+                    <Button
+                        :disabled="receiveForm.processing"
+                        @click="submitReceipts"
+                    >
                         Submit receipt
                     </Button>
                 </div>
@@ -435,7 +511,7 @@ function submitReceipts(): void {
             class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
         >
             <div class="mb-3 text-sm font-semibold tracking-tight">Notes</div>
-            <div class="text-sm text-muted-foreground whitespace-pre-line">
+            <div class="text-sm whitespace-pre-line text-muted-foreground">
                 {{ purchaseOrder.notes }}
             </div>
         </div>

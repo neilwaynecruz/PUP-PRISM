@@ -38,7 +38,7 @@ defineProps<Props>();
     <DropdownMenuItem as-child>
         <button
             type="button"
-            class="relative flex w-full cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-hidden transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
+            class="relative flex w-full cursor-pointer items-center rounded-sm px-2 py-1.5 text-sm outline-hidden transition-colors select-none hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
             data-testid="logout-button"
             @click="performLogout"
         >

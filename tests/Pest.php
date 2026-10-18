@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
 /*
@@ -52,7 +53,7 @@ function validHandoverSignaturePng(): string
     return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 }
 
-function expectResponsePreventsClientCaching(\Illuminate\Testing\TestResponse $response): void
+function expectResponsePreventsClientCaching(TestResponse $response): void
 {
     $cacheControl = (string) $response->headers->get('Cache-Control');
 

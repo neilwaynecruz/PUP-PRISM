@@ -94,7 +94,9 @@ function formatProvisionedAt(value: string | null): string {
     <Head title="Users" />
 
     <div class="flex flex-col gap-6 p-4 sm:p-6">
-        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        >
             <Heading
                 variant="small"
                 title="Users"
@@ -137,7 +139,9 @@ function formatProvisionedAt(value: string | null): string {
             </select>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm">
+        <div
+            class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm"
+        >
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left">
                     <tr

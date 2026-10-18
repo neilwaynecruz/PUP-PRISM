@@ -1,5 +1,5 @@
-import { expect, test } from './fixtures/test';
 import { loginAs } from './fixtures/auth';
+import { expect, test } from './fixtures/test';
 
 test.use({
     viewport: { width: 390, height: 844 },

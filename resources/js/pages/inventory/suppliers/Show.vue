@@ -92,15 +92,21 @@ defineOptions({
         </div>
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Email</div>
                 <div class="mt-1 font-medium">{{ supplier.email ?? '—' }}</div>
             </div>
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Phone</div>
                 <div class="mt-1 font-medium">{{ supplier.phone ?? '—' }}</div>
             </div>
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Lead time</div>
                 <div class="mt-1 font-medium">
                     {{
@@ -110,7 +116,9 @@ defineOptions({
                     }}
                 </div>
             </div>
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="text-sm text-muted-foreground">Status</div>
                 <div class="mt-1 font-medium">
                     {{ supplier.is_active ? 'Active' : 'Inactive' }}
@@ -119,12 +127,17 @@ defineOptions({
         </div>
 
         <div class="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4 text-sm font-semibold tracking-tight">
                     Assigned products
                 </div>
 
-                <div v-if="products.length === 0" class="text-sm text-muted-foreground">
+                <div
+                    v-if="products.length === 0"
+                    class="text-sm text-muted-foreground"
+                >
                     No products are assigned to this supplier yet.
                 </div>
 
@@ -136,40 +149,55 @@ defineOptions({
                     >
                         <div class="flex items-start justify-between gap-3">
                             <div>
-                                <div class="font-medium">{{ product.name }}</div>
-                                <div class="font-mono text-xs text-muted-foreground">
+                                <div class="font-medium">
+                                    {{ product.name }}
+                                </div>
+                                <div
+                                    class="font-mono text-xs text-muted-foreground"
+                                >
                                     {{ product.sku }}
                                 </div>
                             </div>
                             <Button variant="ghost" size="sm" as-child>
-                                <Link :href="productsShow(product.id)">View</Link>
+                                <Link :href="productsShow(product.id)"
+                                    >View</Link
+                                >
                             </Button>
                         </div>
-                        <div class="mt-3 grid gap-1 text-sm text-muted-foreground">
+                        <div
+                            class="mt-3 grid gap-1 text-sm text-muted-foreground"
+                        >
                             <div>Category: {{ product.category ?? '—' }}</div>
                             <div>
                                 Default price:
                                 {{
                                     product.unit_price !== null
-                                        ? formatPhilippinePeso(product.unit_price)
+                                        ? formatPhilippinePeso(
+                                              product.unit_price,
+                                          )
                                         : '—'
                                 }}
                             </div>
                             <div v-if="product.type === 'consumable'">
-                                On hand: {{ product.on_hand_qty ?? 0 }} / reorder
-                                at {{ product.reorder_threshold ?? 0 }}
+                                On hand: {{ product.on_hand_qty ?? 0 }} /
+                                reorder at {{ product.reorder_threshold ?? 0 }}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
+            <div
+                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            >
                 <div class="mb-4 text-sm font-semibold tracking-tight">
                     Recent purchase orders
                 </div>
 
-                <div v-if="recentPurchaseOrders.length === 0" class="text-sm text-muted-foreground">
+                <div
+                    v-if="recentPurchaseOrders.length === 0"
+                    class="text-sm text-muted-foreground"
+                >
                     No purchase orders recorded yet.
                 </div>
 
@@ -189,13 +217,17 @@ defineOptions({
                                 </div>
                             </div>
                             <Button variant="ghost" size="sm" as-child>
-                                <Link :href="purchaseOrdersShow(purchaseOrder.id)"
+                                <Link
+                                    :href="purchaseOrdersShow(purchaseOrder.id)"
                                     >Open</Link
                                 >
                             </Button>
                         </div>
                         <div class="mt-3 text-sm text-muted-foreground">
-                            Total: {{ formatPhilippinePeso(purchaseOrder.total_amount) }}
+                            Total:
+                            {{
+                                formatPhilippinePeso(purchaseOrder.total_amount)
+                            }}
                         </div>
                         <div class="mt-2 h-2 rounded-full bg-muted">
                             <div
@@ -218,8 +250,12 @@ defineOptions({
                 Additional details
             </div>
             <div class="grid gap-2 text-sm text-muted-foreground">
-                <div v-if="supplier.address">Address: {{ supplier.address }}</div>
-                <div v-if="supplier.website">Website: {{ supplier.website }}</div>
+                <div v-if="supplier.address">
+                    Address: {{ supplier.address }}
+                </div>
+                <div v-if="supplier.website">
+                    Website: {{ supplier.website }}
+                </div>
                 <div v-if="supplier.payment_terms">
                     Payment terms: {{ supplier.payment_terms }}
                 </div>

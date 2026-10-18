@@ -136,7 +136,9 @@ function applyScannedTag(tagCode: string): void {
                             >Asset tag code
                             <span class="text-rose-500">*</span></Label
                         >
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+                        <div
+                            class="flex flex-col gap-2 sm:flex-row sm:items-center"
+                        >
                             <Input
                                 id="asset_tag_code"
                                 v-model="assetTagCode"

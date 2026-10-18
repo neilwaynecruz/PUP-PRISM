@@ -108,7 +108,7 @@ const workflowSteps = computed(() => {
                     ? 'Not issued'
                     : currentStatus === 'Backordered'
                       ? 'Awaiting remaining stock'
-                    : 'Pending issuance'),
+                      : 'Pending issuance'),
             detail: props.requisition.issued_position?.title ?? null,
         },
     ];
@@ -532,14 +532,24 @@ defineOptions({
                         class="grid gap-2 rounded-lg border border-border/40 p-3 md:grid-cols-[1.5fr_120px_120px]"
                     >
                         <div>
-                            <div class="font-medium">{{ line.name ?? line.sku ?? 'Line item' }}</div>
+                            <div class="font-medium">
+                                {{ line.name ?? line.sku ?? 'Line item' }}
+                            </div>
                             <div class="text-xs text-muted-foreground">
-                                {{ line.sku ?? '—' }} · Remaining {{ line.qty_remaining }}
+                                {{ line.sku ?? '—' }} · Remaining
+                                {{ line.qty_remaining }}
                             </div>
                         </div>
-                        <input type="hidden" :name="`lines[${index}][id]`" :value="line.id" />
+                        <input
+                            type="hidden"
+                            :name="`lines[${index}][id]`"
+                            :value="line.id"
+                        />
                         <div class="grid gap-1">
-                            <label class="text-xs font-medium text-muted-foreground">Issue now</label>
+                            <label
+                                class="text-xs font-medium text-muted-foreground"
+                                >Issue now</label
+                            >
                             <Input
                                 :name="`lines[${index}][qty_to_issue]`"
                                 type="number"
@@ -565,12 +575,15 @@ defineOptions({
                             class="mt-0.5 h-4 w-4 rounded border border-input"
                         />
                         <span class="text-sm text-muted-foreground">
-                            Mark remaining quantities as backordered after this fulfillment step.
+                            Mark remaining quantities as backordered after this
+                            fulfillment step.
                         </span>
                     </label>
 
                     <div class="grid gap-1">
-                        <label class="text-sm font-medium">Issuance notes (optional)</label>
+                        <label class="text-sm font-medium"
+                            >Issuance notes (optional)</label
+                        >
                         <Input name="notes" placeholder="Optional notes" />
                         <InputError :message="errors.notes" />
                     </div>

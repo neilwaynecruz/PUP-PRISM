@@ -66,17 +66,30 @@ defineOptions({
                 </div>
                 <div class="grid gap-2">
                     <Label for="website">Website</Label>
-                    <Input id="website" name="website" placeholder="https://..." />
+                    <Input
+                        id="website"
+                        name="website"
+                        placeholder="https://..."
+                    />
                     <InputError :message="errors.website" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="payment_terms">Payment terms</Label>
-                    <Input id="payment_terms" name="payment_terms" placeholder="Net 30" />
+                    <Input
+                        id="payment_terms"
+                        name="payment_terms"
+                        placeholder="Net 30"
+                    />
                     <InputError :message="errors.payment_terms" />
                 </div>
                 <div class="grid gap-2">
                     <Label for="lead_time_days">Lead time (days)</Label>
-                    <Input id="lead_time_days" name="lead_time_days" type="number" min="0" />
+                    <Input
+                        id="lead_time_days"
+                        name="lead_time_days"
+                        type="number"
+                        min="0"
+                    />
                     <InputError :message="errors.lead_time_days" />
                 </div>
                 <div class="grid gap-2">

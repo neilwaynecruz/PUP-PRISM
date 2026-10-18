@@ -64,7 +64,7 @@ const { closeOverlays, pendingPath } = useAppNavigation();
             </SidebarMenu>
         </SidebarHeader>
 
-        <SidebarContent class="px-2 py-3 space-y-4">
+        <SidebarContent class="space-y-4 px-2 py-3">
             <NavMain
                 v-for="group in groupedNavItems"
                 :key="group.group"
