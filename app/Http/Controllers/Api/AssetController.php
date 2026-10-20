@@ -22,7 +22,7 @@ class AssetController extends Controller
         $search = $request->string('search')->trim()->toString();
 
         $assets = Asset::query()
-            ->with(['product:id,name', 'position:id,title,department_id'])
+            ->with(['product:id,name', 'position:id,title,department_id', 'currentLocation:id,code,name'])
             ->when($status !== '', function ($query) use ($status) {
                 $query->where('status', $status);
             })
@@ -51,7 +51,7 @@ class AssetController extends Controller
     {
         $this->authorize('view', $asset);
 
-        $asset->load(['product:id,name', 'position:id,title,department_id']);
+        $asset->load(['product:id,name', 'position:id,title,department_id', 'currentLocation:id,code,name']);
 
         return response()->json([
             'data' => new AssetResource($asset),

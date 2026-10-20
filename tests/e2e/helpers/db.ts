@@ -34,17 +34,11 @@ export function verifyEmail(email: string): void {
 }
 
 export function confirmTwoFactor(email: string): void {
-    runArtisan([
-        'tinker',
-        `--execute=$user = App\\Models\\User::where("email", "${email}")->firstOrFail(); $user->forceFill(["two_factor_secret" => encrypt("e2e-secret"), "two_factor_recovery_codes" => encrypt(json_encode(["e2e-recovery-code"])), "two_factor_confirmed_at" => now()])->save();`,
-    ]);
+    runArtisan(['e2e:configure-two-factor', email]);
 }
 
 export function beginTwoFactorSetup(email: string): void {
-    runArtisan([
-        'tinker',
-        `--execute=$user = App\\Models\\User::where("email", "${email}")->firstOrFail(); $user->forceFill(["two_factor_secret" => encrypt("e2e-secret"), "two_factor_recovery_codes" => encrypt(json_encode(["e2e-recovery-code"])), "two_factor_confirmed_at" => null])->save();`,
-    ]);
+    runArtisan(['e2e:configure-two-factor', email, '--pending']);
 }
 
 export function getUserIdByEmail(email: string): number {
@@ -64,9 +58,13 @@ export function preparePendingHandoverVerification(
     recipientEmail: string,
     token: string,
 ): number {
-    const output = runArtisan(
-        ['e2e:prepare-handover-verification', assetTagCode, recipientEmail, token, '--wait=10'],
-    );
+    const output = runArtisan([
+        'e2e:prepare-handover-verification',
+        assetTagCode,
+        recipientEmail,
+        token,
+        '--wait=10',
+    ]);
 
     return parseInt(output, 10);
 }
@@ -88,7 +86,9 @@ export function getProductOnHandQtyBySku(sku: string): number {
             .get(sku) as { on_hand_qty?: number } | undefined;
 
         if (typeof row?.on_hand_qty !== 'number') {
-            throw new Error(`Unable to find on-hand quantity for SKU [${sku}].`);
+            throw new Error(
+                `Unable to find on-hand quantity for SKU [${sku}].`,
+            );
         }
 
         return row.on_hand_qty;

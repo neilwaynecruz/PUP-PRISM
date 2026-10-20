@@ -4,9 +4,12 @@ import {
     BarChart3,
     Bell,
     BookOpen,
+    Boxes,
+    ClipboardCheck,
     FileText,
     History,
     LayoutGrid,
+    MapPin,
     Package,
     Radar,
     ReceiptText,
@@ -19,12 +22,15 @@ import { dashboard } from '@/routes';
 import { index as adminAlertsIndex } from '@/routes/admin/alerts';
 import { index as categoriesIndex } from '@/routes/admin/categories';
 import { index as departmentsIndex } from '@/routes/admin/departments';
+import { index as locationsIndex } from '@/routes/admin/locations';
 import { health as operationsHealthIndex } from '@/routes/admin/operations';
 import { index as originsIndex } from '@/routes/admin/origins';
 import { index as positionsIndex } from '@/routes/admin/positions';
 import { index as adminUsersIndex } from '@/routes/admin/users';
+import { index as assetsIndex } from '@/routes/inventory/assets';
 import { index as auditLogsIndex } from '@/routes/inventory/audit-logs';
 import { index as bookingsIndex } from '@/routes/inventory/bookings';
+import { index as countsIndex } from '@/routes/inventory/counts';
 import { index as forecastingIndex } from '@/routes/inventory/forecasting';
 import { index as handoverIndex } from '@/routes/inventory/handover';
 import { index as movementsIndex } from '@/routes/inventory/movements';
@@ -57,6 +63,8 @@ export type InventorySearchItem = InventoryNavItem & {
 const defaultPermissions: AuthPermissions = {
     viewProducts: false,
     createProducts: false,
+    viewAssets: false,
+    viewCounts: false,
     viewHandover: false,
     viewBookings: false,
     viewRequisitions: false,
@@ -72,6 +80,7 @@ const defaultPermissions: AuthPermissions = {
     viewAlerts: false,
     viewOperationsHealth: false,
     viewMasterData: false,
+    viewLocations: false,
 };
 
 const mainNavigationItems: InventoryNavItem[] = [
@@ -85,6 +94,18 @@ const mainNavigationItems: InventoryNavItem[] = [
         href: productsIndex(),
         icon: Package,
         permission: 'viewProducts',
+    },
+    {
+        title: 'Assets',
+        href: assetsIndex(),
+        icon: Boxes,
+        permission: 'viewAssets',
+    },
+    {
+        title: 'Physical counts',
+        href: countsIndex(),
+        icon: ClipboardCheck,
+        permission: 'viewCounts',
     },
     {
         title: 'Handover',
@@ -207,6 +228,29 @@ const searchNavigationItems: InventorySearchItem[] = [
         description: 'Browse inventory items and stock levels',
         keywords: ['products', 'inventory', 'stock', 'catalog'],
         permission: 'viewProducts',
+    },
+    {
+        title: 'Assets',
+        href: assetsIndex(),
+        icon: Boxes,
+        description:
+            'Track tagged property, locations, maintenance, and lifecycle history',
+        keywords: [
+            'assets',
+            'property',
+            'maintenance',
+            'location',
+            'lifecycle',
+        ],
+        permission: 'viewAssets',
+    },
+    {
+        title: 'Physical counts',
+        href: countsIndex(),
+        icon: ClipboardCheck,
+        description: 'Count physical inventory and review stock differences',
+        keywords: ['count', 'physical inventory', 'reconciliation', 'variance'],
+        permission: 'viewCounts',
     },
     {
         title: 'New Product',
@@ -394,6 +438,18 @@ export function useInventoryNavigation() {
                             permission: 'viewProducts',
                         },
                         {
+                            title: 'Assets',
+                            href: assetsIndex(),
+                            icon: Boxes,
+                            permission: 'viewAssets',
+                        },
+                        {
+                            title: 'Physical Counts',
+                            href: countsIndex(),
+                            icon: ClipboardCheck,
+                            permission: 'viewCounts',
+                        },
+                        {
                             title: 'Suppliers',
                             href: suppliersIndex(),
                             icon: ShieldCheck,
@@ -512,6 +568,12 @@ export function useInventoryNavigation() {
                             href: originsIndex(),
                             icon: Package,
                             permission: 'viewMasterData',
+                        },
+                        {
+                            title: 'Locations',
+                            href: locationsIndex(),
+                            icon: MapPin,
+                            permission: 'viewLocations',
                         },
                         {
                             title: 'Settings',

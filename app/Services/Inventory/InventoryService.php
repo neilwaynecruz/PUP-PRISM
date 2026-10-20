@@ -7,6 +7,7 @@ use App\Enums\ProductType;
 use App\Enums\RequisitionStatus;
 use App\Enums\StockMovementReasonCode;
 use App\Models\Asset;
+use App\Models\InventoryCountLine;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\PurchaseOrder;
@@ -534,6 +535,104 @@ class InventoryService
             );
         });
 
+        $this->dispatchInventoryDeltaRealtime($result);
+    }
+
+    /**
+     * Apply a reviewed count variance while the caller owns the surrounding transaction.
+     *
+     * @return array{product: Product, on_hand_qty: int, delta: int, movement: StockMovement}
+     */
+    public function applyApprovedCountVariance(
+        User $user,
+        InventoryCountLine $line,
+        ?string $ipAddress = null,
+    ): array {
+        if (DB::transactionLevel() < 1) {
+            throw new \LogicException('Approved count variances must be applied inside a database transaction.');
+        }
+
+        if ($line->adjustment_movement_id !== null) {
+            throw new \RuntimeException('This count discrepancy has already been posted.');
+        }
+
+        if ($line->stock_lot_id === null || $line->variance_qty === null || $line->counted_qty === null) {
+            throw new \RuntimeException('This count line does not contain a postable stock-lot variance.');
+        }
+
+        $product = Product::query()->whereKey($line->product_id)->lockForUpdate()->firstOrFail();
+        if ($product->type !== ProductType::Consumable) {
+            throw new \RuntimeException('Only consumable count lines can change stock quantities.');
+        }
+
+        $stock = ProductStock::query()->where('product_id', $product->id)->lockForUpdate()->firstOrFail();
+        $countedLot = StockLot::query()
+            ->whereKey($line->stock_lot_id)
+            ->where('product_id', $product->id)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        $qtyDelta = (int) $line->variance_qty;
+        $qtyBefore = (int) $stock->on_hand_qty;
+        $qtyAfter = $qtyBefore + $qtyDelta;
+
+        if ($qtyAfter < 0) {
+            throw new \RuntimeException("The approved variance would reduce SKU {$product->sku} below zero.");
+        }
+
+        $movementLot = $countedLot;
+        if ($qtyDelta < 0) {
+            if ((int) $countedLot->qty_remaining < abs($qtyDelta)) {
+                throw new \RuntimeException("Lot {$countedLot->reference_no} no longer has enough stock for this variance. Request a recount.");
+            }
+
+            $countedLot->decrement('qty_remaining', abs($qtyDelta));
+            $stock->decrement('on_hand_qty', abs($qtyDelta));
+        } elseif ($qtyDelta > 0) {
+            $movementLot = StockLot::create([
+                'product_id' => $product->id,
+                'reference_no' => 'COUNT-'.$line->session->reference_no.'-'.$line->id,
+                'received_at' => CarbonImmutable::now(),
+                'expires_at' => $countedLot->expires_at,
+                'qty_received' => $qtyDelta,
+                'qty_remaining' => $qtyDelta,
+            ]);
+
+            $stock->increment('on_hand_qty', $qtyDelta);
+        }
+
+        $movement = StockMovement::create([
+            'movement_type' => 'cycle_count',
+            'reason_code' => StockMovementReasonCode::VarianceReview->value,
+            'product_id' => $product->id,
+            'stock_lot_id' => $movementLot->id,
+            'asset_id' => null,
+            'requisition_id' => null,
+            'qty_delta' => $qtyDelta,
+            'qty_before' => $qtyBefore,
+            'qty_after' => $qtyAfter,
+            'counted_qty' => $line->counted_qty,
+            'variance_qty' => $qtyDelta,
+            'performed_by' => $user->id,
+            'accountable_position_id' => $user->position_id,
+            'ip_address' => $ipAddress,
+            'performed_at' => CarbonImmutable::now(),
+            'notes' => "Approved physical count {$line->session->reference_no}; source lot {$countedLot->reference_no}.",
+        ]);
+
+        return [
+            'product' => $product->fresh() ?? $product,
+            'on_hand_qty' => $qtyAfter,
+            'delta' => $qtyDelta,
+            'movement' => $movement,
+        ];
+    }
+
+    /**
+     * @param  array{product: Product, on_hand_qty: int, delta: int}  $result
+     */
+    public function publishInventoryDelta(array $result): void
+    {
         $this->dispatchInventoryDeltaRealtime($result);
     }
 

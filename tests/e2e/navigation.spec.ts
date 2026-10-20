@@ -107,7 +107,9 @@ test.describe('Inventory Navigation', () => {
             if (
                 message.type() !== 'error' ||
                 text.includes('fonts.googleapis.com') ||
-                text.includes('ERR_NETWORK_ACCESS_DENIED')
+                text.includes('ERR_NETWORK_ACCESS_DENIED') ||
+                (text.includes('WebSocket connection to') &&
+                    text.includes('localhost:8080'))
             ) {
                 return;
             }

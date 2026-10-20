@@ -2,8 +2,11 @@
 
 namespace App\Services\Inventory;
 
+use App\Enums\AssetLifecycleStatus;
 use App\Enums\AssetStatus;
+use App\Enums\MaintenanceStatus;
 use App\Models\Asset;
+use App\Models\AssetMaintenance;
 use App\Models\Booking;
 use App\Models\HandoverLog;
 use Carbon\CarbonImmutable;
@@ -17,7 +20,7 @@ class AssetIntegrityService
         \DateTimeInterface $endAt,
         ?int $ignoreBookingId = null,
     ): void {
-        if ($asset->status !== AssetStatus::Available) {
+        if ($asset->status !== AssetStatus::Available || $asset->lifecycle_status !== AssetLifecycleStatus::Active) {
             throw ValidationException::withMessages([
                 'asset_id' => __('Only available assets can be booked.'),
             ]);
@@ -32,6 +35,28 @@ class AssetIntegrityService
         if ($pendingHandoverExists) {
             throw ValidationException::withMessages([
                 'asset_id' => __('This asset has a handover pending verification.'),
+            ]);
+        }
+
+        $maintenanceConflict = AssetMaintenance::query()
+            ->where('asset_id', $asset->id)
+            ->where(function ($query) use ($startAt, $endAt) {
+                $query->whereIn('status', [
+                    MaintenanceStatus::Reported->value,
+                    MaintenanceStatus::InProgress->value,
+                ])
+                    ->orWhere(function ($query) use ($startAt, $endAt) {
+                        $query->where('status', MaintenanceStatus::Scheduled->value)
+                            ->whereDate('scheduled_for', '>=', $startAt)
+                            ->whereDate('scheduled_for', '<=', $endAt);
+                    });
+            })
+            ->lockForUpdate()
+            ->exists();
+
+        if ($maintenanceConflict) {
+            throw ValidationException::withMessages([
+                'asset_id' => __('This asset is unavailable while it has open maintenance during the selected schedule.'),
             ]);
         }
 
@@ -59,7 +84,8 @@ class AssetIntegrityService
         ?int $ignoreHandoverLogId = null,
         ?CarbonImmutable $effectiveAt = null,
     ): void {
-        if (in_array($asset->status, [AssetStatus::Condemned, AssetStatus::Unserviceable], true)) {
+        if ($asset->lifecycle_status !== AssetLifecycleStatus::Active
+            || in_array($asset->status, [AssetStatus::Condemned, AssetStatus::Unserviceable], true)) {
             throw ValidationException::withMessages([
                 $errorKey => __('Only active assets can be handed over.'),
             ]);
@@ -78,6 +104,22 @@ class AssetIntegrityService
         if ($pendingHandoverExists) {
             throw ValidationException::withMessages([
                 $errorKey => __('This asset already has a handover pending verification.'),
+            ]);
+        }
+
+        $maintenanceConflict = AssetMaintenance::query()
+            ->where('asset_id', $asset->id)
+            ->whereIn('status', [
+                MaintenanceStatus::Reported->value,
+                MaintenanceStatus::Scheduled->value,
+                MaintenanceStatus::InProgress->value,
+            ])
+            ->lockForUpdate()
+            ->exists();
+
+        if ($maintenanceConflict) {
+            throw ValidationException::withMessages([
+                $errorKey => __('This asset has scheduled or active maintenance and cannot be handed over.'),
             ]);
         }
 

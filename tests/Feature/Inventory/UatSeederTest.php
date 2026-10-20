@@ -113,6 +113,12 @@ test('the e2e setup command refuses non dedicated databases', function () {
         ->assertFailed();
 });
 
+test('the e2e two factor helper command is restricted to the e2e environment', function () {
+    $this->artisan('e2e:configure-two-factor admin@example.test')
+        ->expectsOutputToContain('restricted to the E2E environment')
+        ->assertFailed();
+});
+
 test('the e2e setup command refuses similarly named sqlite databases outside the dedicated path', function () {
     $unsafeDirectory = storage_path('framework/testing/e2e-guard/database');
     $unsafeDatabase = $unsafeDirectory.DIRECTORY_SEPARATOR.'e2e.sqlite';

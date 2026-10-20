@@ -2,10 +2,13 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Asset;
 use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\Department;
 use App\Models\InventoryAlert;
+use App\Models\InventoryCountSession;
+use App\Models\Location;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\Requisition;
@@ -99,6 +102,8 @@ class HandleInertiaRequests extends Middleware
             return [
                 'viewProducts' => false,
                 'createProducts' => false,
+                'viewAssets' => false,
+                'viewCounts' => false,
                 'viewHandover' => false,
                 'viewBookings' => false,
                 'viewRequisitions' => false,
@@ -114,12 +119,15 @@ class HandleInertiaRequests extends Middleware
                 'viewAlerts' => false,
                 'viewOperationsHealth' => false,
                 'viewMasterData' => false,
+                'viewLocations' => false,
             ];
         }
 
         return [
             'viewProducts' => $user->can('viewAny', Product::class),
             'createProducts' => $user->can('create', Product::class),
+            'viewAssets' => $user->can('viewAny', Asset::class),
+            'viewCounts' => $user->can('viewAny', InventoryCountSession::class),
             'viewHandover' => $user->hasAnyRole(['Admin', 'Property Custodian']),
             'viewBookings' => $user->can('viewAny', Booking::class),
             'viewRequisitions' => $user->can('viewAny', Requisition::class),
@@ -135,6 +143,7 @@ class HandleInertiaRequests extends Middleware
             'viewAlerts' => $user->can('viewAny', InventoryAlert::class),
             'viewOperationsHealth' => $user->hasRole('Admin'),
             'viewMasterData' => $user->can('viewAny', Department::class),
+            'viewLocations' => $user->can('viewAny', Location::class),
         ];
     }
 

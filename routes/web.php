@@ -4,18 +4,25 @@ use App\Http\Controllers\Admin\AlertsController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\HealthController;
+use App\Http\Controllers\Admin\LocationController;
 use App\Http\Controllers\Admin\OperationsHealthController;
 use App\Http\Controllers\Admin\OriginController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GlobalSearchController;
+use App\Http\Controllers\Inventory\AssetController;
+use App\Http\Controllers\Inventory\AssetLifecycleController;
+use App\Http\Controllers\Inventory\AssetMaintenanceController;
+use App\Http\Controllers\Inventory\AssetTransferController;
+use App\Http\Controllers\Inventory\AttachmentController;
 use App\Http\Controllers\Inventory\AuditLogController;
 use App\Http\Controllers\Inventory\BookingController;
 use App\Http\Controllers\Inventory\ForecastController;
 use App\Http\Controllers\Inventory\HandoverController;
 use App\Http\Controllers\Inventory\HandoverReceiptController;
 use App\Http\Controllers\Inventory\HandoverVerificationController;
+use App\Http\Controllers\Inventory\InventoryCountController;
 use App\Http\Controllers\Inventory\InventoryReportController;
 use App\Http\Controllers\Inventory\ProductController;
 use App\Http\Controllers\Inventory\ProductLabelController;
@@ -99,6 +106,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('origins', OriginController::class)->except(['show']);
         Route::patch('origins/{origin}/deactivate', [OriginController::class, 'deactivate'])
             ->name('origins.deactivate');
+
+        Route::resource('locations', LocationController::class)->only(['index', 'store', 'update', 'destroy']);
     });
 
     Route::prefix('admin/alerts')->name('admin.alerts.')->middleware('role:Admin|Supply Head')->group(function () {
@@ -116,6 +125,72 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
     Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::middleware('role:Admin|Supply Head|Property Custodian')->group(function () {
+            Route::get('assets', [AssetController::class, 'index'])->name('assets.index');
+            Route::get('assets/{asset}', [AssetController::class, 'show'])->whereNumber('asset')->name('assets.show');
+
+            Route::post('maintenance', [AssetMaintenanceController::class, 'store'])->name('maintenance.store');
+            Route::put('maintenance/{assetMaintenance}/status', [AssetMaintenanceController::class, 'transition'])
+                ->whereNumber('assetMaintenance')
+                ->name('maintenance.transition');
+
+            Route::post('asset-transfers', [AssetTransferController::class, 'store'])->name('asset-transfers.store');
+            Route::post('asset-transfers/{assetTransfer}/approve', [AssetTransferController::class, 'approve'])
+                ->whereNumber('assetTransfer')
+                ->name('asset-transfers.approve');
+            Route::post('asset-transfers/{assetTransfer}/reject', [AssetTransferController::class, 'reject'])
+                ->whereNumber('assetTransfer')
+                ->name('asset-transfers.reject');
+            Route::post('asset-transfers/{assetTransfer}/cancel', [AssetTransferController::class, 'cancel'])
+                ->whereNumber('assetTransfer')
+                ->name('asset-transfers.cancel');
+
+            Route::post('asset-lifecycle', [AssetLifecycleController::class, 'store'])->name('asset-lifecycle.store');
+            Route::post('asset-lifecycle/{assetLifecycleEvent}/approve', [AssetLifecycleController::class, 'approve'])
+                ->whereNumber('assetLifecycleEvent')
+                ->name('asset-lifecycle.approve');
+            Route::post('asset-lifecycle/{assetLifecycleEvent}/reject', [AssetLifecycleController::class, 'reject'])
+                ->whereNumber('assetLifecycleEvent')
+                ->name('asset-lifecycle.reject');
+
+            Route::post('attachments/{attachableType}/{attachableId}', [AttachmentController::class, 'store'])
+                ->whereIn('attachableType', ['asset', 'maintenance', 'transfer', 'lifecycle', 'count-session'])
+                ->whereNumber('attachableId')
+                ->name('attachments.store');
+            Route::get('attachments/{attachment}/download', [AttachmentController::class, 'download'])
+                ->whereNumber('attachment')
+                ->name('attachments.download');
+            Route::delete('attachments/{attachment}', [AttachmentController::class, 'destroy'])
+                ->whereNumber('attachment')
+                ->name('attachments.destroy');
+        });
+
+        Route::middleware('role:Admin|Supply Head|Property Custodian')->group(function () {
+            Route::get('counts', [InventoryCountController::class, 'index'])->name('counts.index');
+            Route::post('counts', [InventoryCountController::class, 'store'])->name('counts.store');
+            Route::get('counts/{inventoryCountSession}', [InventoryCountController::class, 'show'])
+                ->whereNumber('inventoryCountSession')
+                ->name('counts.show');
+            Route::put('counts/{inventoryCountSession}/lines/{inventoryCountLine}', [InventoryCountController::class, 'updateLine'])
+                ->whereNumber(['inventoryCountSession', 'inventoryCountLine'])
+                ->name('counts.lines.update');
+            Route::post('counts/{inventoryCountSession}/submit', [InventoryCountController::class, 'submit'])
+                ->whereNumber('inventoryCountSession')
+                ->name('counts.submit');
+            Route::put('counts/{inventoryCountSession}/lines/{inventoryCountLine}/review', [InventoryCountController::class, 'reviewLine'])
+                ->whereNumber(['inventoryCountSession', 'inventoryCountLine'])
+                ->name('counts.lines.review');
+            Route::post('counts/{inventoryCountSession}/approve', [InventoryCountController::class, 'approve'])
+                ->whereNumber('inventoryCountSession')
+                ->name('counts.approve');
+            Route::post('counts/{inventoryCountSession}/complete', [InventoryCountController::class, 'complete'])
+                ->whereNumber('inventoryCountSession')
+                ->name('counts.complete');
+            Route::post('counts/{inventoryCountSession}/cancel', [InventoryCountController::class, 'cancel'])
+                ->whereNumber('inventoryCountSession')
+                ->name('counts.cancel');
+        });
+
         Route::middleware('role:Admin|Property Custodian')->group(function () {
             Route::get('handover', [HandoverController::class, 'index'])
                 ->name('handover.index');

@@ -5,6 +5,7 @@ import departments from './departments'
 import positions from './positions'
 import categories from './categories'
 import origins from './origins'
+import locations from './locations'
 import alerts from './alerts'
 /**
 * @see \App\Http\Controllers\Admin\HealthController::__invoke
@@ -92,6 +93,7 @@ departments: Object.assign(departments, departments),
 positions: Object.assign(positions, positions),
 categories: Object.assign(categories, categories),
 origins: Object.assign(origins, origins),
+locations: Object.assign(locations, locations),
 alerts: Object.assign(alerts, alerts),
 }
 

@@ -17,8 +17,16 @@ class AssetResource extends InertiaJsonResource
             'id' => (int) $this->id,
             'tag_code' => $this->tag_code,
             'status' => $this->status?->value,
+            'lifecycle_status' => $this->lifecycle_status?->value,
+            'condition_status' => $this->condition_status?->value,
             'name' => $this->relationLoaded('product') ? $this->product?->name : null,
             'position' => $this->positionSummary(),
+            'location' => $this->relationLoaded('currentLocation') && $this->currentLocation
+                ? [
+                    'code' => $this->currentLocation->code,
+                    'name' => $this->currentLocation->name,
+                ]
+                : null,
         ];
     }
 
