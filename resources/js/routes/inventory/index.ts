@@ -1,4 +1,10 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition } from './../../wayfinder'
+import assets from './assets'
+import maintenance from './maintenance'
+import assetTransfers from './asset-transfers'
+import assetLifecycle from './asset-lifecycle'
+import attachments from './attachments'
+import counts from './counts'
 import handover from './handover'
 import bookings from './bookings'
 import requisitions from './requisitions'
@@ -90,7 +96,13 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     trash.form = trashForm
 const inventory = {
-    handover: Object.assign(handover, handover),
+    assets: Object.assign(assets, assets),
+maintenance: Object.assign(maintenance, maintenance),
+assetTransfers: Object.assign(assetTransfers, assetTransfers),
+assetLifecycle: Object.assign(assetLifecycle, assetLifecycle),
+attachments: Object.assign(attachments, attachments),
+counts: Object.assign(counts, counts),
+handover: Object.assign(handover, handover),
 bookings: Object.assign(bookings, bookings),
 requisitions: Object.assign(requisitions, requisitions),
 requisitionTemplates: Object.assign(requisitionTemplates, requisitionTemplates),

@@ -5,6 +5,7 @@ import DepartmentController from './DepartmentController'
 import PositionController from './PositionController'
 import CategoryController from './CategoryController'
 import OriginController from './OriginController'
+import LocationController from './LocationController'
 import AlertsController from './AlertsController'
 const Admin = {
     HealthController: Object.assign(HealthController, HealthController),
@@ -14,6 +15,7 @@ DepartmentController: Object.assign(DepartmentController, DepartmentController),
 PositionController: Object.assign(PositionController, PositionController),
 CategoryController: Object.assign(CategoryController, CategoryController),
 OriginController: Object.assign(OriginController, OriginController),
+LocationController: Object.assign(LocationController, LocationController),
 AlertsController: Object.assign(AlertsController, AlertsController),
 }
 

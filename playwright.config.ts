@@ -12,10 +12,7 @@ export default defineConfig({
     forbidOnly: !!process.env.CI,
     retries: process.env.CI ? 1 : 0,
     workers: 1,
-    reporter: [
-        ['html', { outputFolder: 'tests/e2e/report' }],
-        ['list'],
-    ],
+    reporter: [['html', { outputFolder: 'tests/e2e/report' }], ['list']],
     use: {
         baseURL: BASE_URL,
         testIdAttribute: 'data-testid',
@@ -31,6 +28,7 @@ export default defineConfig({
             APP_URL: BASE_URL,
             DB_CONNECTION: 'sqlite',
             DB_DATABASE: E2E_DATABASE,
+            CACHE_STORE: 'array',
             MAIL_MAILER: 'array',
             QUEUE_CONNECTION: 'sync',
             SESSION_DRIVER: 'file',

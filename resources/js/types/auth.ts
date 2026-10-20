@@ -12,6 +12,8 @@ export type User = {
 export type AuthPermissions = {
     viewProducts: boolean;
     createProducts: boolean;
+    viewAssets: boolean;
+    viewCounts: boolean;
     viewHandover: boolean;
     viewBookings: boolean;
     viewRequisitions: boolean;
@@ -27,6 +29,7 @@ export type AuthPermissions = {
     viewAlerts: boolean;
     viewOperationsHealth: boolean;
     viewMasterData: boolean;
+    viewLocations: boolean;
 };
 
 export type Auth = {

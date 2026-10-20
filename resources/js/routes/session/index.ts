@@ -78,7 +78,7 @@ status.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     
     status.form = statusForm
 /**
- * @see routes/web.php:48
+ * @see routes/web.php:55
  * @route '/session/keep-alive'
  */
 export const keepAlive = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -92,7 +92,7 @@ keepAlive.definition = {
 } satisfies RouteDefinition<["get","head"]>
 
 /**
- * @see routes/web.php:48
+ * @see routes/web.php:55
  * @route '/session/keep-alive'
  */
 keepAlive.url = (options?: RouteQueryOptions) => {
@@ -100,7 +100,7 @@ keepAlive.url = (options?: RouteQueryOptions) => {
 }
 
 /**
- * @see routes/web.php:48
+ * @see routes/web.php:55
  * @route '/session/keep-alive'
  */
 keepAlive.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -108,7 +108,7 @@ keepAlive.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     method: 'get',
 })
 /**
- * @see routes/web.php:48
+ * @see routes/web.php:55
  * @route '/session/keep-alive'
  */
 keepAlive.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -117,7 +117,7 @@ keepAlive.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 })
 
     /**
- * @see routes/web.php:48
+ * @see routes/web.php:55
  * @route '/session/keep-alive'
  */
     const keepAliveForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -126,7 +126,7 @@ keepAlive.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     })
 
             /**
- * @see routes/web.php:48
+ * @see routes/web.php:55
  * @route '/session/keep-alive'
  */
         keepAliveForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -134,7 +134,7 @@ keepAlive.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
             method: 'get',
         })
             /**
- * @see routes/web.php:48
+ * @see routes/web.php:55
  * @route '/session/keep-alive'
  */
         keepAliveForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

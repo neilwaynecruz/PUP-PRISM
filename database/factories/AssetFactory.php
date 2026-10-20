@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\AssetConditionStatus;
+use App\Enums\AssetLifecycleStatus;
 use App\Enums\AssetStatus;
 use App\Models\Asset;
 use App\Models\Position;
@@ -25,6 +27,8 @@ class AssetFactory extends Factory
             'position_id' => null,
             'tag_code' => fake()->unique()->bothify('AST-########'),
             'status' => AssetStatus::Available,
+            'lifecycle_status' => AssetLifecycleStatus::Active,
+            'condition_status' => AssetConditionStatus::Serviceable,
         ];
     }
 

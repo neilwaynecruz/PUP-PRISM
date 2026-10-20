@@ -1,3 +1,9 @@
+import AssetController from './AssetController'
+import AssetMaintenanceController from './AssetMaintenanceController'
+import AssetTransferController from './AssetTransferController'
+import AssetLifecycleController from './AssetLifecycleController'
+import AttachmentController from './AttachmentController'
+import InventoryCountController from './InventoryCountController'
 import HandoverController from './HandoverController'
 import BookingController from './BookingController'
 import RequisitionController from './RequisitionController'
@@ -15,7 +21,13 @@ import AuditLogController from './AuditLogController'
 import HandoverVerificationController from './HandoverVerificationController'
 import HandoverReceiptController from './HandoverReceiptController'
 const Inventory = {
-    HandoverController: Object.assign(HandoverController, HandoverController),
+    AssetController: Object.assign(AssetController, AssetController),
+AssetMaintenanceController: Object.assign(AssetMaintenanceController, AssetMaintenanceController),
+AssetTransferController: Object.assign(AssetTransferController, AssetTransferController),
+AssetLifecycleController: Object.assign(AssetLifecycleController, AssetLifecycleController),
+AttachmentController: Object.assign(AttachmentController, AttachmentController),
+InventoryCountController: Object.assign(InventoryCountController, InventoryCountController),
+HandoverController: Object.assign(HandoverController, HandoverController),
 BookingController: Object.assign(BookingController, BookingController),
 RequisitionController: Object.assign(RequisitionController, RequisitionController),
 RequisitionTemplateController: Object.assign(RequisitionTemplateController, RequisitionTemplateController),

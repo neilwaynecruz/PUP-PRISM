@@ -14,8 +14,17 @@ test.describe('Requisition Lifecycle', () => {
         });
 
         page.on('console', (message) => {
-            if (message.type() === 'error') {
-                consoleErrors.push(message.text());
+            const text = message.text();
+            const isExpectedTestEnvironmentFailure =
+                text.includes('ERR_NETWORK_ACCESS_DENIED') ||
+                (text.includes('WebSocket connection to') &&
+                    text.includes('localhost:8080'));
+
+            if (
+                message.type() === 'error' &&
+                !isExpectedTestEnvironmentFailure
+            ) {
+                consoleErrors.push(text);
             }
         });
 

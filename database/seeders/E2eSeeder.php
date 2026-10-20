@@ -138,11 +138,32 @@ class E2eSeeder extends Seeder
                 ['tag_code' => $def['tag_code']],
                 [
                     'product_id' => $assetProduct->id,
-                    'position_id' => $positions[$def['position']]->id,
+                    'position_id' => $def['position'] === null ? null : $positions[$def['position']]->id,
                     'status' => $def['status'],
                 ],
             );
         }
+
+        $phaseFourAssetProduct = Product::query()->updateOrCreate(
+            ['sku' => 'AST-E2E-P4-001'],
+            [
+                'name' => 'Phase 4 E2E Asset',
+                'category_id' => $categories['IT Equipment']->id,
+                'origin_id' => $origin->id,
+                'type' => ProductType::Asset,
+                'reorder_threshold' => 0,
+                'is_active' => true,
+            ],
+        );
+
+        Asset::query()->updateOrCreate(
+            ['tag_code' => 'AST-E2E-0003'],
+            [
+                'product_id' => $phaseFourAssetProduct->id,
+                'position_id' => null,
+                'status' => AssetStatus::Available,
+            ],
+        );
     }
 
     protected function seedPosition(string $code, Department $department, string $title): Position
