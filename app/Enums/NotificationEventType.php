@@ -9,6 +9,7 @@ enum NotificationEventType: string
     case BookingSubmitted = 'booking_submitted';
     case BookingStatusChanged = 'booking_status_changed';
     case LowStock = 'low_stock';
+    case ExpiringStock = 'expiring_stock';
     case ProcurementRecommendation = 'procurement_recommendation';
     case HandoverVerification = 'handover_verification';
 
@@ -20,6 +21,7 @@ enum NotificationEventType: string
             self::BookingSubmitted => 'Booking submitted',
             self::BookingStatusChanged => 'Booking status changed',
             self::LowStock => 'Low stock alert',
+            self::ExpiringStock => 'Expiring stock alert',
             self::ProcurementRecommendation => 'Procurement recommendation',
             self::HandoverVerification => 'Handover verification',
         };
@@ -33,6 +35,7 @@ enum NotificationEventType: string
             self::BookingSubmitted => 'When a new asset booking request is submitted.',
             self::BookingStatusChanged => 'When your booking is approved, rejected, or updated.',
             self::LowStock => 'When consumable stock drops below the reorder threshold.',
+            self::ExpiringStock => 'When stock lots approach their expiration date.',
             self::ProcurementRecommendation => 'When a forecast predicts an upcoming stockout.',
             self::HandoverVerification => 'When an internal asset handover needs your verification.',
         };

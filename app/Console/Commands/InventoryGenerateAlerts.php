@@ -6,6 +6,7 @@ use App\Enums\ProductType;
 use App\Models\InventoryAlert;
 use App\Models\Product;
 use App\Models\StockLot;
+use App\Services\NotificationService;
 use App\Support\SchedulerHeartbeat;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Attributes\Description;
@@ -19,7 +20,7 @@ class InventoryGenerateAlerts extends Command
     /**
      * Execute the console command.
      */
-    public function handle(): int
+    public function handle(NotificationService $notificationService): int
     {
         $now = CarbonImmutable::now();
 
@@ -38,7 +39,7 @@ class InventoryGenerateAlerts extends Command
             $onHand = $product->stock?->on_hand_qty ?? 0;
             $activeLowStockProductIds[] = $product->id;
 
-            InventoryAlert::query()->updateOrCreate(
+            $alert = InventoryAlert::query()->updateOrCreate(
                 [
                     'type' => 'low_stock',
                     'product_id' => $product->id,
@@ -50,6 +51,10 @@ class InventoryGenerateAlerts extends Command
                     'detected_at' => $now,
                 ],
             );
+
+            if ($alert->wasRecentlyCreated) {
+                $notificationService->lowStockAlert($product, $onHand);
+            }
         }
 
         $staleLowStockAlerts = InventoryAlert::query()
@@ -73,8 +78,10 @@ class InventoryGenerateAlerts extends Command
 
         foreach ($expiringLots as $lot) {
             $activeExpiringLotIds[] = $lot->id;
+            $expiresAt = CarbonImmutable::parse((string) $lot->expires_at)->startOfDay();
+            $daysLeft = (int) $now->startOfDay()->diffInDays($expiresAt, false);
 
-            InventoryAlert::query()->updateOrCreate(
+            $alert = InventoryAlert::query()->updateOrCreate(
                 [
                     'type' => 'expiring',
                     'product_id' => $lot->product_id,
@@ -86,6 +93,10 @@ class InventoryGenerateAlerts extends Command
                     'detected_at' => $now,
                 ],
             );
+
+            if ($alert->wasRecentlyCreated) {
+                $notificationService->expiringStockAlert($lot, $daysLeft);
+            }
         }
 
         $staleExpiringAlerts = InventoryAlert::query()

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+defineOptions({ name: 'HandoverVerifyPage' });
+
 import { Form, Head, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import type { SignaturePadInstance } from 'vue-signature-pad';

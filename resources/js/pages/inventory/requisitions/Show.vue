@@ -142,6 +142,7 @@ function formatDateTime(iso: string | null): string {
 }
 
 defineOptions({
+    name: 'RequisitionShowPage',
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: requisitionsIndex() },

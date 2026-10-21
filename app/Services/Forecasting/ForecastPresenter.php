@@ -56,6 +56,13 @@ class ForecastPresenter
             'lead_time_days' => (int) data_get($rawData, 'summary.lead_time_days', 0),
             'safety_stock_days' => (int) data_get($rawData, 'summary.safety_stock_days', 0),
             'has_sufficient_history' => (bool) data_get($rawData, 'summary.has_sufficient_history', false),
+            'pending_on_order_qty' => (int) data_get($rawData, 'summary.pending_on_order_qty', 0),
+            'pending_committed_qty' => (int) data_get($rawData, 'summary.pending_committed_qty', 0),
+            'effective_available_qty' => (int) data_get(
+                $rawData,
+                'summary.effective_available_qty',
+                $snapshot->current_on_hand_qty,
+            ),
         ];
     }
 
@@ -82,6 +89,9 @@ class ForecastPresenter
             'lead_time_days' => $result->leadTimeDays,
             'safety_stock_days' => $result->safetyStockDays,
             'has_sufficient_history' => $result->hasSufficientHistory,
+            'pending_on_order_qty' => $result->pendingOnOrderQty,
+            'pending_committed_qty' => $result->pendingCommittedQty,
+            'effective_available_qty' => $result->effectiveAvailableQty,
         ];
     }
 

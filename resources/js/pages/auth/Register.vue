@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { login } from '@/routes';
 
 defineOptions({
+    name: 'UserRegistrationPage',
     layout: {
         title: 'Create an account',
         description: 'Enter your details below to create your account',

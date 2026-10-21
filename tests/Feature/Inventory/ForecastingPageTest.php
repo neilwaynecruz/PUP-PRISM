@@ -102,6 +102,7 @@ test('supply head can view forecasting detail for a consumable product', functio
             ->where('profile.method', $expectedMethod)
             ->where('profile.lookback_days', 60)
             ->has('forecast')
+            ->has('backtest')
             ->has('confidenceExplanation')
             ->has('methodOptions', 3));
 });

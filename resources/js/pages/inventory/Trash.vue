@@ -1,4 +1,6 @@
 <script setup lang="ts">
+defineOptions({ name: 'InventoryTrashPage' });
+
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';

@@ -16,6 +16,7 @@ const props = defineProps<{
     can: { delete: boolean; deactivate: boolean };
 }>();
 defineOptions({
+    name: 'OriginEditPage',
     layout: {
         breadcrumbs: [
             { title: 'Admin', href: index() },

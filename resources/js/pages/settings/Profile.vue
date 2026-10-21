@@ -19,6 +19,7 @@ type Props = {
 defineProps<Props>();
 
 defineOptions({
+    name: 'ProfileSettingsPage',
     layout: {
         breadcrumbs: [
             {

@@ -59,7 +59,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
  * @see app/Http/Controllers/Inventory/AssetLifecycleController.php:28
  * @route '/inventory/asset-lifecycle/{assetLifecycleEvent}/approve'
  */
-export const approve = (args: { assetLifecycleEvent: string | number | { id: string | number } } | [assetLifecycleEvent: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const approve = (args: { assetLifecycleEvent: number | { id: number } } | [assetLifecycleEvent: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: approve.url(args, options),
     method: 'post',
 })
@@ -74,7 +74,7 @@ approve.definition = {
  * @see app/Http/Controllers/Inventory/AssetLifecycleController.php:28
  * @route '/inventory/asset-lifecycle/{assetLifecycleEvent}/approve'
  */
-approve.url = (args: { assetLifecycleEvent: string | number | { id: string | number } } | [assetLifecycleEvent: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+approve.url = (args: { assetLifecycleEvent: number | { id: number } } | [assetLifecycleEvent: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { assetLifecycleEvent: args }
     }
@@ -107,7 +107,7 @@ approve.url = (args: { assetLifecycleEvent: string | number | { id: string | num
  * @see app/Http/Controllers/Inventory/AssetLifecycleController.php:28
  * @route '/inventory/asset-lifecycle/{assetLifecycleEvent}/approve'
  */
-approve.post = (args: { assetLifecycleEvent: string | number | { id: string | number } } | [assetLifecycleEvent: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+approve.post = (args: { assetLifecycleEvent: number | { id: number } } | [assetLifecycleEvent: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: approve.url(args, options),
     method: 'post',
 })
@@ -117,7 +117,7 @@ approve.post = (args: { assetLifecycleEvent: string | number | { id: string | nu
  * @see app/Http/Controllers/Inventory/AssetLifecycleController.php:28
  * @route '/inventory/asset-lifecycle/{assetLifecycleEvent}/approve'
  */
-    const approveForm = (args: { assetLifecycleEvent: string | number | { id: string | number } } | [assetLifecycleEvent: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const approveForm = (args: { assetLifecycleEvent: number | { id: number } } | [assetLifecycleEvent: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: approve.url(args, options),
         method: 'post',
     })
@@ -127,7 +127,7 @@ approve.post = (args: { assetLifecycleEvent: string | number | { id: string | nu
  * @see app/Http/Controllers/Inventory/AssetLifecycleController.php:28
  * @route '/inventory/asset-lifecycle/{assetLifecycleEvent}/approve'
  */
-        approveForm.post = (args: { assetLifecycleEvent: string | number | { id: string | number } } | [assetLifecycleEvent: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        approveForm.post = (args: { assetLifecycleEvent: number | { id: number } } | [assetLifecycleEvent: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: approve.url(args, options),
             method: 'post',
         })
@@ -138,7 +138,7 @@ approve.post = (args: { assetLifecycleEvent: string | number | { id: string | nu
  * @see app/Http/Controllers/Inventory/AssetLifecycleController.php:41
  * @route '/inventory/asset-lifecycle/{assetLifecycleEvent}/reject'
  */
-export const reject = (args: { assetLifecycleEvent: string | number | { id: string | number } } | [assetLifecycleEvent: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const reject = (args: { assetLifecycleEvent: number | { id: number } } | [assetLifecycleEvent: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: reject.url(args, options),
     method: 'post',
 })
@@ -153,7 +153,7 @@ reject.definition = {
  * @see app/Http/Controllers/Inventory/AssetLifecycleController.php:41
  * @route '/inventory/asset-lifecycle/{assetLifecycleEvent}/reject'
  */
-reject.url = (args: { assetLifecycleEvent: string | number | { id: string | number } } | [assetLifecycleEvent: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+reject.url = (args: { assetLifecycleEvent: number | { id: number } } | [assetLifecycleEvent: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { assetLifecycleEvent: args }
     }
@@ -186,7 +186,7 @@ reject.url = (args: { assetLifecycleEvent: string | number | { id: string | numb
  * @see app/Http/Controllers/Inventory/AssetLifecycleController.php:41
  * @route '/inventory/asset-lifecycle/{assetLifecycleEvent}/reject'
  */
-reject.post = (args: { assetLifecycleEvent: string | number | { id: string | number } } | [assetLifecycleEvent: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+reject.post = (args: { assetLifecycleEvent: number | { id: number } } | [assetLifecycleEvent: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: reject.url(args, options),
     method: 'post',
 })
@@ -196,7 +196,7 @@ reject.post = (args: { assetLifecycleEvent: string | number | { id: string | num
  * @see app/Http/Controllers/Inventory/AssetLifecycleController.php:41
  * @route '/inventory/asset-lifecycle/{assetLifecycleEvent}/reject'
  */
-    const rejectForm = (args: { assetLifecycleEvent: string | number | { id: string | number } } | [assetLifecycleEvent: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const rejectForm = (args: { assetLifecycleEvent: number | { id: number } } | [assetLifecycleEvent: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: reject.url(args, options),
         method: 'post',
     })
@@ -206,7 +206,7 @@ reject.post = (args: { assetLifecycleEvent: string | number | { id: string | num
  * @see app/Http/Controllers/Inventory/AssetLifecycleController.php:41
  * @route '/inventory/asset-lifecycle/{assetLifecycleEvent}/reject'
  */
-        rejectForm.post = (args: { assetLifecycleEvent: string | number | { id: string | number } } | [assetLifecycleEvent: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        rejectForm.post = (args: { assetLifecycleEvent: number | { id: number } } | [assetLifecycleEvent: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: reject.url(args, options),
             method: 'post',
         })

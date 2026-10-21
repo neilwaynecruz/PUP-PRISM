@@ -137,7 +137,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:85
  * @route '/inventory/counts/{inventoryCountSession}'
  */
-export const show = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+export const show = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
@@ -152,7 +152,7 @@ show.definition = {
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:85
  * @route '/inventory/counts/{inventoryCountSession}'
  */
-show.url = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+show.url = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { inventoryCountSession: args }
     }
@@ -185,7 +185,7 @@ show.url = (args: { inventoryCountSession: string | number | { id: string | numb
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:85
  * @route '/inventory/counts/{inventoryCountSession}'
  */
-show.get = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
+show.get = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
     url: show.url(args, options),
     method: 'get',
 })
@@ -194,7 +194,7 @@ show.get = (args: { inventoryCountSession: string | number | { id: string | numb
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:85
  * @route '/inventory/counts/{inventoryCountSession}'
  */
-show.head = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
+show.head = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     url: show.url(args, options),
     method: 'head',
 })
@@ -204,7 +204,7 @@ show.head = (args: { inventoryCountSession: string | number | { id: string | num
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:85
  * @route '/inventory/counts/{inventoryCountSession}'
  */
-    const showForm = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+    const showForm = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
         action: show.url(args, options),
         method: 'get',
     })
@@ -214,7 +214,7 @@ show.head = (args: { inventoryCountSession: string | number | { id: string | num
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:85
  * @route '/inventory/counts/{inventoryCountSession}'
  */
-        showForm.get = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.get = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, options),
             method: 'get',
         })
@@ -223,7 +223,7 @@ show.head = (args: { inventoryCountSession: string | number | { id: string | num
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:85
  * @route '/inventory/counts/{inventoryCountSession}'
  */
-        showForm.head = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
+        showForm.head = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
             action: show.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'HEAD',
@@ -239,7 +239,7 @@ show.head = (args: { inventoryCountSession: string | number | { id: string | num
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:113
  * @route '/inventory/counts/{inventoryCountSession}/lines/{inventoryCountLine}'
  */
-export const updateLine = (args: { inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+export const updateLine = (args: { inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } } | [inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: updateLine.url(args, options),
     method: 'put',
 })
@@ -254,7 +254,7 @@ updateLine.definition = {
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:113
  * @route '/inventory/counts/{inventoryCountSession}/lines/{inventoryCountLine}'
  */
-updateLine.url = (args: { inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } ], options?: RouteQueryOptions) => {
+updateLine.url = (args: { inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } } | [inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } ], options?: RouteQueryOptions) => {
     if (Array.isArray(args)) {
         args = {
                     inventoryCountSession: args[0],
@@ -284,7 +284,7 @@ updateLine.url = (args: { inventoryCountSession: string | number | { id: string 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:113
  * @route '/inventory/counts/{inventoryCountSession}/lines/{inventoryCountLine}'
  */
-updateLine.put = (args: { inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+updateLine.put = (args: { inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } } | [inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: updateLine.url(args, options),
     method: 'put',
 })
@@ -294,7 +294,7 @@ updateLine.put = (args: { inventoryCountSession: string | number | { id: string 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:113
  * @route '/inventory/counts/{inventoryCountSession}/lines/{inventoryCountLine}'
  */
-    const updateLineForm = (args: { inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const updateLineForm = (args: { inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } } | [inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: updateLine.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -309,7 +309,7 @@ updateLine.put = (args: { inventoryCountSession: string | number | { id: string 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:113
  * @route '/inventory/counts/{inventoryCountSession}/lines/{inventoryCountLine}'
  */
-        updateLineForm.put = (args: { inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        updateLineForm.put = (args: { inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } } | [inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: updateLine.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',
@@ -325,7 +325,7 @@ updateLine.put = (args: { inventoryCountSession: string | number | { id: string 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:136
  * @route '/inventory/counts/{inventoryCountSession}/submit'
  */
-export const submit = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const submit = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: submit.url(args, options),
     method: 'post',
 })
@@ -340,7 +340,7 @@ submit.definition = {
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:136
  * @route '/inventory/counts/{inventoryCountSession}/submit'
  */
-submit.url = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+submit.url = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { inventoryCountSession: args }
     }
@@ -373,7 +373,7 @@ submit.url = (args: { inventoryCountSession: string | number | { id: string | nu
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:136
  * @route '/inventory/counts/{inventoryCountSession}/submit'
  */
-submit.post = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+submit.post = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: submit.url(args, options),
     method: 'post',
 })
@@ -383,7 +383,7 @@ submit.post = (args: { inventoryCountSession: string | number | { id: string | n
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:136
  * @route '/inventory/counts/{inventoryCountSession}/submit'
  */
-    const submitForm = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const submitForm = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: submit.url(args, options),
         method: 'post',
     })
@@ -393,7 +393,7 @@ submit.post = (args: { inventoryCountSession: string | number | { id: string | n
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:136
  * @route '/inventory/counts/{inventoryCountSession}/submit'
  */
-        submitForm.post = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        submitForm.post = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: submit.url(args, options),
             method: 'post',
         })
@@ -404,7 +404,7 @@ submit.post = (args: { inventoryCountSession: string | number | { id: string | n
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:151
  * @route '/inventory/counts/{inventoryCountSession}/lines/{inventoryCountLine}/review'
  */
-export const reviewLine = (args: { inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+export const reviewLine = (args: { inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } } | [inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: reviewLine.url(args, options),
     method: 'put',
 })
@@ -419,7 +419,7 @@ reviewLine.definition = {
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:151
  * @route '/inventory/counts/{inventoryCountSession}/lines/{inventoryCountLine}/review'
  */
-reviewLine.url = (args: { inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } ], options?: RouteQueryOptions) => {
+reviewLine.url = (args: { inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } } | [inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } ], options?: RouteQueryOptions) => {
     if (Array.isArray(args)) {
         args = {
                     inventoryCountSession: args[0],
@@ -449,7 +449,7 @@ reviewLine.url = (args: { inventoryCountSession: string | number | { id: string 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:151
  * @route '/inventory/counts/{inventoryCountSession}/lines/{inventoryCountLine}/review'
  */
-reviewLine.put = (args: { inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+reviewLine.put = (args: { inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } } | [inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } ], options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: reviewLine.url(args, options),
     method: 'put',
 })
@@ -459,7 +459,7 @@ reviewLine.put = (args: { inventoryCountSession: string | number | { id: string 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:151
  * @route '/inventory/counts/{inventoryCountSession}/lines/{inventoryCountLine}/review'
  */
-    const reviewLineForm = (args: { inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const reviewLineForm = (args: { inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } } | [inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: reviewLine.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -474,7 +474,7 @@ reviewLine.put = (args: { inventoryCountSession: string | number | { id: string 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:151
  * @route '/inventory/counts/{inventoryCountSession}/lines/{inventoryCountLine}/review'
  */
-        reviewLineForm.put = (args: { inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number }, inventoryCountLine: string | number | { id: string | number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        reviewLineForm.put = (args: { inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } } | [inventoryCountSession: number | { id: number }, inventoryCountLine: number | { id: number } ], options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: reviewLine.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',
@@ -490,7 +490,7 @@ reviewLine.put = (args: { inventoryCountSession: string | number | { id: string 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:174
  * @route '/inventory/counts/{inventoryCountSession}/approve'
  */
-export const approve = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const approve = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: approve.url(args, options),
     method: 'post',
 })
@@ -505,7 +505,7 @@ approve.definition = {
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:174
  * @route '/inventory/counts/{inventoryCountSession}/approve'
  */
-approve.url = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+approve.url = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { inventoryCountSession: args }
     }
@@ -538,7 +538,7 @@ approve.url = (args: { inventoryCountSession: string | number | { id: string | n
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:174
  * @route '/inventory/counts/{inventoryCountSession}/approve'
  */
-approve.post = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+approve.post = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: approve.url(args, options),
     method: 'post',
 })
@@ -548,7 +548,7 @@ approve.post = (args: { inventoryCountSession: string | number | { id: string | 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:174
  * @route '/inventory/counts/{inventoryCountSession}/approve'
  */
-    const approveForm = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const approveForm = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: approve.url(args, options),
         method: 'post',
     })
@@ -558,7 +558,7 @@ approve.post = (args: { inventoryCountSession: string | number | { id: string | 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:174
  * @route '/inventory/counts/{inventoryCountSession}/approve'
  */
-        approveForm.post = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        approveForm.post = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: approve.url(args, options),
             method: 'post',
         })
@@ -569,7 +569,7 @@ approve.post = (args: { inventoryCountSession: string | number | { id: string | 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:189
  * @route '/inventory/counts/{inventoryCountSession}/complete'
  */
-export const complete = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const complete = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: complete.url(args, options),
     method: 'post',
 })
@@ -584,7 +584,7 @@ complete.definition = {
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:189
  * @route '/inventory/counts/{inventoryCountSession}/complete'
  */
-complete.url = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+complete.url = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { inventoryCountSession: args }
     }
@@ -617,7 +617,7 @@ complete.url = (args: { inventoryCountSession: string | number | { id: string | 
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:189
  * @route '/inventory/counts/{inventoryCountSession}/complete'
  */
-complete.post = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+complete.post = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: complete.url(args, options),
     method: 'post',
 })
@@ -627,7 +627,7 @@ complete.post = (args: { inventoryCountSession: string | number | { id: string |
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:189
  * @route '/inventory/counts/{inventoryCountSession}/complete'
  */
-    const completeForm = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const completeForm = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: complete.url(args, options),
         method: 'post',
     })
@@ -637,7 +637,7 @@ complete.post = (args: { inventoryCountSession: string | number | { id: string |
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:189
  * @route '/inventory/counts/{inventoryCountSession}/complete'
  */
-        completeForm.post = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        completeForm.post = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: complete.url(args, options),
             method: 'post',
         })
@@ -648,7 +648,7 @@ complete.post = (args: { inventoryCountSession: string | number | { id: string |
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:204
  * @route '/inventory/counts/{inventoryCountSession}/cancel'
  */
-export const cancel = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const cancel = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: cancel.url(args, options),
     method: 'post',
 })
@@ -663,7 +663,7 @@ cancel.definition = {
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:204
  * @route '/inventory/counts/{inventoryCountSession}/cancel'
  */
-cancel.url = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+cancel.url = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { inventoryCountSession: args }
     }
@@ -696,7 +696,7 @@ cancel.url = (args: { inventoryCountSession: string | number | { id: string | nu
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:204
  * @route '/inventory/counts/{inventoryCountSession}/cancel'
  */
-cancel.post = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+cancel.post = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: cancel.url(args, options),
     method: 'post',
 })
@@ -706,7 +706,7 @@ cancel.post = (args: { inventoryCountSession: string | number | { id: string | n
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:204
  * @route '/inventory/counts/{inventoryCountSession}/cancel'
  */
-    const cancelForm = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const cancelForm = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: cancel.url(args, options),
         method: 'post',
     })
@@ -716,7 +716,7 @@ cancel.post = (args: { inventoryCountSession: string | number | { id: string | n
  * @see app/Http/Controllers/Inventory/InventoryCountController.php:204
  * @route '/inventory/counts/{inventoryCountSession}/cancel'
  */
-        cancelForm.post = (args: { inventoryCountSession: string | number | { id: string | number } } | [inventoryCountSession: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        cancelForm.post = (args: { inventoryCountSession: number | { id: number } } | [inventoryCountSession: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: cancel.url(args, options),
             method: 'post',
         })

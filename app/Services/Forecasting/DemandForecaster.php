@@ -3,13 +3,18 @@
 namespace App\Services\Forecasting;
 
 use App\Enums\ProductType;
+use App\Enums\PurchaseOrderStatus;
+use App\Enums\RequisitionStatus;
 use App\Models\ForecastProfile;
 use App\Models\Product;
+use App\Models\PurchaseOrderLine;
+use App\Models\RequisitionLine;
 use App\Services\Forecasting\Data\ForecastResult;
 use App\Services\Forecasting\Methods\ExponentialSmoothingMethod;
 use App\Services\Forecasting\Methods\MovingAverageMethod;
 use App\Services\Forecasting\Methods\SeasonalMethod;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class DemandForecaster
@@ -39,12 +44,28 @@ class DemandForecaster
             : round(array_sum(array_column($predictions, 'predicted_qty')) / count($predictions), 2);
         $currentOnHandQty = max(0, (int) ($product->stock?->on_hand_qty ?? 0));
         $reorderPointQty = (int) ceil($predictedDailyConsumption * ($profile->lead_time_days + $profile->safety_stock_days));
-        $recommendedReorderQty = max(
-            0,
-            max($reorderPointQty, (int) ($product->reorder_threshold ?? 0)) - $currentOnHandQty,
-        );
+
+        // Open purchase orders (incoming replenishment)
+        $onOrderQty = (int) PurchaseOrderLine::query()
+            ->where('product_id', $product->id)
+            ->whereHas('purchaseOrder', fn ($q) => $q->whereIn('status', [PurchaseOrderStatus::Sent, PurchaseOrderStatus::Partial]))
+            ->sum(DB::raw('qty_ordered - qty_received'));
+        $onOrderQty = max(0, $onOrderQty);
+
+        // Pending unissued requisitions (committed department reservations)
+        $committedQty = (int) RequisitionLine::query()
+            ->where('product_id', $product->id)
+            ->whereHas('requisition', fn ($q) => $q->whereIn('status', [RequisitionStatus::Approved, RequisitionStatus::PartiallyIssued, RequisitionStatus::Backordered]))
+            ->sum(DB::raw('qty_requested - qty_issued'));
+        $committedQty = max(0, $committedQty);
+
+        $effectiveAvailableQty = max(0, $currentOnHandQty - $committedQty);
+        $netInventoryPosition = $currentOnHandQty - $committedQty + $onOrderQty;
+        $targetStock = max($reorderPointQty, (int) ($product->reorder_threshold ?? 0));
+        $recommendedReorderQty = max(0, $targetStock - max(0, $netInventoryPosition));
+
         $predictedDaysUntilStockout = $predictedDailyConsumption > 0
-            ? (int) floor($currentOnHandQty / $predictedDailyConsumption)
+            ? (int) floor($effectiveAvailableQty / $predictedDailyConsumption)
             : null;
         $predictedStockoutDate = $predictedDaysUntilStockout === null
             ? null
@@ -75,6 +96,9 @@ class DemandForecaster
             safetyStockDays: $profile->safety_stock_days,
             hasSufficientHistory: $hasSufficientHistory,
             generatedAt: $asOf,
+            pendingOnOrderQty: $onOrderQty,
+            pendingCommittedQty: $committedQty,
+            effectiveAvailableQty: $effectiveAvailableQty,
         );
     }
 

@@ -5,10 +5,12 @@ use App\Enums\BookingStatus;
 use App\Enums\RequisitionStatus;
 use App\Models\Asset;
 use App\Models\Booking;
+use App\Models\ForecastSnapshot;
 use App\Models\Position;
 use App\Models\Product;
 use App\Models\Requisition;
 use App\Models\RequisitionLine;
+use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\User;
 use Spatie\Permission\Models\Role;
@@ -25,7 +27,7 @@ function reportExportUser(string $role, array $attributes = []): User
 {
     $factory = User::factory();
 
-    if ($role === 'Admin') {
+    if (in_array($role, ['Admin', 'Supply Head'], true)) {
         $factory = $factory->withTwoFactor();
     }
 
@@ -226,6 +228,92 @@ test('property custodian can export requisition history reports as csv', functio
         ->toContain('Requisition export notes');
 });
 
+test('supply head can export stock expiration report as csv', function () {
+    $supplyHead = reportExportUser('Supply Head');
+    $product = Product::factory()->consumable()->create(['sku' => 'EXP-CSV-001', 'name' => 'Expiring Item']);
+
+    $lot = StockLot::factory()->create([
+        'product_id' => $product->id,
+        'reference_no' => 'LOT-EXP-CSV',
+        'qty_remaining' => 12,
+        'expires_at' => now()->addDays(5)->toDateString(),
+    ]);
+
+    $response = $this->actingAs($supplyHead)
+        ->get(route('inventory.reports.expirations', ['format' => 'csv'], absolute: false));
+
+    $response->assertOk();
+    expect((string) $response->headers->get('content-type'))->toContain('text/csv');
+
+    $content = $response->streamedContent();
+    expect($content)
+        ->toContain('Stock Expiration & FEFO Report')
+        ->toContain('LOT-EXP-CSV')
+        ->toContain('EXP-CSV-001')
+        ->toContain('CRITICAL');
+});
+
+test('forecast export includes the latest available snapshot for every product', function () {
+    $supplyHead = reportExportUser('Supply Head');
+    $firstProduct = Product::factory()->consumable()->create([
+        'sku' => 'FORECAST-CSV-CURRENT',
+        'name' => 'Current Forecast Item',
+    ]);
+    $secondProduct = Product::factory()->consumable()->create([
+        'sku' => 'FORECAST-CSV-OLDER',
+        'name' => 'Older Forecast Item',
+    ]);
+
+    ForecastSnapshot::factory()->create([
+        'product_id' => $firstProduct->id,
+        'forecast_date' => '2026-10-20',
+        'generated_at' => '2026-10-20 01:30:00',
+    ]);
+    ForecastSnapshot::factory()->create([
+        'product_id' => $secondProduct->id,
+        'forecast_date' => '2026-10-19',
+        'generated_at' => '2026-10-19 01:30:00',
+    ]);
+
+    $response = $this->actingAs($supplyHead)
+        ->get(route('inventory.reports.forecasting', ['format' => 'csv'], absolute: false));
+
+    $response->assertOk();
+    $content = $response->streamedContent();
+
+    expect($content)
+        ->toContain('FORECAST-CSV-CURRENT')
+        ->toContain('FORECAST-CSV-OLDER');
+});
+
+test('supply head can export inventory optimization report as csv', function () {
+    $supplyHead = reportExportUser('Supply Head');
+    $product = Product::factory()->consumable()->create([
+        'sku' => 'OPT-CSV-001',
+        'name' => 'Optimized Item',
+        'unit_price' => 350.00,
+    ]);
+
+    StockMovement::factory()->create([
+        'product_id' => $product->id,
+        'movement_type' => 'issue',
+        'qty_delta' => -25,
+        'performed_at' => now()->subDays(10),
+    ]);
+
+    $response = $this->actingAs($supplyHead)
+        ->get(route('inventory.reports.optimization', ['format' => 'csv'], absolute: false));
+
+    $response->assertOk();
+    expect((string) $response->headers->get('content-type'))->toContain('text/csv');
+
+    $content = $response->streamedContent();
+    expect($content)
+        ->toContain('Inventory Optimization & ABC Analysis Report')
+        ->toContain('OPT-CSV-001')
+        ->toContain('Optimized Item');
+});
+
 dataset('pdf report routes', [
     'products' => fn () => [
         'user' => tap(User::factory()->create(), fn (User $user) => $user->assignRole('Property Custodian')),
@@ -250,6 +338,16 @@ dataset('pdf report routes', [
     'requisitions' => fn () => [
         'user' => tap(User::factory()->create(), fn (User $user) => $user->assignRole('Property Custodian')),
         'route_name' => 'inventory.reports.requisitions',
+        'route_parameters' => ['format' => 'pdf'],
+    ],
+    'expirations' => fn () => [
+        'user' => reportExportUser('Supply Head'),
+        'route_name' => 'inventory.reports.expirations',
+        'route_parameters' => ['format' => 'pdf'],
+    ],
+    'optimization' => fn () => [
+        'user' => reportExportUser('Supply Head'),
+        'route_name' => 'inventory.reports.optimization',
         'route_parameters' => ['format' => 'pdf'],
     ],
 ]);
@@ -280,6 +378,16 @@ dataset('forbidden report routes', [
     'asset condition export for supply head' => fn () => [
         'user' => tap(User::factory()->withTwoFactor()->create(), fn (User $user) => $user->assignRole('Supply Head')),
         'route_name' => 'inventory.reports.asset-conditions',
+        'route_parameters' => ['format' => 'csv'],
+    ],
+    'expirations export for plain user' => fn () => [
+        'user' => User::factory()->create(),
+        'route_name' => 'inventory.reports.expirations',
+        'route_parameters' => ['format' => 'csv'],
+    ],
+    'optimization export for plain user' => fn () => [
+        'user' => User::factory()->create(),
+        'route_name' => 'inventory.reports.optimization',
         'route_parameters' => ['format' => 'csv'],
     ],
 ]);

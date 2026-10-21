@@ -1,4 +1,6 @@
 <script setup lang="ts">
+defineOptions({ name: 'SettingsLayout' });
+
 import { Link, usePage } from '@inertiajs/vue3';
 import { LoaderCircle } from 'lucide-vue-next';
 import { computed } from 'vue';

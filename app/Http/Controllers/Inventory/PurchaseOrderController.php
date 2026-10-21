@@ -84,13 +84,35 @@ class PurchaseOrderController extends Controller
         ]);
     }
 
-    public function create(): Response
+    public function create(Request $request): Response
     {
         $this->authorize('create', PurchaseOrder::class);
+
+        $initialSupplierId = null;
+        $initialLines = null;
+
+        if ($request->filled('product_id')) {
+            $productId = $request->integer('product_id');
+            $product = Product::query()->where('is_active', true)->find($productId);
+
+            if ($product instanceof Product) {
+                $initialSupplierId = $product->supplier_id;
+                $initialQty = max(1, $request->integer('qty', 1));
+                $initialLines = [
+                    [
+                        'product_id' => (string) $product->id,
+                        'qty_ordered' => (string) $initialQty,
+                        'unit_price' => $product->unit_price !== null ? (string) round((float) $product->unit_price, 2) : '',
+                    ],
+                ];
+            }
+        }
 
         return Inertia::render('inventory/purchase-orders/Create', [
             'suppliers' => $this->supplierOptions(onlyActive: true),
             'products' => $this->productOptions(),
+            'initialSupplierId' => $initialSupplierId,
+            'initialLines' => $initialLines,
         ]);
     }
 

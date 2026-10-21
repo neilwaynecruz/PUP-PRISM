@@ -131,6 +131,8 @@ test('unauthorized users are denied export access across all reporting endpoints
         ['route' => 'inventory.reports.procurement', 'role_needed' => 'Supply Head/Admin'],
         ['route' => 'inventory.reports.forecasting', 'role_needed' => 'Supply Head/Admin'],
         ['route' => 'inventory.reports.slow-moving', 'role_needed' => 'Supply Head/Admin'],
+        ['route' => 'inventory.reports.expirations', 'role_needed' => 'Supply Head/Admin'],
+        ['route' => 'inventory.reports.optimization', 'role_needed' => 'Supply Head/Admin'],
     ];
 
     foreach ($restrictedEndpoints as $endpoint) {

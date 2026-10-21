@@ -316,6 +316,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('reports/slow-moving/{format}', [InventoryReportController::class, 'slowMovingStock'])
                 ->whereIn('format', ['csv', 'pdf'])
                 ->name('reports.slow-moving');
+
+            Route::get('reports/expirations/{format}', [InventoryReportController::class, 'expirations'])
+                ->whereIn('format', ['csv', 'pdf'])
+                ->name('reports.expirations');
+
+            Route::get('reports/optimization/{format}', [InventoryReportController::class, 'optimization'])
+                ->whereIn('format', ['csv', 'pdf'])
+                ->name('reports.optimization');
         });
 
         Route::middleware('role:Admin|Supply Head')->group(function () {

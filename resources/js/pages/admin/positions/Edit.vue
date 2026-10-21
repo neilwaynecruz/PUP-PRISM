@@ -25,6 +25,7 @@ const props = defineProps<{
 }>();
 
 defineOptions({
+    name: 'PositionEditPage',
     layout: {
         breadcrumbs: [
             { title: 'Admin', href: index() },

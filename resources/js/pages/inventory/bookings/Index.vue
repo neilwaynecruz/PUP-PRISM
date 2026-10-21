@@ -110,6 +110,7 @@ const props = defineProps<{
 }>();
 
 defineOptions({
+    name: 'BookingIndexPage',
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: bookingsIndex() },

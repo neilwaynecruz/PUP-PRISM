@@ -10,6 +10,7 @@ import { create, index } from '@/routes/admin/positions';
 
 defineProps<{ departments: { id: number; name: string }[] }>();
 defineOptions({
+    name: 'PositionCreatePage',
     layout: {
         breadcrumbs: [
             { title: 'Admin', href: index() },

@@ -9,7 +9,9 @@ use App\Models\Requisition;
 use App\Services\Reports\AssetConditionReportService;
 use App\Services\Reports\BookingScheduleReportService;
 use App\Services\Reports\CsvTableExporter;
+use App\Services\Reports\ExpirationReportService;
 use App\Services\Reports\ForecastSummaryReportService;
+use App\Services\Reports\InventoryOptimizationReportService;
 use App\Services\Reports\PdfTableExporter;
 use App\Services\Reports\ProcurementReportService;
 use App\Services\Reports\ProductInventoryReportService;
@@ -33,6 +35,8 @@ class InventoryReportController extends Controller
         private readonly ProcurementReportService $procurementReports,
         private readonly ForecastSummaryReportService $forecastSummaryReports,
         private readonly SlowMovingStockReportService $slowMovingStockReports,
+        private readonly ExpirationReportService $expirationReports,
+        private readonly InventoryOptimizationReportService $optimizationReports,
     ) {}
 
     public function products(Request $request, string $format): Response
@@ -89,6 +93,20 @@ class InventoryReportController extends Controller
         abort_unless($request->user()?->hasAnyRole(['Admin', 'Supply Head']), 403);
 
         return $this->download($format, $this->slowMovingStockReports->build($request));
+    }
+
+    public function expirations(Request $request, string $format): Response
+    {
+        abort_unless($request->user()?->hasAnyRole(['Admin', 'Supply Head']), 403);
+
+        return $this->download($format, $this->expirationReports->build($request));
+    }
+
+    public function optimization(Request $request, string $format): Response
+    {
+        abort_unless($request->user()?->hasAnyRole(['Admin', 'Supply Head']), 403);
+
+        return $this->download($format, $this->optimizationReports->build($request));
     }
 
     private function download(string $format, TableReport $report): Response

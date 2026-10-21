@@ -36,6 +36,8 @@ type DraftLine = {
 const props = defineProps<{
     suppliers: SupplierOption[];
     products: ProductOption[];
+    initialSupplierId?: number | string | null;
+    initialLines?: DraftLine[] | null;
 }>();
 
 defineOptions({
@@ -50,17 +52,19 @@ defineOptions({
 });
 
 const form = useForm({
-    supplier_id: '',
+    supplier_id: props.initialSupplierId ? String(props.initialSupplierId) : '',
     expected_delivery_at: '',
     tax: '',
     notes: '',
-    lines: [
-        {
-            product_id: '',
-            qty_ordered: '',
-            unit_price: '',
-        },
-    ] as DraftLine[],
+    lines: (props.initialLines && props.initialLines.length > 0
+        ? props.initialLines
+        : [
+              {
+                  product_id: '',
+                  qty_ordered: '',
+                  unit_price: '',
+              },
+          ]) as DraftLine[],
 });
 
 const filteredProducts = computed(() => {

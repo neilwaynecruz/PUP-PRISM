@@ -18,6 +18,8 @@
 | [PHASE_1_SECURITY_DATA_INTEGRITY_REPORT.md](./PHASE_1_SECURITY_DATA_INTEGRITY_REPORT.md) | Continuation report for the Phase 1 security, inventory integrity, seeder safety, QR scanner, and route fixes |
 | [PHASE_2_IMPLEMENTATION_REPORT.md](./PHASE_2_IMPLEMENTATION_REPORT.md) | Implementation and final stabilization report for Phase 2 backend reliability, database integrity, and automated testing |
 | [PHASE_3_IMPLEMENTATION_REPORT.md](./PHASE_3_IMPLEMENTATION_REPORT.md) | Continuation report for the Phase 3 UI/UX, accessibility, responsive design, and user-friendly language improvements |
+| [PHASE_4_IMPLEMENTATION_REPORT.md](./PHASE_4_IMPLEMENTATION_REPORT.md) | Implementation report for Phase 4 physical inventory counting, reconciliation, asset maintenance, location transfers, and lifecycle management |
+| [PHASE_5_IMPLEMENTATION_REPORT.md](./PHASE_5_IMPLEMENTATION_REPORT.md) | Implementation report for Phase 5 smart demand forecasting, ABC analysis, scientific safety stock, EOQ, strict FEFO fulfillment, and workflow automation |
 
 ## Quick Start
 
