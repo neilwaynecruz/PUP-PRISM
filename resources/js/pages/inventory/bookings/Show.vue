@@ -62,6 +62,7 @@ function formatDateTime(iso: string | null): string {
 }
 
 defineOptions({
+    name: 'BookingShowPage',
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: '/inventory' },

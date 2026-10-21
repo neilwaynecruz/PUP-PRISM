@@ -148,16 +148,16 @@ test('issue requisition allocates by earliest expiry and updates status', functi
         'product_id' => $product->id,
         'qty_received' => 5,
         'qty_remaining' => 5,
-        'received_at' => CarbonImmutable::parse('2026-01-05 08:00:00'),
-        'expires_at' => '2026-12-31',
+        'received_at' => CarbonImmutable::now()->subDays(10),
+        'expires_at' => CarbonImmutable::now()->addDays(90)->toDateString(),
     ]);
 
     $earlierExpiryLot = StockLot::factory()->create([
         'product_id' => $product->id,
         'qty_received' => 3,
         'qty_remaining' => 3,
-        'received_at' => CarbonImmutable::parse('2026-01-01 08:00:00'),
-        'expires_at' => '2026-06-30',
+        'received_at' => CarbonImmutable::now()->subDays(20),
+        'expires_at' => CarbonImmutable::now()->addDays(30)->toDateString(),
     ]);
 
     $requisition = Requisition::factory()->create([

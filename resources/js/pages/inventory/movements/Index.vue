@@ -59,6 +59,7 @@ const props = defineProps<{
 }>();
 
 defineOptions({
+    name: 'StockMovementIndexPage',
     layout: {
         breadcrumbs: [
             { title: 'Movements', href: StockMovementController.index() },

@@ -44,6 +44,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 defineOptions({
+    name: 'SecuritySettingsPage',
     layout: {
         breadcrumbs: [
             {

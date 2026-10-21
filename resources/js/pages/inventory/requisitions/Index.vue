@@ -96,6 +96,7 @@ const props = defineProps<{
 }>();
 
 defineOptions({
+    name: 'RequisitionIndexPage',
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: requisitionsIndex() },

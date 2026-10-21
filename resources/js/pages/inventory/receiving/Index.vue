@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 defineOptions({
+    name: 'ReceivingIndexPage',
     layout: {
         breadcrumbs: [
             { title: 'Receiving', href: ReceivingController.index() },

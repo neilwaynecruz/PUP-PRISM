@@ -8,9 +8,13 @@ use App\Http\Requests\Inventory\UpdateForecastProfileRequest;
 use App\Models\ForecastProfile;
 use App\Models\ForecastSnapshot;
 use App\Models\Product;
+use App\Models\StockLot;
 use App\Services\DashboardStatsService;
 use App\Services\Forecasting\DemandForecaster;
+use App\Services\Forecasting\ForecastBacktester;
 use App\Services\Forecasting\ForecastPresenter;
+use App\Services\Optimization\InventoryOptimizationService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -22,6 +26,8 @@ class ForecastController extends Controller
         private readonly DemandForecaster $forecaster,
         private readonly ForecastPresenter $presenter,
         private readonly DashboardStatsService $dashboardStats,
+        private readonly InventoryOptimizationService $optimizationService,
+        private readonly ForecastBacktester $backtester,
     ) {}
 
     public function index(Request $request): Response
@@ -74,6 +80,40 @@ class ForecastController extends Controller
             ->withQueryString()
             ->through(fn (Product $product) => $this->formatIndexRow($product));
 
+        $today = CarbonImmutable::now()->startOfDay();
+        $expiringLots = StockLot::query()
+            ->where('qty_remaining', '>', 0)
+            ->whereNotNull('expires_at')
+            ->whereDate('expires_at', '<=', $today->addDays(60))
+            ->with('product:id,sku,name')
+            ->orderBy('expires_at')
+            ->limit(50)
+            ->get()
+            ->map(function (StockLot $lot) use ($today): array {
+                $expiresAt = CarbonImmutable::parse((string) $lot->expires_at)->startOfDay();
+                $diffDays = (int) $today->diffInDays($expiresAt, false);
+
+                return [
+                    'id' => $lot->id,
+                    'reference_no' => $lot->reference_no ?? "LOT-{$lot->id}",
+                    'product_id' => $lot->product_id,
+                    'sku' => $lot->product?->sku ?? 'N/A',
+                    'product_name' => $lot->product?->name ?? 'Unknown',
+                    'qty_remaining' => $lot->qty_remaining,
+                    'received_at' => CarbonImmutable::parse((string) $lot->received_at)->toDateString(),
+                    'expires_at' => $expiresAt->toDateString(),
+                    'days_until_expiry' => $diffDays,
+                    'status' => match (true) {
+                        $diffDays < 0 => 'expired',
+                        $diffDays <= 15 => 'critical',
+                        $diffDays <= 30 => 'warning',
+                        default => 'healthy',
+                    },
+                ];
+            })
+            ->values()
+            ->all();
+
         return Inertia::render('inventory/forecasting/Index', [
             'filters' => [
                 'search' => $search,
@@ -84,6 +124,8 @@ class ForecastController extends Controller
             'forecastSummary' => $this->dashboardStats->getForecastSummary(),
             'methodOptions' => $this->presenter->methodOptions(),
             'products' => $products,
+            'optimization' => $this->optimizationService->getAbcAnalysis(),
+            'expiringLots' => $expiringLots,
         ]);
     }
 
@@ -99,6 +141,8 @@ class ForecastController extends Controller
 
         $forecast = $this->resolveForecast($product);
         $profile = $this->resolveProfile($product);
+        $optimization = $this->optimizationService->getProductOptimization($product);
+        $backtest = $this->backtester->evaluate($product);
 
         return Inertia::render('inventory/forecasting/Show', [
             'product' => [
@@ -110,6 +154,8 @@ class ForecastController extends Controller
             ],
             'forecast' => $forecast,
             'profile' => $profile,
+            'optimization' => $optimization,
+            'backtest' => $backtest,
             'confidenceExplanation' => $forecast !== null
                 ? $this->presenter->confidenceExplanation($forecast)
                 : __('No forecast is available for this product yet.'),

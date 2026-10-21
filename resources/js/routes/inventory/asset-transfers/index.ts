@@ -59,7 +59,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:29
  * @route '/inventory/asset-transfers/{assetTransfer}/approve'
  */
-export const approve = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const approve = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: approve.url(args, options),
     method: 'post',
 })
@@ -74,7 +74,7 @@ approve.definition = {
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:29
  * @route '/inventory/asset-transfers/{assetTransfer}/approve'
  */
-approve.url = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+approve.url = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { assetTransfer: args }
     }
@@ -107,7 +107,7 @@ approve.url = (args: { assetTransfer: string | number | { id: string | number } 
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:29
  * @route '/inventory/asset-transfers/{assetTransfer}/approve'
  */
-approve.post = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+approve.post = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: approve.url(args, options),
     method: 'post',
 })
@@ -117,7 +117,7 @@ approve.post = (args: { assetTransfer: string | number | { id: string | number }
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:29
  * @route '/inventory/asset-transfers/{assetTransfer}/approve'
  */
-    const approveForm = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const approveForm = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: approve.url(args, options),
         method: 'post',
     })
@@ -127,7 +127,7 @@ approve.post = (args: { assetTransfer: string | number | { id: string | number }
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:29
  * @route '/inventory/asset-transfers/{assetTransfer}/approve'
  */
-        approveForm.post = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        approveForm.post = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: approve.url(args, options),
             method: 'post',
         })
@@ -138,7 +138,7 @@ approve.post = (args: { assetTransfer: string | number | { id: string | number }
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:42
  * @route '/inventory/asset-transfers/{assetTransfer}/reject'
  */
-export const reject = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const reject = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: reject.url(args, options),
     method: 'post',
 })
@@ -153,7 +153,7 @@ reject.definition = {
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:42
  * @route '/inventory/asset-transfers/{assetTransfer}/reject'
  */
-reject.url = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+reject.url = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { assetTransfer: args }
     }
@@ -186,7 +186,7 @@ reject.url = (args: { assetTransfer: string | number | { id: string | number } }
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:42
  * @route '/inventory/asset-transfers/{assetTransfer}/reject'
  */
-reject.post = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+reject.post = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: reject.url(args, options),
     method: 'post',
 })
@@ -196,7 +196,7 @@ reject.post = (args: { assetTransfer: string | number | { id: string | number } 
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:42
  * @route '/inventory/asset-transfers/{assetTransfer}/reject'
  */
-    const rejectForm = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const rejectForm = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: reject.url(args, options),
         method: 'post',
     })
@@ -206,7 +206,7 @@ reject.post = (args: { assetTransfer: string | number | { id: string | number } 
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:42
  * @route '/inventory/asset-transfers/{assetTransfer}/reject'
  */
-        rejectForm.post = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        rejectForm.post = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: reject.url(args, options),
             method: 'post',
         })
@@ -217,7 +217,7 @@ reject.post = (args: { assetTransfer: string | number | { id: string | number } 
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:55
  * @route '/inventory/asset-transfers/{assetTransfer}/cancel'
  */
-export const cancel = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+export const cancel = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: cancel.url(args, options),
     method: 'post',
 })
@@ -232,7 +232,7 @@ cancel.definition = {
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:55
  * @route '/inventory/asset-transfers/{assetTransfer}/cancel'
  */
-cancel.url = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+cancel.url = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { assetTransfer: args }
     }
@@ -265,7 +265,7 @@ cancel.url = (args: { assetTransfer: string | number | { id: string | number } }
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:55
  * @route '/inventory/asset-transfers/{assetTransfer}/cancel'
  */
-cancel.post = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
+cancel.post = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     url: cancel.url(args, options),
     method: 'post',
 })
@@ -275,7 +275,7 @@ cancel.post = (args: { assetTransfer: string | number | { id: string | number } 
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:55
  * @route '/inventory/asset-transfers/{assetTransfer}/cancel'
  */
-    const cancelForm = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const cancelForm = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: cancel.url(args, options),
         method: 'post',
     })
@@ -285,7 +285,7 @@ cancel.post = (args: { assetTransfer: string | number | { id: string | number } 
  * @see app/Http/Controllers/Inventory/AssetTransferController.php:55
  * @route '/inventory/asset-transfers/{assetTransfer}/cancel'
  */
-        cancelForm.post = (args: { assetTransfer: string | number | { id: string | number } } | [assetTransfer: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        cancelForm.post = (args: { assetTransfer: number | { id: number } } | [assetTransfer: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: cancel.url(args, options),
             method: 'post',
         })

@@ -19,13 +19,7 @@ class ForecastSummaryReportService extends AbstractTableReportService
 
         $latestForecastDate = $snapshots->first()?->forecast_date;
 
-        $latestSnapshots = $latestForecastDate === null
-            ? collect()
-            : $snapshots->filter(
-                fn (ForecastSnapshot $snapshot) => (
-                    CarbonImmutable::parse((string) $snapshot->forecast_date)->toDateString()
-                ) === CarbonImmutable::parse((string) $latestForecastDate)->toDateString(),
-            );
+        $latestSnapshots = $snapshots->unique('product_id');
 
         $rows = $latestSnapshots
             ->sortBy(fn (ForecastSnapshot $snapshot) => $snapshot->predicted_days_until_stockout ?? PHP_INT_MAX)
@@ -52,6 +46,7 @@ class ForecastSummaryReportService extends AbstractTableReportService
                 'Forecast date' => $latestForecastDate !== null
                     ? CarbonImmutable::parse((string) $latestForecastDate)->toDateString()
                     : 'None',
+                'Coverage' => 'Latest available snapshot for each product',
             ]),
             columns: [
                 'forecast_date' => 'Forecast date',

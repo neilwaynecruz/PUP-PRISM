@@ -1,4 +1,6 @@
 <script setup lang="ts">
+defineOptions({ name: 'PageHeading' });
+
 type Props = {
     title: string;
     description?: string;

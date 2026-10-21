@@ -363,15 +363,42 @@ class InventoryService
                 $runningOnHand = (int) $stock->on_hand_qty;
                 $remaining = $qty;
 
+                $today = CarbonImmutable::now()->toDateString();
+
                 /** @var Collection<int, StockLot> $lots */
                 $lots = StockLot::query()
                     ->where('product_id', $product->id)
                     ->where('qty_remaining', '>', 0)
+                    ->where(function ($query) use ($today) {
+                        $query->whereNull('expires_at')
+                            ->orWhereDate('expires_at', '>=', $today);
+                    })
                     ->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END')
                     ->orderBy('expires_at')
                     ->orderBy('received_at')
                     ->lockForUpdate()
                     ->get();
+
+                $unexpiredAvailable = (int) $lots->sum('qty_remaining');
+
+                if ($unexpiredAvailable < $qty) {
+                    $totalLotRemaining = (int) StockLot::query()
+                        ->where('product_id', $product->id)
+                        ->where('qty_remaining', '>', 0)
+                        ->sum('qty_remaining');
+
+                    $hasExpiredLots = StockLot::query()
+                        ->where('product_id', $product->id)
+                        ->where('qty_remaining', '>', 0)
+                        ->whereDate('expires_at', '<', $today)
+                        ->exists();
+
+                    if ($totalLotRemaining >= $qty && $hasExpiredLots) {
+                        throw new \RuntimeException("Insufficient unexpired stock for SKU {$product->sku}. Expired lots cannot be issued.");
+                    }
+
+                    throw new \RuntimeException("Unable to allocate lots for SKU {$product->sku}.");
+                }
 
                 foreach ($lots as $lot) {
                     if ($remaining <= 0) {

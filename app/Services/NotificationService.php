@@ -6,9 +6,11 @@ use App\Enums\NotificationEventType;
 use App\Models\Booking;
 use App\Models\Product;
 use App\Models\Requisition;
+use App\Models\StockLot;
 use App\Models\User;
 use App\Notifications\BookingStatusChangedNotification;
 use App\Notifications\BookingSubmittedNotification;
+use App\Notifications\ExpiringStockAlertNotification;
 use App\Notifications\LowStockAlertNotification;
 use App\Notifications\ProcurementRecommendationNotification;
 use App\Notifications\RequisitionStatusChangedNotification;
@@ -119,6 +121,24 @@ class NotificationService
             $recipients,
             new LowStockAlertNotification($product, $currentStock),
             NotificationEventType::LowStock->value,
+        );
+    }
+
+    /**
+     * Notify Supply Head users when a stock lot is expiring soon.
+     */
+    public function expiringStockAlert(StockLot $lot, int $daysUntilExpiration): void
+    {
+        $recipients = $this->usersWithRole('Supply Head');
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        $this->notifyUsers(
+            $recipients,
+            new ExpiringStockAlertNotification($lot, $daysUntilExpiration),
+            NotificationEventType::ExpiringStock->value,
         );
     }
 

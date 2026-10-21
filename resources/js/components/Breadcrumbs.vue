@@ -1,4 +1,6 @@
 <script setup lang="ts">
+defineOptions({ name: 'PrismBreadcrumbs' });
+
 import { Link } from '@inertiajs/vue3';
 import {
     Breadcrumb,

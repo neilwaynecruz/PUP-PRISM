@@ -91,7 +91,9 @@ defineOptions({
             { title: 'Physical counts', href: index() },
             {
                 title: 'Count details',
-                href: show(window.location.pathname.split('/').pop() ?? ''),
+                href: show(
+                    Number(window.location.pathname.split('/').pop()) || 1,
+                ),
             },
         ],
     },

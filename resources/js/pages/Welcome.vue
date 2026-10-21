@@ -1,4 +1,6 @@
 <script setup lang="ts">
+defineOptions({ name: 'WelcomePage' });
+
 import { Head, Link } from '@inertiajs/vue3';
 import { dashboard, login } from '@/routes';
 

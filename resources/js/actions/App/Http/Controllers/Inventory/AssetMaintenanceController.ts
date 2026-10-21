@@ -59,7 +59,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
  * @see app/Http/Controllers/Inventory/AssetMaintenanceController.php:29
  * @route '/inventory/maintenance/{assetMaintenance}/status'
  */
-export const transition = (args: { assetMaintenance: string | number | { id: string | number } } | [assetMaintenance: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+export const transition = (args: { assetMaintenance: number | { id: number } } | [assetMaintenance: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: transition.url(args, options),
     method: 'put',
 })
@@ -74,7 +74,7 @@ transition.definition = {
  * @see app/Http/Controllers/Inventory/AssetMaintenanceController.php:29
  * @route '/inventory/maintenance/{assetMaintenance}/status'
  */
-transition.url = (args: { assetMaintenance: string | number | { id: string | number } } | [assetMaintenance: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions) => {
+transition.url = (args: { assetMaintenance: number | { id: number } } | [assetMaintenance: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
     if (typeof args === 'string' || typeof args === 'number') {
         args = { assetMaintenance: args }
     }
@@ -107,7 +107,7 @@ transition.url = (args: { assetMaintenance: string | number | { id: string | num
  * @see app/Http/Controllers/Inventory/AssetMaintenanceController.php:29
  * @route '/inventory/maintenance/{assetMaintenance}/status'
  */
-transition.put = (args: { assetMaintenance: string | number | { id: string | number } } | [assetMaintenance: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
+transition.put = (args: { assetMaintenance: number | { id: number } } | [assetMaintenance: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
     url: transition.url(args, options),
     method: 'put',
 })
@@ -117,7 +117,7 @@ transition.put = (args: { assetMaintenance: string | number | { id: string | num
  * @see app/Http/Controllers/Inventory/AssetMaintenanceController.php:29
  * @route '/inventory/maintenance/{assetMaintenance}/status'
  */
-    const transitionForm = (args: { assetMaintenance: string | number | { id: string | number } } | [assetMaintenance: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+    const transitionForm = (args: { assetMaintenance: number | { id: number } } | [assetMaintenance: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
         action: transition.url(args, {
                     [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                         _method: 'PUT',
@@ -132,7 +132,7 @@ transition.put = (args: { assetMaintenance: string | number | { id: string | num
  * @see app/Http/Controllers/Inventory/AssetMaintenanceController.php:29
  * @route '/inventory/maintenance/{assetMaintenance}/status'
  */
-        transitionForm.put = (args: { assetMaintenance: string | number | { id: string | number } } | [assetMaintenance: string | number | { id: string | number } ] | string | number | { id: string | number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        transitionForm.put = (args: { assetMaintenance: number | { id: number } } | [assetMaintenance: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
             action: transition.url(args, {
                         [options?.mergeQuery ? 'mergeQuery' : 'query']: {
                             _method: 'PUT',

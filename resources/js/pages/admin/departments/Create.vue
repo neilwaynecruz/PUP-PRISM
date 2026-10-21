@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { create, index } from '@/routes/admin/departments';
 
 defineOptions({
+    name: 'DepartmentCreatePage',
     layout: {
         breadcrumbs: [
             { title: 'Admin', href: index() },

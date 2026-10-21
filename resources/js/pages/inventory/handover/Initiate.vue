@@ -44,6 +44,7 @@ const props = defineProps<{
 const recipientSearch = ref(props.filters.recipient_search ?? '');
 
 defineOptions({
+    name: 'HandoverInitiatePage',
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: handoverIndex() },

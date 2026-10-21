@@ -9,6 +9,7 @@ use App\Models\InventoryAlert;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -23,17 +24,25 @@ class PurchaseOrderGenerator
      */
     public function generateFromAlerts(User $requestedBy): Collection
     {
+        $productsTable = (new Product)->getTable();
+
+        /** @var Collection<int|string, Collection<int, Product>> $products */
         $products = Product::query()
             ->where('type', ProductType::Consumable)
             ->where('is_active', true)
             ->whereNotNull('supplier_id')
-            ->whereHas('stock', fn ($query) => $query->whereColumn('on_hand_qty', '<=', 'products.reorder_threshold'))
+            ->whereHas('stock', fn (Builder $query) => $query->whereColumn('on_hand_qty', '<=', "{$productsTable}.reorder_threshold"))
+            ->whereDoesntHave('purchaseOrderLines.purchaseOrder', fn (Builder $query) => $query->whereIn('status', [
+                PurchaseOrderStatus::Draft,
+                PurchaseOrderStatus::Sent,
+                PurchaseOrderStatus::Partial,
+            ]))
             ->with([
                 'stock:id,product_id,on_hand_qty',
                 'supplier:id,name,lead_time_days,is_active',
             ])
             ->get()
-            ->filter(fn (Product $product) => $product->supplier?->is_active)
+            ->filter(fn (Product $product): bool => $product->supplier?->is_active === true)
             ->groupBy('supplier_id');
 
         $created = new Collection;
@@ -41,7 +50,7 @@ class PurchaseOrderGenerator
         foreach ($products as $supplierProducts) {
             $purchaseOrder = DB::transaction(fn (): ?PurchaseOrder => $this->createDraftPurchaseOrder(
                 $requestedBy,
-                new Collection($supplierProducts->all()),
+                $supplierProducts->values(),
             ));
 
             if ($purchaseOrder instanceof PurchaseOrder) {
@@ -57,6 +66,7 @@ class PurchaseOrderGenerator
      */
     public function generateFromForecastAlerts(User $requestedBy): Collection
     {
+        $productsTable = (new Product)->getTable();
         $forecastProductIds = InventoryAlert::query()
             ->where('type', 'forecast_stockout')
             ->whereNull('resolved_at')
@@ -68,18 +78,24 @@ class PurchaseOrderGenerator
             return new Collection;
         }
 
+        /** @var Collection<int|string, Collection<int, Product>> $products */
         $products = Product::query()
             ->whereIn('id', $forecastProductIds)
             ->where('type', ProductType::Consumable)
             ->where('is_active', true)
             ->whereNotNull('supplier_id')
-            ->whereHas('stock', fn ($query) => $query->whereColumn('on_hand_qty', '>', 'products.reorder_threshold'))
+            ->whereHas('stock', fn (Builder $query) => $query->whereColumn('on_hand_qty', '>', "{$productsTable}.reorder_threshold"))
+            ->whereDoesntHave('purchaseOrderLines.purchaseOrder', fn (Builder $query) => $query->whereIn('status', [
+                PurchaseOrderStatus::Draft,
+                PurchaseOrderStatus::Sent,
+                PurchaseOrderStatus::Partial,
+            ]))
             ->with([
                 'stock:id,product_id,on_hand_qty',
                 'supplier:id,name,lead_time_days,is_active',
             ])
             ->get()
-            ->filter(fn (Product $product) => $product->supplier?->is_active)
+            ->filter(fn (Product $product): bool => $product->supplier?->is_active === true)
             ->groupBy('supplier_id');
 
         $created = new Collection;
@@ -87,7 +103,7 @@ class PurchaseOrderGenerator
         foreach ($products as $supplierProducts) {
             $purchaseOrder = DB::transaction(fn (): ?PurchaseOrder => $this->createDraftPurchaseOrder(
                 $requestedBy,
-                new Collection($supplierProducts->all()),
+                $supplierProducts->values(),
                 'Auto-generated from forecast stockout alerts.',
             ));
 
@@ -99,17 +115,56 @@ class PurchaseOrderGenerator
         return $created;
     }
 
+    /**
+     * @param  Collection<int, Product>  $products
+     */
     private function createDraftPurchaseOrder(
         User $requestedBy,
         Collection $products,
         string $notes = 'Auto-generated from low-stock and forecast signals.',
     ): ?PurchaseOrder {
+        $productIds = $products->modelKeys();
+        sort($productIds);
+
+        if ($productIds === []) {
+            return null;
+        }
+
+        Product::query()
+            ->whereKey($productIds)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get(['id']);
+
+        $products = Product::query()
+            ->whereKey($productIds)
+            ->where('type', ProductType::Consumable)
+            ->where('is_active', true)
+            ->whereNotNull('supplier_id')
+            ->whereDoesntHave('purchaseOrderLines.purchaseOrder', fn (Builder $query) => $query->whereIn('status', [
+                PurchaseOrderStatus::Draft,
+                PurchaseOrderStatus::Sent,
+                PurchaseOrderStatus::Partial,
+            ]))
+            ->with([
+                'stock:id,product_id,on_hand_qty',
+                'supplier:id,name,lead_time_days,is_active',
+            ])
+            ->orderBy('id')
+            ->get()
+            ->filter(fn (Product $product): bool => $product->supplier?->is_active === true)
+            ->values();
+
         /** @var Product|null $firstProduct */
         $firstProduct = $products->first();
 
         if (! $firstProduct instanceof Product || $firstProduct->supplier_id === null) {
             return null;
         }
+
+        $products = $products
+            ->filter(fn (Product $product) => $product->supplier_id === $firstProduct->supplier_id)
+            ->values();
 
         $lines = [];
         $subtotal = 0.0;
@@ -160,7 +215,9 @@ class PurchaseOrderGenerator
             $purchaseOrder->lines()->create($line);
         }
 
-        return $purchaseOrder->fresh(['supplier', 'requester', 'lines.product']);
+        $purchaseOrder->load(['supplier', 'requester', 'lines.product']);
+
+        return $purchaseOrder;
     }
 
     private function resolveRecommendedQuantity(Product $product): int

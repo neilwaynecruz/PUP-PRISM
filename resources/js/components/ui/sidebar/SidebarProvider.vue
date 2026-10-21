@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { HTMLAttributes, Ref } from "vue"
-import { defaultDocument, useEventListener, useMediaQuery, useVModel } from "@vueuse/core"
+import { useEventListener, useMediaQuery, useVModel } from "@vueuse/core"
 import { router } from "@inertiajs/vue3"
 import { TooltipProvider } from "reka-ui"
-import { computed, ref } from "vue"
+import { computed, onMounted, ref } from "vue"
 import { cn } from "@/lib/utils"
 import { provideSidebarContext, SIDEBAR_COOKIE_MAX_AGE, SIDEBAR_COOKIE_NAME, SIDEBAR_KEYBOARD_SHORTCUT, SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./utils"
 
@@ -12,7 +12,7 @@ const props = withDefaults(defineProps<{
   open?: boolean
   class?: HTMLAttributes["class"]
 }>(), {
-  defaultOpen: !defaultDocument?.cookie.includes(`${SIDEBAR_COOKIE_NAME}=false`),
+  defaultOpen: true,
   open: undefined,
 })
 
@@ -20,8 +20,14 @@ const emits = defineEmits<{
   "update:open": [open: boolean]
 }>()
 
-const isMobile = useMediaQuery("(max-width: 768px)")
+const mobileMediaQuery = useMediaQuery("(max-width: 768px)")
+const hasMounted = ref(false)
+const isMobile = computed(() => hasMounted.value && mobileMediaQuery.value)
 const openMobile = ref(false)
+
+onMounted(() => {
+  hasMounted.value = true
+})
 
 const open = useVModel(props, "open", emits, {
   defaultValue: props.defaultOpen ?? false,

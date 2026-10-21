@@ -28,6 +28,9 @@ class ForecastResult
         public readonly int $safetyStockDays,
         public readonly bool $hasSufficientHistory,
         public readonly CarbonImmutable $generatedAt,
+        public readonly int $pendingOnOrderQty = 0,
+        public readonly int $pendingCommittedQty = 0,
+        public readonly int $effectiveAvailableQty = 0,
     ) {}
 
     /**
@@ -60,6 +63,9 @@ class ForecastResult
                         fn (array $point) => $point['qty'] > 0,
                     )),
                     'has_sufficient_history' => $this->hasSufficientHistory,
+                    'pending_on_order_qty' => $this->pendingOnOrderQty,
+                    'pending_committed_qty' => $this->pendingCommittedQty,
+                    'effective_available_qty' => $this->effectiveAvailableQty,
                 ],
             ],
             'generated_at' => $this->generatedAt,

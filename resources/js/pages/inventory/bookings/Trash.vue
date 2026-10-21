@@ -1,4 +1,6 @@
 <script setup lang="ts">
+defineOptions({ name: 'BookingTrashPage' });
+
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
 import EmptyState from '@/components/EmptyState.vue';
