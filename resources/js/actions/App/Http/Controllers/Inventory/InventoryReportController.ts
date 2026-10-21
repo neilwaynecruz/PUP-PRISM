@@ -24,7 +24,7 @@ products.url = (args: { format: string | number } | [format: string | number ] |
         args = { format: args }
     }
 
-
+    
     if (Array.isArray(args)) {
         args = {
                     format: args[0],
@@ -94,7 +94,7 @@ products.head = (args: { format: string | number } | [format: string | number ] 
                     }),
             method: 'get',
         })
-
+    
     products.form = productsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
@@ -121,7 +121,7 @@ bookings.url = (args: { format: string | number } | [format: string | number ] |
         args = { format: args }
     }
 
-
+    
     if (Array.isArray(args)) {
         args = {
                     format: args[0],
@@ -191,7 +191,7 @@ bookings.head = (args: { format: string | number } | [format: string | number ] 
                     }),
             method: 'get',
         })
-
+    
     bookings.form = bookingsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
@@ -218,7 +218,7 @@ requisitions.url = (args: { format: string | number } | [format: string | number
         args = { format: args }
     }
 
-
+    
     if (Array.isArray(args)) {
         args = {
                     format: args[0],
@@ -288,7 +288,7 @@ requisitions.head = (args: { format: string | number } | [format: string | numbe
                     }),
             method: 'get',
         })
-
+    
     requisitions.form = requisitionsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::procurement
@@ -315,7 +315,7 @@ procurement.url = (args: { format: string | number } | [format: string | number 
         args = { format: args }
     }
 
-
+    
     if (Array.isArray(args)) {
         args = {
                     format: args[0],
@@ -385,7 +385,7 @@ procurement.head = (args: { format: string | number } | [format: string | number
                     }),
             method: 'get',
         })
-
+    
     procurement.form = procurementForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::forecasting
@@ -412,7 +412,7 @@ forecasting.url = (args: { format: string | number } | [format: string | number 
         args = { format: args }
     }
 
-
+    
     if (Array.isArray(args)) {
         args = {
                     format: args[0],
@@ -482,7 +482,7 @@ forecasting.head = (args: { format: string | number } | [format: string | number
                     }),
             method: 'get',
         })
-
+    
     forecasting.form = forecastingForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::slowMovingStock
@@ -509,7 +509,7 @@ slowMovingStock.url = (args: { format: string | number } | [format: string | num
         args = { format: args }
     }
 
-
+    
     if (Array.isArray(args)) {
         args = {
                     format: args[0],
@@ -579,7 +579,7 @@ slowMovingStock.head = (args: { format: string | number } | [format: string | nu
                     }),
             method: 'get',
         })
-
+    
     slowMovingStock.form = slowMovingStockForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::expirations
@@ -606,7 +606,7 @@ expirations.url = (args: { format: string | number } | [format: string | number 
         args = { format: args }
     }
 
-
+    
     if (Array.isArray(args)) {
         args = {
                     format: args[0],
@@ -676,7 +676,7 @@ expirations.head = (args: { format: string | number } | [format: string | number
                     }),
             method: 'get',
         })
-
+    
     expirations.form = expirationsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::optimization
@@ -703,7 +703,7 @@ optimization.url = (args: { format: string | number } | [format: string | number
         args = { format: args }
     }
 
-
+    
     if (Array.isArray(args)) {
         args = {
                     format: args[0],
@@ -773,7 +773,7 @@ optimization.head = (args: { format: string | number } | [format: string | numbe
                     }),
             method: 'get',
         })
-
+    
     optimization.form = optimizationForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::stockMovements
@@ -800,7 +800,7 @@ stockMovements.url = (args: { format: string | number } | [format: string | numb
         args = { format: args }
     }
 
-
+    
     if (Array.isArray(args)) {
         args = {
                     format: args[0],
@@ -870,7 +870,7 @@ stockMovements.head = (args: { format: string | number } | [format: string | num
                     }),
             method: 'get',
         })
-
+    
     stockMovements.form = stockMovementsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
@@ -897,7 +897,7 @@ assetConditions.url = (args: { format: string | number } | [format: string | num
         args = { format: args }
     }
 
-
+    
     if (Array.isArray(args)) {
         args = {
                     format: args[0],
@@ -967,7 +967,7 @@ assetConditions.head = (args: { format: string | number } | [format: string | nu
                     }),
             method: 'get',
         })
-
+    
     assetConditions.form = assetConditionsForm
 const InventoryReportController = { products, bookings, requisitions, procurement, forecasting, slowMovingStock, expirations, optimization, stockMovements, assetConditions }
 
