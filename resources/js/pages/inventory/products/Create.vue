@@ -21,6 +21,7 @@ defineProps<{
 
 defineOptions({
     name: 'InventoryProductCreatePage',
+    inheritAttrs: false,
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: productsIndex() },

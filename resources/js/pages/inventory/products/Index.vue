@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
+import { Printer } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import TableSkeleton from '@/components/TableSkeleton.vue';
@@ -35,6 +36,7 @@ import {
     edit as productsEdit,
     destroy as productsDestroy,
 } from '@/routes/inventory/products';
+import { sheet as productLabelsSheet } from '@/routes/inventory/products/labels';
 
 type Option = { id: number; name: string };
 
@@ -152,6 +154,7 @@ const bulkActionDialogOpen = ref(false);
 const pendingBulkAction = ref<'activate' | 'deactivate' | null>(null);
 const bulkActionProcessing = ref(false);
 const isRefreshing = ref(false);
+const labelScopeDialogOpen = ref(false);
 
 const {
     selectedIds,
@@ -204,6 +207,49 @@ function confirmBulkCategory(): void {
     );
 }
 
+function openBulkLabels(): void {
+    if (selectedIds.value.size === 0) {
+        return;
+    }
+
+    const ids = Array.from(selectedIds.value).join(',');
+    router.visit(productLabelsSheet.url({ query: { product_ids: ids } }));
+}
+
+function openBulkLabelsFromHeader(): void {
+    if (hasSelection.value) {
+        openBulkLabels();
+
+        return;
+    }
+
+    labelScopeDialogOpen.value = true;
+}
+
+function confirmFilteredLabels(): void {
+    const query: Record<string, string> = {};
+    query.selection_scope = 'filtered';
+
+    if (search.value) {
+        query.search = search.value;
+    }
+
+    if (type.value) {
+        query.type = type.value;
+    }
+
+    if (categoryId.value) {
+        query.category_id = categoryId.value;
+    }
+
+    if (active.value) {
+        query.active = active.value;
+    }
+
+    labelScopeDialogOpen.value = false;
+    router.visit(productLabelsSheet.url({ query }));
+}
+
 function confirmBulkAction(): void {
     if (!pendingBulkAction.value || bulkActionProcessing.value) {
         return;
@@ -236,6 +282,7 @@ function confirmBulkAction(): void {
 
 defineOptions({
     name: 'InventoryProductIndexPage',
+    inheritAttrs: false,
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: productsIndex() },
@@ -355,6 +402,15 @@ onBeforeUnmount(() => {
                 </Button>
                 <Button variant="outline" size="sm" as-child class="rounded-lg">
                     <a :href="props.exportUrls.pdf">Download PDF</a>
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="gap-1.5 rounded-lg"
+                    @click="openBulkLabelsFromHeader"
+                >
+                    <Printer class="h-3.5 w-3.5 text-primary" />
+                    <span>Print labels</span>
                 </Button>
                 <Button variant="outline" size="sm" as-child class="rounded-lg">
                     <Link href="/inventory/products/trash">Trash</Link>
@@ -493,6 +549,15 @@ onBeforeUnmount(() => {
                     >{{ selectedIds.size }} selected</span
                 >
                 <div class="ml-auto flex flex-wrap gap-2">
+                    <Button
+                        variant="secondary"
+                        size="sm"
+                        class="h-7 gap-1.5 rounded-lg text-xs font-semibold text-primary"
+                        @click="openBulkLabels"
+                    >
+                        <Printer class="h-3.5 w-3.5" />
+                        <span>Print labels</span>
+                    </Button>
                     <Button
                         variant="outline"
                         size="sm"
@@ -934,6 +999,36 @@ onBeforeUnmount(() => {
                             @click="confirmDelete"
                             >Move to Trash</Button
                         >
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog v-model:open="labelScopeDialogOpen">
+                <DialogContent>
+                    <DialogHeader class="space-y-3">
+                        <DialogTitle
+                            >Print labels for filtered products?</DialogTitle
+                        >
+                        <DialogDescription>
+                            No products are selected. This will prepare one
+                            label for every active product matching the current
+                            search, type, and category filters, up to the
+                            500-label safety limit.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div
+                        class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+                    >
+                        To print only the current page, cancel and select the
+                        products using the checkboxes first.
+                    </div>
+                    <DialogFooter class="gap-2">
+                        <DialogClose as-child>
+                            <Button variant="secondary">Cancel</Button>
+                        </DialogClose>
+                        <Button @click="confirmFilteredLabels">
+                            Continue to label preview
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

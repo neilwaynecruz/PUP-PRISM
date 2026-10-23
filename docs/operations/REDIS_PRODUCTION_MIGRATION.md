@@ -1,6 +1,6 @@
 # Redis Production Migration Strategy
 
-> **Companion docs:** [PRODUCTION_READINESS_PLAN.md](../../PRODUCTION_READINESS_PLAN.md), [QUEUE_OPERATIONS.md](./QUEUE_OPERATIONS.md)
+> **Companion docs:** [PRODUCTION_DEPLOYMENT_RUNBOOK.md](./PRODUCTION_DEPLOYMENT_RUNBOOK.md), [QUEUE_OPERATIONS.md](./QUEUE_OPERATIONS.md)
 
 PUP PRISM defaults to **database** drivers for cache, session, and queue in `.env.example`. This is appropriate for early production and small deployments. Migrate to **Redis** when you observe connection pool pressure, slow session writes, or queue latency under concurrent workers.
 

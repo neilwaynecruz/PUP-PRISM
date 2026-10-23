@@ -339,6 +339,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->whereNumber('requisition')
                 ->name('requisitions.issue');
 
+            Route::get('products/labels/sheet', [ProductLabelController::class, 'sheet'])
+                ->name('products.labels.sheet');
+
+            Route::post('products/labels/pdf', [ProductLabelController::class, 'pdf'])
+                ->name('products.labels.pdf');
+
             // Not part of ProductController/authorizeResource, so it keeps its own guard.
             Route::get('products/{product}/label', [ProductLabelController::class, 'show'])
                 ->whereNumber('product')
@@ -447,6 +453,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         // so ProductPolicy is the single source of truth for per-action access.
         Route::get('products', [ProductController::class, 'index'])
             ->name('products.index');
+
+        Route::get('products/lookup', [ProductController::class, 'lookup'])
+            ->name('products.lookup');
 
         Route::get('products/create', [ProductController::class, 'create'])
             ->name('products.create');

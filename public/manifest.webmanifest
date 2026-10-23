@@ -1,41 +1,44 @@
 {
-    "name": "PUP PRISM Field Operations",
+    "id": "/",
+    "name": "PUP PRISM",
     "short_name": "PRISM",
-    "description": "Mobile-first inventory workflows for receiving, handover, bookings, forecasting, and operational field work.",
+    "description": "Property, resource, inventory, and supply management for Polytechnic University of the Philippines.",
     "start_url": "/dashboard",
     "scope": "/",
     "display": "standalone",
-    "orientation": "portrait-primary",
+    "display_override": ["window-controls-overlay", "standalone"],
+    "orientation": "any",
     "background_color": "#ffffff",
-    "theme_color": "#ffffff",
+    "theme_color": "#0f172a",
     "lang": "en-PH",
+    "prefer_related_applications": false,
     "icons": [
         {
-            "src": "/android-icon-192x192.png",
+            "src": "/Icons/prism-icon-192x192.png",
             "sizes": "192x192",
             "type": "image/png",
-            "purpose": "any"
+            "purpose": "any maskable"
         },
         {
-            "src": "/ms-icon-310x310.png",
-            "sizes": "310x310",
+            "src": "/Icons/prism-icon-512x512.png",
+            "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any"
+            "purpose": "any maskable"
         }
     ],
     "shortcuts": [
         {
-            "name": "Receive stock",
+            "name": "Open inventory",
+            "short_name": "Inventory",
+            "url": "/inventory"
+        },
+        {
+            "name": "Open receiving",
             "short_name": "Receiving",
             "url": "/inventory/receiving"
         },
         {
-            "name": "Asset handover",
-            "short_name": "Handover",
-            "url": "/inventory/handover"
-        },
-        {
-            "name": "Bookings",
+            "name": "Open bookings",
             "short_name": "Bookings",
             "url": "/inventory/bookings"
         }

@@ -19,11 +19,13 @@ use App\Services\AuditLogService;
 use App\Services\Forecasting\DemandForecaster;
 use App\Services\Forecasting\ForecastPresenter;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -90,6 +92,70 @@ class ProductController extends Controller
                 'create' => $request->user()?->can('create', Product::class) ?? false,
                 'bulkUpdate' => $request->user()?->hasAnyRole(['Admin', 'Supply Head']) ?? false,
             ],
+        ]);
+    }
+
+    public function lookup(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', Product::class);
+
+        $query = Str::squish($request->string('query')->toString());
+        $sku = $request->string('sku')->trim()->toString();
+        $type = $request->string('type')->trim()->toString();
+        $categoryId = $request->integer('category_id') ?: null;
+        $onlyInStock = $request->boolean('in_stock_only');
+        $limit = min(50, max(1, $request->integer('limit', 20)));
+        $page = max(1, $request->integer('page', 1));
+
+        $products = Product::query()
+            ->with(['category:id,name', 'stock:id,product_id,on_hand_qty'])
+            ->when($sku !== '', fn ($q) => $q->whereLike('sku', $sku))
+            ->when($query !== '', function ($q) use ($query) {
+                foreach (explode(' ', $query) as $term) {
+                    $q->where(function ($sub) use ($term) {
+                        $sub->whereLike('sku', "%{$term}%")
+                            ->orWhereLike('name', "%{$term}%");
+                    });
+                }
+            })
+            ->when($type !== '', fn ($q) => $q->where('type', $type))
+            ->when($categoryId !== null, fn ($q) => $q->where('category_id', $categoryId))
+            ->when($onlyInStock, function ($q) {
+                $q->whereHas('stock', fn ($sq) => $sq->where('on_hand_qty', '>', 0));
+            })
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->paginate($limit, [
+                'id',
+                'sku',
+                'name',
+                'type',
+                'category_id',
+                'reorder_threshold',
+                'unit_price',
+                'is_active',
+            ], 'page', $page);
+
+        return response()->json([
+            'products' => $products->getCollection()->map(fn (Product $p) => [
+                'id' => $p->id,
+                'sku' => $p->sku,
+                'name' => $p->name,
+                'type' => $p->type?->value,
+                'category_id' => $p->category_id,
+                'category' => $p->category?->name,
+                'on_hand_qty' => $p->stock?->on_hand_qty ?? 0,
+                'reorder_threshold' => $p->reorder_threshold,
+                'unit_price' => $p->unit_price !== null ? (float) $p->unit_price : null,
+                'is_active' => $p->is_active,
+            ]),
+            'pagination' => [
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'per_page' => $products->perPage(),
+                'total' => $products->total(),
+            ],
+            'category_options' => $this->categoryOptions(),
         ]);
     }
 

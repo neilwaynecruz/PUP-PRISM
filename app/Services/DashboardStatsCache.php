@@ -20,7 +20,11 @@ class DashboardStatsCache
     }
 
     /**
+     * @template T
+     *
      * @param  array{from: string|null, to: string|null}  $range
+     * @param  Closure(): T  $callback
+     * @return T
      */
     public function remember(string $role, array $range, Closure $callback): mixed
     {

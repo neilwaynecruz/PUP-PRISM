@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { computed } from 'vue';
+import { Package } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
 import PurchaseOrderController from '@/actions/App/Http/Controllers/Inventory/PurchaseOrderController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
+import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -110,6 +113,52 @@ function onProductChange(index: number): void {
         product.unit_price !== null ? String(product.unit_price) : '';
 }
 
+const catalogDialogOpen = ref(false);
+const targetLineIndex = ref<number | null>(null);
+
+function onProductSelected(product: ProductLookupItem, qty: number): void {
+    if (targetLineIndex.value !== null && form.lines[targetLineIndex.value]) {
+        const line = form.lines[targetLineIndex.value];
+
+        line.product_id = String(product.id);
+        line.qty_ordered = String(qty);
+        line.unit_price =
+            product.unit_price !== null ? String(product.unit_price) : '';
+        targetLineIndex.value = null;
+        catalogDialogOpen.value = false;
+
+        return;
+    }
+
+    const existing = form.lines.find(
+        (l) => l.product_id === String(product.id),
+    );
+
+    if (existing) {
+        const currentQty = parseInt(existing.qty_ordered, 10) || 0;
+
+        existing.qty_ordered = String(currentQty + qty);
+
+        return;
+    }
+
+    const emptyLine = form.lines.find((l) => !l.product_id);
+
+    if (emptyLine) {
+        emptyLine.product_id = String(product.id);
+        emptyLine.qty_ordered = String(qty);
+        emptyLine.unit_price =
+            product.unit_price !== null ? String(product.unit_price) : '';
+    } else {
+        form.lines.push({
+            product_id: String(product.id),
+            qty_ordered: String(qty),
+            unit_price:
+                product.unit_price !== null ? String(product.unit_price) : '',
+        });
+    }
+}
+
 function submit(): void {
     router.post(
         PurchaseOrderController.store().url,
@@ -191,18 +240,35 @@ function submit(): void {
             <div
                 class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
             >
-                <div class="mb-4 flex items-center justify-between">
+                <div
+                    class="mb-4 flex flex-wrap items-center justify-between gap-2"
+                >
                     <div class="text-sm font-semibold tracking-tight">
                         Line items
                     </div>
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        @click="addLine"
-                    >
-                        Add line
-                    </Button>
+                    <div class="flex items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            class="h-8 gap-1.5 text-xs text-primary"
+                            @click="
+                                targetLineIndex = null;
+                                catalogDialogOpen = true;
+                            "
+                        >
+                            <Package class="h-3.5 w-3.5" />
+                            <span>Browse Catalog</span>
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            @click="addLine"
+                        >
+                            Add line
+                        </Button>
+                    </div>
                 </div>
 
                 <div class="grid gap-4">
@@ -212,9 +278,23 @@ function submit(): void {
                         class="grid gap-3 rounded-lg border border-border/50 p-4 lg:grid-cols-[2fr_0.8fr_0.8fr_auto]"
                     >
                         <div class="grid gap-2">
-                            <Label :for="`line-product-${index}`"
-                                >Product</Label
-                            >
+                            <div class="flex items-center justify-between">
+                                <Label :for="`line-product-${index}`"
+                                    >Product</Label
+                                >
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    class="h-6 px-1.5 text-[11px] text-primary hover:bg-primary/5"
+                                    @click="
+                                        targetLineIndex = index;
+                                        catalogDialogOpen = true;
+                                    "
+                                >
+                                    Browse Catalog
+                                </Button>
+                            </div>
                             <select
                                 :id="`line-product-${index}`"
                                 v-model="line.product_id"
@@ -304,5 +384,13 @@ function submit(): void {
                 <Button :disabled="form.processing">Create draft</Button>
             </div>
         </form>
+
+        <ProductSelectDialog
+            v-model:open="catalogDialogOpen"
+            title="Browse products for purchase order"
+            description="Find and select accredited products to add directly to your order draft."
+            :exclude-skus="[]"
+            @select="onProductSelected"
+        />
     </div>
 </template>

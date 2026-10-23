@@ -14,7 +14,7 @@ class UatOrganizationSeeder extends Seeder
     public function run(): void
     {
         if (app()->isProduction()) {
-            throw new \RuntimeException('UAT demo data cannot be seeded in production.');
+            throw new \RuntimeException('Operational seed data cannot be seeded in production.');
         }
 
         foreach (['Admin', 'Supply Head', 'Property Custodian'] as $roleName) {
@@ -25,10 +25,13 @@ class UatOrganizationSeeder extends Seeder
 
         foreach ([
             ['code' => 'ADMIN', 'name' => 'Administration Office'],
+            ['code' => 'ACCT', 'name' => 'Accounting Office'],
             ['code' => 'BACC', 'name' => 'College of Business and Accountancy'],
+            ['code' => 'CLINIC', 'name' => 'University Health Services'],
             ['code' => 'COED', 'name' => 'College of Education'],
             ['code' => 'COE', 'name' => 'College of Engineering'],
             ['code' => 'DIR', 'name' => 'Office of the Director'],
+            ['code' => 'FMO', 'name' => 'Facilities Management Office'],
             ['code' => 'IT', 'name' => 'Information Technology Office'],
             ['code' => 'LIB', 'name' => 'University Library'],
             ['code' => 'REG', 'name' => 'Registrar Office'],
@@ -45,10 +48,12 @@ class UatOrganizationSeeder extends Seeder
 
         foreach ([
             ['code' => 'POS-ADMIN-SYS', 'department' => 'IT', 'title' => 'PRISM System Administrator'],
+            ['code' => 'POS-ACCT-PC', 'department' => 'ACCT', 'title' => 'Property Custodian - Accounting'],
             ['code' => 'POS-SUP-HEAD', 'department' => 'SPMO', 'title' => 'Supply Head'],
             ['code' => 'POS-PC-CHIEF', 'department' => 'SPMO', 'title' => 'Chief Property Custodian'],
             ['code' => 'POS-DIRECTOR', 'department' => 'DIR', 'title' => 'Director'],
             ['code' => 'POS-IT-EXPERT', 'department' => 'IT', 'title' => 'IT Expert'],
+            ['code' => 'POS-CLINIC-PC', 'department' => 'CLINIC', 'title' => 'Property Custodian - Health Services'],
             ['code' => 'POS-COE-PC', 'department' => 'COE', 'title' => 'Property Custodian - Engineering'],
             ['code' => 'POS-COED-PC', 'department' => 'COED', 'title' => 'Property Custodian - Education'],
             ['code' => 'POS-BACC-PC', 'department' => 'BACC', 'title' => 'Property Custodian - Business and Accountancy'],
@@ -57,6 +62,7 @@ class UatOrganizationSeeder extends Seeder
             ['code' => 'POS-STUDENT-PC', 'department' => 'STUDENT', 'title' => 'Property Custodian - Student Affairs'],
             ['code' => 'POS-ADMIN-PC', 'department' => 'ADMIN', 'title' => 'Property Custodian - Administration'],
             ['code' => 'POS-DIR-PC', 'department' => 'DIR', 'title' => 'Property Custodian - Director Office'],
+            ['code' => 'POS-FMO-PC', 'department' => 'FMO', 'title' => 'Property Custodian - Facilities Management'],
             ['code' => 'POS-SPMO-ANL', 'department' => 'SPMO', 'title' => 'Inventory Analyst'],
         ] as $position) {
             $positions[$position['code']] = $this->seedPosition(
@@ -66,20 +72,23 @@ class UatOrganizationSeeder extends Seeder
             );
         }
 
-        $this->seedUser('admin@local.test', 'Admin User', $positions['POS-ADMIN-SYS'], ['Admin']);
-        $this->seedUser('supply@local.test', 'Supply Head', $positions['POS-SUP-HEAD'], ['Supply Head']);
-        $this->seedUser('custodian@local.test', 'Chief Property Custodian', $positions['POS-PC-CHIEF'], ['Property Custodian']);
-        $this->seedUser('it.expert@local.test', 'IT Expert', $positions['POS-IT-EXPERT'], ['Admin']);
-        $this->seedUser('director@local.test', 'Office Director', $positions['POS-DIRECTOR'], ['Property Custodian']);
-        $this->seedUser('eng.custodian@local.test', 'Engineering Custodian', $positions['POS-COE-PC'], ['Property Custodian']);
-        $this->seedUser('education.custodian@local.test', 'Education Custodian', $positions['POS-COED-PC'], ['Property Custodian']);
-        $this->seedUser('business.custodian@local.test', 'Business Custodian', $positions['POS-BACC-PC'], ['Property Custodian']);
-        $this->seedUser('registrar.custodian@local.test', 'Registrar Custodian', $positions['POS-REG-PC'], ['Property Custodian']);
-        $this->seedUser('library.custodian@local.test', 'Library Custodian', $positions['POS-LIB-PC'], ['Property Custodian']);
-        $this->seedUser('student.affairs.custodian@local.test', 'Student Affairs Custodian', $positions['POS-STUDENT-PC'], ['Property Custodian']);
-        $this->seedUser('admin.office.custodian@local.test', 'Administration Custodian', $positions['POS-ADMIN-PC'], ['Property Custodian']);
-        $this->seedUser('director.office.custodian@local.test', 'Director Office Custodian', $positions['POS-DIR-PC'], ['Property Custodian']);
-        $this->seedUser('inventory.analyst@local.test', 'Inventory Analyst', $positions['POS-SPMO-ANL'], ['Supply Head']);
+        $this->seedUser('admin@local.test', 'Adrian M. Mercado', $positions['POS-ADMIN-SYS'], ['Admin']);
+        $this->seedUser('supply@local.test', 'Maria Teresa L. Villanueva', $positions['POS-SUP-HEAD'], ['Supply Head']);
+        $this->seedUser('custodian@local.test', 'Roberto S. Santiago', $positions['POS-PC-CHIEF'], ['Property Custodian']);
+        $this->seedUser('it.expert@local.test', 'Camille R. Reyes', $positions['POS-IT-EXPERT'], ['Admin']);
+        $this->seedUser('director@local.test', 'Elena P. Navarro', $positions['POS-DIRECTOR'], ['Property Custodian']);
+        $this->seedUser('eng.custodian@local.test', 'Paolo D. Mendoza', $positions['POS-COE-PC'], ['Property Custodian']);
+        $this->seedUser('education.custodian@local.test', 'Grace A. Bautista', $positions['POS-COED-PC'], ['Property Custodian']);
+        $this->seedUser('business.custodian@local.test', 'Josefina C. Ramos', $positions['POS-BACC-PC'], ['Property Custodian']);
+        $this->seedUser('registrar.custodian@local.test', 'Michael T. Garcia', $positions['POS-REG-PC'], ['Property Custodian']);
+        $this->seedUser('library.custodian@local.test', 'Rina V. Aquino', $positions['POS-LIB-PC'], ['Property Custodian']);
+        $this->seedUser('student.affairs.custodian@local.test', 'Daniel F. Castillo', $positions['POS-STUDENT-PC'], ['Property Custodian']);
+        $this->seedUser('admin.office.custodian@local.test', 'Lourdes M. Flores', $positions['POS-ADMIN-PC'], ['Property Custodian']);
+        $this->seedUser('director.office.custodian@local.test', 'Noel B. de Leon', $positions['POS-DIR-PC'], ['Property Custodian']);
+        $this->seedUser('inventory.analyst@local.test', 'Angela S. Cruz', $positions['POS-SPMO-ANL'], ['Supply Head']);
+        $this->seedUser('accounting.custodian@local.test', 'Beatriz N. Salazar', $positions['POS-ACCT-PC'], ['Property Custodian']);
+        $this->seedUser('clinic.custodian@local.test', 'Carlo M. Domingo', $positions['POS-CLINIC-PC'], ['Property Custodian']);
+        $this->seedUser('facilities.custodian@local.test', 'Rogelio P. Lim', $positions['POS-FMO-PC'], ['Property Custodian']);
     }
 
     /**
@@ -99,7 +108,14 @@ class UatOrganizationSeeder extends Seeder
 
         if ($user->wasRecentlyCreated) {
             $user->syncRoles($roles);
+
+            return;
         }
+
+        $user->forceFill([
+            'name' => $name,
+            'position_id' => $position->id,
+        ])->save();
     }
 
     protected function seedPosition(string $code, Department $department, string $title): Position

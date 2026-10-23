@@ -10,9 +10,13 @@ test.describe('Asset Booking Flow', () => {
         await expect(page.getByTestId('bookings-page')).toBeVisible();
 
         // Search and select an asset
-        await page.getByTestId('booking-asset-search-input').fill('AST-E2E-0002');
+        await page
+            .getByTestId('booking-asset-search-input')
+            .fill('AST-E2E-0002');
         await expect(page).toHaveURL(/asset_search=AST-E2E-0002$/);
-        await expect(page.getByTestId('booking-asset-select')).toHaveValue(/\d+/);
+        await expect(page.getByTestId('booking-asset-select')).toHaveValue(
+            /\d+/,
+        );
 
         // Fill in dates
         const tomorrow = new Date();
@@ -22,7 +26,9 @@ test.describe('Asset Booking Flow', () => {
 
         await page.getByTestId('booking-start-input').fill(startAt);
         await page.getByTestId('booking-end-input').fill(endAt);
-        await page.getByTestId('booking-purpose-input').fill('E2E Test Booking');
+        await page
+            .getByTestId('booking-purpose-input')
+            .fill('Engineering laboratory equipment reservation');
 
         // Submit the booking request
         await page.getByTestId('request-booking-button').click();
@@ -38,7 +44,9 @@ test.describe('Asset Booking Flow', () => {
         await page.waitForLoadState('networkidle');
 
         // The approval queue should have our pending request
-        await expect(page.getByTestId('approve-booking-button').first()).toBeVisible({ timeout: 10000 });
+        await expect(
+            page.getByTestId('approve-booking-button').first(),
+        ).toBeVisible({ timeout: 10000 });
 
         // Approve the booking
         await page.getByTestId('approve-booking-button').first().click();
@@ -48,6 +56,8 @@ test.describe('Asset Booking Flow', () => {
         await expect(page.locator('body')).toContainText('Approved');
 
         // Step 3: Verify the booking appears in the booking records section
-        await expect(page.locator('body')).toContainText('E2E Test Asset');
+        await expect(page.locator('body')).toContainText(
+            'Business Laptop, 14-inch',
+        );
     });
 });

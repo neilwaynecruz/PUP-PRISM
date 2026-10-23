@@ -1,6 +1,6 @@
 # Production Logging Strategy
 
-> **Companion docs:** [PRODUCTION_READINESS_PLAN.md](../../PRODUCTION_READINESS_PLAN.md), [README.md](./README.md)
+> **Companion docs:** [PRODUCTION_DEPLOYMENT_RUNBOOK.md](./PRODUCTION_DEPLOYMENT_RUNBOOK.md), [README.md](./README.md)
 
 This document defines how PUP PRISM should log in production and how logs can be centralized for diagnostics and incident response.
 

@@ -23,7 +23,7 @@ class E2eSeeder extends Seeder
     public function run(): void
     {
         if (app()->isProduction()) {
-            throw new \RuntimeException('E2E demo data cannot be seeded in production.');
+            throw new \RuntimeException('E2E fixture data cannot be seeded in production.');
         }
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
@@ -62,11 +62,11 @@ class E2eSeeder extends Seeder
 
         $users = [];
         $userDefinitions = [
-            ['email' => 'admin@e2e.test', 'name' => 'Admin User', 'position' => 'POS-ADMIN', 'roles' => ['Admin']],
-            ['email' => 'supply@e2e.test', 'name' => 'Supply Head', 'position' => 'POS-SUPPLY', 'roles' => ['Supply Head']],
-            ['email' => 'custodian@e2e.test', 'name' => 'Property Custodian', 'position' => 'POS-CUSTODIAN', 'roles' => ['Property Custodian']],
-            ['email' => 'requester@e2e.test', 'name' => 'Requester User', 'position' => 'POS-ENGINEER', 'roles' => ['Property Custodian']],
-            ['email' => 'recipient@e2e.test', 'name' => 'Recipient User', 'position' => 'POS-ENGINEER', 'roles' => []],
+            ['email' => 'admin@e2e.test', 'name' => 'Adrian Mercado', 'position' => 'POS-ADMIN', 'roles' => ['Admin']],
+            ['email' => 'supply@e2e.test', 'name' => 'Maria Teresa Villanueva', 'position' => 'POS-SUPPLY', 'roles' => ['Supply Head']],
+            ['email' => 'custodian@e2e.test', 'name' => 'Roberto Santiago', 'position' => 'POS-CUSTODIAN', 'roles' => ['Property Custodian']],
+            ['email' => 'requester@e2e.test', 'name' => 'Paolo Mendoza', 'position' => 'POS-ENGINEER', 'roles' => ['Property Custodian']],
+            ['email' => 'recipient@e2e.test', 'name' => 'Grace Bautista', 'position' => 'POS-ENGINEER', 'roles' => []],
         ];
 
         foreach ($userDefinitions as $def) {
@@ -93,7 +93,7 @@ class E2eSeeder extends Seeder
         $consumableProduct = Product::query()->updateOrCreate(
             ['sku' => 'CON-E2E-001'],
             [
-                'name' => 'E2E Test Consumable',
+                'name' => 'Multipurpose Copy Paper, A4, 80 gsm',
                 'category_id' => $categories['Office Supplies']->id,
                 'origin_id' => $origin->id,
                 'type' => ProductType::Consumable,
@@ -119,7 +119,7 @@ class E2eSeeder extends Seeder
         $assetProduct = Product::query()->updateOrCreate(
             ['sku' => 'AST-E2E-001'],
             [
-                'name' => 'E2E Test Asset',
+                'name' => 'Business Laptop, 14-inch',
                 'category_id' => $categories['IT Equipment']->id,
                 'origin_id' => $origin->id,
                 'type' => ProductType::Asset,
@@ -147,7 +147,7 @@ class E2eSeeder extends Seeder
         $phaseFourAssetProduct = Product::query()->updateOrCreate(
             ['sku' => 'AST-E2E-P4-001'],
             [
-                'name' => 'Phase 4 E2E Asset',
+                'name' => 'Portable LCD Projector, Full HD',
                 'category_id' => $categories['IT Equipment']->id,
                 'origin_id' => $origin->id,
                 'type' => ProductType::Asset,

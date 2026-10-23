@@ -43,6 +43,7 @@ const props = defineProps<{
 
 defineOptions({
     name: 'InventorySupplierIndexPage',
+    inheritAttrs: false,
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: suppliersIndex() },

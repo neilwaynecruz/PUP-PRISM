@@ -1,9 +1,13 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { AlertTriangle, Package } from 'lucide-vue-next';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
+import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
 import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -26,6 +30,7 @@ import {
 } from '@/components/ui/select';
 import { useBulkSelection } from '@/composables/useBulkSelection';
 import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
+import { lookup as productLookupRoute } from '@/routes/inventory/products';
 import {
     destroy as requisitionTemplatesDestroy,
     duplicate as requisitionTemplatesDuplicate,
@@ -77,7 +82,14 @@ type DraftLine = {
     sku: string;
     qty_requested: string;
     name: string | null;
+    category?: string | null;
+    type?: string | null;
+    on_hand_qty?: number | null;
     availabilityMessage: string | null;
+    searchQuery?: string;
+    suggestions?: ProductLookupItem[];
+    showSuggestions?: boolean;
+    isSearching?: boolean;
 };
 
 const props = defineProps<{
@@ -141,6 +153,10 @@ watch([search, status, dateFrom, dateTo], () => {
 onBeforeUnmount(() => {
     isComponentActive = false;
     window.clearTimeout(listFilterTimer);
+    Object.values(lineSearchTimers).forEach((timer) => clearTimeout(timer));
+    Object.values(lineSearchControllers).forEach((controller) =>
+        controller.abort(),
+    );
 });
 
 let nextDraftKey = 0;
@@ -153,8 +169,250 @@ function makeDraftLine(line?: Partial<TemplateLine>): DraftLine {
         sku: line?.sku ?? '',
         qty_requested: line?.qty_requested ? String(line.qty_requested) : '1',
         name: line?.name ?? null,
+        category: null,
+        type: null,
+        on_hand_qty: null,
         availabilityMessage: line?.availability?.message ?? null,
+        searchQuery: line?.sku ?? '',
+        suggestions: [],
+        showSuggestions: false,
+        isSearching: false,
     };
+}
+
+const catalogDialogOpen = ref(false);
+const targetLineIndex = ref<number | null>(null);
+const lineSearchTimers: Record<string, ReturnType<typeof setTimeout>> = {};
+const lineSearchControllers: Record<string, AbortController> = {};
+
+function updateLineAvailabilityWarning(line: DraftLine): void {
+    const qty = parseInt(line.qty_requested, 10) || 0;
+
+    if (line.on_hand_qty !== null && line.on_hand_qty !== undefined) {
+        if (line.on_hand_qty <= 0) {
+            line.availabilityMessage =
+                'Item currently has 0 available on-hand stock. Request will be queued for replenishment.';
+        } else if (qty > line.on_hand_qty) {
+            line.availabilityMessage = `Requested quantity (${qty}) exceeds available stock (${line.on_hand_qty}).`;
+        } else {
+            line.availabilityMessage = null;
+        }
+    }
+}
+
+function applyProductToLine(
+    line: DraftLine,
+    product: ProductLookupItem,
+    index: number,
+    quantity?: number,
+): void {
+    // Prevent accidental duplicate line items by consolidating into existing line if present
+    const existingIndex = requisitionForm.lines.findIndex(
+        (l, i) =>
+            i !== index &&
+            l.sku.trim().toLowerCase() === product.sku.trim().toLowerCase(),
+    );
+
+    if (existingIndex !== -1) {
+        const existing = requisitionForm.lines[existingIndex];
+        const addQty = quantity ?? (parseInt(line.qty_requested, 10) || 1);
+        const currentQty = parseInt(existing.qty_requested, 10) || 0;
+        existing.qty_requested = String(currentQty + addQty);
+        existing.name = product.name;
+        existing.category = product.category;
+        existing.on_hand_qty = product.on_hand_qty;
+        updateLineAvailabilityWarning(existing);
+
+        if (requisitionForm.lines.length > 1) {
+            requisitionForm.lines.splice(index, 1);
+        } else {
+            line.sku = '';
+            line.name = null;
+            line.searchQuery = '';
+            line.suggestions = [];
+            line.showSuggestions = false;
+            line.availabilityMessage = null;
+        }
+
+        return;
+    }
+
+    line.sku = product.sku;
+    line.name = product.name;
+    line.category = product.category;
+    line.type = product.type;
+    line.on_hand_qty = product.on_hand_qty;
+    line.searchQuery = product.sku;
+    line.showSuggestions = false;
+    line.suggestions = [];
+
+    if (quantity !== undefined) {
+        line.qty_requested = String(quantity);
+    }
+
+    updateLineAvailabilityWarning(line);
+}
+
+function onProductSelectedFromCatalog(
+    product: ProductLookupItem,
+    qty: number,
+): void {
+    if (
+        targetLineIndex.value !== null &&
+        requisitionForm.lines[targetLineIndex.value]
+    ) {
+        applyProductToLine(
+            requisitionForm.lines[targetLineIndex.value],
+            product,
+            targetLineIndex.value,
+            qty,
+        );
+        targetLineIndex.value = null;
+        catalogDialogOpen.value = false;
+
+        return;
+    }
+
+    const existingIndex = requisitionForm.lines.findIndex(
+        (l) => l.sku.trim().toLowerCase() === product.sku.trim().toLowerCase(),
+    );
+
+    if (existingIndex !== -1) {
+        const existing = requisitionForm.lines[existingIndex];
+        const currentQty = parseInt(existing.qty_requested, 10) || 0;
+        existing.qty_requested = String(currentQty + qty);
+        existing.name = product.name;
+        existing.category = product.category;
+        existing.on_hand_qty = product.on_hand_qty;
+        updateLineAvailabilityWarning(existing);
+
+        return;
+    }
+
+    const emptyLineIndex = requisitionForm.lines.findIndex(
+        (l) => !l.sku.trim(),
+    );
+
+    if (emptyLineIndex !== -1) {
+        applyProductToLine(
+            requisitionForm.lines[emptyLineIndex],
+            product,
+            emptyLineIndex,
+            qty,
+        );
+    } else {
+        const newLine = makeDraftLine();
+        requisitionForm.lines.push(newLine);
+        applyProductToLine(
+            newLine,
+            product,
+            requisitionForm.lines.length - 1,
+            qty,
+        );
+    }
+}
+
+async function onSkuScanned(
+    line: DraftLine,
+    scannedSku: string,
+    index: number,
+): Promise<void> {
+    line.sku = scannedSku;
+    line.searchQuery = scannedSku;
+    clearLineAvailability(line);
+
+    try {
+        const url = `${productLookupRoute.url()}?sku=${encodeURIComponent(scannedSku)}&type=consumable`;
+        const res = await fetch(url, {
+            headers: { Accept: 'application/json' },
+        });
+
+        if (res.ok) {
+            const data = await res.json();
+
+            if (data.products && data.products.length > 0) {
+                applyProductToLine(line, data.products[0], index);
+
+                return;
+            }
+        }
+    } catch {
+        line.availabilityMessage =
+            'The scanned SKU could not be checked. You can try again or search by product name.';
+
+        return;
+    }
+
+    line.availabilityMessage =
+        "We couldn't find an active consumable with that SKU. Try searching by product name.";
+}
+
+function onLineSearchInput(line: DraftLine): void {
+    clearLineAvailability(line);
+    const query = (line.searchQuery ?? '').trim();
+    line.sku = query;
+
+    if (!query || query.length < 2) {
+        line.suggestions = [];
+        line.showSuggestions = false;
+
+        return;
+    }
+
+    clearTimeout(lineSearchTimers[line.key]);
+    lineSearchTimers[line.key] = setTimeout(async () => {
+        lineSearchControllers[line.key]?.abort();
+        const requestController = new AbortController();
+        lineSearchControllers[line.key] = requestController;
+        line.isSearching = true;
+
+        try {
+            const url = `${productLookupRoute.url()}?query=${encodeURIComponent(query)}&type=consumable&limit=8`;
+            const res = await fetch(url, {
+                headers: { Accept: 'application/json' },
+                signal: requestController.signal,
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                line.suggestions = data.products ?? [];
+                line.showSuggestions = (line.suggestions?.length ?? 0) > 0;
+                line.availabilityMessage = line.showSuggestions
+                    ? null
+                    : 'No active consumables match this search. Try another product name or SKU.';
+            } else {
+                line.availabilityMessage =
+                    'The product search could not be completed. Please try again.';
+            }
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                return;
+            }
+
+            line.suggestions = [];
+            line.showSuggestions = false;
+            line.availabilityMessage =
+                'The product search could not be completed. Check your connection and try again.';
+        } finally {
+            if (lineSearchControllers[line.key] === requestController) {
+                line.isSearching = false;
+            }
+        }
+    }, 250);
+}
+
+function selectSuggestion(
+    line: DraftLine,
+    item: ProductLookupItem,
+    index: number,
+): void {
+    applyProductToLine(line, item, index);
+}
+
+function hideSuggestionsWithDelay(line: DraftLine): void {
+    setTimeout(() => {
+        line.showSuggestions = false;
+    }, 200);
 }
 
 function buildPayloadLines(
@@ -230,9 +488,11 @@ function clearLineAvailability(line: DraftLine): void {
 }
 
 const requisitionForm = useForm<{
+    submission_token: string;
     notes: string;
     lines: DraftLine[];
 }>({
+    submission_token: crypto.randomUUID(),
     notes: '',
     lines: [makeDraftLine()],
 });
@@ -442,6 +702,7 @@ function confirmTemplateDelete(): void {
 function submitRequisition(): void {
     requisitionForm
         .transform((data) => ({
+            submission_token: data.submission_token,
             notes: data.notes || '',
             lines: buildPayloadLines(data.lines),
         }))
@@ -449,6 +710,7 @@ function submitRequisition(): void {
             preserveScroll: true,
             onSuccess: () => {
                 requisitionForm.reset();
+                requisitionForm.submission_token = crypto.randomUUID();
                 requisitionForm.lines = [makeDraftLine()];
             },
         });
@@ -1031,19 +1293,35 @@ function confirmBulkAction(): void {
 
                         <div class="grid gap-3">
                             <div
-                                class="flex items-center justify-between gap-3"
+                                class="flex flex-wrap items-center justify-between gap-2"
                             >
-                                <Label class="text-sm font-medium"
+                                <Label class="text-sm font-semibold"
                                     >Line items</Label
                                 >
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    class="rounded-lg"
-                                    @click="addRequestLine"
-                                    >Add line</Button
-                                >
+                                <div class="flex items-center gap-2">
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        class="h-8 gap-1.5 rounded-lg text-xs text-primary hover:bg-primary/5"
+                                        @click="
+                                            targetLineIndex = null;
+                                            catalogDialogOpen = true;
+                                        "
+                                    >
+                                        <Package class="h-3.5 w-3.5" />
+                                        <span>Browse Catalog</span>
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        class="h-8 rounded-lg text-xs"
+                                        @click="addRequestLine"
+                                    >
+                                        Add line
+                                    </Button>
+                                </div>
                             </div>
 
                             <div
@@ -1060,70 +1338,219 @@ function confirmBulkAction(): void {
                                         >
                                             Item {{ index + 1 }}
                                         </div>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            class="h-7 rounded-lg px-2 text-xs text-muted-foreground"
-                                            :disabled="
-                                                requisitionForm.lines.length ===
-                                                1
-                                            "
-                                            @click="removeRequestLine(index)"
-                                        >
-                                            Remove
-                                        </Button>
+                                        <div class="flex items-center gap-1.5">
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                class="h-7 rounded-lg px-2 text-xs text-primary hover:bg-primary/5"
+                                                @click="
+                                                    targetLineIndex = index;
+                                                    catalogDialogOpen = true;
+                                                "
+                                            >
+                                                <Package class="mr-1 h-3 w-3" />
+                                                Browse catalog
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                class="h-7 rounded-lg px-2 text-xs text-muted-foreground hover:text-destructive"
+                                                :disabled="
+                                                    requisitionForm.lines
+                                                        .length === 1
+                                                "
+                                                @click="
+                                                    removeRequestLine(index)
+                                                "
+                                            >
+                                                Remove
+                                            </Button>
+                                        </div>
                                     </div>
 
                                     <div
-                                        class="grid gap-3 sm:grid-cols-[1fr_116px]"
+                                        class="grid gap-3 sm:grid-cols-[1fr_120px]"
                                     >
-                                        <div class="grid gap-2">
+                                        <div class="relative grid gap-2">
                                             <div
                                                 class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
                                             >
                                                 <Label
                                                     :for="`line-sku-${line.key}`"
-                                                    >Product SKU</Label
+                                                    class="text-xs font-medium"
                                                 >
-                                                <QrScannerDialog
-                                                    button-label="Scan SKU"
-                                                    title="Scan requisition SKU"
-                                                    description="Use the camera to capture a labeled product QR code, or type the SKU manually."
-                                                    @scanned="
-                                                        line.sku = $event;
-                                                        clearLineAvailability(
+                                                    Product (Search by name,
+                                                    SKU, or scan)
+                                                </Label>
+                                                <div
+                                                    class="flex items-center gap-2"
+                                                >
+                                                    <QrScannerDialog
+                                                        button-label="Scan QR"
+                                                        title="Scan requisition SKU"
+                                                        description="Use the camera to capture a labeled product QR code, or type the SKU manually."
+                                                        @scanned="
+                                                            onSkuScanned(
+                                                                line,
+                                                                $event,
+                                                                index,
+                                                            )
+                                                        "
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div class="relative">
+                                                <Input
+                                                    :id="`line-sku-${line.key}`"
+                                                    v-model="line.searchQuery"
+                                                    :name="`lines[${index}][sku]`"
+                                                    data-testid="requisition-sku-input"
+                                                    autocomplete="off"
+                                                    placeholder="Type product name or enter SKU code..."
+                                                    required
+                                                    @input="
+                                                        onLineSearchInput(line)
+                                                    "
+                                                    @focus="
+                                                        line.showSuggestions =
+                                                            (line.suggestions
+                                                                ?.length ?? 0) >
+                                                            0
+                                                    "
+                                                    @blur="
+                                                        hideSuggestionsWithDelay(
                                                             line,
-                                                        );
+                                                        )
                                                     "
                                                 />
+
+                                                <!-- Autocomplete suggestions dropdown -->
+                                                <div
+                                                    v-if="
+                                                        line.showSuggestions &&
+                                                        line.suggestions &&
+                                                        line.suggestions
+                                                            .length > 0
+                                                    "
+                                                    class="absolute top-full right-0 left-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-border/80 bg-popover p-1.5 shadow-lg backdrop-blur"
+                                                >
+                                                    <div
+                                                        v-for="suggestion in line.suggestions"
+                                                        :key="suggestion.id"
+                                                        class="flex cursor-pointer items-center justify-between gap-2 rounded-lg p-2 text-xs transition hover:bg-accent"
+                                                        @mousedown.prevent="
+                                                            selectSuggestion(
+                                                                line,
+                                                                suggestion,
+                                                                index,
+                                                            )
+                                                        "
+                                                    >
+                                                        <div
+                                                            class="min-w-0 flex-1"
+                                                        >
+                                                            <div
+                                                                class="truncate font-medium text-foreground"
+                                                            >
+                                                                {{
+                                                                    suggestion.name
+                                                                }}
+                                                            </div>
+                                                            <div
+                                                                class="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground"
+                                                            >
+                                                                <span
+                                                                    class="font-mono"
+                                                                    >{{
+                                                                        suggestion.sku
+                                                                    }}</span
+                                                                >
+                                                                <span
+                                                                    v-if="
+                                                                        suggestion.category
+                                                                    "
+                                                                    >•
+                                                                    {{
+                                                                        suggestion.category
+                                                                    }}</span
+                                                                >
+                                                            </div>
+                                                        </div>
+                                                        <span
+                                                            class="shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold"
+                                                            :class="
+                                                                suggestion.on_hand_qty >
+                                                                0
+                                                                    ? 'border-emerald-200 bg-emerald-500/10 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400'
+                                                                    : 'border-rose-200 bg-rose-500/10 text-rose-700 dark:border-rose-800 dark:text-rose-400'
+                                                            "
+                                                        >
+                                                            {{
+                                                                suggestion.on_hand_qty
+                                                            }}
+                                                            in stock
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <Input
-                                                :id="`line-sku-${line.key}`"
-                                                v-model="line.sku"
-                                                :name="`lines[${index}][sku]`"
-                                                data-testid="requisition-sku-input"
-                                                autocomplete="off"
-                                                placeholder="Example: 4801234567890"
-                                                required
-                                                @input="
-                                                    clearLineAvailability(line)
-                                                "
-                                            />
+
+                                            <!-- Selected Product Summary Card -->
                                             <div
                                                 v-if="line.name"
-                                                class="text-xs text-muted-foreground"
+                                                class="flex flex-wrap items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2.5 py-1.5 text-xs"
                                             >
-                                                {{ line.name }}
+                                                <span
+                                                    class="font-semibold text-foreground"
+                                                    >{{ line.name }}</span
+                                                >
+                                                <Badge
+                                                    variant="outline"
+                                                    class="h-4 px-1 font-mono text-[9px]"
+                                                >
+                                                    {{ line.sku }}
+                                                </Badge>
+                                                <span
+                                                    v-if="line.category"
+                                                    class="text-[11px] text-muted-foreground"
+                                                >
+                                                    {{ line.category }}
+                                                </span>
+                                                <span
+                                                    v-if="
+                                                        line.on_hand_qty !==
+                                                            null &&
+                                                        line.on_hand_qty !==
+                                                            undefined
+                                                    "
+                                                    class="ml-auto text-[11px] font-medium"
+                                                    :class="
+                                                        line.on_hand_qty > 0
+                                                            ? 'text-emerald-700 dark:text-emerald-400'
+                                                            : 'text-rose-600 dark:text-rose-400'
+                                                    "
+                                                >
+                                                    {{ line.on_hand_qty }}
+                                                    available
+                                                </span>
                                             </div>
+
                                             <div
                                                 v-if="line.availabilityMessage"
                                                 role="status"
                                                 aria-live="polite"
-                                                class="text-xs text-amber-700 dark:text-amber-400"
+                                                class="flex items-start gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400"
                                             >
-                                                {{ line.availabilityMessage }}
+                                                <AlertTriangle
+                                                    class="mt-0.5 h-3.5 w-3.5 shrink-0"
+                                                />
+                                                <span>{{
+                                                    line.availabilityMessage
+                                                }}</span>
                                             </div>
+
                                             <InputError
                                                 :message="
                                                     currentLineError(
@@ -1135,8 +1562,10 @@ function confirmBulkAction(): void {
                                         </div>
 
                                         <div class="grid gap-2">
-                                            <Label :for="`line-qty-${line.key}`"
-                                                >Quantity requested</Label
+                                            <Label
+                                                :for="`line-qty-${line.key}`"
+                                                class="text-xs font-medium"
+                                                >Quantity</Label
                                             >
                                             <Input
                                                 :id="`line-qty-${line.key}`"
@@ -1145,8 +1574,14 @@ function confirmBulkAction(): void {
                                                 data-testid="requisition-qty-input"
                                                 type="number"
                                                 min="1"
+                                                max="1000000"
                                                 inputmode="numeric"
                                                 required
+                                                @input="
+                                                    updateLineAvailabilityWarning(
+                                                        line,
+                                                    )
+                                                "
                                             />
                                             <InputError
                                                 :message="
@@ -1530,5 +1965,16 @@ function confirmBulkAction(): void {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <ProductSelectDialog
+            v-model:open="catalogDialogOpen"
+            title="Browse products for requisition"
+            description="Select products from the catalog. Requested items are automatically added or consolidated into your request draft."
+            type-filter="consumable"
+            :exclude-skus="
+                requisitionForm.lines.map((l) => l.sku).filter(Boolean)
+            "
+            @select="onProductSelectedFromCatalog"
+        />
     </div>
 </template>

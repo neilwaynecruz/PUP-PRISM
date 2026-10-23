@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class OriginFactory extends Factory
 {
+    protected static int $sequence = 0;
+
     /**
      * Define the model's default state.
      *
@@ -17,8 +19,21 @@ class OriginFactory extends Factory
      */
     public function definition(): array
     {
+        $index = ++static::$sequence;
+        $institutionalSources = [
+            'University General Fund',
+            'Local Government Grant',
+            'Commission on Higher Education Grant',
+            'Research Program Fund',
+            'Alumni Donation Program',
+            'International Partnership Grant',
+        ];
+        $sourceName = $institutionalSources[($index - 1) % count($institutionalSources)];
+
         return [
-            'name' => fake()->unique()->randomElement(['Main Campus', 'LGU', 'Donation']),
+            'name' => $index <= count($institutionalSources)
+                ? $sourceName
+                : "{$sourceName} Allocation {$index}",
             'is_active' => true,
         ];
     }

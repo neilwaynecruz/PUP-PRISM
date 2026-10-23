@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Enums\ProductType;
 use App\Enums\RequisitionStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\RequisitionApproveRequest;
@@ -24,10 +25,13 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
+use Throwable;
 
 class RequisitionController extends Controller
 {
@@ -145,39 +149,77 @@ class RequisitionController extends Controller
         $this->authorize('create', Requisition::class);
 
         $validated = $request->validated();
+        $submissionKey = sprintf(
+            'requisition-submission:%d:%s',
+            $request->user()->id,
+            $validated['submission_token'],
+        );
 
-        $requisition = DB::transaction(function () use ($request, $validated): Requisition {
-            $requisition = Requisition::create([
-                'requester_id' => $request->user()->id,
-                'requester_position_id' => $request->user()->position_id,
-                'approver_id' => null,
-                'approver_position_id' => null,
-                'requested_ip_address' => $request->ip(),
-                'approved_ip_address' => null,
-                'approved_at' => null,
-                'issued_by' => null,
-                'issued_position_id' => null,
-                'issued_ip_address' => null,
-                'issued_at' => null,
-                'status' => RequisitionStatus::Submitted,
-                'notes' => $validated['notes'] ?? null,
+        if (! Cache::add($submissionKey, true, now()->addMinutes(10))) {
+            Inertia::flash('toast', [
+                'type' => 'info',
+                'message' => __('This requisition was already submitted. No duplicate was created.'),
             ]);
 
-            foreach ($validated['lines'] as $line) {
-                $product = Product::query()->where('sku', $line['sku'])->firstOrFail();
+            return back();
+        }
 
-                RequisitionLine::create([
-                    'requisition_id' => $requisition->id,
-                    'product_id' => $product->id,
-                    'qty_requested' => (int) $line['qty_requested'],
-                    'qty_issued' => 0,
+        try {
+            $requisition = DB::transaction(function () use ($request, $validated): Requisition {
+                $requestedSkus = collect($validated['lines'])->pluck('sku')->all();
+                $productsBySku = Product::query()
+                    ->whereIn('sku', $requestedSkus)
+                    ->where('type', ProductType::Consumable)
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->get(['id', 'sku'])
+                    ->keyBy('sku');
+
+                foreach ($validated['lines'] as $index => $line) {
+                    if (! $productsBySku->has($line['sku'])) {
+                        throw ValidationException::withMessages([
+                            "lines.{$index}.sku" => 'This product is no longer available for requisitions. Choose another product.',
+                        ]);
+                    }
+                }
+
+                $requisition = Requisition::create([
+                    'requester_id' => $request->user()->id,
+                    'requester_position_id' => $request->user()->position_id,
+                    'approver_id' => null,
+                    'approver_position_id' => null,
+                    'requested_ip_address' => $request->ip(),
+                    'approved_ip_address' => null,
+                    'approved_at' => null,
+                    'issued_by' => null,
+                    'issued_position_id' => null,
+                    'issued_ip_address' => null,
+                    'issued_at' => null,
+                    'status' => RequisitionStatus::Submitted,
+                    'notes' => $validated['notes'] ?? null,
                 ]);
-            }
 
-            return $requisition;
-        });
+                foreach ($validated['lines'] as $line) {
+                    /** @var Product $product */
+                    $product = $productsBySku->get($line['sku']);
 
-        AuditLogService::logCreated($requisition, "Requisition #{$requisition->id} submitted.");
+                    RequisitionLine::create([
+                        'requisition_id' => $requisition->id,
+                        'product_id' => $product->id,
+                        'qty_requested' => (int) $line['qty_requested'],
+                        'qty_issued' => 0,
+                    ]);
+                }
+
+                AuditLogService::logCreated($requisition, "Requisition #{$requisition->id} submitted.");
+
+                return $requisition;
+            });
+        } catch (Throwable $exception) {
+            Cache::forget($submissionKey);
+
+            throw $exception;
+        }
 
         $this->notifications->requisitionSubmitted($requisition);
 

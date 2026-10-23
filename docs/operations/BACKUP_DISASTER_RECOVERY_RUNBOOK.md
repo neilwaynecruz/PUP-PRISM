@@ -1,7 +1,7 @@
 # Backup, Restore, and Disaster Recovery Runbook
 
 > **Stack:** Laravel 13 + PostgreSQL 14+  
-> **Companion docs:** [PRODUCTION_READINESS_PLAN.md](../../PRODUCTION_READINESS_PLAN.md), [docs/operations/README.md](./README.md)
+> **Companion docs:** [PRODUCTION_DEPLOYMENT_RUNBOOK.md](./PRODUCTION_DEPLOYMENT_RUNBOOK.md), [README.md](./README.md)
 
 This runbook describes how to back up, restore, and recover PUP PRISM in production. It assumes PostgreSQL is the primary database (`DB_CONNECTION=pgsql`) and application files live on a Linux application server or managed platform.
 
@@ -9,12 +9,12 @@ This runbook describes how to back up, restore, and recover PUP PRISM in product
 
 ## 1. Recovery objectives
 
-| Metric | Recommended target | Notes |
-| ------ | ------------------ | ----- |
-| **RPO** (max acceptable data loss) | ≤ 24 hours | Daily logical backups; consider WAL archiving for stricter RPO |
-| **RTO** (max acceptable downtime) | ≤ 4 hours | Depends on infra provisioning and restore drill familiarity |
+| Metric | Approved target | Decision owner |
+| ------ | --------------- | -------------- |
+| **RPO** (maximum acceptable data loss) | **TBD** | Institutional IT and records owners |
+| **RTO** (maximum acceptable downtime) | **TBD** | Institutional IT and service owners |
 
-Adjust targets with institutional IT policy. Document approved values in your deployment ticket or change record.
+Do not treat example schedules in this runbook as approved policy. Record institutionally approved targets, backup frequency, retention, geographic copies, and escalation owners in the deployment change record before release.
 
 ---
 
@@ -60,7 +60,7 @@ pg_dump \
   --dbname="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}"
 ```
 
-**Schedule:** Daily off-peak (e.g. 02:00 Asia/Manila), retain 30 daily + 12 monthly copies per institutional policy.
+**Schedule and retention:** Set these from the approved RPO, records-retention rules, storage capacity, and privacy requirements. A daily off-peak backup can be used for a staging drill, but it is not an institutionally approved production schedule by default.
 
 **Verify:** Weekly restore to a staging database (see §5).
 
@@ -197,4 +197,4 @@ High-growth tables are pruned automatically by `app:prune-operational-data` (see
 
 ---
 
-*Last updated: 2026-07-04 — aligned with PUP PRISM PostgreSQL + Laravel 13 deployment model.*
+*Last updated: 2026-10-21 — recovery targets remain subject to institutional approval.*

@@ -1,36 +1,50 @@
-const CACHE_NAME = 'pup-prism-shell-v2';
+const CACHE_PREFIX = 'pup-prism-shell-';
+const CACHE_NAME = `${CACHE_PREFIX}v4`;
 const PRECACHE_URLS = [
     '/offline.html',
     '/manifest.webmanifest',
-    '/manifest.json',
     '/favicon.ico',
-    '/favicon-16x16.png',
-    '/favicon-32x32.png',
-    '/favicon-96x96.png',
-    '/android-icon-192x192.png',
-    '/apple-icon-180x180.png',
+    '/Icons/prism-icon-192x192.png',
+    '/Icons/prism-icon-512x512.png',
 ];
 
 self.addEventListener('install', (event) => {
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_URLS)),
-    );
+        caches.open(CACHE_NAME).then(async (cache) => {
+            await cache.add('/offline.html');
 
-    self.skipWaiting();
+            await Promise.allSettled(
+                PRECACHE_URLS.filter((url) => url !== '/offline.html').map(
+                    (url) => cache.add(url),
+                ),
+            );
+        }),
+    );
 });
 
 self.addEventListener('activate', (event) => {
     event.waitUntil(
-        caches.keys().then((keys) =>
-            Promise.all(
-                keys
-                    .filter((key) => key !== CACHE_NAME)
-                    .map((key) => caches.delete(key)),
-            ),
-        ),
-    );
+        (async () => {
+            const keys = await caches.keys();
 
-    self.clients.claim();
+            await Promise.all(
+                keys
+                    .filter(
+                        (key) =>
+                            key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME,
+                    )
+                    .map((key) => caches.delete(key)),
+            );
+
+            await self.clients.claim();
+        })(),
+    );
+});
+
+self.addEventListener('message', (event) => {
+    if (event.data?.type === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -41,7 +55,7 @@ self.addEventListener('fetch', (event) => {
     const requestUrl = new URL(event.request.url);
     const isSameOrigin = requestUrl.origin === self.location.origin;
 
-    if (event.request.mode === 'navigate') {
+    if (event.request.mode === 'navigate' && isSameOrigin) {
         event.respondWith(
             fetch(event.request).catch(async () => {
                 const cachedResponse = await caches.match('/offline.html');
@@ -59,20 +73,22 @@ self.addEventListener('fetch', (event) => {
 
     if (PRECACHE_URLS.includes(requestUrl.pathname)) {
         event.respondWith(
-            caches.match(event.request).then((cachedResponse) => {
+            caches.match(event.request).then(async (cachedResponse) => {
                 if (cachedResponse) {
                     return cachedResponse;
                 }
 
-                return fetch(event.request).then((networkResponse) => {
-                    const responseClone = networkResponse.clone();
+                const networkResponse = await fetch(event.request);
 
-                    caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, responseClone);
-                    });
-
+                if (!networkResponse.ok) {
                     return networkResponse;
-                });
+                }
+
+                const cache = await caches.open(CACHE_NAME);
+
+                await cache.put(event.request, networkResponse.clone());
+
+                return networkResponse;
             }),
         );
     }

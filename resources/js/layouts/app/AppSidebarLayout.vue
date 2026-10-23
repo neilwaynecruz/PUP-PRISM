@@ -4,6 +4,7 @@ import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
 import AppSidebarHeader from '@/components/AppSidebarHeader.vue';
 import GlobalSearchDialog from '@/components/GlobalSearchDialog.vue';
+import PwaStatus from '@/components/PwaStatus.vue';
 import SessionTimeoutWarning from '@/components/SessionTimeoutWarning.vue';
 import { Toaster } from '@/components/ui/sonner';
 import { useInertiaToast } from '@/composables/useInertiaToast';
@@ -38,5 +39,6 @@ withDefaults(defineProps<Props>(), {
         <GlobalSearchDialog />
         <Toaster />
         <SessionTimeoutWarning />
+        <PwaStatus />
     </AppShell>
 </template>

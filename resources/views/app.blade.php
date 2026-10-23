@@ -7,9 +7,9 @@
         <meta name="apple-mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'PUP PRISM') }}">
         <meta name="mobile-web-app-capable" content="yes">
-        <meta name="msapplication-TileColor" content="#ffffff">
-        <meta name="msapplication-TileImage" content="/ms-icon-144x144.png">
-        <meta name="theme-color" content="#ffffff">
+        <meta name="msapplication-TileColor" content="#0f172a">
+        <meta name="msapplication-TileImage" content="/Icons/prism-icon-192x192.png">
+        <meta name="theme-color" content="#0f172a">
 
         {{-- Inline script to detect system dark mode preference and apply it immediately --}}
         <script>
@@ -45,13 +45,13 @@
         <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
         <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
         <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/Icons/apple-icon-180x180%20(2).png">
         <link rel="icon" href="/favicon.ico" sizes="any">
-        <link rel="icon" type="image/png" sizes="192x192" href="/android-icon-192x192.png">
+        <link rel="icon" type="image/png" sizes="192x192" href="/Icons/prism-icon-192x192.png">
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-        <link rel="manifest" href="/manifest.json">
+        <link rel="manifest" href="/manifest.webmanifest">
 
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
 

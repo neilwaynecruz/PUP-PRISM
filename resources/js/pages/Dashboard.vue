@@ -5,6 +5,7 @@ import {
     BarElement,
     CategoryScale,
     Chart,
+    Filler,
     Legend,
     LineController,
     LineElement,
@@ -45,6 +46,7 @@ Chart.register(
     BarController,
     BarElement,
     CategoryScale,
+    Filler,
     Legend,
     LineController,
     LineElement,
@@ -160,6 +162,7 @@ const props = defineProps<{
 
 defineOptions({
     name: 'DashboardPage',
+    inheritAttrs: false,
     layout: {
         breadcrumbs: [
             {

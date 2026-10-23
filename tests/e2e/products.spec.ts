@@ -3,10 +3,12 @@ import { expect, test } from './fixtures/test';
 
 test.describe('Product CRUD Lifecycle', () => {
     const sku = `E2E-CRUD-${Date.now()}`;
-    const productName = 'E2E Test Product';
+    const productName = 'Heavy-Duty Stapler, 100-Sheet Capacity';
     const updatedName = 'E2E Updated Product';
 
-    test('Complete product lifecycle: Create -> View -> Edit -> Delete', async ({ page }) => {
+    test('Complete product lifecycle: Create -> View -> Edit -> Delete', async ({
+        page,
+    }) => {
         await loginAs(page, 'admin@e2e.test');
 
         // Navigate to products index
@@ -41,7 +43,10 @@ test.describe('Product CRUD Lifecycle', () => {
         // Step 2: View Product
         await Promise.all([
             page.waitForURL(/\/inventory\/products\/\d+$/),
-            page.getByTestId(`product-row-${sku}`).getByTestId('view-product-button').click(),
+            page
+                .getByTestId(`product-row-${sku}`)
+                .getByTestId('view-product-button')
+                .click(),
         ]);
         await expect(page.getByTestId('product-show-page')).toBeVisible();
         await expect(page.locator('body')).toContainText(productName);
@@ -60,8 +65,12 @@ test.describe('Product CRUD Lifecycle', () => {
         await page.waitForLoadState('networkidle');
 
         // Verify the update persisted
-        await expect(page.getByTestId('product-edit-page')).toBeVisible({ timeout: 10000 });
-        await expect(page.getByTestId('product-name-input')).toHaveValue(updatedName);
+        await expect(page.getByTestId('product-edit-page')).toBeVisible({
+            timeout: 10000,
+        });
+        await expect(page.getByTestId('product-name-input')).toHaveValue(
+            updatedName,
+        );
 
         // Step 4: Delete - go back to index and verify the product exists
         await page.goto('/inventory/products');

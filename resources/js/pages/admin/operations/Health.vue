@@ -49,6 +49,7 @@ const props = defineProps<{
 
 defineOptions({
     name: 'AdminOperationsHealthPage',
+    inheritAttrs: false,
     layout: {
         breadcrumbs: [
             { title: 'Admin', href: operationsHealth() },

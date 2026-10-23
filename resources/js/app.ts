@@ -2,6 +2,7 @@ import { createInertiaApp } from '@inertiajs/vue3';
 import { configureEcho } from '@laravel/echo-vue';
 import { initializeTheme } from '@/composables/useAppearance';
 import { initializeAppNavigation } from '@/composables/useAppNavigation';
+import { initializePwa } from '@/composables/usePwa';
 import AppLayout from '@/layouts/AppLayout.vue';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import SettingsLayout from '@/layouts/settings/Layout.vue';
@@ -21,22 +22,6 @@ if (
 }
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-
-function registerServiceWorker(): void {
-    if (
-        typeof window === 'undefined' ||
-        !('serviceWorker' in navigator) ||
-        !window.isSecureContext
-    ) {
-        return;
-    }
-
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(() => {
-            // Ignore registration failures so field workflows continue without PWA features.
-        });
-    });
-}
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
@@ -68,4 +53,4 @@ initializeAppNavigation();
 
 initializeSessionGuard();
 
-registerServiceWorker();
+initializePwa();

@@ -1,6 +1,6 @@
 # Queue Operations
 
-> **Companion docs:** [PRODUCTION_READINESS_PLAN.md](../../PRODUCTION_READINESS_PLAN.md) **P1.7**, [README.md](./README.md)
+> **Companion docs:** [PRODUCTION_DEPLOYMENT_RUNBOOK.md](./PRODUCTION_DEPLOYMENT_RUNBOOK.md), [README.md](./README.md)
 
 PUP PRISM uses Laravel's queue system for notifications, broadcasts, and other async work. Production requires a **persistent worker**; the database driver is the default (`QUEUE_CONNECTION=database`).
 

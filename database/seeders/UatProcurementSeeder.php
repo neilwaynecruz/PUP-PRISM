@@ -10,13 +10,14 @@ use App\Models\Supplier;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 class UatProcurementSeeder extends Seeder
 {
     public function run(): void
     {
         if (app()->isProduction()) {
-            throw new \RuntimeException('UAT demo data cannot be seeded in production.');
+            throw new \RuntimeException('Operational seed data cannot be seeded in production.');
         }
 
         $this->call(SupplierSeeder::class);
@@ -29,44 +30,69 @@ class UatProcurementSeeder extends Seeder
 
         foreach ([
             'CON-PAPER-A4' => [
-                'supplier' => 'Campus Office Supplies Co.',
+                'supplier' => 'Metro Manila Office Solutions Corporation',
                 'lead_time_days' => 5,
                 'unit_price' => 218.50,
             ],
             'CON-INK-BLK' => [
-                'supplier' => 'Campus Office Supplies Co.',
+                'supplier' => 'Metro Manila Office Solutions Corporation',
                 'lead_time_days' => 4,
                 'unit_price' => 675.00,
             ],
             'CON-BAT-AA' => [
-                'supplier' => 'Campus Office Supplies Co.',
+                'supplier' => 'Metro Manila Office Solutions Corporation',
                 'lead_time_days' => 5,
                 'unit_price' => 32.00,
             ],
             'CON-ALCOHOL-70' => [
-                'supplier' => 'Meditech Distribution',
+                'supplier' => 'Luzon Medical and Laboratory Supply, Inc.',
                 'lead_time_days' => 3,
                 'unit_price' => 145.00,
             ],
             'CON-GLOVES-M' => [
-                'supplier' => 'Meditech Distribution',
+                'supplier' => 'Luzon Medical and Laboratory Supply, Inc.',
                 'lead_time_days' => 4,
                 'unit_price' => 380.00,
             ],
             'CON-DISINF-01' => [
-                'supplier' => 'CleanEdge Trading',
+                'supplier' => 'Greenfield Janitorial and Sanitation Supply',
                 'lead_time_days' => 2,
                 'unit_price' => 195.00,
             ],
             'AST-LAP-001' => [
-                'supplier' => 'Digital Axis Systems',
+                'supplier' => 'Northstar Digital Systems Corporation',
                 'lead_time_days' => 10,
                 'unit_price' => 38500.00,
             ],
             'AST-PRN-001' => [
-                'supplier' => 'Digital Axis Systems',
+                'supplier' => 'Northstar Digital Systems Corporation',
                 'lead_time_days' => 8,
                 'unit_price' => 14990.00,
+            ],
+            'CON-TONER-151A' => [
+                'supplier' => 'Metro Manila Office Solutions Corporation',
+                'lead_time_days' => 5,
+                'unit_price' => 5890.00,
+            ],
+            'CON-MASK-3PLY' => [
+                'supplier' => 'Luzon Medical and Laboratory Supply, Inc.',
+                'lead_time_days' => 4,
+                'unit_price' => 165.00,
+            ],
+            'CON-LIGHT-LED12' => [
+                'supplier' => 'VoltEdge Electrical Supply Corporation',
+                'lead_time_days' => 7,
+                'unit_price' => 118.00,
+            ],
+            'CON-HSOAP-500' => [
+                'supplier' => 'Greenfield Janitorial and Sanitation Supply',
+                'lead_time_days' => 3,
+                'unit_price' => 92.50,
+            ],
+            'AST-CAB-001' => [
+                'supplier' => 'PrimeLine Furniture and Storage Solutions',
+                'lead_time_days' => 14,
+                'unit_price' => 12800.00,
             ],
         ] as $sku => $procurementAttributes) {
             /** @var Product|null $product */
@@ -74,8 +100,8 @@ class UatProcurementSeeder extends Seeder
             /** @var Supplier|null $supplier */
             $supplier = $suppliers->get($procurementAttributes['supplier']);
 
-            if (! $product || ! $supplier) {
-                continue;
+            if (! $product instanceof Product || ! $supplier instanceof Supplier) {
+                throw new \RuntimeException("Missing required procurement seed dependency for {$sku}.");
             }
 
             $product->forceFill([
@@ -88,8 +114,8 @@ class UatProcurementSeeder extends Seeder
         $timeline = CarbonImmutable::today()->setTime(10, 0);
 
         $this->syncPurchaseOrder(
-            poNumber: 'PO-UAT-0001',
-            supplier: $suppliers['Campus Office Supplies Co.'],
+            poNumber: 'PO-20261001-0001',
+            supplier: $suppliers['Metro Manila Office Solutions Corporation'],
             requestedBy: $requestedBy,
             approvedBy: null,
             status: PurchaseOrderStatus::Draft,
@@ -106,8 +132,8 @@ class UatProcurementSeeder extends Seeder
         );
 
         $this->syncPurchaseOrder(
-            poNumber: 'PO-UAT-0002',
-            supplier: $suppliers['Meditech Distribution'],
+            poNumber: 'PO-20261001-0002',
+            supplier: $suppliers['Luzon Medical and Laboratory Supply, Inc.'],
             requestedBy: $requestedBy,
             approvedBy: $approvedBy,
             status: PurchaseOrderStatus::Sent,
@@ -124,8 +150,8 @@ class UatProcurementSeeder extends Seeder
         );
 
         $this->syncPurchaseOrder(
-            poNumber: 'PO-UAT-0003',
-            supplier: $suppliers['CleanEdge Trading'],
+            poNumber: 'PO-20261001-0003',
+            supplier: $suppliers['Greenfield Janitorial and Sanitation Supply'],
             requestedBy: $requestedBy,
             approvedBy: $approvedBy,
             status: PurchaseOrderStatus::Partial,
@@ -141,8 +167,8 @@ class UatProcurementSeeder extends Seeder
         );
 
         $this->syncPurchaseOrder(
-            poNumber: 'PO-UAT-0004',
-            supplier: $suppliers['Digital Axis Systems'],
+            poNumber: 'PO-20261001-0004',
+            supplier: $suppliers['Northstar Digital Systems Corporation'],
             requestedBy: $requestedBy,
             approvedBy: $approvedBy,
             status: PurchaseOrderStatus::Received,
@@ -159,8 +185,8 @@ class UatProcurementSeeder extends Seeder
         );
 
         $this->syncPurchaseOrder(
-            poNumber: 'PO-UAT-0005',
-            supplier: $suppliers['Campus Office Supplies Co.'],
+            poNumber: 'PO-20261001-0005',
+            supplier: $suppliers['Metro Manila Office Solutions Corporation'],
             requestedBy: $requestedBy,
             approvedBy: $approvedBy,
             status: PurchaseOrderStatus::Cancelled,
@@ -172,6 +198,15 @@ class UatProcurementSeeder extends Seeder
             notes: 'Cancelled after request consolidation with a later PO.',
             lines: [
                 ['sku' => 'CON-BAT-AA', 'qty_ordered' => 60, 'qty_received' => 0, 'unit_price' => 32.00],
+            ],
+        );
+
+        DB::table('purchase_order_sequences')->updateOrInsert(
+            ['date_prefix' => '20261001'],
+            [
+                'last_sequence' => 5,
+                'created_at' => $timeline->subDays(21),
+                'updated_at' => $timeline,
             ],
         );
     }
@@ -213,11 +248,7 @@ class UatProcurementSeeder extends Seeder
         );
 
         foreach ($lines as $line) {
-            $product = Product::query()->where('sku', $line['sku'])->first();
-
-            if (! $product) {
-                continue;
-            }
+            $product = Product::query()->where('sku', $line['sku'])->firstOrFail();
 
             PurchaseOrderLine::query()->updateOrCreate(
                 [

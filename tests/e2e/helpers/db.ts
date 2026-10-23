@@ -96,3 +96,21 @@ export function getProductOnHandQtyBySku(sku: string): number {
         database.close();
     }
 }
+
+export function getProductIdBySku(sku: string): number {
+    const database = new DatabaseSync(E2E_DATABASE, { readOnly: true });
+
+    try {
+        const row = database
+            .prepare('select id from products where sku = ? limit 1')
+            .get(sku) as { id?: number } | undefined;
+
+        if (typeof row?.id !== 'number') {
+            throw new Error(`Unable to find product ID for SKU [${sku}].`);
+        }
+
+        return row.id;
+    } finally {
+        database.close();
+    }
+}

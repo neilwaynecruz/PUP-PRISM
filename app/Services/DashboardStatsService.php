@@ -129,13 +129,9 @@ class DashboardStatsService
      */
     public function getForecastSummary(): array
     {
-        $snapshots = ForecastSnapshot::query()
-            ->with('product:id,sku,name')
-            ->orderByDesc('forecast_date')
-            ->orderByDesc('generated_at')
-            ->get();
+        $latestForecastDate = ForecastSnapshot::query()->max('forecast_date');
 
-        if ($snapshots->isEmpty()) {
+        if ($latestForecastDate === null) {
             return [
                 'forecast_date' => null,
                 'last_generated_at' => null,
@@ -146,24 +142,26 @@ class DashboardStatsService
             ];
         }
 
-        $latestForecastDate = CarbonImmutable::parse((string) $snapshots->first()?->forecast_date)->toDateString();
-        $latestSnapshots = $snapshots
-            ->filter(fn (ForecastSnapshot $snapshot) => (
-                CarbonImmutable::parse((string) $snapshot->forecast_date)->toDateString()
-            ) === $latestForecastDate)
-            ->values();
+        $latestForecastValue = (string) $latestForecastDate;
+        $latestForecastDate = CarbonImmutable::parse($latestForecastValue)->toDateString();
+        $snapshotSummary = ForecastSnapshot::query()
+            ->where('forecast_date', $latestForecastValue)
+            ->selectRaw('MAX(generated_at) as last_generated_at')
+            ->selectRaw('SUM(CASE WHEN predicted_days_until_stockout IS NOT NULL AND predicted_days_until_stockout <= 7 THEN 1 ELSE 0 END) as urgent_count')
+            ->selectRaw('SUM(CASE WHEN predicted_days_until_stockout BETWEEN 8 AND 14 THEN 1 ELSE 0 END) as at_risk_count')
+            ->selectRaw('AVG(confidence_score) as average_confidence')
+            ->toBase()
+            ->first();
+        $latestSnapshots = ForecastSnapshot::query()
+            ->with('product:id,sku,name')
+            ->where('forecast_date', $latestForecastValue)
+            ->orderByRaw('CASE WHEN predicted_days_until_stockout IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('predicted_days_until_stockout')
+            ->orderByDesc('recommended_reorder_qty')
+            ->orderByDesc('generated_at')
+            ->limit(8)
+            ->get();
         $items = $latestSnapshots
-            ->sort(function (ForecastSnapshot $left, ForecastSnapshot $right): int {
-                $leftDays = $left->predicted_days_until_stockout ?? PHP_INT_MAX;
-                $rightDays = $right->predicted_days_until_stockout ?? PHP_INT_MAX;
-
-                if ($leftDays === $rightDays) {
-                    return $right->recommended_reorder_qty <=> $left->recommended_reorder_qty;
-                }
-
-                return $leftDays <=> $rightDays;
-            })
-            ->take(8)
             ->map(fn (ForecastSnapshot $snapshot) => [
                 'product_id' => $snapshot->product_id,
                 'product_name' => $snapshot->product?->name ?? 'Unknown product',
@@ -183,26 +181,18 @@ class DashboardStatsService
             ->values()
             ->toArray();
 
-        $confidenceScores = $latestSnapshots
-            ->pluck('confidence_score')
-            ->filter(fn (mixed $score) => $score !== null)
-            ->map(fn (mixed $score) => (float) $score);
+        $lastGeneratedAt = $snapshotSummary?->last_generated_at;
+        $averageConfidence = $snapshotSummary?->average_confidence;
 
         return [
             'forecast_date' => $latestForecastDate,
-            'last_generated_at' => ($latestGeneratedAt = $latestSnapshots->max('generated_at')) !== null
-                ? CarbonImmutable::parse((string) $latestGeneratedAt)->toISOString()
+            'last_generated_at' => $lastGeneratedAt !== null
+                ? CarbonImmutable::parse((string) $lastGeneratedAt)->toISOString()
                 : null,
-            'urgent_count' => $latestSnapshots
-                ->filter(fn (ForecastSnapshot $snapshot) => $snapshot->predicted_days_until_stockout !== null
-                    && $snapshot->predicted_days_until_stockout <= 7)
-                ->count(),
-            'at_risk_count' => $latestSnapshots
-                ->filter(fn (ForecastSnapshot $snapshot) => $snapshot->predicted_days_until_stockout !== null
-                    && $snapshot->predicted_days_until_stockout <= 14)
-                ->count(),
-            'average_confidence' => $confidenceScores->isNotEmpty()
-                ? round((float) $confidenceScores->avg(), 2)
+            'urgent_count' => (int) ($snapshotSummary?->urgent_count ?? 0),
+            'at_risk_count' => (int) ($snapshotSummary?->at_risk_count ?? 0),
+            'average_confidence' => $averageConfidence !== null
+                ? round((float) $averageConfidence, 2)
                 : null,
             'items' => $items,
         ];
@@ -444,7 +434,7 @@ class DashboardStatsService
     }
 
     /**
-     * @return list<array{id: int, type: string, name: string, deleted_at: string, deleted_by: string|null}>
+     * @return list<array{id: int, type: string, name: string, deleted_at: string, deleted_by: string|null, restore_url: string}>
      */
     private function recentlyDeleted(): array
     {
@@ -453,13 +443,13 @@ class DashboardStatsService
             ->orderByDesc('deleted_at')
             ->limit(5)
             ->get(['id', 'name', 'deleted_at'])
-            ->map(fn ($p) => [
-                'id' => $p->id,
+            ->map(fn (Product $product) => [
+                'id' => $product->id,
                 'type' => 'product',
-                'name' => $p->name,
-                'deleted_at' => $p->deleted_at->format('M d, Y H:i'),
-                'deleted_by' => $p->deletedBy?->name ?? 'Unknown',
-                'restore_url' => route('inventory.products.restore', $p->id),
+                'name' => $product->name,
+                'deleted_at' => $this->formatDeletedAt($product->deleted_at),
+                'deleted_by' => $product->deletedBy?->name ?? 'Unknown',
+                'restore_url' => route('inventory.products.restore', $product->id),
             ]);
 
         $bookings = Booking::onlyTrashed()
@@ -467,13 +457,13 @@ class DashboardStatsService
             ->orderByDesc('deleted_at')
             ->limit(5)
             ->get(['id', 'asset_id', 'deleted_at'])
-            ->map(fn ($b) => [
-                'id' => $b->id,
+            ->map(fn (Booking $booking) => [
+                'id' => $booking->id,
                 'type' => 'booking',
-                'name' => 'Booking: '.($b->asset?->tag_code ?? 'Unknown'),
-                'deleted_at' => $b->deleted_at->format('M d, Y H:i'),
-                'deleted_by' => $b->deletedBy?->name ?? 'Unknown',
-                'restore_url' => route('inventory.bookings.restore', $b->id),
+                'name' => 'Booking: '.($booking->asset?->tag_code ?? 'Unknown'),
+                'deleted_at' => $this->formatDeletedAt($booking->deleted_at),
+                'deleted_by' => $booking->deletedBy?->name ?? 'Unknown',
+                'restore_url' => route('inventory.bookings.restore', $booking->id),
             ]);
 
         $requisitions = Requisition::onlyTrashed()
@@ -481,13 +471,13 @@ class DashboardStatsService
             ->orderByDesc('deleted_at')
             ->limit(5)
             ->get(['id', 'deleted_at'])
-            ->map(fn ($r) => [
-                'id' => $r->id,
+            ->map(fn (Requisition $requisition) => [
+                'id' => $requisition->id,
                 'type' => 'requisition',
-                'name' => 'Requisition #'.$r->id,
-                'deleted_at' => $r->deleted_at->format('M d, Y H:i'),
-                'deleted_by' => $r->deletedBy?->name ?? 'Unknown',
-                'restore_url' => route('inventory.requisitions.restore', $r->id),
+                'name' => 'Requisition #'.$requisition->id,
+                'deleted_at' => $this->formatDeletedAt($requisition->deleted_at),
+                'deleted_by' => $requisition->deletedBy?->name ?? 'Unknown',
+                'restore_url' => route('inventory.requisitions.restore', $requisition->id),
             ]);
 
         return $products
@@ -497,6 +487,13 @@ class DashboardStatsService
             ->take(5)
             ->values()
             ->toArray();
+    }
+
+    private function formatDeletedAt(mixed $deletedAt): string
+    {
+        return $deletedAt !== null
+            ? CarbonImmutable::parse((string) $deletedAt)->format('M d, Y H:i')
+            : 'Unknown';
     }
 
     /**

@@ -108,6 +108,7 @@ test('web and api requisition submission produce consistent database outcomes', 
         ->withSession(['_token' => $csrfToken])
         ->post(route('inventory.requisitions.store', absolute: false), [
             '_token' => $csrfToken,
+            'submission_token' => fake()->uuid(),
             'notes' => 'Submitted via Web',
             'lines' => [
                 ['sku' => $product->sku, 'qty_requested' => 4],

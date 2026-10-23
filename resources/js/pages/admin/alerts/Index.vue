@@ -62,6 +62,7 @@ const props = defineProps<{
 
 defineOptions({
     name: 'AdminAlertsIndexPage',
+    inheritAttrs: false,
     layout: {
         breadcrumbs: [
             { title: 'Admin', href: alertsIndex() },

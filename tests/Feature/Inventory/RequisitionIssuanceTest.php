@@ -50,6 +50,7 @@ test('requester can submit a requisition and view it in the index and show pages
         ->withSession(['_token' => $csrfToken])
         ->post(route('inventory.requisitions.store', absolute: false), [
             '_token' => $csrfToken,
+            'submission_token' => fake()->uuid(),
             'notes' => 'Quarterly supply request',
             'lines' => [
                 ['sku' => $product->sku, 'qty_requested' => 4],
@@ -61,6 +62,11 @@ test('requester can submit a requisition and view it in the index and show pages
 
     expect($requisition->status)->toBe(RequisitionStatus::Submitted);
     expect($requisition->lines)->toHaveCount(1);
+    $this->assertDatabaseHas('audit_logs', [
+        'action' => 'create',
+        'model_type' => 'Requisition',
+        'model_id' => $requisition->id,
+    ]);
 
     $this->actingAs($requester)
         ->get(route('inventory.requisitions.index', absolute: false))
@@ -355,4 +361,96 @@ test('duplicate requisition line submissions are rejected before stock changes',
     expect($stock->fresh()?->on_hand_qty)->toBe(5);
     expect($lot->fresh()?->qty_remaining)->toBe(5);
     expect(StockMovement::query()->where('requisition_id', $requisition->id)->exists())->toBeFalse();
+});
+
+test('requester can select multiple products and submit requisition successfully', function () {
+    $requesterPosition = Position::factory()->create();
+    $requester = User::factory()->assignedPosition($requesterPosition)->create();
+    $requester->assignRole('Property Custodian');
+
+    $p1 = Product::factory()->consumable()->create(['sku' => 'SKU-MULTI-REQ-1', 'name' => 'Marker Blue']);
+    $p2 = Product::factory()->consumable()->create(['sku' => 'SKU-MULTI-REQ-2', 'name' => 'Eraser White']);
+
+    $this->actingAs($requester)
+        ->from(route('inventory.requisitions.index', absolute: false))
+        ->post(route('inventory.requisitions.store', absolute: false), [
+            'submission_token' => fake()->uuid(),
+            'notes' => 'Multi-product order from catalog',
+            'lines' => [
+                ['sku' => 'SKU-MULTI-REQ-1', 'qty_requested' => 5],
+                ['sku' => 'SKU-MULTI-REQ-2', 'qty_requested' => 3],
+            ],
+        ])
+        ->assertRedirect(route('inventory.requisitions.index', absolute: false));
+
+    $req = Requisition::query()->where('requester_id', $requester->id)->latest()->first();
+    expect($req)->not->toBeNull();
+    expect($req->lines)->toHaveCount(2);
+    expect($req->lines->pluck('product_id')->all())->toContain($p1->id, $p2->id);
+});
+
+test('requisition submission rejects assets inactive products and deleted products', function () {
+    $position = Position::factory()->create();
+    $requester = User::factory()->assignedPosition($position)->create();
+    $requester->assignRole('Property Custodian');
+
+    $asset = Product::factory()->create(['sku' => 'SKU-REQ-ASSET', 'type' => 'asset']);
+    $inactive = Product::factory()->consumable()->create(['sku' => 'SKU-REQ-INACTIVE', 'is_active' => false]);
+    $deleted = Product::factory()->consumable()->create(['sku' => 'SKU-REQ-DELETED']);
+    $deleted->delete();
+
+    foreach ([$asset, $inactive, $deleted] as $product) {
+        $this->actingAs($requester)
+            ->post(route('inventory.requisitions.store', absolute: false), [
+                'submission_token' => fake()->uuid(),
+                'lines' => [
+                    ['sku' => $product->sku, 'qty_requested' => 1],
+                ],
+            ])
+            ->assertSessionHasErrors('lines.0.sku');
+    }
+
+    expect(Requisition::query()->where('requester_id', $requester->id)->exists())->toBeFalse();
+});
+
+test('requisition submission rejects quantities outside the supported range', function (int $quantity) {
+    $position = Position::factory()->create();
+    $requester = User::factory()->assignedPosition($position)->create();
+    $requester->assignRole('Property Custodian');
+    $product = Product::factory()->consumable()->create(['sku' => 'SKU-REQ-QTY-LIMIT']);
+
+    $this->actingAs($requester)
+        ->post(route('inventory.requisitions.store', absolute: false), [
+            'submission_token' => fake()->uuid(),
+            'lines' => [
+                ['sku' => $product->sku, 'qty_requested' => $quantity],
+            ],
+        ])
+        ->assertSessionHasErrors('lines.0.qty_requested');
+
+    expect(Requisition::query()->where('requester_id', $requester->id)->exists())->toBeFalse();
+})->with([0, -1, 1_000_001, 2_147_483_648]);
+
+test('replaying the same requisition submission token does not create a duplicate', function () {
+    $position = Position::factory()->create();
+    $requester = User::factory()->assignedPosition($position)->create();
+    $requester->assignRole('Property Custodian');
+    $product = Product::factory()->consumable()->create(['sku' => 'SKU-REQ-IDEMPOTENT']);
+    $payload = [
+        'submission_token' => '9f2d1553-49a8-4c74-a2b1-867c55969ed8',
+        'notes' => 'One network submission',
+        'lines' => [
+            ['sku' => $product->sku, 'qty_requested' => 2],
+        ],
+    ];
+
+    $this->actingAs($requester)
+        ->post(route('inventory.requisitions.store', absolute: false), $payload)
+        ->assertRedirect();
+
+    $this->actingAs($requester)
+        ->post(route('inventory.requisitions.store', absolute: false), $payload)
+        ->assertRedirect();
+
+    expect(Requisition::query()->where('requester_id', $requester->id)->count())->toBe(1);
 });

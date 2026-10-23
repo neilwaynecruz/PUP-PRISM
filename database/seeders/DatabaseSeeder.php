@@ -10,7 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call(RoleSeeder::class);
 
-        if (app()->isProduction()) {
+        if (! app()->environment(['local', 'testing'])) {
             return;
         }
 
@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             UatInventorySeeder::class,
             UatProcurementSeeder::class,
             UatWorkflowSeeder::class,
+            UatAssetOperationsSeeder::class,
             UatMonitoringSeeder::class,
         ]);
     }

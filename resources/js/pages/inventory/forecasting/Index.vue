@@ -138,6 +138,7 @@ const props = defineProps<{
 
 defineOptions({
     name: 'InventoryForecastingIndexPage',
+    inheritAttrs: false,
     layout: {
         breadcrumbs: [
             { title: 'Inventory', href: forecastingIndex() },

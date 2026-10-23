@@ -1,9 +1,10 @@
 # Operations Runbooks
 
-Production operations documentation for PUP PRISM. These runbooks complement [PRODUCTION_READINESS_PLAN.md](../../PRODUCTION_READINESS_PLAN.md) (server/runtime checklist) and focus on **recovery, retention, queues, Redis, and logging**.
+Production operations documentation for PUP PRISM. These runbooks cover deployment, recovery, retention, queues, Redis, and logging without containing production credentials.
 
 | Document | Purpose |
 | -------- | ------- |
+| [PRODUCTION_DEPLOYMENT_RUNBOOK.md](./PRODUCTION_DEPLOYMENT_RUNBOOK.md) | Environment, deployment, service supervision, health checks, and rollback |
 | [BACKUP_DISASTER_RECOVERY_RUNBOOK.md](./BACKUP_DISASTER_RECOVERY_RUNBOOK.md) | PostgreSQL backup/restore and disaster-recovery drills |
 | [QUEUE_OPERATIONS.md](./QUEUE_OPERATIONS.md) | Queue workers, monitoring, failed-job handling |
 | [REDIS_PRODUCTION_MIGRATION.md](./REDIS_PRODUCTION_MIGRATION.md) | Migrating cache, session, and queue drivers to Redis |

@@ -52,13 +52,15 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
             }),
         ).toBeVisible();
 
-        await page.getByLabel('Scope or area').fill('Phase 4 E2E stock room');
+        await page
+            .getByLabel('Scope or area')
+            .fill('Central supply stockroom quarterly count');
         await page.getByLabel('Assigned counter').selectOption({
-            label: 'Admin User',
+            label: 'Adrian Mercado',
         });
         await page
             .locator('label')
-            .filter({ hasText: 'E2E Test Consumable' })
+            .filter({ hasText: 'Multipurpose Copy Paper, A4, 80 gsm' })
             .getByRole('checkbox')
             .check();
         await page
@@ -68,7 +70,7 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
 
         const line = page
             .locator('article')
-            .filter({ hasText: 'E2E Test Consumable' })
+            .filter({ hasText: 'Multipurpose Copy Paper, A4, 80 gsm' })
             .first();
         await expect(line).toBeVisible();
         const snapshot = (
