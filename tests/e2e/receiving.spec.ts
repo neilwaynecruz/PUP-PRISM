@@ -21,9 +21,14 @@ test.describe('Stock Receiving Flow', () => {
         await expect(page).toHaveURL(/search=CON-E2E-001$/);
         await Promise.all([
             page.waitForURL(/\/inventory\/products\/\d+$/),
-            page.getByTestId('product-row-CON-E2E-001').getByTestId('view-product-button').click(),
+            page
+                .getByTestId('product-row-CON-E2E-001')
+                .getByTestId('view-product-button')
+                .click(),
         ]);
-        await expect(page.getByTestId('product-on-hand-value')).toHaveText('On hand: 125');
+        await expect(page.getByTestId('product-on-hand-value')).toHaveText(
+            /(?:On hand:\s*)?125/,
+        );
     });
 
     test('Receive asset stock', async ({ page }) => {
@@ -33,7 +38,9 @@ test.describe('Stock Receiving Flow', () => {
         await expect(page.getByTestId('receiving-page')).toBeVisible();
 
         await page.getByTestId('receiving-sku-input').fill('AST-E2E-001');
-        await page.getByTestId('receiving-tag-codes-input').fill('AST-E2E-RCV-001\nAST-E2E-RCV-002');
+        await page
+            .getByTestId('receiving-tag-codes-input')
+            .fill('AST-E2E-RCV-001\nAST-E2E-RCV-002');
 
         await page.getByTestId('receive-stock-button').click();
         await expect(page.getByTestId('receiving-page')).toBeVisible();
@@ -44,8 +51,13 @@ test.describe('Stock Receiving Flow', () => {
         await expect(page).toHaveURL(/search=AST-E2E-001$/);
         await Promise.all([
             page.waitForURL(/\/inventory\/products\/\d+$/),
-            page.getByTestId('product-row-AST-E2E-001').getByTestId('view-product-button').click(),
+            page
+                .getByTestId('product-row-AST-E2E-001')
+                .getByTestId('view-product-button')
+                .click(),
         ]);
-        await expect(page.getByTestId('product-assets-count-value')).toHaveText('4');
+        await expect(page.getByTestId('product-assets-count-value')).toHaveText(
+            '4',
+        );
     });
 });

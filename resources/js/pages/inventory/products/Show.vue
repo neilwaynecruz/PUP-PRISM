@@ -287,7 +287,7 @@ function stockToneClass(): string {
         <div class="grid gap-6 lg:grid-cols-3">
             <!-- Card 1: Overview & Classification -->
             <div
-                class="flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
+                class="flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/2 dark:border-border/60 dark:bg-card/90 dark:ring-white/3"
             >
                 <div class="border-b border-border/60 bg-muted/30 px-5 py-3.5">
                     <div class="flex items-center gap-2">
@@ -339,7 +339,7 @@ function stockToneClass(): string {
 
             <!-- Card 2: Inventory & Stock Status -->
             <div
-                class="flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
+                class="flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/2 dark:border-border/60 dark:bg-card/90 dark:ring-white/3"
             >
                 <div class="border-b border-border/60 bg-muted/30 px-5 py-3.5">
                     <div class="flex items-center gap-2">
@@ -360,14 +360,17 @@ function stockToneClass(): string {
                 >
                     <div>
                         <div class="text-xs text-muted-foreground">
-                            On-Hand Quantity
+                            Stock Status
                         </div>
                         <div class="mt-2 flex items-baseline gap-3">
                             <span
                                 class="font-mono text-3xl font-bold tracking-tight text-foreground"
                                 data-testid="product-on-hand-value"
                             >
-                                {{ product.on_hand_qty ?? 0 }}
+                                <span
+                                    class="font-sans text-xs font-medium text-muted-foreground"
+                                    >On hand: </span
+                                >{{ product.on_hand_qty ?? 0 }}
                             </span>
                             <span
                                 class="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold"
@@ -427,7 +430,7 @@ function stockToneClass(): string {
 
             <!-- Card 3: Procurement & Replenishment -->
             <div
-                class="flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
+                class="flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/2 dark:border-border/60 dark:bg-card/90 dark:ring-white/3"
             >
                 <div class="border-b border-border/60 bg-muted/30 px-5 py-3.5">
                     <div class="flex items-center gap-2">
@@ -486,7 +489,7 @@ function stockToneClass(): string {
         <!-- Stock Movement History (Consumables) -->
         <div
             v-if="product.type === 'consumable'"
-            class="overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
+            class="overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/2 dark:border-border/60 dark:bg-card/90 dark:ring-white/3"
         >
             <div
                 class="flex items-center justify-between border-b border-border/60 bg-muted/30 px-5 py-3.5"
