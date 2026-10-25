@@ -234,7 +234,7 @@ class ProductLabelController extends Controller
                 'margin_mm' => 6,
                 'gap_mm' => 1,
                 'cell_height_mm' => $isLetter ? 25 : 26,
-                'qr_size_px' => 52,
+                'qr_size_px' => 42,
             ],
             'medium_18' => [
                 'cols' => 3,
@@ -242,7 +242,7 @@ class ProductLabelController extends Controller
                 'margin_mm' => 8,
                 'gap_mm' => 2,
                 'cell_height_mm' => $isLetter ? 41 : 42,
-                'qr_size_px' => 82,
+                'qr_size_px' => 72,
             ],
             'large_12' => [
                 'cols' => 2,
@@ -250,7 +250,7 @@ class ProductLabelController extends Controller
                 'margin_mm' => 8,
                 'gap_mm' => 2,
                 'cell_height_mm' => $isLetter ? 41 : 42,
-                'qr_size_px' => 90,
+                'qr_size_px' => 80,
             ],
             'single_1' => [
                 'cols' => 1,
@@ -258,7 +258,7 @@ class ProductLabelController extends Controller
                 'margin_mm' => 20,
                 'gap_mm' => 0,
                 'cell_height_mm' => 220,
-                'qr_size_px' => 250,
+                'qr_size_px' => 200,
             ],
             default => [ // standard_24
                 'cols' => 3,
@@ -266,7 +266,7 @@ class ProductLabelController extends Controller
                 'margin_mm' => 8,
                 'gap_mm' => 2,
                 'cell_height_mm' => $isLetter ? 30 : 32,
-                'qr_size_px' => 68,
+                'qr_size_px' => 54,
             ],
         };
     }

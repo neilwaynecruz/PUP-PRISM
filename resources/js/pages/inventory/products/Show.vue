@@ -1,7 +1,20 @@
 <script setup lang="ts">
 import { Head, Link } from '@inertiajs/vue3';
+import {
+    ArrowLeft,
+    Boxes,
+    Building2,
+    History,
+    Package,
+    Pencil,
+    Printer,
+    Tag,
+    Trash2,
+} from 'lucide-vue-next';
+import AdminCodeBadge from '@/components/admin/AdminCodeBadge.vue';
 import Heading from '@/components/Heading.vue';
 import ProductForecastPanel from '@/components/inventory/ProductForecastPanel.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatPhilippinePeso } from '@/lib/utils';
 import {
@@ -63,7 +76,7 @@ type ProductForecast = {
     has_sufficient_history: boolean;
 };
 
-defineProps<{
+const props = defineProps<{
     product: Product;
     forecast: ProductForecast | null;
     stockMovements: StockMovement[];
@@ -74,9 +87,20 @@ defineProps<{
     isDeleted?: boolean;
 }>();
 
+defineOptions({
+    name: 'InventoryProductShowPage',
+    layout: {
+        breadcrumbs: [
+            { title: 'Inventory', href: productsIndex() },
+            { title: 'Products', href: productsIndex() },
+            { title: 'View', href: productsIndex() },
+        ],
+    },
+});
+
 function formatDateTime(iso: string | null): string {
     if (!iso) {
-        return '—';
+        return 'Not recorded';
     }
 
     const d = new Date(iso);
@@ -91,214 +115,424 @@ function formatDateTime(iso: string | null): string {
     });
 }
 
-defineOptions({
-    name: 'InventoryProductShowPage',
-    layout: {
-        breadcrumbs: [
-            { title: 'Inventory', href: productsIndex() },
-            { title: 'Products', href: productsIndex() },
-            { title: 'View', href: productsIndex() },
-        ],
-    },
-});
+function stockLabel(): string {
+    if (props.product.type !== 'consumable') {
+        return 'Asset tracked';
+    }
+
+    const onHand = props.product.on_hand_qty ?? 0;
+
+    if (onHand <= 0) {
+        return 'Out of stock';
+    }
+
+    if (onHand <= props.product.reorder_threshold) {
+        return 'Low stock';
+    }
+
+    return 'In stock';
+}
+
+function stockToneClass(): string {
+    const label = stockLabel();
+
+    if (label === 'Out of stock') {
+        return 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-300';
+    }
+
+    if (label === 'Low stock') {
+        return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300';
+    }
+
+    return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-300';
+}
 </script>
 
 <template>
     <Head :title="product.name" />
 
-    <div class="flex flex-col gap-6 p-4" data-testid="product-show-page">
+    <div
+        class="flex flex-col gap-6 p-4 sm:p-6 lg:p-8"
+        data-testid="product-show-page"
+    >
+        <!-- Trashed Banner -->
         <div
             v-if="isDeleted"
-            class="rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-900 dark:bg-rose-950"
+            class="flex flex-col gap-3 rounded-xl border border-rose-500/30 bg-rose-50/60 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-rose-900/60 dark:bg-rose-950/40"
         >
             <div class="flex items-center gap-3">
-                <span class="h-2 w-2 rounded-full bg-rose-500" />
-                <span class="font-medium text-rose-900 dark:text-rose-100"
-                    >This product has been deleted and is in trash.</span
-                >
-                <Button variant="ghost" size="sm" as-child class="ml-auto">
-                    <Link href="/inventory/products/trash">Go to Trash</Link>
-                </Button>
+                <Trash2
+                    class="h-5 w-5 shrink-0 text-rose-600 dark:text-rose-400"
+                />
+                <div>
+                    <span
+                        class="font-semibold text-rose-900 dark:text-rose-200"
+                    >
+                        This product is currently in the trash.
+                    </span>
+                    <p class="text-xs text-rose-700/80 dark:text-rose-300/80">
+                        It has been soft-deleted and is hidden from standard
+                        requisitioning and receiving catalogs.
+                    </p>
+                </div>
             </div>
+
+            <Button
+                variant="outline"
+                size="sm"
+                as-child
+                class="border-rose-300 bg-white text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:border-rose-800 dark:bg-rose-900/40 dark:text-rose-200"
+            >
+                <Link href="/inventory/products/trash">
+                    <span>Manage in Trash</span>
+                </Link>
+            </Button>
         </div>
 
+        <!-- Page Header & Action Controls -->
         <div
-            class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between"
+            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
         >
-            <Heading
-                variant="small"
-                :title="product.name"
-                :description="`SKU: ${product.sku}`"
-            />
+            <div class="space-y-1.5">
+                <Heading
+                    variant="small"
+                    :title="product.name"
+                    :description="`SKU: ${product.sku}`"
+                />
 
-            <div class="flex items-center gap-2">
-                <Button variant="ghost" as-child>
-                    <Link :href="productsIndex()">Back</Link>
+                <div class="flex flex-wrap items-center gap-2 pt-1">
+                    <AdminCodeBadge :value="product.sku" />
+
+                    <span
+                        class="inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-xs font-semibold tracking-wider uppercase"
+                        :class="
+                            product.type === 'consumable'
+                                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                : 'bg-sky-500/10 text-sky-700 dark:text-sky-400'
+                        "
+                    >
+                        <Boxes
+                            v-if="product.type === 'consumable'"
+                            class="h-3.5 w-3.5"
+                        />
+                        <Tag v-else class="h-3.5 w-3.5" />
+                        {{ product.type }}
+                    </span>
+
+                    <span
+                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium"
+                        :class="
+                            product.is_active
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-muted text-muted-foreground'
+                        "
+                    >
+                        <span
+                            class="h-1.5 w-1.5 rounded-full"
+                            :class="
+                                product.is_active
+                                    ? 'bg-emerald-500'
+                                    : 'bg-muted-foreground/40'
+                            "
+                        />
+                        {{ product.is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex flex-wrap items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    as-child
+                    class="h-9 gap-1.5 rounded-lg text-xs"
+                >
+                    <Link :href="productsIndex()">
+                        <ArrowLeft class="h-3.5 w-3.5" />
+                        <span>Catalog</span>
+                    </Link>
                 </Button>
-                <Button v-if="can.printLabel" variant="ghost" as-child>
-                    <Link :href="productLabel(product.id)">Print label</Link>
+
+                <Button
+                    v-if="can.printLabel"
+                    variant="outline"
+                    size="sm"
+                    as-child
+                    class="h-9 gap-1.5 rounded-lg text-xs"
+                >
+                    <Link :href="productLabel(product.id)">
+                        <Printer class="h-3.5 w-3.5 text-primary" />
+                        <span>Print label</span>
+                    </Link>
                 </Button>
+
                 <Button
                     v-if="can.edit"
                     as-child
+                    size="sm"
                     data-test="show-edit-product-button"
                     data-testid="show-edit-product-button"
+                    class="h-9 gap-1.5 rounded-lg px-4 text-xs font-semibold shadow-xs"
                 >
-                    <Link :href="productsEdit(product.id)">Edit</Link>
+                    <Link :href="productsEdit(product.id)">
+                        <Pencil class="h-3.5 w-3.5" />
+                        <span>Edit product</span>
+                    </Link>
                 </Button>
             </div>
         </div>
 
-        <div class="grid gap-4 md:grid-cols-2">
+        <!-- Cohesive Information Cards -->
+        <div class="grid gap-6 lg:grid-cols-3">
+            <!-- Card 1: Overview & Classification -->
             <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                class="flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
             >
-                <div class="text-sm text-muted-foreground">Type</div>
-                <div class="mt-1 font-medium capitalize">
-                    {{ product.type }}
+                <div class="border-b border-border/60 bg-muted/30 px-5 py-3.5">
+                    <div class="flex items-center gap-2">
+                        <Tag class="h-4 w-4 text-primary" />
+                        <h2 class="text-sm font-semibold text-foreground">
+                            Classification
+                        </h2>
+                    </div>
+                </div>
+
+                <div class="grid divide-y divide-border/40 p-5 pt-1 text-sm">
+                    <div class="flex items-center justify-between py-2.5">
+                        <span class="text-xs text-muted-foreground"
+                            >Product Type</span
+                        >
+                        <span class="font-medium text-foreground capitalize">{{
+                            product.type
+                        }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between py-2.5">
+                        <span class="text-xs text-muted-foreground"
+                            >Category</span
+                        >
+                        <span class="font-medium text-foreground">{{
+                            product.category ?? 'Not assigned'
+                        }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between py-2.5">
+                        <span class="text-xs text-muted-foreground"
+                            >Origin</span
+                        >
+                        <span class="font-medium text-foreground">{{
+                            product.origin ?? 'Not specified'
+                        }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between py-2.5">
+                        <span class="text-xs text-muted-foreground"
+                            >Catalog Status</span
+                        >
+                        <span class="font-medium text-foreground">{{
+                            product.is_active ? 'Active' : 'Inactive'
+                        }}</span>
+                    </div>
                 </div>
             </div>
 
+            <!-- Card 2: Inventory & Stock Status -->
             <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                class="flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
             >
-                <div class="text-sm text-muted-foreground">Status</div>
-                <div class="mt-1 font-medium">
-                    {{ product.is_active ? 'Active' : 'Inactive' }}
+                <div class="border-b border-border/60 bg-muted/30 px-5 py-3.5">
+                    <div class="flex items-center gap-2">
+                        <Package class="h-4 w-4 text-primary" />
+                        <h2 class="text-sm font-semibold text-foreground">
+                            {{
+                                product.type === 'consumable'
+                                    ? 'Inventory Status'
+                                    : 'Asset Register'
+                            }}
+                        </h2>
+                    </div>
                 </div>
-            </div>
 
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div class="text-sm text-muted-foreground">Category</div>
-                <div class="mt-1 font-medium">
-                    {{ product.category ?? '—' }}
-                </div>
-            </div>
-
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div class="text-sm text-muted-foreground">Supplier</div>
-                <div class="mt-1 font-medium">
-                    {{ product.supplier ?? '—' }}
-                </div>
-            </div>
-
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div class="text-sm text-muted-foreground">Origin</div>
-                <div class="mt-1 font-medium">{{ product.origin ?? '—' }}</div>
-            </div>
-
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div class="text-sm text-muted-foreground">
-                    Reorder threshold
-                </div>
                 <div
-                    class="mt-1 font-medium"
-                    data-testid="product-reorder-threshold-value"
+                    v-if="product.type === 'consumable'"
+                    class="flex flex-1 flex-col justify-between p-5"
                 >
-                    {{ product.reorder_threshold ?? 0 }}
+                    <div>
+                        <div class="text-xs text-muted-foreground">
+                            On-Hand Quantity
+                        </div>
+                        <div class="mt-2 flex items-baseline gap-3">
+                            <span
+                                class="font-mono text-3xl font-bold tracking-tight text-foreground"
+                                data-testid="product-on-hand-value"
+                            >
+                                {{ product.on_hand_qty ?? 0 }}
+                            </span>
+                            <span
+                                class="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                                :class="stockToneClass()"
+                            >
+                                {{ stockLabel() }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 border-t border-border/40 pt-3">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-muted-foreground"
+                                >Reorder Threshold</span
+                            >
+                            <span
+                                class="font-mono font-semibold text-foreground"
+                                data-testid="product-reorder-threshold-value"
+                            >
+                                {{ product.reorder_threshold ?? 0 }} units
+                            </span>
+                        </div>
+                        <p class="mt-1 text-[11px] text-muted-foreground">
+                            Alert triggered when available inventory is at or
+                            below this number.
+                        </p>
+                    </div>
+                </div>
+
+                <div v-else class="flex flex-1 flex-col justify-between p-5">
+                    <div>
+                        <div class="text-xs text-muted-foreground">
+                            Registered Assets
+                        </div>
+                        <div class="mt-2 flex items-baseline gap-2">
+                            <span
+                                class="font-mono text-3xl font-bold tracking-tight text-foreground"
+                                data-testid="product-assets-count-value"
+                            >
+                                {{ product.assets_count }}
+                            </span>
+                            <span
+                                class="text-sm font-medium text-muted-foreground"
+                                >individual items</span
+                            >
+                        </div>
+                    </div>
+
+                    <div
+                        class="mt-4 border-t border-border/40 pt-3 text-xs text-muted-foreground"
+                    >
+                        Each asset is individually tagged with a barcode
+                        property identifier and custodian assignment.
+                    </div>
                 </div>
             </div>
 
+            <!-- Card 3: Procurement & Replenishment -->
             <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                class="flex flex-col overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
             >
-                <div class="text-sm text-muted-foreground">Lead time</div>
-                <div class="mt-1 font-medium">
-                    {{
-                        product.lead_time_days !== null
-                            ? `${product.lead_time_days} ${product.lead_time_days === 1 ? 'day' : 'days'}`
-                            : '—'
-                    }}
+                <div class="border-b border-border/60 bg-muted/30 px-5 py-3.5">
+                    <div class="flex items-center gap-2">
+                        <Building2 class="h-4 w-4 text-primary" />
+                        <h2 class="text-sm font-semibold text-foreground">
+                            Procurement
+                        </h2>
+                    </div>
                 </div>
-            </div>
 
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div class="text-sm text-muted-foreground">
-                    Default unit price
-                </div>
-                <div class="mt-1 font-medium">
-                    {{
-                        product.unit_price !== null
-                            ? formatPhilippinePeso(product.unit_price)
-                            : '—'
-                    }}
-                </div>
-            </div>
+                <div class="grid divide-y divide-border/40 p-5 pt-1 text-sm">
+                    <div class="flex items-center justify-between py-2.5">
+                        <span class="text-xs text-muted-foreground"
+                            >Preferred Supplier</span
+                        >
+                        <span class="font-medium text-foreground">{{
+                            product.supplier ?? 'No preferred supplier recorded'
+                        }}</span>
+                    </div>
 
-            <div
-                v-if="product.type === 'consumable'"
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div class="text-sm text-muted-foreground">Stock</div>
-                <div
-                    class="mt-1 font-medium"
-                    data-testid="product-on-hand-value"
-                >
-                    On hand: {{ product.on_hand_qty ?? 0 }}
-                </div>
-            </div>
+                    <div class="flex items-center justify-between py-2.5">
+                        <span class="text-xs text-muted-foreground"
+                            >Lead Time</span
+                        >
+                        <span class="font-medium text-foreground">
+                            {{
+                                product.lead_time_days !== null
+                                    ? `${product.lead_time_days} ${product.lead_time_days === 1 ? 'day' : 'days'}`
+                                    : 'Not specified'
+                            }}
+                        </span>
+                    </div>
 
-            <div
-                v-else
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-            >
-                <div class="text-sm text-muted-foreground">Assets</div>
-                <div
-                    class="mt-1 font-medium"
-                    data-testid="product-assets-count-value"
-                >
-                    {{ product.assets_count }}
+                    <div class="flex items-center justify-between py-2.5">
+                        <span class="text-xs text-muted-foreground"
+                            >Default Unit Price</span
+                        >
+                        <span class="font-mono font-medium text-foreground">
+                            {{
+                                product.unit_price !== null
+                                    ? formatPhilippinePeso(product.unit_price)
+                                    : 'No unit price recorded'
+                            }}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- Demand Forecast Panel (Consumables) -->
         <ProductForecastPanel
             v-if="product.type === 'consumable'"
             :forecast="forecast"
         />
 
-        <!-- Stock movement history -->
+        <!-- Stock Movement History (Consumables) -->
         <div
             v-if="product.type === 'consumable'"
-            class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+            class="overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
         >
-            <div class="mb-4 text-sm font-semibold tracking-tight">
-                Stock movement history
+            <div
+                class="flex items-center justify-between border-b border-border/60 bg-muted/30 px-5 py-3.5"
+            >
+                <div class="flex items-center gap-2">
+                    <History class="h-4 w-4 text-primary" />
+                    <h2 class="text-sm font-semibold text-foreground">
+                        Stock Movement History
+                    </h2>
+                </div>
+                <Badge
+                    variant="secondary"
+                    class="h-5 px-2 text-[11px] font-normal"
+                >
+                    {{ stockMovements.length }}
+                    {{ stockMovements.length === 1 ? 'movement' : 'movements' }}
+                    recorded
+                </Badge>
             </div>
 
             <div
                 v-if="stockMovements.length === 0"
-                class="text-sm text-muted-foreground"
+                class="p-8 text-center text-sm text-muted-foreground"
             >
-                No stock movements recorded yet.
+                No stock movements have been recorded yet for this product.
             </div>
 
-            <div v-else class="grid gap-3">
-                <div class="grid gap-3 md:hidden">
+            <div v-else>
+                <!-- Mobile Stock Movements (< 768px) -->
+                <div class="grid divide-y divide-border/40 md:hidden">
                     <div
                         v-for="m in stockMovements"
                         :key="m.id"
-                        class="rounded-xl border border-border/40 p-4 text-sm"
+                        class="flex flex-col gap-2 p-4 text-xs"
                     >
-                        <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start justify-between gap-2">
                             <div>
-                                <div class="font-medium">{{ m.source }}</div>
-                                <div class="text-xs text-muted-foreground">
+                                <span class="font-semibold text-foreground">{{
+                                    m.source
+                                }}</span>
+                                <div class="text-[11px] text-muted-foreground">
                                     {{ formatDateTime(m.performed_at) }}
                                 </div>
                             </div>
                             <span
-                                class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
+                                class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold uppercase"
                                 :class="
                                     m.movement_type === 'receive'
                                         ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
@@ -310,105 +544,97 @@ defineOptions({
                                 {{ m.movement_type }}
                             </span>
                         </div>
-                        <div class="mt-3 grid gap-2 text-sm">
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground"
-                                    >Change</span
+
+                        <div
+                            class="grid grid-cols-3 gap-2 rounded-lg bg-muted/30 p-2 text-center"
+                        >
+                            <div>
+                                <span class="text-[10px] text-muted-foreground"
+                                    >Before</span
                                 >
-                                <span
-                                    class="font-mono"
+                                <div class="font-mono font-medium">
+                                    {{ m.qty_before ?? '—' }}
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-muted-foreground"
+                                    >Delta</span
+                                >
+                                <div
+                                    class="font-mono font-semibold"
                                     :class="
                                         m.qty_delta > 0
-                                            ? 'text-emerald-600'
+                                            ? 'text-emerald-600 dark:text-emerald-400'
                                             : m.qty_delta < 0
-                                              ? 'text-rose-600'
+                                              ? 'text-rose-600 dark:text-rose-400'
                                               : ''
                                     "
                                 >
                                     {{ m.qty_delta > 0 ? '+' : ''
                                     }}{{ m.qty_delta }}
-                                </span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground"
-                                    >Before</span
-                                >
-                                <span class="font-mono">{{
-                                    m.qty_before ?? '—'
-                                }}</span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground">After</span>
-                                <span class="font-mono">{{
-                                    m.qty_after ?? '—'
-                                }}</span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground">By</span>
-                                <span>{{ m.performed_by }}</span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground"
-                                    >Reference</span
-                                >
-                                <span>{{ m.reference ?? '—' }}</span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground"
-                                    >Accountable</span
-                                >
-                                <span>{{ m.accountable_position ?? '—' }}</span>
+                                </div>
                             </div>
                             <div>
-                                <div class="text-muted-foreground">Notes</div>
-                                <div class="mt-1">{{ m.notes ?? '—' }}</div>
+                                <span class="text-[10px] text-muted-foreground"
+                                    >After</span
+                                >
+                                <div class="font-mono font-medium">
+                                    {{ m.qty_after ?? '—' }}
+                                </div>
                             </div>
+                        </div>
+
+                        <div class="text-[11px] text-muted-foreground">
+                            <span>By: </span>
+                            <span class="font-medium text-foreground">{{
+                                m.performed_by
+                            }}</span>
+                            <span v-if="m.reference">
+                                • Ref: {{ m.reference }}</span
+                            >
                         </div>
                     </div>
                 </div>
 
+                <!-- Desktop Stock Movements Table (>= 768px) -->
                 <div class="hidden overflow-x-auto md:block">
-                    <table class="w-full text-sm">
+                    <table class="w-full text-left text-sm">
                         <thead
-                            class="text-left text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase"
+                            class="border-b border-border/60 bg-muted/20 text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                         >
-                            <tr class="border-b border-border/60">
-                                <th class="py-2 pr-3">Date</th>
-                                <th class="py-2 pr-3">Source</th>
-                                <th class="py-2 pr-3">Type</th>
-                                <th class="py-2 pr-3 text-right">Before</th>
-                                <th class="py-2 pr-3 text-right">Change</th>
-                                <th class="py-2 pr-3 text-right">After</th>
-                                <th class="py-2 pr-3">By</th>
-                                <th class="py-2 pr-3">Reference</th>
-                                <th class="py-2 pr-3">Notes</th>
+                            <tr>
+                                <th class="px-4 py-3">Date / Time</th>
+                                <th class="px-4 py-3">Source</th>
+                                <th class="px-4 py-3">Type</th>
+                                <th class="px-4 py-3 text-right">Before</th>
+                                <th class="px-4 py-3 text-right">Change</th>
+                                <th class="px-4 py-3 text-right">After</th>
+                                <th class="px-4 py-3">Performed By</th>
+                                <th class="px-4 py-3">
+                                    Reference / Accountability
+                                </th>
+                                <th class="px-4 py-3">Notes</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-border/40 text-xs">
                             <tr
                                 v-for="m in stockMovements"
                                 :key="m.id"
-                                class="border-b border-border/40"
+                                class="transition-colors hover:bg-muted/30"
                             >
-                                <td class="py-2 pr-3 text-muted-foreground">
+                                <td
+                                    class="px-4 py-3 whitespace-nowrap text-muted-foreground"
+                                >
                                     {{ formatDateTime(m.performed_at) }}
                                 </td>
-                                <td class="py-2 pr-3">{{ m.source }}</td>
-                                <td class="py-2 pr-3">
+                                <td
+                                    class="px-4 py-3 font-medium text-foreground"
+                                >
+                                    {{ m.source }}
+                                </td>
+                                <td class="px-4 py-3">
                                     <span
-                                        class="inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium"
+                                        class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
                                         :class="
                                             m.movement_type === 'receive'
                                                 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
@@ -420,34 +646,44 @@ defineOptions({
                                         {{ m.movement_type }}
                                     </span>
                                 </td>
-                                <td class="py-2 pr-3 text-right font-mono">
+                                <td
+                                    class="px-4 py-3 text-right font-mono text-muted-foreground"
+                                >
                                     {{ m.qty_before ?? '—' }}
                                 </td>
                                 <td
-                                    class="py-2 pr-3 text-right font-mono"
+                                    class="px-4 py-3 text-right font-mono font-semibold"
                                     :class="
                                         m.qty_delta > 0
-                                            ? 'text-emerald-600'
+                                            ? 'text-emerald-600 dark:text-emerald-400'
                                             : m.qty_delta < 0
-                                              ? 'text-rose-600'
-                                              : ''
+                                              ? 'text-rose-600 dark:text-rose-400'
+                                              : 'text-foreground'
                                     "
                                 >
                                     {{ m.qty_delta > 0 ? '+' : ''
                                     }}{{ m.qty_delta }}
                                 </td>
-                                <td class="py-2 pr-3 text-right font-mono">
+                                <td
+                                    class="px-4 py-3 text-right font-mono text-foreground"
+                                >
                                     {{ m.qty_after ?? '—' }}
                                 </td>
-                                <td class="py-2 pr-3">{{ m.performed_by }}</td>
-                                <td class="py-2 pr-3 text-muted-foreground">
+                                <td
+                                    class="px-4 py-3 whitespace-nowrap text-foreground"
+                                >
+                                    {{ m.performed_by }}
+                                </td>
+                                <td class="px-4 py-3 text-muted-foreground">
                                     {{
                                         m.reference ??
                                         m.accountable_position ??
                                         '—'
                                     }}
                                 </td>
-                                <td class="py-2 pr-3 text-muted-foreground">
+                                <td
+                                    class="px-4 py-3 text-muted-foreground italic"
+                                >
                                     {{ m.notes ?? '—' }}
                                 </td>
                             </tr>

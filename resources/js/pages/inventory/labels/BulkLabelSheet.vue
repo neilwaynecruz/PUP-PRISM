@@ -138,24 +138,43 @@ const activeLayout = computed(() => {
                 marginMm: 6,
                 gapMm: 1,
                 cellHeightMm: isLetter ? 25 : 26,
+                qrSizePx: 42,
             };
         case 'standard_24':
             return {
                 marginMm: 8,
                 gapMm: 2,
                 cellHeightMm: isLetter ? 30 : 32,
+                qrSizePx: 54,
             };
         case 'medium_18':
+            return {
+                marginMm: 8,
+                gapMm: 2,
+                cellHeightMm: isLetter ? 41 : 42,
+                qrSizePx: 72,
+            };
         case 'large_12':
             return {
                 marginMm: 8,
                 gapMm: 2,
                 cellHeightMm: isLetter ? 41 : 42,
+                qrSizePx: 80,
             };
         case 'single_1':
-            return { marginMm: 20, gapMm: 0, cellHeightMm: 220 };
+            return {
+                marginMm: 20,
+                gapMm: 0,
+                cellHeightMm: 220,
+                qrSizePx: 200,
+            };
         default:
-            return { marginMm: 8, gapMm: 2, cellHeightMm: 32 };
+            return {
+                marginMm: 8,
+                gapMm: 2,
+                cellHeightMm: isLetter ? 30 : 32,
+                qrSizePx: 54,
+            };
     }
 });
 
@@ -533,54 +552,84 @@ function handleDownloadPdf(): void {
                         <div
                             v-for="(item, itemIndex) in sheet"
                             :key="`${sheetIndex}-${itemIndex}`"
-                            class="label-card flex flex-col items-center justify-center rounded-lg border border-dashed border-slate-300 bg-white p-2 text-center transition dark:border-slate-300 dark:bg-white dark:text-black"
+                            class="label-card flex flex-col items-center justify-between overflow-hidden rounded-lg border border-dashed border-slate-300 bg-white px-1.5 py-1 text-center transition dark:border-slate-300 dark:bg-white dark:text-black"
                             :style="{
                                 height: `${activeLayout.cellHeightMm}mm`,
+                                maxHeight: `${activeLayout.cellHeightMm}mm`,
                             }"
                         >
+                            <!-- Product Name -->
                             <div
                                 v-if="showName"
-                                class="w-full truncate text-[10px] font-bold text-slate-900"
+                                class="w-full shrink-0 truncate leading-tight font-bold text-slate-900"
+                                :class="
+                                    gridPreset === 'compact_30'
+                                        ? 'text-[8.5px]'
+                                        : gridPreset === 'standard_24'
+                                          ? 'text-[9.5px]'
+                                          : 'text-[11px]'
+                                "
                                 :title="item.name"
                             >
                                 {{ item.name }}
                             </div>
 
+                            <!-- Centered QR Code with constrained SVG size -->
                             <div
-                                class="my-1 flex items-center justify-center"
+                                class="my-0.5 flex shrink-0 items-center justify-center [&>svg]:block [&>svg]:h-full [&>svg]:max-h-full [&>svg]:w-full [&>svg]:max-w-full"
                                 :style="{
-                                    maxWidth:
-                                        gridPreset === 'compact_30'
-                                            ? '54px'
-                                            : gridPreset === 'medium_18'
-                                              ? '86px'
-                                              : gridPreset === 'large_12'
-                                                ? '94px'
-                                                : gridPreset === 'single_1'
-                                                  ? '240px'
-                                                  : '72px',
+                                    width: `${activeLayout.qrSizePx}px`,
+                                    height: `${activeLayout.qrSizePx}px`,
+                                    maxWidth: `${activeLayout.qrSizePx}px`,
+                                    maxHeight: `${activeLayout.qrSizePx}px`,
                                 }"
                                 v-html="item.qr_svg"
                             />
 
+                            <!-- SKU, Category, and Branding Container -->
                             <div
-                                v-if="showSku"
-                                class="font-mono text-[9px] font-semibold tracking-wider text-slate-700"
+                                class="flex w-full shrink-0 flex-col items-center justify-center leading-none"
                             >
-                                {{ item.sku }}
-                            </div>
+                                <div
+                                    v-if="showSku"
+                                    class="font-mono font-semibold tracking-wider text-slate-800"
+                                    :class="
+                                        gridPreset === 'compact_30'
+                                            ? 'text-[8px]'
+                                            : gridPreset === 'standard_24'
+                                              ? 'text-[9px]'
+                                              : 'text-[10px]'
+                                    "
+                                >
+                                    {{ item.sku }}
+                                </div>
 
-                            <div
-                                v-if="showCategory && item.category"
-                                class="text-[8px] font-medium tracking-tight text-slate-500 uppercase"
-                            >
-                                {{ item.category }}
-                            </div>
+                                <div
+                                    v-if="showCategory && item.category"
+                                    class="mt-0.5 max-w-full truncate font-medium tracking-tight text-slate-500 uppercase"
+                                    :class="
+                                        gridPreset === 'compact_30'
+                                            ? 'text-[7px]'
+                                            : gridPreset === 'standard_24'
+                                              ? 'text-[8px]'
+                                              : 'text-[9px]'
+                                    "
+                                >
+                                    {{ item.category }}
+                                </div>
 
-                            <div
-                                class="mt-0.5 text-[7px] font-bold tracking-widest text-[#880000] uppercase"
-                            >
-                                PUP PRISM
+                                <div
+                                    class="mt-0.5 font-bold tracking-widest text-[#880000] uppercase"
+                                    :class="
+                                        gridPreset === 'compact_30'
+                                            ? 'text-[6.5px]'
+                                            : gridPreset === 'standard_24'
+                                              ? 'text-[7px]'
+                                              : 'text-[8px]'
+                                    "
+                                >
+                                    PUP PRISM
+                                </div>
                             </div>
                         </div>
                     </div>

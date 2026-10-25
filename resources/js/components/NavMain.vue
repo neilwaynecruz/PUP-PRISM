@@ -80,31 +80,48 @@ function isPendingItem(item: NavItem): boolean {
 </script>
 
 <template>
-    <SidebarGroup class="py-1">
+    <SidebarGroup
+        class="py-1 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:py-1"
+    >
+        <!-- Group Header Toggle (Visible in expanded sidebar mode only) -->
         <button
             type="button"
-            class="flex w-full items-center justify-between rounded-md px-3 py-1 text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase transition-colors hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            class="flex w-full items-center justify-between rounded-md px-3 py-1.5 text-[10px] font-semibold tracking-wider text-muted-foreground/80 uppercase transition-colors group-data-[collapsible=icon]:hidden hover:text-foreground focus:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             :aria-expanded="isOpen"
             @click="toggleGroup"
         >
-            <span>{{ title }}</span>
+            <span class="truncate">{{ title }}</span>
             <ChevronDown
                 class="h-3 w-3 shrink-0 text-muted-foreground/60 transition-transform duration-200"
                 :class="{ '-rotate-90': !isOpen }"
             />
         </button>
 
-        <SidebarMenu v-show="isOpen" class="mt-1 gap-0.5">
-            <SidebarMenuItem v-for="item in items" :key="item.title">
+        <!-- Subtle separator between navigation sections in collapsed icon mode -->
+        <div
+            class="mx-auto my-1.5 hidden h-px w-5 bg-sidebar-border/60 group-data-[collapsible=icon]:block first:group-data-[collapsible=icon]:hidden"
+            role="separator"
+        />
+
+        <!-- Menu items: always accessible in icon mode, toggleable in expanded mode -->
+        <SidebarMenu
+            class="mt-1 gap-1 group-data-[collapsible=icon]:mt-0 group-data-[collapsible=icon]:!flex group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center"
+            :class="{ hidden: !isOpen }"
+        >
+            <SidebarMenuItem
+                v-for="item in items"
+                :key="item.title"
+                class="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center"
+            >
                 <SidebarMenuButton
                     as-child
                     :is-active="isCurrentUrl(item.href)"
                     :tooltip="item.title"
-                    class="group relative transition-colors duration-200 data-[active=true]:bg-primary/10 data-[active=true]:font-semibold data-[active=true]:text-primary data-[active=true]:shadow-xs dark:data-[active=true]:bg-primary/15"
+                    class="group relative transition-colors duration-200 group-data-[collapsible=icon]:!size-9 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:!p-0 data-[active=true]:bg-primary/10 data-[active=true]:font-semibold data-[active=true]:text-primary data-[active=true]:shadow-xs dark:data-[active=true]:bg-primary/15"
                 >
                     <Link
                         :href="item.href"
-                        class="flex items-center gap-3"
+                        class="flex items-center gap-3 group-data-[collapsible=icon]:h-full group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:justify-center"
                         @click="handleNavigation()"
                     >
                         <component
@@ -112,13 +129,14 @@ function isPendingItem(item: NavItem): boolean {
                             aria-hidden="true"
                             class="h-[18px] w-[18px] shrink-0 text-muted-foreground/75 group-hover:text-foreground group-data-[active=true]:text-primary"
                         />
-                        <span class="text-xs font-medium">{{
-                            item.title
-                        }}</span>
+                        <span
+                            class="text-xs font-medium group-data-[collapsible=icon]:hidden"
+                            >{{ item.title }}</span
+                        >
                         <LoaderCircle
                             v-if="isPendingItem(item)"
                             aria-hidden="true"
-                            class="ml-auto h-3.5 w-3.5 animate-spin text-primary motion-reduce:animate-none"
+                            class="ml-auto h-3.5 w-3.5 animate-spin text-primary group-data-[collapsible=icon]:hidden motion-reduce:animate-none"
                         />
                     </Link>
                 </SidebarMenuButton>

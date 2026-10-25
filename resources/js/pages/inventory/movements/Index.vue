@@ -1,7 +1,21 @@
 <script setup lang="ts">
-import { Form, Head, Link, router } from '@inertiajs/vue3';
+import { Form, Head, router } from '@inertiajs/vue3';
+import {
+    Activity,
+    Calendar,
+    ClipboardCheck,
+    FileSpreadsheet,
+    FileText,
+    RotateCcw,
+    Search,
+    SlidersHorizontal,
+    User,
+    Wrench,
+} from 'lucide-vue-next';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import StockMovementController from '@/actions/App/Http/Controllers/Inventory/StockMovementController';
+import AdminCodeBadge from '@/components/admin/AdminCodeBadge.vue';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
@@ -148,7 +162,7 @@ function sortIndicator(col: string): string {
         return '';
     }
 
-    return direction.value === 'asc' ? ' \u2191' : ' \u2193';
+    return direction.value === 'asc' ? ' ↑' : ' ↓';
 }
 
 function formatDateTime(iso: string | null): string {
@@ -240,22 +254,74 @@ function humanizeReasonCode(value: string | null): string {
     <Head title="Stock Movements" />
 
     <div
-        class="flex flex-col gap-6 p-4 sm:p-6"
+        class="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8"
         data-testid="movements-index-page"
     >
-        <Heading
-            variant="small"
-            title="Stock movements"
-            description="Review receipts, issuances, transfers, adjustments, and cycle counts recorded in inventory history."
-        />
+        <!-- Header & Export Actions -->
+        <div
+            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+        >
+            <div class="space-y-1">
+                <Heading
+                    variant="small"
+                    title="Stock movements"
+                    description="Review historical inventory events: receipts, issuances, transfers, manual adjustments, and cycle count reconciliations."
+                />
+            </div>
 
-        <div class="grid gap-4 xl:grid-cols-2">
+            <!-- Export Buttons -->
             <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                class="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/20 p-0.5"
+            >
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    as-child
+                    class="h-8 gap-1.5 rounded-md px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                    <a
+                        :href="props.exportUrls.csv"
+                        title="Download Stock Movements CSV"
+                    >
+                        <FileSpreadsheet
+                            class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+                        />
+                        <span class="hidden sm:inline">CSV</span>
+                    </a>
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    as-child
+                    class="h-8 gap-1.5 rounded-md px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                >
+                    <a
+                        :href="props.exportUrls.pdf"
+                        title="Download Stock Movements PDF"
+                    >
+                        <FileText
+                            class="h-3.5 w-3.5 text-rose-600 dark:text-rose-400"
+                        />
+                        <span class="hidden sm:inline">PDF</span>
+                    </a>
+                </Button>
+            </div>
+        </div>
+
+        <!-- 2 Column Operations: Manual Adjustment & Cycle Count Reconciliation -->
+        <div class="grid gap-6 xl:grid-cols-2">
+            <!-- Manual stock adjustment -->
+            <div
+                class="rounded-xl border border-border/70 bg-card p-5 shadow-xs"
             >
                 <div class="mb-4">
-                    <div class="font-medium">Manual stock adjustment</div>
-                    <div class="text-sm text-muted-foreground">
+                    <div
+                        class="flex items-center gap-2 text-xs font-bold tracking-tight text-foreground uppercase"
+                    >
+                        <Wrench class="h-4 w-4 text-primary" />
+                        Manual stock adjustment
+                    </div>
+                    <div class="mt-1 text-xs text-muted-foreground">
                         Record audited inventory increases or decreases with a
                         structured reason code.
                     </div>
@@ -267,11 +333,15 @@ function humanizeReasonCode(value: string | null): string {
                     class="grid gap-3"
                 >
                     <div class="grid gap-1.5">
-                        <Label for="adjust-product">Product</Label>
+                        <Label
+                            for="adjust-product"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Product</Label
+                        >
                         <select
                             id="adjust-product"
                             name="product_id"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                            class="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                             required
                         >
                             <option value="" disabled selected>
@@ -288,9 +358,13 @@ function humanizeReasonCode(value: string | null): string {
                         <InputError :message="errors.product_id" />
                     </div>
 
-                    <div class="grid gap-1.5 md:grid-cols-2">
+                    <div class="grid gap-3 sm:grid-cols-2">
                         <div class="grid gap-1.5">
-                            <Label for="adjust-qty">Quantity change</Label>
+                            <Label
+                                for="adjust-qty"
+                                class="text-xs font-medium text-muted-foreground"
+                                >Quantity change</Label
+                            >
                             <Input
                                 id="adjust-qty"
                                 name="qty_delta"
@@ -298,19 +372,24 @@ function humanizeReasonCode(value: string | null): string {
                                 inputmode="numeric"
                                 placeholder="Example: -3 or 5"
                                 required
+                                class="h-10 rounded-lg text-sm"
                             />
-                            <p class="text-xs text-muted-foreground">
-                                Use a negative number to decrease stock or a
-                                positive number to increase it.
+                            <p class="text-[0.7rem] text-muted-foreground">
+                                Use negative to decrease or positive to
+                                increase.
                             </p>
                             <InputError :message="errors.qty_delta" />
                         </div>
                         <div class="grid gap-1.5">
-                            <Label for="adjust-reason">Reason</Label>
+                            <Label
+                                for="adjust-reason"
+                                class="text-xs font-medium text-muted-foreground"
+                                >Reason code</Label
+                            >
                             <select
                                 id="adjust-reason"
                                 name="reason_code"
-                                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                                class="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                                 required
                             >
                                 <option value="" disabled selected>
@@ -329,12 +408,16 @@ function humanizeReasonCode(value: string | null): string {
                     </div>
 
                     <div class="grid gap-1.5">
-                        <Label for="adjust-notes">Notes</Label>
+                        <Label
+                            for="adjust-notes"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Remarks / Notes</Label
+                        >
                         <textarea
                             id="adjust-notes"
                             name="notes"
-                            rows="3"
-                            class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                            rows="2"
+                            class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                             placeholder="Explain why this adjustment is needed…"
                         />
                         <InputError :message="errors.notes" />
@@ -343,7 +426,8 @@ function humanizeReasonCode(value: string | null): string {
                     <Button
                         type="submit"
                         :disabled="processing"
-                        class="w-full sm:w-auto"
+                        size="sm"
+                        class="h-9 w-full rounded-lg text-xs sm:w-auto"
                     >
                         {{
                             processing
@@ -354,14 +438,20 @@ function humanizeReasonCode(value: string | null): string {
                 </Form>
             </div>
 
+            <!-- Cycle count -->
             <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                class="rounded-xl border border-border/70 bg-card p-5 shadow-xs"
             >
                 <div class="mb-4">
-                    <div class="font-medium">Cycle count</div>
-                    <div class="text-sm text-muted-foreground">
-                        Capture a physical count and let the system write any
-                        resulting variance to stock history.
+                    <div
+                        class="flex items-center gap-2 text-xs font-bold tracking-tight text-foreground uppercase"
+                    >
+                        <ClipboardCheck class="h-4 w-4 text-primary" />
+                        Cycle count reconciliation
+                    </div>
+                    <div class="mt-1 text-xs text-muted-foreground">
+                        Capture physical counts and write variances
+                        automatically to stock history.
                     </div>
                 </div>
 
@@ -371,11 +461,15 @@ function humanizeReasonCode(value: string | null): string {
                     class="grid gap-3"
                 >
                     <div class="grid gap-1.5">
-                        <Label for="count-product">Product</Label>
+                        <Label
+                            for="count-product"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Product</Label
+                        >
                         <select
                             id="count-product"
                             name="product_id"
-                            class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                            class="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                             required
                         >
                             <option value="" disabled selected>
@@ -392,24 +486,38 @@ function humanizeReasonCode(value: string | null): string {
                         <InputError :message="errors.product_id" />
                     </div>
 
-                    <div class="grid gap-1.5 md:grid-cols-2">
+                    <div class="grid gap-3 sm:grid-cols-2">
                         <div class="grid gap-1.5">
-                            <Label for="counted-qty">Counted quantity</Label>
+                            <Label
+                                for="counted-qty"
+                                class="text-xs font-medium text-muted-foreground"
+                                >Counted quantity</Label
+                            >
                             <Input
                                 id="counted-qty"
                                 name="counted_qty"
                                 type="number"
                                 min="0"
+                                inputmode="numeric"
+                                placeholder="Example: 24"
                                 required
+                                class="h-10 rounded-lg text-sm"
                             />
+                            <p class="text-[0.7rem] text-muted-foreground">
+                                Actual units counted in stock.
+                            </p>
                             <InputError :message="errors.counted_qty" />
                         </div>
                         <div class="grid gap-1.5">
-                            <Label for="count-reason">Reason</Label>
+                            <Label
+                                for="count-reason"
+                                class="text-xs font-medium text-muted-foreground"
+                                >Reason code</Label
+                            >
                             <select
                                 id="count-reason"
                                 name="reason_code"
-                                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                                class="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                                 required
                             >
                                 <option value="" disabled selected>
@@ -428,13 +536,17 @@ function humanizeReasonCode(value: string | null): string {
                     </div>
 
                     <div class="grid gap-1.5">
-                        <Label for="count-notes">Notes</Label>
+                        <Label
+                            for="count-notes"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Remarks / Notes</Label
+                        >
                         <textarea
                             id="count-notes"
                             name="notes"
-                            rows="3"
-                            class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
-                            placeholder="Add details about the physical count…"
+                            rows="2"
+                            class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                            placeholder="Optional notes regarding the count…"
                         />
                         <InputError :message="errors.notes" />
                     </div>
@@ -442,7 +554,8 @@ function humanizeReasonCode(value: string | null): string {
                     <Button
                         type="submit"
                         :disabled="processing"
-                        class="w-full sm:w-auto"
+                        size="sm"
+                        class="h-9 w-full rounded-lg text-xs sm:w-auto"
                     >
                         {{
                             processing
@@ -454,133 +567,20 @@ function humanizeReasonCode(value: string | null): string {
             </div>
         </div>
 
-        <div class="rounded-xl border border-border/60 bg-card p-5 shadow-sm">
-            <div
-                class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
-            >
-                <span
-                    class="inline-block h-1.5 w-1.5 rounded-full bg-primary/60"
-                />
-                Filters
-            </div>
-
-            <div
-                class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
-            >
-                <div class="grid gap-1.5">
-                    <label
-                        for="filter-search"
-                        class="text-[11px] font-medium tracking-wider text-muted-foreground/70 uppercase"
-                        >Search</label
+        <!-- Filter Card -->
+        <div class="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
+            <div class="mb-3 flex items-center justify-between">
+                <div
+                    class="flex items-center gap-2 text-xs font-semibold tracking-wide text-foreground uppercase"
+                >
+                    <SlidersHorizontal class="h-3.5 w-3.5 text-primary" />
+                    <span>Search & Filters</span>
+                    <span
+                        v-if="hasActiveFilters"
+                        class="rounded-full bg-primary/10 px-2 py-0.5 text-[0.65rem] font-bold text-primary"
                     >
-                    <Input
-                        id="filter-search"
-                        v-model="search"
-                        data-testid="movement-search-input"
-                        placeholder="SKU, name, tag, ref, user, notes\u2026"
-                        class="rounded-lg"
-                    />
-                </div>
-
-                <div class="grid gap-1.5">
-                    <label
-                        for="filter-type"
-                        class="text-[11px] font-medium tracking-wider text-muted-foreground/70 uppercase"
-                        >Movement type</label
-                    >
-                    <select
-                        id="filter-type"
-                        v-model="type"
-                        data-testid="movement-type-select"
-                        class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
-                    >
-                        <option value="">All types</option>
-                        <option value="receive">Received</option>
-                        <option value="issue">Issued</option>
-                        <option value="transfer">Transferred</option>
-                        <option value="condemn">Condemned</option>
-                        <option value="return">Returned</option>
-                        <option value="adjustment">Adjustment</option>
-                        <option value="cycle_count">Cycle count</option>
-                    </select>
-                </div>
-
-                <div class="grid gap-1.5">
-                    <label
-                        for="filter-user"
-                        class="text-[11px] font-medium tracking-wider text-muted-foreground/70 uppercase"
-                        >Performed by</label
-                    >
-                    <select
-                        id="filter-user"
-                        v-model="performedBy"
-                        data-testid="movement-user-select"
-                        class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
-                    >
-                        <option value="">All users</option>
-                        <option
-                            v-for="u in users"
-                            :key="u.id"
-                            :value="String(u.id)"
-                        >
-                            {{ u.name }}
-                        </option>
-                    </select>
-                </div>
-
-                <div class="grid gap-1.5">
-                    <label
-                        for="filter-date-from"
-                        class="text-[11px] font-medium tracking-wider text-muted-foreground/70 uppercase"
-                        >Date from</label
-                    >
-                    <Input
-                        id="filter-date-from"
-                        v-model="dateFrom"
-                        data-testid="movement-date-from-input"
-                        type="date"
-                        class="rounded-lg"
-                    />
-                </div>
-
-                <div class="grid gap-1.5">
-                    <label
-                        for="filter-date-to"
-                        class="text-[11px] font-medium tracking-wider text-muted-foreground/70 uppercase"
-                        >Date to</label
-                    >
-                    <Input
-                        id="filter-date-to"
-                        v-model="dateTo"
-                        data-testid="movement-date-to-input"
-                        type="date"
-                        class="rounded-lg"
-                    />
-                </div>
-            </div>
-
-            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <div class="flex flex-wrap items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        as-child
-                        class="rounded-lg border-dashed"
-                    >
-                        <a :href="props.exportUrls.csv"
-                            >Download Stock Movements (CSV)</a
-                        >
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        as-child
-                        class="rounded-lg border-dashed"
-                    >
-                        <a :href="props.exportUrls.pdf"
-                            >Download Stock Movements (PDF)</a
-                        >
-                    </Button>
+                        Active
+                    </span>
                 </div>
 
                 <Button
@@ -588,249 +588,417 @@ function humanizeReasonCode(value: string | null): string {
                     variant="ghost"
                     size="sm"
                     data-testid="movement-reset-filters"
-                    class="rounded-lg text-muted-foreground"
+                    class="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
                     @click="resetFilters"
                 >
-                    Reset filters
+                    <RotateCcw class="h-3 w-3" />
+                    Clear filters
                 </Button>
+            </div>
+
+            <div
+                class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+            >
+                <div class="grid gap-1">
+                    <label
+                        for="filter-search"
+                        class="text-xs font-medium text-muted-foreground"
+                        >Search</label
+                    >
+                    <div class="relative">
+                        <Search
+                            class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                        />
+                        <Input
+                            id="filter-search"
+                            v-model="search"
+                            data-testid="movement-search-input"
+                            placeholder="SKU, product, tag, user…"
+                            class="h-10 rounded-lg pl-9 text-sm"
+                        />
+                    </div>
+                </div>
+
+                <div class="grid gap-1">
+                    <label
+                        for="filter-type"
+                        class="text-xs font-medium text-muted-foreground"
+                        >Movement type</label
+                    >
+                    <div class="relative">
+                        <Activity
+                            class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                        />
+                        <select
+                            id="filter-type"
+                            v-model="type"
+                            data-testid="movement-type-select"
+                            class="h-10 w-full rounded-lg border border-input bg-background pr-8 pl-9 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                        >
+                            <option value="">All types</option>
+                            <option value="receive">Received</option>
+                            <option value="issue">Issued</option>
+                            <option value="transfer">Transferred</option>
+                            <option value="condemn">Condemned</option>
+                            <option value="return">Returned</option>
+                            <option value="adjustment">Adjustment</option>
+                            <option value="cycle_count">Cycle count</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid gap-1">
+                    <label
+                        for="filter-user"
+                        class="text-xs font-medium text-muted-foreground"
+                        >Performed by</label
+                    >
+                    <div class="relative">
+                        <User
+                            class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                        />
+                        <select
+                            id="filter-user"
+                            v-model="performedBy"
+                            data-testid="movement-user-select"
+                            class="h-10 w-full rounded-lg border border-input bg-background pr-8 pl-9 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                        >
+                            <option value="">All users</option>
+                            <option
+                                v-for="u in users"
+                                :key="u.id"
+                                :value="String(u.id)"
+                            >
+                                {{ u.name }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid gap-1">
+                    <label
+                        for="filter-date-from"
+                        class="text-xs font-medium text-muted-foreground"
+                        >Date from</label
+                    >
+                    <div class="relative">
+                        <Calendar
+                            class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                        />
+                        <Input
+                            id="filter-date-from"
+                            v-model="dateFrom"
+                            data-testid="movement-date-from-input"
+                            type="date"
+                            class="h-10 rounded-lg pl-9 text-sm"
+                        />
+                    </div>
+                </div>
+
+                <div class="grid gap-1">
+                    <label
+                        for="filter-date-to"
+                        class="text-xs font-medium text-muted-foreground"
+                        >Date to</label
+                    >
+                    <div class="relative">
+                        <Calendar
+                            class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                        />
+                        <Input
+                            id="filter-date-to"
+                            v-model="dateTo"
+                            data-testid="movement-date-to-input"
+                            type="date"
+                            class="h-10 rounded-lg pl-9 text-sm"
+                        />
+                    </div>
+                </div>
             </div>
         </div>
 
+        <!-- Mobile Movements List -->
         <div class="grid gap-3 md:hidden">
+            <div
+                v-if="movements.data.length === 0"
+                class="rounded-xl border border-dashed border-border/70 p-8 text-center"
+            >
+                <p class="text-sm font-semibold text-foreground">
+                    No stock movements found
+                </p>
+                <p class="mt-1 text-xs text-muted-foreground">
+                    Try changing your search keywords or filter criteria.
+                </p>
+            </div>
             <div
                 v-for="m in movements.data"
                 :key="m.id"
-                class="rounded-xl border border-border/60 p-4 text-sm"
+                class="rounded-xl border border-border/70 bg-card p-4 text-sm shadow-xs"
             >
                 <div class="flex items-start justify-between gap-3">
                     <span
                         :class="[
-                            'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wider uppercase',
+                            'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wider uppercase',
                             movementTypeColor(m.movement_type),
                         ]"
                     >
                         <span
                             :class="[
-                                'h-1 w-1 rounded-full',
+                                'h-1.5 w-1.5 rounded-full',
                                 movementTypeDot(m.movement_type),
                             ]"
                         />
                         {{ movementTypeLabel(m.movement_type) }}
                     </span>
                     <div class="font-mono text-xs text-muted-foreground">
-                        IP {{ m.ip_address ?? '\u2014' }}
-                    </div>
-                </div>
-
-                <div class="mt-3 space-y-2 text-muted-foreground">
-                    <div v-if="m.product">
-                        {{ m.product.name }} \u00b7 {{ m.product.sku }}
-                    </div>
-                    <div v-if="m.asset">
-                        Asset tag: {{ m.asset.tag_code }} ({{ m.asset.status }})
-                    </div>
-                    <div v-if="m.stock_lot?.reference_no">
-                        Ref: {{ m.stock_lot.reference_no }}
-                    </div>
-                    <div>Actor: {{ m.performed_by.name }}</div>
-                    <div v-if="m.accountable_position">
-                        Position: {{ m.accountable_position.title
-                        }}{{
-                            m.accountable_position.department
-                                ? `, ${m.accountable_position.department}`
-                                : ''
-                        }}
-                    </div>
-                    <div v-if="m.qty_delta !== null">
-                        Quantity: {{ m.qty_delta }}
-                    </div>
-                    <div>Reason: {{ humanizeReasonCode(m.reason_code) }}</div>
-                    <div v-if="m.counted_qty !== null">
-                        Counted: {{ m.counted_qty }} (variance
-                        {{ m.variance_qty ?? 0 }})
-                    </div>
-                    <div v-if="m.notes">Notes: {{ m.notes }}</div>
-                    <div class="text-xs text-muted-foreground/70">
                         {{ formatDateTime(m.performed_at) }}
                     </div>
                 </div>
-            </div>
 
-            <div
-                v-if="movements.data.length === 0"
-                class="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground"
-            >
-                No stock movements match the current filters.
+                <div class="mt-3">
+                    <div v-if="m.product">
+                        <div class="font-semibold text-foreground">
+                            {{ m.product.name }}
+                        </div>
+                        <div class="mt-0.5">
+                            <AdminCodeBadge :value="m.product.sku" />
+                        </div>
+                    </div>
+                    <div v-if="m.asset" class="mt-2 flex items-center gap-2">
+                        <AdminCodeBadge :value="m.asset.tag_code" />
+                        <span class="text-xs text-muted-foreground">{{
+                            m.asset.status
+                        }}</span>
+                    </div>
+                </div>
+
+                <dl
+                    class="mt-3 grid grid-cols-2 gap-2 border-t border-border/40 pt-3 text-xs"
+                >
+                    <div>
+                        <dt class="text-muted-foreground">Qty change</dt>
+                        <dd
+                            class="mt-0.5 font-mono font-bold"
+                            :class="
+                                (m.qty_delta ?? 0) > 0
+                                    ? 'text-emerald-600 dark:text-emerald-400'
+                                    : (m.qty_delta ?? 0) < 0
+                                      ? 'text-rose-600 dark:text-rose-400'
+                                      : 'text-foreground'
+                            "
+                        >
+                            {{
+                                m.qty_delta !== null
+                                    ? m.qty_delta > 0
+                                        ? `+${m.qty_delta}`
+                                        : m.qty_delta
+                                    : '—'
+                            }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-muted-foreground">Reason</dt>
+                        <dd class="mt-0.5 font-medium text-foreground">
+                            {{ humanizeReasonCode(m.reason_code) }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-muted-foreground">User</dt>
+                        <dd class="mt-0.5 text-foreground">
+                            {{ m.performed_by.name }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-muted-foreground">Position</dt>
+                        <dd class="mt-0.5 truncate text-foreground">
+                            {{ m.accountable_position?.title ?? '—' }}
+                        </dd>
+                    </div>
+                </dl>
             </div>
         </div>
 
+        <!-- Desktop Movements Table -->
         <div
-            class="hidden overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm md:block"
+            class="hidden overflow-hidden rounded-xl border border-border/70 bg-card shadow-xs md:block"
         >
-            <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left">
-                    <tr class="[&>th]:px-4 [&>th]:py-3">
-                        <th
-                            class="cursor-pointer whitespace-nowrap select-none"
-                            @click="toggleSort('performed_at')"
-                        >
-                            When{{ sortIndicator('performed_at') }}
-                        </th>
-                        <th
-                            class="cursor-pointer select-none"
-                            @click="toggleSort('movement_type')"
-                        >
-                            Type{{ sortIndicator('movement_type') }}
-                        </th>
-                        <th>Product</th>
-                        <th>Asset</th>
-                        <th class="text-right">Qty</th>
-                        <th>Reason</th>
-                        <th
-                            class="cursor-pointer select-none"
-                            @click="toggleSort('performed_by')"
-                        >
-                            Actor{{ sortIndicator('performed_by') }}
-                        </th>
-                        <th>Position</th>
-                        <th>IP</th>
-                        <th>Notes</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border/60">
-                    <tr v-if="movements.data.length === 0">
-                        <td
-                            class="px-4 py-10 text-center text-muted-foreground"
-                            colspan="10"
-                        >
-                            No stock movements match the current filters.
-                        </td>
-                    </tr>
-
-                    <tr
-                        v-for="m in movements.data"
-                        :key="m.id"
-                        class="[&>td]:px-4 [&>td]:py-3"
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <caption class="sr-only">
+                        Stock movements audit trail
+                    </caption>
+                    <thead
+                        class="border-b border-border/60 bg-muted/40 text-left"
                     >
-                        <td
-                            class="text-xs whitespace-nowrap text-muted-foreground"
+                        <tr
+                            class="text-xs font-semibold tracking-wider text-muted-foreground uppercase [&>th]:px-4 [&>th]:py-3"
                         >
-                            {{ formatDateTime(m.performed_at) }}
-                        </td>
-                        <td>
-                            <span
-                                :class="[
-                                    'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-semibold tracking-wider uppercase',
-                                    movementTypeColor(m.movement_type),
-                                ]"
+                            <th
+                                class="cursor-pointer select-none hover:text-foreground"
+                                scope="col"
+                                @click="toggleSort('performed_at')"
+                            >
+                                <span class="inline-flex items-center gap-1">
+                                    Date {{ sortIndicator('performed_at') }}
+                                </span>
+                            </th>
+                            <th scope="col">Type</th>
+                            <th scope="col">Product</th>
+                            <th scope="col">Asset</th>
+                            <th
+                                class="cursor-pointer text-right select-none hover:text-foreground"
+                                scope="col"
+                                @click="toggleSort('qty_delta')"
                             >
                                 <span
+                                    class="inline-flex items-center justify-end gap-1"
+                                >
+                                    Qty delta {{ sortIndicator('qty_delta') }}
+                                </span>
+                            </th>
+                            <th scope="col">Reason</th>
+                            <th scope="col">User</th>
+                            <th scope="col">Accountability</th>
+                            <th scope="col">IP</th>
+                            <th scope="col">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border/60">
+                        <tr v-if="movements.data.length === 0">
+                            <td
+                                class="px-4 py-12 text-center text-sm text-muted-foreground"
+                                colspan="10"
+                            >
+                                No stock movements match the current filters.
+                            </td>
+                        </tr>
+
+                        <tr
+                            v-for="m in movements.data"
+                            :key="m.id"
+                            class="transition-colors hover:bg-muted/30 [&>td]:px-4 [&>td]:py-3.5"
+                        >
+                            <td
+                                class="text-xs whitespace-nowrap text-muted-foreground"
+                            >
+                                {{ formatDateTime(m.performed_at) }}
+                            </td>
+                            <td>
+                                <span
                                     :class="[
-                                        'h-1 w-1 rounded-full',
-                                        movementTypeDot(m.movement_type),
+                                        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tracking-wider uppercase',
+                                        movementTypeColor(m.movement_type),
                                     ]"
-                                />
-                                {{ movementTypeLabel(m.movement_type) }}
-                            </span>
-                        </td>
-                        <td>
-                            <div v-if="m.product">
-                                <div class="font-medium">
-                                    {{ m.product.name }}
+                                >
+                                    <span
+                                        :class="[
+                                            'h-1.5 w-1.5 rounded-full',
+                                            movementTypeDot(m.movement_type),
+                                        ]"
+                                    />
+                                    {{ movementTypeLabel(m.movement_type) }}
+                                </span>
+                            </td>
+                            <td>
+                                <div v-if="m.product">
+                                    <div class="font-medium text-foreground">
+                                        {{ m.product.name }}
+                                    </div>
+                                    <div class="mt-0.5">
+                                        <AdminCodeBadge
+                                            :value="m.product.sku"
+                                        />
+                                    </div>
+                                </div>
+                                <span v-else class="text-muted-foreground/60"
+                                    >—</span
+                                >
+                            </td>
+                            <td>
+                                <div v-if="m.asset" class="space-y-0.5">
+                                    <AdminCodeBadge :value="m.asset.tag_code" />
+                                    <div
+                                        class="text-[0.7rem] text-muted-foreground"
+                                    >
+                                        {{ m.asset.status }}
+                                    </div>
+                                </div>
+                                <span v-else class="text-muted-foreground/60"
+                                    >—</span
+                                >
+                            </td>
+                            <td class="text-right font-mono font-bold">
+                                <span
+                                    v-if="m.qty_delta !== null"
+                                    :class="
+                                        m.qty_delta > 0
+                                            ? 'text-emerald-600 dark:text-emerald-400'
+                                            : m.qty_delta < 0
+                                              ? 'text-rose-600 dark:text-rose-400'
+                                              : 'text-foreground'
+                                    "
+                                >
+                                    {{
+                                        m.qty_delta > 0
+                                            ? `+${m.qty_delta}`
+                                            : m.qty_delta
+                                    }}
+                                </span>
+                                <span v-else class="text-muted-foreground/60"
+                                    >—</span
+                                >
+                            </td>
+                            <td>
+                                <div class="font-medium text-foreground">
+                                    {{ humanizeReasonCode(m.reason_code) }}
                                 </div>
                                 <div
-                                    class="font-mono text-xs text-muted-foreground"
+                                    v-if="m.counted_qty !== null"
+                                    class="text-xs text-muted-foreground"
                                 >
-                                    {{ m.product.sku }}
+                                    Counted: {{ m.counted_qty }}, var:
+                                    {{ m.variance_qty ?? 0 }}
                                 </div>
-                            </div>
-                            <div v-else class="text-muted-foreground">—</div>
-                        </td>
-                        <td>
-                            <div v-if="m.asset">
-                                <div class="font-medium">
-                                    {{ m.asset.tag_code }}
+                            </td>
+                            <td>
+                                <div class="font-medium text-foreground">
+                                    {{ m.performed_by.name }}
                                 </div>
-                                <div class="text-xs text-muted-foreground">
-                                    {{ m.asset.status }}
+                            </td>
+                            <td>
+                                <div
+                                    v-if="m.accountable_position"
+                                    class="font-medium text-foreground"
+                                >
+                                    {{ m.accountable_position.title }}
                                 </div>
-                            </div>
-                            <div v-else class="text-muted-foreground">—</div>
-                        </td>
-                        <td class="text-right font-mono">
-                            <span v-if="m.qty_delta !== null">{{
-                                m.qty_delta
-                            }}</span>
-                            <span v-else class="text-muted-foreground">—</span>
-                        </td>
-                        <td>
-                            <div class="font-medium">
-                                {{ humanizeReasonCode(m.reason_code) }}
-                            </div>
-                            <div
-                                v-if="m.counted_qty !== null"
-                                class="text-xs text-muted-foreground"
+                                <div
+                                    v-if="m.accountable_position"
+                                    class="text-xs text-muted-foreground"
+                                >
+                                    {{
+                                        m.accountable_position.department ??
+                                        m.accountable_position.code
+                                    }}
+                                </div>
+                                <span v-else class="text-muted-foreground/60"
+                                    >—</span
+                                >
+                            </td>
+                            <td class="font-mono text-xs text-muted-foreground">
+                                {{ m.ip_address ?? '—' }}
+                            </td>
+                            <td
+                                class="max-w-xs truncate text-xs text-muted-foreground"
                             >
-                                Counted {{ m.counted_qty }}, variance
-                                {{ m.variance_qty ?? 0 }}
-                            </div>
-                        </td>
-                        <td>
-                            <div class="font-medium">
-                                {{ m.performed_by.name }}
-                            </div>
-                        </td>
-                        <td>
-                            <div
-                                v-if="m.accountable_position"
-                                class="font-medium"
-                            >
-                                {{ m.accountable_position.title }}
-                            </div>
-                            <div
-                                v-if="m.accountable_position"
-                                class="text-xs text-muted-foreground"
-                            >
-                                {{
-                                    m.accountable_position.department ??
-                                    m.accountable_position.code
-                                }}
-                            </div>
-                            <div v-else class="text-muted-foreground">—</div>
-                        </td>
-                        <td class="font-mono text-xs text-muted-foreground">
-                            {{ m.ip_address ?? '—' }}
-                        </td>
-                        <td class="max-w-sm truncate text-muted-foreground">
-                            {{ m.notes ?? '—' }}
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
+                                {{ m.notes ?? '—' }}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
 
-        <div
-            v-if="movements.links.length"
-            class="flex flex-wrap items-center justify-center gap-2"
-        >
-            <Button
-                v-for="(link, i) in movements.links"
-                :key="i"
-                variant="ghost"
-                size="sm"
-                :disabled="!link.url"
-                as-child
-            >
-                <Link
-                    v-if="link.url"
-                    :href="link.url"
-                    preserve-scroll
-                    preserve-state
-                >
-                    <span v-html="link.label" />
-                </Link>
-                <span v-else v-html="link.label" />
-            </Button>
-        </div>
+        <AdminPagination :links="movements.links" />
     </div>
 </template>

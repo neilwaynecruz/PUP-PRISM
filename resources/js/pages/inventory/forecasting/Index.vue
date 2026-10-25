@@ -8,6 +8,7 @@ import {
     FileSpreadsheet,
     Gauge,
     PackageSearch,
+    RotateCcw,
     Search,
     SlidersHorizontal,
     TrendingUp,
@@ -166,6 +167,21 @@ const optimizationClass = ref('');
 // Expiration filters
 const expiringSearch = ref('');
 const expiringStatus = ref('');
+
+const hasActiveForecastFilters = computed(
+    () =>
+        search.value.trim() !== '' ||
+        urgency.value !== '' ||
+        method.value !== '' ||
+        minConfidence.value !== '',
+);
+
+function resetForecastFilters(): void {
+    search.value = '';
+    urgency.value = '';
+    method.value = '';
+    minConfidence.value = '';
+}
 
 let refreshTimer: number | undefined;
 
@@ -507,9 +523,19 @@ const filteredExpiringLots = computed(() => {
                             <PackageSearch class="h-5 w-5" />
                         </div>
                         <div>
-                            <h2 class="text-base font-semibold tracking-tight">
-                                Consumable forecast registry
-                            </h2>
+                            <div class="flex items-center gap-2">
+                                <h2
+                                    class="text-base font-semibold tracking-tight"
+                                >
+                                    Consumable forecast registry
+                                </h2>
+                                <span
+                                    v-if="hasActiveForecastFilters"
+                                    class="rounded-full bg-primary/10 px-2 py-0.5 text-[0.65rem] font-bold text-primary"
+                                >
+                                    Filtered
+                                </span>
+                            </div>
                             <p class="mt-1 text-sm text-muted-foreground">
                                 Filter by urgency, confidence, or forecasting
                                 method.
@@ -517,53 +543,77 @@ const filteredExpiringLots = computed(() => {
                         </div>
                     </div>
 
-                    <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <div class="relative">
-                            <Search
-                                class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                            />
+                    <div class="flex flex-col gap-2">
+                        <div
+                            v-if="hasActiveForecastFilters"
+                            class="flex justify-end"
+                        >
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                class="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                @click="resetForecastFilters"
+                            >
+                                <RotateCcw class="h-3 w-3" />
+                                Clear filters
+                            </Button>
+                        </div>
+                        <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                            <div class="relative">
+                                <Search
+                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                                />
+                                <Input
+                                    v-model="search"
+                                    placeholder="Search SKU or product name"
+                                    aria-label="Search forecasts"
+                                    class="h-11 rounded-xl border-border/70 bg-background/80 pl-9 shadow-inner shadow-black/5 focus-visible:ring-blue-500/30"
+                                />
+                            </div>
+                            <select
+                                v-model="urgency"
+                                class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-blue-400/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                                aria-label="Urgency filter"
+                            >
+                                <option value="">All urgency levels</option>
+                                <option value="urgent">
+                                    Urgent (≤ 7 days)
+                                </option>
+                                <option value="at_risk">
+                                    At risk (8–14 days)
+                                </option>
+                                <option value="stable">
+                                    Stable (> 14 days)
+                                </option>
+                                <option value="unknown">
+                                    No stockout date
+                                </option>
+                            </select>
+                            <select
+                                v-model="method"
+                                class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-violet-400/40 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 focus:outline-none"
+                                aria-label="Method filter"
+                            >
+                                <option value="">All methods</option>
+                                <option
+                                    v-for="option in methodOptions"
+                                    :key="option.value"
+                                    :value="option.value"
+                                >
+                                    {{ option.label }}
+                                </option>
+                            </select>
                             <Input
-                                v-model="search"
-                                placeholder="Search SKU or product name"
-                                aria-label="Search forecasts"
-                                class="h-11 rounded-xl border-border/70 bg-background/80 pl-9 shadow-inner shadow-black/5 focus-visible:ring-blue-500/30"
+                                v-model="minConfidence"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="1"
+                                placeholder="Min confidence %"
+                                aria-label="Minimum confidence"
+                                class="h-11 rounded-xl border-border/70 bg-background/80 shadow-inner shadow-black/5 focus-visible:ring-cyan-500/30"
                             />
                         </div>
-                        <select
-                            v-model="urgency"
-                            class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-blue-400/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
-                            aria-label="Urgency filter"
-                        >
-                            <option value="">All urgency levels</option>
-                            <option value="urgent">Urgent (≤ 7 days)</option>
-                            <option value="at_risk">At risk (8–14 days)</option>
-                            <option value="stable">Stable (> 14 days)</option>
-                            <option value="unknown">No stockout date</option>
-                        </select>
-                        <select
-                            v-model="method"
-                            class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-violet-400/40 focus:border-violet-400 focus:ring-2 focus:ring-violet-500/20 focus:outline-none"
-                            aria-label="Method filter"
-                        >
-                            <option value="">All methods</option>
-                            <option
-                                v-for="option in methodOptions"
-                                :key="option.value"
-                                :value="option.value"
-                            >
-                                {{ option.label }}
-                            </option>
-                        </select>
-                        <Input
-                            v-model="minConfidence"
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="1"
-                            placeholder="Min confidence %"
-                            aria-label="Minimum confidence"
-                            class="h-11 rounded-xl border-border/70 bg-background/80 shadow-inner shadow-black/5 focus-visible:ring-cyan-500/30"
-                        />
                     </div>
                 </div>
 

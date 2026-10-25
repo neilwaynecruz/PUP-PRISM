@@ -1,9 +1,20 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { MapPin, PackageSearch } from 'lucide-vue-next';
-import { onBeforeUnmount, ref, watch } from 'vue';
+import {
+    Activity,
+    Boxes,
+    MapPin,
+    PackageSearch,
+    RotateCcw,
+    Search,
+    SlidersHorizontal,
+    Tag,
+} from 'lucide-vue-next';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import AdminCodeBadge from '@/components/admin/AdminCodeBadge.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { index, show } from '@/routes/inventory/assets';
 
@@ -40,6 +51,20 @@ const locationId = ref(
     props.filters.location_id ? String(props.filters.location_id) : '',
 );
 const lifecycleStatus = ref(props.filters.lifecycle_status ?? '');
+
+const hasActiveFilters = computed(
+    () =>
+        search.value.trim() !== '' ||
+        locationId.value !== '' ||
+        lifecycleStatus.value !== '',
+);
+
+function resetFilters(): void {
+    search.value = '';
+    locationId.value = '';
+    lifecycleStatus.value = '';
+}
+
 let timer: number | undefined;
 
 watch([search, locationId, lifecycleStatus], () => {
@@ -56,6 +81,7 @@ watch([search, locationId, lifecycleStatus], () => {
         );
     }, 250);
 });
+
 onBeforeUnmount(() => window.clearTimeout(timer));
 
 function label(value: string): string {
@@ -64,16 +90,36 @@ function label(value: string): string {
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function tone(value: string): string {
+function lifecycleTone(value: string): string {
     if (['active', 'serviceable', 'Available'].includes(value)) {
-        return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+        return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-300';
     }
 
     if (['retired', 'Unserviceable'].includes(value)) {
-        return 'bg-amber-500/10 text-amber-700 dark:text-amber-300';
+        return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300';
     }
 
-    return 'bg-rose-500/10 text-rose-700 dark:text-rose-300';
+    return 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-300';
+}
+
+function statusTone(value: string): string {
+    if (
+        ['serviceable', 'available', 'active', 'operational'].includes(
+            value.toLowerCase(),
+        )
+    ) {
+        return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+    }
+
+    if (['in_use', 'assigned'].includes(value.toLowerCase())) {
+        return 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300';
+    }
+
+    if (['maintenance', 'under_repair'].includes(value.toLowerCase())) {
+        return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300';
+    }
+
+    return 'border-muted bg-muted/60 text-muted-foreground';
 }
 </script>
 
@@ -81,126 +127,255 @@ function tone(value: string): string {
     <Head title="Asset registry" />
     <div
         class="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8"
+        data-testid="assets-index-page"
     >
-        <Heading
-            variant="small"
-            title="Asset registry"
-            description="Find tagged university property, review its current location, and open its maintenance and lifecycle history."
-        />
-
-        <fieldset
-            class="grid gap-3 rounded-xl border border-border/70 bg-card p-4 sm:grid-cols-3"
+        <!-- Header -->
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
         >
-            <legend class="sr-only">Filter assets</legend>
-            <label class="grid gap-1 text-xs font-medium text-muted-foreground"
-                >Search
-                <Input
-                    v-model="search"
-                    placeholder="Enter an asset tag, product, or SKU"
-                    autocomplete="off"
-                />
-            </label>
-            <label class="grid gap-1 text-xs font-medium text-muted-foreground"
-                >Location
-                <select
-                    v-model="locationId"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
-                >
-                    <option value="">All locations</option>
-                    <option
-                        v-for="location in locations"
-                        :key="location.id"
-                        :value="String(location.id)"
-                    >
-                        {{ location.code }} — {{ location.name }}
-                    </option>
-                </select>
-            </label>
-            <label class="grid gap-1 text-xs font-medium text-muted-foreground"
-                >Lifecycle
-                <select
-                    v-model="lifecycleStatus"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
-                >
-                    <option value="">All lifecycle states</option>
-                    <option value="active">Active</option>
-                    <option value="retired">Retired</option>
-                    <option value="disposed">Disposed</option>
-                </select>
-            </label>
-        </fieldset>
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <Heading
+                        variant="small"
+                        title="Asset registry"
+                        description="Find tagged university property, review physical locations, and track maintenance and lifecycle history."
+                    />
+                </div>
+            </div>
 
+            <div class="flex items-center gap-2">
+                <div
+                    class="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-1.5 text-xs text-muted-foreground"
+                >
+                    <Boxes class="h-3.5 w-3.5 text-primary" />
+                    <span>Total assets:</span>
+                    <strong class="font-semibold text-foreground">{{
+                        assets.total
+                    }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Bar -->
+        <div class="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
+            <div class="mb-3 flex items-center justify-between">
+                <div
+                    class="flex items-center gap-2 text-xs font-semibold tracking-wide text-foreground uppercase"
+                >
+                    <SlidersHorizontal class="h-3.5 w-3.5 text-primary" />
+                    <span>Search & Filters</span>
+                    <span
+                        v-if="hasActiveFilters"
+                        class="rounded-full bg-primary/10 px-2 py-0.5 text-[0.65rem] font-bold text-primary"
+                    >
+                        Active
+                    </span>
+                </div>
+
+                <Button
+                    v-if="hasActiveFilters"
+                    variant="ghost"
+                    size="sm"
+                    class="h-7 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    @click="resetFilters"
+                >
+                    <RotateCcw class="h-3 w-3" />
+                    Clear filters
+                </Button>
+            </div>
+
+            <fieldset class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <legend class="sr-only">Filter assets</legend>
+                <div class="grid gap-1">
+                    <label
+                        for="asset-search"
+                        class="text-xs font-medium text-muted-foreground"
+                    >
+                        Search
+                    </label>
+                    <div class="relative">
+                        <Search
+                            class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                        />
+                        <Input
+                            id="asset-search"
+                            v-model="search"
+                            placeholder="Enter an asset tag, product, or SKU"
+                            autocomplete="off"
+                            class="h-10 rounded-lg pl-9 text-sm"
+                        />
+                    </div>
+                </div>
+
+                <div class="grid gap-1">
+                    <label
+                        for="asset-location"
+                        class="text-xs font-medium text-muted-foreground"
+                    >
+                        Location
+                    </label>
+                    <div class="relative">
+                        <MapPin
+                            class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                        />
+                        <select
+                            id="asset-location"
+                            v-model="locationId"
+                            class="h-10 w-full rounded-lg border border-input bg-background pr-8 pl-9 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                        >
+                            <option value="">All locations</option>
+                            <option
+                                v-for="location in locations"
+                                :key="location.id"
+                                :value="String(location.id)"
+                            >
+                                {{ location.code }} — {{ location.name }}
+                            </option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid gap-1 sm:col-span-2 lg:col-span-1">
+                    <label
+                        for="asset-lifecycle"
+                        class="text-xs font-medium text-muted-foreground"
+                    >
+                        Lifecycle state
+                    </label>
+                    <div class="relative">
+                        <Activity
+                            class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                        />
+                        <select
+                            id="asset-lifecycle"
+                            v-model="lifecycleStatus"
+                            class="h-10 w-full rounded-lg border border-input bg-background pr-8 pl-9 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                        >
+                            <option value="">All lifecycle states</option>
+                            <option value="active">Active</option>
+                            <option value="retired">Retired</option>
+                            <option value="disposed">Disposed</option>
+                        </select>
+                    </div>
+                </div>
+            </fieldset>
+        </div>
+
+        <!-- Asset Cards Grid -->
         <div
             v-if="assets.data.length"
-            class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
+            class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
         >
             <Link
                 v-for="asset in assets.data"
                 :key="asset.id"
                 :href="show(asset.id)"
-                class="group rounded-xl border border-border/70 bg-card p-4 shadow-xs transition hover:border-primary/40 hover:shadow-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                class="group flex flex-col justify-between rounded-xl border border-border/70 bg-card p-5 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
-                <div class="flex items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <p class="font-mono text-xs text-muted-foreground">
-                            {{ asset.tag_code }}
-                        </p>
-                        <h2 class="mt-1 truncate font-semibold">
+                <div>
+                    <!-- Top row: Tag Code & Lifecycle Badge -->
+                    <div class="flex items-center justify-between gap-2">
+                        <AdminCodeBadge :value="asset.tag_code" />
+                        <span
+                            class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium"
+                            :class="lifecycleTone(asset.lifecycle_status)"
+                        >
+                            <span class="h-1.5 w-1.5 rounded-full bg-current" />
+                            {{ label(asset.lifecycle_status) }}
+                        </span>
+                    </div>
+
+                    <!-- Product identity -->
+                    <div class="mt-3">
+                        <h2
+                            class="line-clamp-2 text-sm font-semibold text-foreground transition-colors group-hover:text-primary"
+                        >
                             {{ asset.product.name }}
                         </h2>
-                        <p class="text-xs text-muted-foreground">
+                        <p
+                            class="mt-0.5 flex items-center gap-1 font-mono text-xs text-muted-foreground"
+                        >
+                            <Tag class="h-3 w-3 text-muted-foreground/70" />
                             {{ asset.product.sku }}
                         </p>
                     </div>
-                    <span
-                        class="rounded-full px-2.5 py-1 text-xs font-medium"
-                        :class="tone(asset.lifecycle_status)"
-                        >{{ label(asset.lifecycle_status) }}</span
+
+                    <!-- Location & Accountability panel -->
+                    <div
+                        class="mt-4 flex items-start gap-2.5 rounded-lg border border-border/50 bg-muted/30 p-3 text-xs text-foreground"
                     >
+                        <MapPin
+                            aria-hidden="true"
+                            class="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary"
+                        />
+                        <div class="min-w-0 flex-1">
+                            <strong
+                                class="block truncate font-medium text-foreground"
+                            >
+                                {{
+                                    asset.current_location?.name ??
+                                    'No recorded location'
+                                }}
+                            </strong>
+                            <span
+                                v-if="asset.position"
+                                class="mt-0.5 block truncate text-[0.7rem] text-muted-foreground"
+                            >
+                                Accountable: {{ asset.position.title }}
+                            </span>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Footer status tags -->
                 <div
-                    class="mt-4 flex items-start gap-2 rounded-lg bg-muted/40 p-3 text-sm"
+                    class="mt-4 flex flex-wrap items-center gap-1.5 border-t border-border/40 pt-3"
                 >
-                    <MapPin
-                        aria-hidden="true"
-                        class="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
-                    /><span
-                        ><strong class="font-medium">{{
-                            asset.current_location?.name ??
-                            'No recorded location'
-                        }}</strong
-                        ><span
-                            v-if="asset.position"
-                            class="block text-xs text-muted-foreground"
-                            >Accountable to {{ asset.position.title }}</span
-                        ></span
-                    >
-                </div>
-                <div class="mt-3 flex flex-wrap gap-2">
                     <span
-                        class="rounded-full px-2 py-1 text-xs"
-                        :class="tone(asset.status)"
-                        >{{ label(asset.status) }}</span
-                    ><span
-                        class="rounded-full px-2 py-1 text-xs"
-                        :class="tone(asset.condition_status)"
-                        >{{ label(asset.condition_status) }}</span
+                        class="rounded-md border px-2 py-0.5 text-[0.7rem] font-medium"
+                        :class="statusTone(asset.status)"
                     >
+                        {{ label(asset.status) }}
+                    </span>
+                    <span
+                        class="rounded-md border border-border/60 bg-muted/40 px-2 py-0.5 text-[0.7rem] font-medium text-muted-foreground"
+                    >
+                        {{ label(asset.condition_status) }}
+                    </span>
                 </div>
             </Link>
         </div>
+
+        <!-- Empty state -->
         <div
             v-else
-            class="rounded-xl border border-dashed border-border p-12 text-center"
+            class="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/80 bg-card p-12 text-center"
         >
-            <PackageSearch
-                aria-hidden="true"
-                class="mx-auto h-10 w-10 text-muted-foreground/60"
-            />
-            <h2 class="mt-3 font-semibold">No assets found</h2>
-            <p class="mt-1 text-sm text-muted-foreground">
-                Try changing the search, location, or lifecycle filter.
+            <div
+                class="flex h-14 w-14 items-center justify-center rounded-full bg-muted/50"
+            >
+                <PackageSearch
+                    aria-hidden="true"
+                    class="h-7 w-7 text-muted-foreground/60"
+                />
+            </div>
+            <h2 class="mt-4 text-base font-semibold text-foreground">
+                No assets found
+            </h2>
+            <p class="mt-1 max-w-sm text-xs text-muted-foreground">
+                We couldn't find any assets matching your current search or
+                filter criteria.
             </p>
+            <Button
+                v-if="hasActiveFilters"
+                variant="outline"
+                size="sm"
+                class="mt-4 gap-1.5 rounded-lg text-xs"
+                @click="resetFilters"
+            >
+                <RotateCcw class="h-3.5 w-3.5" />
+                Clear all filters
+            </Button>
         </div>
 
         <AdminPagination :links="assets.links" />

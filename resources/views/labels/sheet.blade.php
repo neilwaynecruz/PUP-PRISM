@@ -45,14 +45,14 @@
             font-size: 7.5pt;
             font-weight: bold;
             color: #0f172a;
-            max-height: 16pt;
+            max-height: 14pt;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            margin-bottom: 1.5mm;
+            margin-bottom: 0.5mm;
         }
         .qr-wrapper {
-            margin: 0 auto 1.5mm auto;
+            margin: 0.5mm auto;
             text-align: center;
         }
         .qr-wrapper img {
@@ -61,24 +61,27 @@
         }
         .sku-code {
             font-family: "Courier New", Courier, monospace;
-            font-size: 7pt;
+            font-size: 6.5pt;
             font-weight: 600;
-            color: #475569;
+            color: #1e293b;
             letter-spacing: 0.5pt;
+            line-height: 1.1;
         }
         .category-name {
-            font-size: 6pt;
+            font-size: 5.5pt;
             color: #64748b;
-            margin-top: 1mm;
+            margin-top: 0.5mm;
             text-transform: uppercase;
+            line-height: 1.1;
         }
         .brand-footer {
             font-size: 5pt;
             color: #880000;
             font-weight: bold;
             letter-spacing: 0.8pt;
-            margin-top: 1mm;
+            margin-top: 0.5mm;
             text-transform: uppercase;
+            line-height: 1.1;
         }
     </style>
 </head>

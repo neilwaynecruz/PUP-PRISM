@@ -2,7 +2,17 @@
 defineOptions({ name: 'ProductTrashPage' });
 
 import { Head, Link, router } from '@inertiajs/vue3';
+import {
+    AlertTriangle,
+    ArrowLeft,
+    Filter,
+    RotateCcw,
+    Trash2,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import AdminCodeBadge from '@/components/admin/AdminCodeBadge.vue';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
+import AdminTableShell from '@/components/admin/AdminTableShell.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
@@ -46,6 +56,10 @@ type ProductRow = {
 type Paginated<T> = {
     data: T[];
     links: PaginationLink[];
+    current_page?: number;
+    last_page?: number;
+    per_page?: number;
+    total?: number;
 };
 
 const props = defineProps<{
@@ -59,13 +73,20 @@ const props = defineProps<{
     deleters: { id: number; name: string }[];
 }>();
 
-const search = ref(props.filters.search);
-const dateFrom = ref(props.filters.date_from);
-const dateTo = ref(props.filters.date_to);
-const deletedBy = ref(props.filters.deleted_by ?? '');
+const search = ref(props.filters.search ?? '');
+const dateFrom = ref(props.filters.date_from ?? '');
+const dateTo = ref(props.filters.date_to ?? '');
+const deletedBy = ref(
+    props.filters.deleted_by ? String(props.filters.deleted_by) : '',
+);
 
 const hasActiveFilters = computed(() => {
-    return search.value || dateFrom.value || dateTo.value || deletedBy.value;
+    return (
+        Boolean(search.value.trim()) ||
+        Boolean(dateFrom.value) ||
+        Boolean(dateTo.value) ||
+        Boolean(deletedBy.value)
+    );
 });
 
 function applyFilters(): void {
@@ -91,7 +112,7 @@ function resetFilters(): void {
 
 function formatDateTime(iso: string | null): string {
     if (!iso) {
-        return '—';
+        return 'Not recorded';
     }
 
     const d = new Date(iso);
@@ -106,11 +127,14 @@ function formatDateTime(iso: string | null): string {
     });
 }
 
+// ── Bulk & Single Dialogs ──
 const selectedProduct = ref<ProductRow | null>(null);
 const restoreDialogOpen = ref(false);
 const forceDeleteDialogOpen = ref(false);
 const bulkRestoreDialogOpen = ref(false);
 const bulkForceDeleteDialogOpen = ref(false);
+const isProcessing = ref(false);
+
 const {
     selectedIds,
     allSelected,
@@ -140,10 +164,11 @@ function openBulkForceDeleteDialog(): void {
 }
 
 function confirmRestore(): void {
-    if (!selectedProduct.value) {
+    if (!selectedProduct.value || isProcessing.value) {
         return;
     }
 
+    isProcessing.value = true;
     router.put(
         `/inventory/products/${selectedProduct.value.id}/restore`,
         {},
@@ -152,24 +177,36 @@ function confirmRestore(): void {
                 restoreDialogOpen.value = false;
                 selectedProduct.value = null;
             },
+            onFinish: () => {
+                isProcessing.value = false;
+            },
         },
     );
 }
 
 function confirmForceDelete(): void {
-    if (!selectedProduct.value) {
+    if (!selectedProduct.value || isProcessing.value) {
         return;
     }
 
+    isProcessing.value = true;
     router.delete(`/inventory/products/${selectedProduct.value.id}/force`, {
         onSuccess: () => {
             forceDeleteDialogOpen.value = false;
             selectedProduct.value = null;
         },
+        onFinish: () => {
+            isProcessing.value = false;
+        },
     });
 }
 
 function confirmBulkRestore(): void {
+    if (isProcessing.value) {
+        return;
+    }
+
+    isProcessing.value = true;
     router.post(
         '/inventory/products/bulk-restore',
         {
@@ -180,11 +217,19 @@ function confirmBulkRestore(): void {
                 bulkRestoreDialogOpen.value = false;
                 clearSelection();
             },
+            onFinish: () => {
+                isProcessing.value = false;
+            },
         },
     );
 }
 
 function confirmBulkForceDelete(): void {
+    if (isProcessing.value) {
+        return;
+    }
+
+    isProcessing.value = true;
     router.post(
         '/inventory/products/bulk-force-delete',
         {
@@ -195,6 +240,9 @@ function confirmBulkForceDelete(): void {
                 bulkForceDeleteDialogOpen.value = false;
                 clearSelection();
             },
+            onFinish: () => {
+                isProcessing.value = false;
+            },
         },
     );
 }
@@ -203,37 +251,115 @@ function confirmBulkForceDelete(): void {
 <template>
     <Head title="Trash — Products" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
-        <!-- Filters -->
-        <div class="rounded-xl border border-border/50 bg-card shadow-sm">
-            <div class="border-b border-border/40 px-5 py-4">
-                <div class="text-sm font-semibold tracking-tight">Filters</div>
-                <div class="text-xs text-muted-foreground/80">
-                    Narrow deleted products by date range, deleter, or keyword.
-                </div>
+    <div class="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+        <!-- Page Header -->
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        >
+            <div>
+                <Heading
+                    variant="small"
+                    title="Product Trash"
+                    description="Deleted product records are retained here for accountability and historical reference. Items can be restored or permanently removed."
+                />
             </div>
-            <div class="grid gap-4 px-5 py-4 sm:grid-cols-2 lg:grid-cols-5">
-                <div class="grid gap-2">
-                    <Label for="search">Search</Label>
+
+            <Button
+                variant="outline"
+                size="sm"
+                as-child
+                class="h-9 gap-1.5 rounded-lg text-xs"
+            >
+                <Link href="/inventory/products">
+                    <ArrowLeft class="h-3.5 w-3.5" />
+                    <span>Back to products</span>
+                </Link>
+            </Button>
+        </div>
+
+        <!-- Filters Section -->
+        <div
+            class="rounded-xl border border-border/70 bg-card/95 p-4 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
+        >
+            <div
+                class="mb-3 flex items-center justify-between border-b border-border/40 pb-2.5"
+            >
+                <div class="flex items-center gap-2">
+                    <Filter class="h-3.5 w-3.5 text-primary" />
+                    <span
+                        class="text-xs font-semibold tracking-wide text-foreground uppercase"
+                        >Filter Deleted Records</span
+                    >
+                </div>
+                <button
+                    v-if="hasActiveFilters"
+                    type="button"
+                    class="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                    @click="resetFilters"
+                >
+                    Reset filters
+                </button>
+            </div>
+
+            <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                <!-- Search -->
+                <div class="grid gap-1.5">
+                    <Label
+                        for="search"
+                        class="text-xs font-medium text-muted-foreground"
+                        >Search</Label
+                    >
                     <Input
                         id="search"
                         v-model="search"
-                        placeholder="SKU or name..."
+                        placeholder="SKU or product name…"
+                        class="h-10 rounded-lg text-sm"
                         @keyup.enter="applyFilters"
                     />
                 </div>
-                <div class="grid gap-2">
-                    <Label for="date_from">Deleted From</Label>
-                    <Input id="date_from" v-model="dateFrom" type="date" />
+
+                <!-- Date From -->
+                <div class="grid gap-1.5">
+                    <Label
+                        for="date_from"
+                        class="text-xs font-medium text-muted-foreground"
+                        >Deleted From</Label
+                    >
+                    <Input
+                        id="date_from"
+                        v-model="dateFrom"
+                        type="date"
+                        class="h-10 rounded-lg text-sm"
+                    />
                 </div>
-                <div class="grid gap-2">
-                    <Label for="date_to">Deleted To</Label>
-                    <Input id="date_to" v-model="dateTo" type="date" />
+
+                <!-- Date To -->
+                <div class="grid gap-1.5">
+                    <Label
+                        for="date_to"
+                        class="text-xs font-medium text-muted-foreground"
+                        >Deleted To</Label
+                    >
+                    <Input
+                        id="date_to"
+                        v-model="dateTo"
+                        type="date"
+                        class="h-10 rounded-lg text-sm"
+                    />
                 </div>
-                <div class="grid gap-2">
-                    <Label for="deleted_by">Deleted By</Label>
+
+                <!-- Deleted By -->
+                <div class="grid gap-1.5">
+                    <Label
+                        for="deleted_by"
+                        class="text-xs font-medium text-muted-foreground"
+                        >Deleted By</Label
+                    >
                     <Select v-model="deletedBy">
-                        <SelectTrigger id="deleted_by">
+                        <SelectTrigger
+                            id="deleted_by"
+                            class="h-10 rounded-lg text-sm"
+                        >
                             <SelectValue placeholder="All users" />
                         </SelectTrigger>
                         <SelectContent>
@@ -248,75 +374,221 @@ function confirmBulkForceDelete(): void {
                         </SelectContent>
                     </Select>
                 </div>
-                <div class="grid gap-2">
-                    <Label class="invisible">Actions</Label>
-                    <div class="flex gap-2">
-                        <Button @click="applyFilters">Filter</Button>
+
+                <!-- Filter Actions -->
+                <div class="grid gap-1.5">
+                    <Label class="invisible hidden text-xs sm:block"
+                        >Filter Action</Label
+                    >
+                    <div class="flex items-center gap-2">
+                        <Button
+                            class="h-10 flex-1 rounded-lg text-xs font-semibold"
+                            @click="applyFilters"
+                        >
+                            Filter
+                        </Button>
                         <Button
                             v-if="hasActiveFilters"
-                            variant="ghost"
+                            variant="outline"
+                            class="h-10 rounded-lg px-3 text-xs"
                             @click="resetFilters"
-                            >Reset</Button
                         >
+                            <RotateCcw class="h-3.5 w-3.5" />
+                        </Button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="flex items-center justify-between">
-            <Heading
-                variant="small"
-                title="Trash"
-                description="Deleted products can be restored here."
-            />
-            <Button variant="ghost" size="sm" as-child class="rounded-lg">
-                <Link href="/inventory/products">Back to products</Link>
-            </Button>
-        </div>
-
-        <!-- Bulk action bar -->
+        <!-- Bulk Action Bar -->
         <div
             v-if="hasSelection"
-            class="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm"
+            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 shadow-2xs dark:border-primary/30 dark:bg-primary/10"
         >
-            <span class="font-medium text-primary"
-                >{{ selectedIds.size }} selected</span
-            >
-            <div class="ml-auto flex flex-wrap gap-2">
+            <div class="flex items-center gap-2">
+                <span
+                    class="inline-flex h-6 items-center rounded-full bg-primary/15 px-2.5 text-xs font-semibold text-primary"
+                >
+                    {{ selectedIds.size }} selected
+                </span>
+                <button
+                    type="button"
+                    class="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                    @click="clearSelection"
+                >
+                    Clear selection
+                </button>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
                 <Button
                     variant="outline"
                     size="sm"
+                    class="h-8 gap-1.5 rounded-lg text-xs font-semibold text-primary"
                     @click="openBulkRestoreDialog"
-                    >Restore</Button
                 >
+                    <RotateCcw class="h-3.5 w-3.5" />
+                    <span>Restore selected</span>
+                </Button>
                 <Button
                     variant="destructive"
                     size="sm"
+                    class="h-8 gap-1.5 rounded-lg text-xs font-semibold"
                     @click="openBulkForceDeleteDialog"
-                    >Delete forever</Button
                 >
+                    <Trash2 class="h-3.5 w-3.5" />
+                    <span>Delete permanently</span>
+                </Button>
             </div>
         </div>
 
-        <div class="rounded-xl border border-border/50 bg-card shadow-sm">
-            <div
-                class="flex items-center justify-between border-b border-border/40 px-5 py-4"
-            >
-                <div class="text-sm font-semibold tracking-tight">
-                    Deleted products
-                </div>
-                <span
-                    class="inline-flex items-center rounded-full border border-border/40 bg-muted/40 px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
-                    >{{ products.data.length }} total</span
+        <!-- Main Deleted Products Content -->
+        <div class="flex flex-col gap-4">
+            <!-- Mobile Cards (< 768px) -->
+            <div class="grid gap-3 md:hidden">
+                <div
+                    v-if="products.data.length === 0"
+                    class="rounded-xl border border-dashed border-border/70 p-8 text-center"
                 >
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-muted/40 text-left">
-                        <tr
-                            class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
+                    <EmptyState
+                        icon="trash"
+                        :title="
+                            hasActiveFilters
+                                ? 'No deleted products match your filter'
+                                : 'Trash is empty'
+                        "
+                        :description="
+                            hasActiveFilters
+                                ? 'Try adjusting your search criteria.'
+                                : 'Deleted products will appear here for recovery or permanent removal.'
+                        "
+                        :action-label="
+                            hasActiveFilters
+                                ? 'Clear filters'
+                                : 'Back to Products'
+                        "
+                        :action-href="
+                            hasActiveFilters ? undefined : '/inventory/products'
+                        "
+                        @action="hasActiveFilters ? resetFilters() : undefined"
+                    />
+                </div>
+
+                <div
+                    v-for="p in products.data"
+                    :key="p.id"
+                    class="flex flex-col rounded-xl border border-border/70 bg-card p-4 shadow-2xs"
+                    :class="{
+                        'border-primary/40 bg-primary/[0.03] ring-1 ring-primary/20':
+                            selectedIds.has(p.id),
+                    }"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3">
+                            <Checkbox
+                                :model-value="selectedIds.has(p.id)"
+                                @update:model-value="() => toggleSelect(p.id)"
+                                aria-label="Select product"
+                                class="mt-1"
+                            />
+                            <div>
+                                <div class="font-medium text-foreground">
+                                    {{ p.name }}
+                                </div>
+                                <div class="mt-1 flex items-center gap-2">
+                                    <AdminCodeBadge :value="p.sku" />
+                                    <span
+                                        class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase"
+                                        :class="
+                                            p.type === 'consumable'
+                                                ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                                : 'bg-sky-500/10 text-sky-700 dark:text-sky-400'
+                                        "
+                                    >
+                                        {{ p.type }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="mt-3 grid gap-1.5 border-t border-border/40 pt-3 text-xs"
+                    >
+                        <div class="flex items-center justify-between">
+                            <span class="text-muted-foreground"
+                                >Deleted At:</span
+                            >
+                            <span class="font-medium text-foreground">{{
+                                formatDateTime(p.deleted_at)
+                            }}</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-muted-foreground"
+                                >Deleted By:</span
+                            >
+                            <span class="font-medium text-foreground">{{
+                                p.deleted_by?.name ?? 'System'
+                            }}</span>
+                        </div>
+                        <div
+                            v-if="p.deletion_reason"
+                            class="flex flex-col gap-0.5 pt-1"
                         >
-                            <th class="w-10">
+                            <span class="text-muted-foreground">Reason:</span>
+                            <span class="text-foreground italic">{{
+                                p.deletion_reason
+                            }}</span>
+                        </div>
+                    </div>
+
+                    <div
+                        class="mt-4 flex items-center gap-2 border-t border-border/40 pt-3"
+                    >
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="h-11 min-h-[44px] flex-1 gap-1.5 rounded-lg text-xs font-medium"
+                            @click="openRestoreDialog(p)"
+                        >
+                            <RotateCcw class="h-3.5 w-3.5 text-primary" />
+                            <span>Restore</span>
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            class="h-11 min-h-[44px] flex-1 gap-1.5 rounded-lg text-xs font-semibold"
+                            @click="openForceDeleteDialog(p)"
+                        >
+                            <Trash2 class="h-3.5 w-3.5" />
+                            <span>Delete permanently</span>
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desktop Table (>= 768px) -->
+            <div class="hidden md:block">
+                <AdminTableShell min-width="1200px">
+                    <caption class="sr-only">
+                        Deleted products retained in trash
+                    </caption>
+                    <colgroup>
+                        <col class="w-12" />
+                        <col class="w-36" />
+                        <col class="min-w-[180px]" />
+                        <col class="w-36" />
+                        <col class="w-40" />
+                        <col class="w-36" />
+                        <col class="w-32" />
+                        <col class="w-44" />
+                        <col class="w-44" />
+                    </colgroup>
+                    <thead
+                        class="border-b border-border/70 bg-muted/40 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                    >
+                        <tr>
+                            <th class="px-4 py-3.5">
                                 <Checkbox
                                     :model-value="
                                         allSelected
@@ -329,36 +601,64 @@ function confirmBulkForceDelete(): void {
                                     aria-label="Select all"
                                 />
                             </th>
-                            <th>SKU</th>
-                            <th>Name</th>
-                            <th>Type</th>
-                            <th>Category</th>
-                            <th>Origin</th>
-                            <th>Deleted at</th>
-                            <th>Deleted by</th>
-                            <th>Reason</th>
-                            <th class="text-right">Actions</th>
+                            <th scope="col" class="px-4 py-3.5">SKU</th>
+                            <th scope="col" class="px-4 py-3.5">
+                                Product Name
+                            </th>
+                            <th scope="col" class="px-4 py-3.5">Type</th>
+                            <th scope="col" class="px-4 py-3.5">Category</th>
+                            <th scope="col" class="px-4 py-3.5">Deleted At</th>
+                            <th scope="col" class="px-4 py-3.5">Deleted By</th>
+                            <th scope="col" class="px-4 py-3.5">Reason</th>
+                            <th scope="col" class="px-4 py-3.5 text-right">
+                                Actions
+                            </th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-border/60">
                         <tr v-if="products.data.length === 0">
-                            <td colspan="9" class="p-0">
+                            <td colspan="9" class="p-0 text-center">
                                 <EmptyState
-                                    icon="product"
-                                    title="Trash is empty"
-                                    description="Deleted products will appear here. You have 30 days to restore them before they are permanently removed."
-                                    action-label="Back to Products"
-                                    action-href="/inventory/products"
+                                    icon="trash"
+                                    :title="
+                                        hasActiveFilters
+                                            ? 'No deleted products match your filter'
+                                            : 'Trash is empty'
+                                    "
+                                    :description="
+                                        hasActiveFilters
+                                            ? 'Try adjusting your search criteria.'
+                                            : 'Deleted products will appear here for recovery or permanent removal.'
+                                    "
+                                    :action-label="
+                                        hasActiveFilters
+                                            ? 'Clear filters'
+                                            : 'Back to Products'
+                                    "
+                                    :action-href="
+                                        hasActiveFilters
+                                            ? undefined
+                                            : '/inventory/products'
+                                    "
+                                    @action="
+                                        hasActiveFilters
+                                            ? resetFilters()
+                                            : undefined
+                                    "
                                 />
                             </td>
                         </tr>
+
                         <tr
                             v-for="p in products.data"
                             :key="p.id"
-                            class="transition-colors [&>td]:px-4 [&>td]:py-3"
-                            :class="{ 'bg-primary/5': selectedIds.has(p.id) }"
+                            class="transition-colors hover:bg-muted/30"
+                            :class="{
+                                'bg-primary/5 hover:bg-primary/8':
+                                    selectedIds.has(p.id),
+                            }"
                         >
-                            <td>
+                            <td class="px-4 py-3">
                                 <Checkbox
                                     :model-value="selectedIds.has(p.id)"
                                     @update:model-value="
@@ -367,15 +667,18 @@ function confirmBulkForceDelete(): void {
                                     aria-label="Select product"
                                 />
                             </td>
-                            <td
-                                class="font-mono text-[11px] text-muted-foreground"
-                            >
-                                {{ p.sku }}
+
+                            <td class="px-4 py-3">
+                                <AdminCodeBadge :value="p.sku" />
                             </td>
-                            <td class="font-medium">{{ p.name }}</td>
-                            <td>
+
+                            <td class="px-4 py-3 font-medium text-foreground">
+                                {{ p.name }}
+                            </td>
+
+                            <td class="px-4 py-3 whitespace-nowrap">
                                 <span
-                                    class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
+                                    class="inline-flex items-center rounded-md px-2.5 py-0.5 text-xs font-medium capitalize"
                                     :class="
                                         p.type === 'consumable'
                                             ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
@@ -385,194 +688,245 @@ function confirmBulkForceDelete(): void {
                                     {{ p.type }}
                                 </span>
                             </td>
-                            <td class="text-muted-foreground">
+
+                            <td
+                                class="truncate px-4 py-3 text-muted-foreground"
+                            >
                                 {{ p.category ?? '—' }}
                             </td>
-                            <td class="text-muted-foreground">
-                                {{ p.origin ?? '—' }}
-                            </td>
-                            <td class="text-muted-foreground">
+
+                            <td
+                                class="px-4 py-3 text-xs whitespace-nowrap text-muted-foreground"
+                            >
                                 {{ formatDateTime(p.deleted_at) }}
                             </td>
-                            <td class="text-muted-foreground">
+
+                            <td
+                                class="truncate px-4 py-3 text-muted-foreground"
+                            >
                                 {{ p.deleted_by?.name ?? '—' }}
                             </td>
+
                             <td
-                                class="max-w-[200px] truncate text-muted-foreground"
+                                class="max-w-[180px] truncate px-4 py-3 text-xs text-muted-foreground"
                                 :title="p.deletion_reason ?? undefined"
                             >
-                                {{ p.deletion_reason ?? '—' }}
+                                {{ p.deletion_reason ?? 'No reason recorded' }}
                             </td>
-                            <td class="text-right">
+
+                            <td class="px-4 py-3 text-right whitespace-nowrap">
                                 <div
-                                    class="flex items-center justify-end gap-1"
+                                    class="flex items-center justify-end gap-1.5 whitespace-nowrap"
                                 >
                                     <Button
-                                        variant="ghost"
+                                        variant="outline"
                                         size="sm"
-                                        class="h-8 rounded-lg text-xs"
+                                        class="h-8 gap-1 rounded-lg px-2 text-xs font-medium"
                                         @click="openRestoreDialog(p)"
                                     >
-                                        Restore
+                                        <RotateCcw
+                                            class="h-3 w-3 text-primary"
+                                        />
+                                        <span>Restore</span>
                                     </Button>
+
                                     <Button
                                         variant="ghost"
                                         size="sm"
-                                        class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                                        class="h-8 gap-1 rounded-lg px-2 text-xs text-rose-600 hover:bg-rose-500/10 hover:text-rose-700"
                                         @click="openForceDeleteDialog(p)"
                                     >
-                                        Delete Forever
+                                        <Trash2 class="h-3 w-3" />
+                                        <span>Permanent</span>
                                     </Button>
                                 </div>
                             </td>
                         </tr>
                     </tbody>
-                </table>
+                </AdminTableShell>
+            </div>
+
+            <!-- Pagination -->
+            <div
+                v-if="products.links.length > 3"
+                class="flex items-center justify-center pt-2"
+            >
+                <AdminPagination :links="products.links" />
             </div>
         </div>
 
+        <!-- Single Restore Confirmation Dialog -->
         <Dialog v-model:open="restoreDialogOpen">
-            <DialogContent>
-                <DialogHeader class="space-y-3">
-                    <DialogTitle>Restore product?</DialogTitle>
-                    <DialogDescription>
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader class="space-y-2">
+                    <DialogTitle class="flex items-center gap-2">
+                        <RotateCcw class="h-5 w-5 text-primary" />
+                        <span>Restore product?</span>
+                    </DialogTitle>
+                    <DialogDescription class="text-sm text-muted-foreground">
                         This will restore
-                        <strong>{{ selectedProduct?.name }}</strong> ({{
-                            selectedProduct?.sku
-                        }}) to the active products list.
+                        <strong class="text-foreground">{{
+                            selectedProduct?.name
+                        }}</strong>
+                        <span class="font-mono text-xs">
+                            ({{ selectedProduct?.sku }})</span
+                        >
+                        back to the active catalog and make it available for
+                        requisitions and receiving.
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter class="gap-2">
+
+                <DialogFooter class="gap-2 sm:justify-end">
                     <DialogClose as-child>
-                        <Button variant="secondary">Cancel</Button>
+                        <Button variant="outline" class="rounded-lg"
+                            >Cancel</Button
+                        >
                     </DialogClose>
-                    <Button @click="confirmRestore">Restore</Button>
+                    <Button
+                        class="rounded-lg font-semibold"
+                        :disabled="isProcessing"
+                        @click="confirmRestore"
+                    >
+                        {{ isProcessing ? 'Restoring…' : 'Restore product' }}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
 
+        <!-- Single Permanent Delete Confirmation Dialog -->
         <Dialog v-model:open="forceDeleteDialogOpen">
-            <DialogContent>
-                <DialogHeader class="space-y-3">
-                    <DialogTitle class="text-rose-600"
-                        >Permanently delete product?</DialogTitle
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader class="space-y-2">
+                    <DialogTitle
+                        class="flex items-center gap-2 text-rose-600 dark:text-rose-400"
                     >
-                    <DialogDescription>
-                        This will
-                        <strong class="text-rose-600"
-                            >permanently delete</strong
+                        <AlertTriangle class="h-5 w-5" />
+                        <span>Permanently delete product?</span>
+                    </DialogTitle>
+                    <DialogDescription class="text-sm text-muted-foreground">
+                        This will permanently remove
+                        <strong class="text-foreground">{{
+                            selectedProduct?.name
+                        }}</strong>
+                        <span class="font-mono text-xs">
+                            ({{ selectedProduct?.sku }})</span
                         >
-                        <strong>{{ selectedProduct?.name }}</strong> ({{
-                            selectedProduct?.sku
-                        }}). <br /><br />
-                        <span class="font-medium text-rose-600"
-                            >This action cannot be undone.</span
-                        >
-                        The product and all associated records will be gone
-                        forever.
+                        from the database.
                     </DialogDescription>
                 </DialogHeader>
-                <DialogFooter class="gap-2">
-                    <DialogClose as-child>
-                        <Button variant="secondary">Cancel</Button>
-                    </DialogClose>
-                    <Button variant="destructive" @click="confirmForceDelete"
-                        >Permanently Delete</Button
-                    >
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
 
-        <Dialog v-model:open="bulkRestoreDialogOpen">
-            <DialogContent>
-                <DialogHeader class="space-y-3">
-                    <DialogTitle>Bulk restore products?</DialogTitle>
-                    <DialogDescription>
-                        This will restore
-                        <strong
-                            >{{ selectedIds.size }}
-                            {{
-                                selectedIds.size === 1 ? 'product' : 'products'
-                            }}</strong
-                        >
-                        to the active products list.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter class="gap-2">
-                    <DialogClose as-child>
-                        <Button variant="secondary">Cancel</Button>
-                    </DialogClose>
-                    <Button @click="confirmBulkRestore"
-                        >Restore Selected</Button
-                    >
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                <div
+                    class="rounded-xl border border-rose-500/25 bg-rose-500/10 p-3.5 text-xs text-rose-800 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-300"
+                >
+                    <span class="font-bold">Caution:</span> This action is
+                    permanent and cannot be undone. All catalog history
+                    associated with this item will be deleted.
+                </div>
 
-        <Dialog v-model:open="bulkForceDeleteDialogOpen">
-            <DialogContent>
-                <DialogHeader class="space-y-3">
-                    <DialogTitle class="text-rose-600"
-                        >Permanently delete
-                        {{ selectedIds.size }} products?</DialogTitle
-                    >
-                    <DialogDescription>
-                        This will
-                        <strong class="text-rose-600"
-                            >permanently delete</strong
-                        >
-                        <strong
-                            >{{ selectedIds.size }}
-                            {{
-                                selectedIds.size === 1 ? 'product' : 'products'
-                            }}</strong
-                        >. <br /><br />
-                        <span class="font-medium text-rose-600"
-                            >This action cannot be undone.</span
-                        >
-                        These products and all associated records will be gone
-                        forever.
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter class="gap-2">
+                <DialogFooter class="gap-2 sm:justify-end">
                     <DialogClose as-child>
-                        <Button variant="secondary">Cancel</Button>
+                        <Button variant="outline" class="rounded-lg"
+                            >Cancel</Button
+                        >
                     </DialogClose>
                     <Button
                         variant="destructive"
-                        @click="confirmBulkForceDelete"
-                        >Permanently Delete All</Button
+                        class="rounded-lg font-semibold"
+                        :disabled="isProcessing"
+                        @click="confirmForceDelete"
                     >
+                        {{ isProcessing ? 'Deleting…' : 'Delete permanently' }}
+                    </Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
 
-        <div
-            v-if="products.links.length"
-            class="flex flex-wrap items-center justify-center gap-1"
-        >
-            <Button
-                v-for="(link, i) in products.links"
-                :key="i"
-                variant="ghost"
-                size="sm"
-                :disabled="!link.url"
-                as-child
-                class="h-8 rounded-lg text-xs"
-                :class="
-                    link.active ? 'bg-primary/10 font-medium text-primary' : ''
-                "
-            >
-                <Link
-                    v-if="link.url"
-                    :href="link.url"
-                    preserve-scroll
-                    preserve-state
+        <!-- Bulk Restore Dialog -->
+        <Dialog v-model:open="bulkRestoreDialogOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader class="space-y-2">
+                    <DialogTitle class="flex items-center gap-2">
+                        <RotateCcw class="h-5 w-5 text-primary" />
+                        <span>Bulk restore products?</span>
+                    </DialogTitle>
+                    <DialogDescription class="text-sm text-muted-foreground">
+                        This will restore
+                        <strong class="text-foreground"
+                            >{{ selectedIds.size }} selected
+                            {{
+                                selectedIds.size === 1 ? 'product' : 'products'
+                            }}</strong
+                        >
+                        to the active inventory catalog.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <DialogFooter class="gap-2 sm:justify-end">
+                    <DialogClose as-child>
+                        <Button variant="outline" class="rounded-lg"
+                            >Cancel</Button
+                        >
+                    </DialogClose>
+                    <Button
+                        class="rounded-lg font-semibold"
+                        :disabled="isProcessing"
+                        @click="confirmBulkRestore"
+                    >
+                        {{ isProcessing ? 'Restoring…' : 'Restore selected' }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Bulk Permanent Delete Dialog -->
+        <Dialog v-model:open="bulkForceDeleteDialogOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader class="space-y-2">
+                    <DialogTitle
+                        class="flex items-center gap-2 text-rose-600 dark:text-rose-400"
+                    >
+                        <AlertTriangle class="h-5 w-5" />
+                        <span
+                            >Permanently delete
+                            {{ selectedIds.size }} products?</span
+                        >
+                    </DialogTitle>
+                    <DialogDescription class="text-sm text-muted-foreground">
+                        This will permanently remove
+                        <strong class="text-foreground"
+                            >{{ selectedIds.size }} selected
+                            {{
+                                selectedIds.size === 1 ? 'product' : 'products'
+                            }}</strong
+                        >
+                        from the database.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div
+                    class="rounded-xl border border-rose-500/25 bg-rose-500/10 p-3.5 text-xs text-rose-800 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-300"
                 >
-                    <span v-html="link.label" />
-                </Link>
-                <span v-else v-html="link.label" />
-            </Button>
-        </div>
+                    <span class="font-bold">Caution:</span> This action cannot
+                    be undone. Products referenced by existing purchase orders
+                    or historical audits cannot be permanently removed.
+                </div>
+
+                <DialogFooter class="gap-2 sm:justify-end">
+                    <DialogClose as-child>
+                        <Button variant="outline" class="rounded-lg"
+                            >Cancel</Button
+                        >
+                    </DialogClose>
+                    <Button
+                        variant="destructive"
+                        class="rounded-lg font-semibold"
+                        :disabled="isProcessing"
+                        @click="confirmBulkForceDelete"
+                    >
+                        {{ isProcessing ? 'Deleting…' : 'Delete permanently' }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

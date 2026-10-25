@@ -1,6 +1,19 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
-import { Plus, Check, Trash2 } from 'lucide-vue-next';
+import {
+    Boxes,
+    Calendar,
+    Check,
+    Clock,
+    FileText,
+    Hash,
+    Layers,
+    Package,
+    Plus,
+    ScanLine,
+    Tag,
+    Trash2,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import ReceivingController from '@/actions/App/Http/Controllers/Inventory/ReceivingController';
 import Heading from '@/components/Heading.vue';
@@ -204,51 +217,61 @@ function appendBatchLineTagCode(index: number, value: string): void {
 <template>
     <Head title="Receiving" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6" data-testid="receiving-page">
+    <div
+        class="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8"
+        data-testid="receiving-page"
+    >
+        <!-- Header & Mode Switcher -->
         <div
-            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
         >
-            <Heading
-                variant="small"
-                title="Receiving"
-                description="Record delivered consumables or tagged assets. Use single-item receiving for one product or batch receiving for a full delivery."
-            />
+            <div class="space-y-1">
+                <Heading
+                    variant="small"
+                    title="Receiving"
+                    description="Record delivered consumables or register individual tagged assets into warehouse stock."
+                />
+            </div>
 
             <div
                 role="group"
                 aria-label="Receiving mode"
-                class="flex gap-1 rounded-lg border border-border/60 bg-card p-1"
+                class="flex items-center gap-1 rounded-xl border border-border/70 bg-muted/40 p-1"
             >
-                <Button
+                <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    class="h-7 rounded-md text-xs"
+                    class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition"
                     :aria-pressed="mode === 'single'"
                     :class="
                         mode === 'single'
-                            ? 'bg-primary/10 font-medium text-primary'
-                            : ''
+                            ? 'bg-card text-foreground shadow-xs'
+                            : 'text-muted-foreground hover:text-foreground'
                     "
                     @click="mode = 'single'"
                 >
-                    Single item
-                </Button>
-                <Button
+                    <Package
+                        class="h-3.5 w-3.5"
+                        :class="mode === 'single' ? 'text-primary' : ''"
+                    />
+                    <span>Single item</span>
+                </button>
+                <button
                     type="button"
-                    variant="ghost"
-                    size="sm"
-                    class="h-7 rounded-md text-xs"
+                    class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition"
                     :aria-pressed="mode === 'batch'"
                     :class="
                         mode === 'batch'
-                            ? 'bg-primary/10 font-medium text-primary'
-                            : ''
+                            ? 'bg-card text-foreground shadow-xs'
+                            : 'text-muted-foreground hover:text-foreground'
                     "
                     @click="mode = 'batch'"
                 >
-                    Batch delivery
-                </Button>
+                    <Boxes
+                        class="h-3.5 w-3.5"
+                        :class="mode === 'batch' ? 'text-primary' : ''"
+                    />
+                    <span>Batch delivery</span>
+                </button>
             </div>
         </div>
 
@@ -261,14 +284,12 @@ function appendBatchLineTagCode(index: number, value: string): void {
             <div class="grid gap-6 lg:col-span-7 xl:col-span-8">
                 <!-- Product identification -->
                 <div
-                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                    class="rounded-xl border border-border/70 bg-card p-5 shadow-xs"
                 >
                     <div
-                        class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
+                        class="mb-4 flex items-center gap-2 text-xs font-bold tracking-tight text-foreground uppercase"
                     >
-                        <span
-                            class="inline-block h-1.5 w-1.5 rounded-full bg-primary/60"
-                        />
+                        <Package class="h-4 w-4 text-primary" />
                         Product identification
                     </div>
                     <div class="grid gap-4">
@@ -278,8 +299,8 @@ function appendBatchLineTagCode(index: number, value: string): void {
                             >
                                 <Label
                                     for="sku"
-                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                    >SKU</Label
+                                    class="text-xs font-medium text-muted-foreground"
+                                    >Product SKU or Barcode</Label
                                 >
                                 <QrScannerDialog
                                     button-label="Scan SKU"
@@ -288,14 +309,19 @@ function appendBatchLineTagCode(index: number, value: string): void {
                                     @scanned="form.sku = $event"
                                 />
                             </div>
-                            <Input
-                                id="sku"
-                                v-model="form.sku"
-                                data-testid="receiving-sku-input"
-                                required
-                                placeholder="Scan or type SKU"
-                                class="rounded-lg"
-                            />
+                            <div class="relative">
+                                <ScanLine
+                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                                />
+                                <Input
+                                    id="sku"
+                                    v-model="form.sku"
+                                    data-testid="receiving-sku-input"
+                                    required
+                                    placeholder="Scan or enter SKU (e.g., CON-HSOAP-500)"
+                                    class="h-10 rounded-lg pl-9 font-mono text-sm"
+                                />
+                            </div>
                             <InputError :message="form.errors.sku" />
                         </div>
                     </div>
@@ -303,78 +329,97 @@ function appendBatchLineTagCode(index: number, value: string): void {
 
                 <!-- Quantity & reference -->
                 <div
-                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                    class="rounded-xl border border-border/70 bg-card p-5 shadow-xs"
                 >
                     <div
-                        class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
+                        class="mb-4 flex items-center gap-2 text-xs font-bold tracking-tight text-foreground uppercase"
                     >
-                        <span
-                            class="inline-block h-1.5 w-1.5 rounded-full bg-amber-500/60"
-                        />
-                        Quantity & reference
+                        <Layers class="h-4 w-4 text-primary" />
+                        Quantity & Delivery Reference
                     </div>
-                    <div class="grid gap-4 md:grid-cols-2">
+                    <div class="grid gap-4 sm:grid-cols-2">
                         <div class="grid gap-2">
                             <Label
                                 for="qty"
-                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
+                                class="text-xs font-medium text-muted-foreground"
                                 >Quantity received (consumables)</Label
                             >
-                            <Input
-                                id="qty"
-                                v-model="form.qty"
-                                data-testid="receiving-qty-input"
-                                type="number"
-                                min="1"
-                                inputmode="numeric"
-                                placeholder="Example: 12"
-                                class="rounded-lg"
-                            />
+                            <div class="relative">
+                                <Hash
+                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                                />
+                                <Input
+                                    id="qty"
+                                    v-model="form.qty"
+                                    data-testid="receiving-qty-input"
+                                    type="number"
+                                    min="1"
+                                    inputmode="numeric"
+                                    placeholder="Example: 12"
+                                    class="h-10 rounded-lg pl-9 text-sm"
+                                />
+                            </div>
                             <InputError :message="form.errors.qty" />
                         </div>
 
                         <div class="grid gap-2">
                             <Label
                                 for="reference_no"
-                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >Delivery reference</Label
+                                class="text-xs font-medium text-muted-foreground"
+                                >Delivery reference / DR No.</Label
                             >
-                            <Input
-                                id="reference_no"
-                                v-model="form.reference_no"
-                                data-testid="receiving-reference-input"
-                                placeholder="Example: DR-000123"
-                                class="rounded-lg"
-                            />
+                            <div class="relative">
+                                <FileText
+                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                                />
+                                <Input
+                                    id="reference_no"
+                                    v-model="form.reference_no"
+                                    data-testid="receiving-reference-input"
+                                    placeholder="Example: DR-202610-001"
+                                    class="h-10 rounded-lg pl-9 text-sm"
+                                />
+                            </div>
                             <InputError :message="form.errors.reference_no" />
                         </div>
 
                         <div class="grid gap-2">
                             <Label
                                 for="received_at"
-                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >Date received</Label
+                                class="text-xs font-medium text-muted-foreground"
+                                >Date & time received</Label
                             >
-                            <Input
-                                id="received_at"
-                                v-model="form.received_at"
-                                type="datetime-local"
-                                class="rounded-lg"
-                            />
+                            <div class="relative">
+                                <Calendar
+                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                                />
+                                <Input
+                                    id="received_at"
+                                    v-model="form.received_at"
+                                    type="datetime-local"
+                                    class="h-10 rounded-lg pl-9 text-sm"
+                                />
+                            </div>
                             <InputError :message="form.errors.received_at" />
                         </div>
+
                         <div class="grid gap-2">
                             <Label
                                 for="expires_at"
-                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >Expiration date (optional)</Label
+                                class="text-xs font-medium text-muted-foreground"
+                                >Lot expiration date (optional)</Label
                             >
-                            <Input
-                                id="expires_at"
-                                v-model="form.expires_at"
-                                type="date"
-                                class="rounded-lg"
-                            />
+                            <div class="relative">
+                                <Clock
+                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                                />
+                                <Input
+                                    id="expires_at"
+                                    v-model="form.expires_at"
+                                    type="date"
+                                    class="h-10 rounded-lg pl-9 text-sm"
+                                />
+                            </div>
                             <InputError :message="form.errors.expires_at" />
                         </div>
                     </div>
@@ -382,27 +427,20 @@ function appendBatchLineTagCode(index: number, value: string): void {
 
                 <!-- Notes -->
                 <div
-                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                    class="rounded-xl border border-border/70 bg-card p-5 shadow-xs"
                 >
                     <div
-                        class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
+                        class="mb-3 flex items-center gap-2 text-xs font-bold tracking-tight text-foreground uppercase"
                     >
-                        <span
-                            class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500/60"
-                        />
-                        Notes
+                        <FileText class="h-4 w-4 text-primary" />
+                        Additional notes / remarks
                     </div>
                     <div class="grid gap-2">
-                        <Label
-                            for="notes"
-                            class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >Additional notes</Label
-                        >
                         <textarea
                             id="notes"
                             v-model="form.notes"
-                            class="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm transition-colors focus:border-ring focus:outline-none"
-                            placeholder="Optional notes…"
+                            class="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                            placeholder="Optional notes or supplier delivery remarks…"
                         />
                         <InputError :message="form.errors.notes" />
                     </div>
@@ -413,24 +451,31 @@ function appendBatchLineTagCode(index: number, value: string): void {
             <div class="grid gap-6 lg:col-span-5 xl:col-span-4">
                 <!-- Asset tags -->
                 <div
-                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                    class="rounded-xl border border-border/70 bg-card p-5 shadow-xs"
                 >
-                    <div
-                        class="mb-4 flex items-center gap-2 text-sm font-semibold tracking-tight"
-                    >
+                    <div class="mb-3 flex items-center justify-between">
+                        <div
+                            class="flex items-center gap-2 text-xs font-bold tracking-tight text-foreground uppercase"
+                        >
+                            <Tag class="h-4 w-4 text-primary" />
+                            Asset tags
+                        </div>
                         <span
-                            class="inline-block h-1.5 w-1.5 rounded-full bg-sky-500/60"
-                        />
-                        Asset tags
+                            v-if="tagCodes.length > 0"
+                            class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
+                        >
+                            {{ tagCodes.length }}
+                            {{ tagCodes.length === 1 ? 'tag' : 'tags' }}
+                        </span>
                     </div>
-                    <div class="grid gap-2">
+                    <div class="grid gap-3">
                         <div
                             class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
                         >
                             <Label
                                 for="tag_codes_text"
-                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >Asset tag codes (one per line)</Label
+                                class="text-xs text-muted-foreground"
+                                >One tag code per line</Label
                             >
                             <QrScannerDialog
                                 button-label="Batch scan tags"
@@ -445,16 +490,16 @@ function appendBatchLineTagCode(index: number, value: string): void {
                             id="tag_codes_text"
                             v-model="form.tag_codes_text"
                             data-testid="receiving-tag-codes-input"
-                            class="min-h-[160px] rounded-lg border border-input bg-background px-3 py-2 text-sm transition-colors focus:border-ring focus:outline-none"
+                            class="min-h-[160px] rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                             placeholder="AST-00000001&#10;AST-00000002"
                         />
-                        <div class="text-xs text-muted-foreground">
-                            Asset scans are appended automatically. You can
-                            still paste or type multiple tag codes here.
+                        <div class="text-[0.7rem] text-muted-foreground">
+                            Scanned barcodes/QRs are appended automatically. You
+                            can also paste or manually type codes.
                         </div>
                         <div
                             v-if="tagScanFeedback"
-                            class="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
+                            class="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-foreground"
                         >
                             {{ tagScanFeedback }}
                         </div>
@@ -464,17 +509,17 @@ function appendBatchLineTagCode(index: number, value: string): void {
 
                 <!-- Confirm Transaction Card -->
                 <div
-                    class="space-y-4 rounded-xl border border-border/60 bg-card p-5 shadow-sm"
+                    class="space-y-4 rounded-xl border border-border/70 bg-card p-5 shadow-xs"
                 >
                     <div>
-                        <h4 class="text-sm font-semibold tracking-tight">
-                            Confirm receiving
-                        </h4>
-                        <p
-                            class="mt-1 text-xs leading-normal text-muted-foreground"
+                        <h4
+                            class="text-sm font-bold tracking-tight text-foreground uppercase"
                         >
-                            Review the quantity, delivery reference, and asset
-                            tag codes before saving this receipt.
+                            Confirm receipt
+                        </h4>
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            Verify the quantity, delivery reference, and asset
+                            tag codes before recording into system stock.
                         </p>
                     </div>
                     <Button

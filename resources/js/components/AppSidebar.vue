@@ -63,21 +63,27 @@ function goToFirstMatch(): void {
         variant="inset"
         class="border-r border-sidebar-border/50"
     >
-        <SidebarHeader class="border-b border-sidebar-border/40 px-3 py-4">
+        <SidebarHeader
+            class="border-b border-sidebar-border/40 px-3 py-3 group-data-[collapsible=icon]:p-2"
+        >
             <SidebarMenu>
                 <SidebarMenuItem>
                     <SidebarMenuButton
                         size="lg"
                         as-child
-                        class="transition-colors duration-200 hover:bg-sidebar-accent/60"
+                        class="transition-colors duration-200 group-data-[collapsible=icon]:!size-9 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:!p-0 hover:bg-sidebar-accent/60"
                     >
                         <Link
                             :href="dashboard()"
-                            class="flex items-center gap-3"
+                            class="flex items-center gap-3 group-data-[collapsible=icon]:h-full group-data-[collapsible=icon]:w-full group-data-[collapsible=icon]:justify-center"
                             @click="closeOverlays()"
                         >
-                            <AppLogoIcon class="size-10 shrink-0" />
-                            <div class="grid min-w-0 flex-1">
+                            <AppLogoIcon
+                                class="size-9 shrink-0 group-data-[collapsible=icon]:size-7"
+                            />
+                            <div
+                                class="grid min-w-0 flex-1 group-data-[collapsible=icon]:hidden"
+                            >
                                 <span
                                     class="truncate text-sm leading-none font-bold tracking-[0.16em] text-sidebar-foreground uppercase"
                                 >
@@ -91,7 +97,7 @@ function goToFirstMatch(): void {
                             </div>
                             <LoaderCircle
                                 v-if="pendingPath === toUrl(dashboard())"
-                                class="h-4 w-4 animate-spin text-primary"
+                                class="h-4 w-4 animate-spin text-primary group-data-[collapsible=icon]:hidden"
                             />
                         </Link>
                     </SidebarMenuButton>
@@ -126,7 +132,7 @@ function goToFirstMatch(): void {
         </div>
 
         <SidebarContent
-            class="scrollbar-thin space-y-2 overflow-y-auto px-2 py-2"
+            class="scrollbar-thin space-y-2 overflow-x-hidden overflow-y-auto px-2 py-2 group-data-[collapsible=icon]:space-y-0 group-data-[collapsible=icon]:overflow-x-hidden group-data-[collapsible=icon]:overflow-y-auto group-data-[collapsible=icon]:px-1"
         >
             <div
                 v-if="navSearchQuery && filteredGroupedNavItems.length === 0"
@@ -145,7 +151,9 @@ function goToFirstMatch(): void {
             />
         </SidebarContent>
 
-        <SidebarFooter class="border-t border-sidebar-border/40 px-2 pt-2 pb-4">
+        <SidebarFooter
+            class="border-t border-sidebar-border/40 px-2 pt-2 pb-4 group-data-[collapsible=icon]:p-1.5"
+        >
             <NavUser />
         </SidebarFooter>
     </Sidebar>

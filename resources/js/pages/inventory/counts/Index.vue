@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
-import { ClipboardCheck, Plus } from 'lucide-vue-next';
+import {
+    Calendar,
+    ClipboardCheck,
+    Compass,
+    Info,
+    MapPin,
+    Plus,
+    ScanLine,
+    User,
+} from 'lucide-vue-next';
 import { computed, ref } from 'vue';
+import AdminCodeBadge from '@/components/admin/AdminCodeBadge.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -209,24 +219,36 @@ function statusClass(value: string): string {
                 class="grid gap-5 border-t border-border/60 p-4 sm:p-5"
                 @submit.prevent="submit"
             >
-                <p
-                    class="rounded-lg bg-sky-500/10 p-3 text-sm text-sky-800 dark:text-sky-200"
-                >
-                    Creating a session saves a system snapshot. Entering counts
-                    will not change official stock until an authorized reviewer
-                    approves the discrepancies.
-                </p>
                 <div
-                    class="flex flex-col gap-2 rounded-xl border border-border/60 bg-muted/20 p-3 sm:flex-row sm:items-center sm:justify-between"
+                    class="flex items-start gap-2.5 rounded-lg border border-sky-500/20 bg-sky-500/10 p-3 text-xs text-sky-900 dark:text-sky-200"
                 >
-                    <div>
-                        <p class="text-sm font-medium">
-                            Scan a product or asset code
-                        </p>
-                        <p class="text-xs text-muted-foreground">
-                            A matching SKU or asset tag will be selected
-                            automatically.
-                        </p>
+                    <Info
+                        class="mt-0.5 h-4 w-4 shrink-0 text-sky-600 dark:text-sky-400"
+                    />
+                    <span
+                        >Creating a session saves a system snapshot. Entering
+                        counts will not change official stock until an
+                        authorized reviewer approves the discrepancies.</span
+                    >
+                </div>
+                <div
+                    class="flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/30 p-3.5 sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"
+                        >
+                            <ScanLine class="h-4 w-4" />
+                        </div>
+                        <div>
+                            <p class="text-sm font-semibold text-foreground">
+                                Scan a product or asset code
+                            </p>
+                            <p class="text-xs text-muted-foreground">
+                                A matching SKU or asset tag will be selected
+                                automatically.
+                            </p>
+                        </div>
                     </div>
                     <QrScannerDialog
                         button-label="Scan Count Item"
@@ -240,64 +262,108 @@ function statusClass(value: string): string {
                     v-if="scanFeedback"
                     role="status"
                     aria-live="polite"
-                    class="text-sm text-muted-foreground"
+                    class="rounded-md border border-border/60 bg-muted/40 px-3 py-1.5 text-xs font-medium text-foreground"
                 >
                     {{ scanFeedback }}
                 </p>
-                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <label class="grid gap-1.5 text-sm font-medium"
-                        >Counting date
-                        <Input
-                            v-model="form.counting_date"
-                            type="date"
-                            required
-                        />
+                <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    <div class="grid gap-1.5">
+                        <label
+                            for="count-date"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Counting date</label
+                        >
+                        <div class="relative">
+                            <Calendar
+                                class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                            />
+                            <Input
+                                id="count-date"
+                                v-model="form.counting_date"
+                                type="date"
+                                required
+                                class="h-10 rounded-lg pl-9 text-sm"
+                            />
+                        </div>
                         <InputError :message="form.errors.counting_date" />
-                    </label>
-                    <label class="grid gap-1.5 text-sm font-medium"
-                        >Scope or area
-                        <Input
-                            v-model="form.scope"
-                            placeholder="Example: Main supply room"
-                            required
-                        />
+                    </div>
+                    <div class="grid gap-1.5">
+                        <label
+                            for="count-scope"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Scope or area</label
+                        >
+                        <div class="relative">
+                            <Compass
+                                class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                            />
+                            <Input
+                                id="count-scope"
+                                v-model="form.scope"
+                                placeholder="Example: Main supply room"
+                                required
+                                class="h-10 rounded-lg pl-9 text-sm"
+                            />
+                        </div>
                         <InputError :message="form.errors.scope" />
-                    </label>
-                    <label class="grid gap-1.5 text-sm font-medium"
-                        >Physical location
-                        <select
-                            v-model="form.location_id"
-                            class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                    </div>
+                    <div class="grid gap-1.5">
+                        <label
+                            for="count-location"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Physical location</label
                         >
-                            <option value="">No location selected</option>
-                            <option
-                                v-for="location in locations"
-                                :key="location.id"
-                                :value="String(location.id)"
+                        <div class="relative">
+                            <MapPin
+                                class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                            />
+                            <select
+                                id="count-location"
+                                v-model="form.location_id"
+                                class="h-10 w-full rounded-lg border border-input bg-background pr-8 pl-9 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                             >
-                                {{ location.code }} — {{ location.name }}
-                            </option>
-                        </select>
+                                <option value="">No location selected</option>
+                                <option
+                                    v-for="location in locations"
+                                    :key="location.id"
+                                    :value="String(location.id)"
+                                >
+                                    {{ location.code }} — {{ location.name }}
+                                </option>
+                            </select>
+                        </div>
                         <InputError :message="form.errors.location_id" />
-                    </label>
-                    <label class="grid gap-1.5 text-sm font-medium"
-                        >Assigned counter
-                        <select
-                            v-model="form.assigned_to"
-                            class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
-                            required
+                    </div>
+                    <div class="grid gap-1.5">
+                        <label
+                            for="count-assigned"
+                            class="text-xs font-medium text-muted-foreground"
+                            >Assigned counter</label
                         >
-                            <option value="" disabled>Select a person</option>
-                            <option
-                                v-for="user in users"
-                                :key="user.id"
-                                :value="String(user.id)"
+                        <div class="relative">
+                            <User
+                                class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
+                            />
+                            <select
+                                id="count-assigned"
+                                v-model="form.assigned_to"
+                                class="h-10 w-full rounded-lg border border-input bg-background pr-8 pl-9 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                                required
                             >
-                                {{ user.name }}
-                            </option>
-                        </select>
+                                <option value="" disabled>
+                                    Select a person
+                                </option>
+                                <option
+                                    v-for="user in users"
+                                    :key="user.id"
+                                    :value="String(user.id)"
+                                >
+                                    {{ user.name }}
+                                </option>
+                            </select>
+                        </div>
                         <InputError :message="form.errors.assigned_to" />
-                    </label>
+                    </div>
                 </div>
 
                 <div class="grid gap-4 lg:grid-cols-2">
@@ -436,58 +502,86 @@ function statusClass(value: string): string {
             </div>
             <div
                 v-if="sessions.data.length"
-                class="grid gap-3 md:grid-cols-2 xl:grid-cols-3"
+                class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
             >
                 <Link
                     v-for="session in sessions.data"
                     :key="session.id"
                     :href="show(session.id)"
-                    class="group rounded-xl border border-border/70 bg-card p-4 shadow-xs transition hover:border-primary/40 hover:shadow-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    class="group flex flex-col justify-between rounded-xl border border-border/70 bg-card p-5 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
-                    <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <p class="font-mono text-xs text-muted-foreground">
-                                {{ session.reference_no }}
-                            </p>
-                            <h3 class="mt-1 font-semibold">
-                                {{ session.scope }}
-                            </h3>
+                    <div>
+                        <div class="flex items-center justify-between gap-2">
+                            <AdminCodeBadge :value="session.reference_no" />
+                            <span
+                                class="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                                :class="statusClass(session.status)"
+                            >
+                                <span
+                                    class="h-1.5 w-1.5 rounded-full bg-current"
+                                />
+                                {{ statusLabel(session.status) }}
+                            </span>
                         </div>
-                        <span
-                            class="rounded-full px-2.5 py-1 text-xs font-medium"
-                            :class="statusClass(session.status)"
-                            >{{ statusLabel(session.status) }}</span
+                        <h3
+                            class="mt-3 line-clamp-1 font-semibold text-foreground transition-colors group-hover:text-primary"
                         >
-                    </div>
-                    <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
-                        <div>
-                            <dt class="text-xs text-muted-foreground">
-                                Progress
-                            </dt>
-                            <dd class="font-medium">
-                                {{ session.counted_lines_count }} of
-                                {{ session.lines_count }}
-                            </dd>
+                            {{ session.scope }}
+                        </h3>
+                        <p
+                            class="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground"
+                        >
+                            <Calendar
+                                class="h-3 w-3 text-muted-foreground/70"
+                            />
+                            {{ session.counting_date }}
+                        </p>
+
+                        <!-- Progress Bar -->
+                        <div class="mt-4 space-y-1.5">
+                            <div
+                                class="flex justify-between text-xs text-muted-foreground"
+                            >
+                                <span>Progress</span>
+                                <span class="font-medium text-foreground">
+                                    {{ session.counted_lines_count }} /
+                                    {{ session.lines_count }} lines
+                                </span>
+                            </div>
+                            <div
+                                class="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+                            >
+                                <div
+                                    class="h-full rounded-full bg-primary transition-all duration-300"
+                                    :style="{
+                                        width: `${session.lines_count > 0 ? Math.round((session.counted_lines_count / session.lines_count) * 100) : 0}%`,
+                                    }"
+                                />
+                            </div>
                         </div>
+                    </div>
+
+                    <dl
+                        class="mt-4 grid grid-cols-2 gap-2 border-t border-border/40 pt-3 text-xs"
+                    >
                         <div>
-                            <dt class="text-xs text-muted-foreground">
-                                Differences
-                            </dt>
-                            <dd class="font-medium">
+                            <dt class="text-muted-foreground">Discrepancies</dt>
+                            <dd
+                                class="mt-0.5 font-semibold"
+                                :class="
+                                    session.discrepancy_lines_count > 0
+                                        ? 'text-amber-600 dark:text-amber-400'
+                                        : 'text-foreground'
+                                "
+                            >
                                 {{ session.discrepancy_lines_count }}
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-xs text-muted-foreground">
-                                Counter
-                            </dt>
-                            <dd>{{ session.assigned_user.name }}</dd>
-                        </div>
-                        <div>
-                            <dt class="text-xs text-muted-foreground">
-                                Location
-                            </dt>
-                            <dd>
+                            <dt class="text-muted-foreground">Location</dt>
+                            <dd
+                                class="mt-0.5 truncate font-medium text-foreground"
+                            >
                                 {{ session.location?.name ?? 'Not specified' }}
                             </dd>
                         </div>

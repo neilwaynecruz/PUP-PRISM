@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import {
+    Activity,
     ArrowLeft,
+    CheckCircle2,
     Download,
     FileText,
     MapPin,
     ShieldCheck,
+    UserCheck,
     Wrench,
 } from 'lucide-vue-next';
 import { computed, reactive, ref, watch } from 'vue';
@@ -450,31 +453,89 @@ function removeAttachment(record: Attachment): void {
             aria-label="Asset summary"
             class="grid gap-3 sm:grid-cols-2 lg:grid-cols-5"
         >
-            <div class="rounded-xl border border-border/70 bg-card p-4">
-                <p class="text-xs text-muted-foreground">Availability</p>
-                <p class="mt-1 font-semibold">{{ label(asset.status) }}</p>
+            <div
+                class="rounded-xl border border-border/70 bg-card p-4 shadow-xs"
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs font-medium text-muted-foreground">
+                        Availability
+                    </p>
+                    <Activity
+                        aria-hidden="true"
+                        class="h-4 w-4 text-muted-foreground/60"
+                    />
+                </div>
+                <p class="mt-2 text-base font-semibold text-foreground">
+                    {{ label(asset.status) }}
+                </p>
             </div>
-            <div class="rounded-xl border border-border/70 bg-card p-4">
-                <p class="text-xs text-muted-foreground">Condition</p>
-                <p class="mt-1 font-semibold">
+            <div
+                class="rounded-xl border border-border/70 bg-card p-4 shadow-xs"
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs font-medium text-muted-foreground">
+                        Condition
+                    </p>
+                    <CheckCircle2
+                        aria-hidden="true"
+                        class="h-4 w-4 text-muted-foreground/60"
+                    />
+                </div>
+                <p class="mt-2 text-base font-semibold text-foreground">
                     {{ label(asset.condition_status) }}
                 </p>
             </div>
-            <div class="rounded-xl border border-border/70 bg-card p-4">
-                <p class="text-xs text-muted-foreground">Lifecycle</p>
-                <p class="mt-1 font-semibold">
+            <div
+                class="rounded-xl border border-border/70 bg-card p-4 shadow-xs"
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs font-medium text-muted-foreground">
+                        Lifecycle
+                    </p>
+                    <ShieldCheck
+                        aria-hidden="true"
+                        class="h-4 w-4 text-muted-foreground/60"
+                    />
+                </div>
+                <p class="mt-2 text-base font-semibold text-foreground">
                     {{ label(asset.lifecycle_status) }}
                 </p>
             </div>
-            <div class="rounded-xl border border-border/70 bg-card p-4">
-                <p class="text-xs text-muted-foreground">Location</p>
-                <p class="mt-1 font-semibold">
+            <div
+                class="rounded-xl border border-border/70 bg-card p-4 shadow-xs"
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs font-medium text-muted-foreground">
+                        Location
+                    </p>
+                    <MapPin
+                        aria-hidden="true"
+                        class="h-4 w-4 text-muted-foreground/60"
+                    />
+                </div>
+                <p
+                    class="mt-2 truncate text-base font-semibold text-foreground"
+                    :title="asset.current_location?.name ?? 'Not recorded'"
+                >
                     {{ asset.current_location?.name ?? 'Not recorded' }}
                 </p>
             </div>
-            <div class="rounded-xl border border-border/70 bg-card p-4">
-                <p class="text-xs text-muted-foreground">Accountability</p>
-                <p class="mt-1 font-semibold">
+            <div
+                class="rounded-xl border border-border/70 bg-card p-4 shadow-xs"
+            >
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-xs font-medium text-muted-foreground">
+                        Accountability
+                    </p>
+                    <UserCheck
+                        aria-hidden="true"
+                        class="h-4 w-4 text-muted-foreground/60"
+                    />
+                </div>
+                <p
+                    class="mt-2 truncate text-base font-semibold text-foreground"
+                    :title="asset.position?.title ?? 'In stock'"
+                >
                     {{ asset.position?.title ?? 'In stock' }}
                 </p>
             </div>
@@ -482,7 +543,7 @@ function removeAttachment(record: Attachment): void {
 
         <div class="grid gap-6 xl:grid-cols-3">
             <section
-                class="space-y-4 xl:col-span-2"
+                class="min-w-0 space-y-4 xl:col-span-2"
                 aria-labelledby="maintenance-title"
             >
                 <div>
@@ -490,10 +551,12 @@ function removeAttachment(record: Attachment): void {
                         id="maintenance-title"
                         class="flex items-center gap-2 text-lg font-semibold"
                     >
-                        <Wrench aria-hidden="true" class="h-5 w-5" />Maintenance
-                        and repairs
+                        <Wrench
+                            aria-hidden="true"
+                            class="h-5 w-5 text-primary"
+                        />Maintenance and repairs
                     </h2>
-                    <p class="text-sm text-muted-foreground">
+                    <p class="text-xs text-muted-foreground">
                         Record service work and outcomes. Existing bookings are
                         protected and must be resolved before work begins.
                     </p>
@@ -503,20 +566,25 @@ function removeAttachment(record: Attachment): void {
                         can.createMaintenance &&
                         asset.lifecycle_status === 'active'
                     "
-                    class="rounded-xl border border-border/70 bg-card"
+                    class="overflow-hidden rounded-xl border border-border/70 bg-card shadow-xs"
                     open
                 >
-                    <summary class="cursor-pointer px-4 py-3 font-medium">
+                    <summary
+                        class="cursor-pointer px-4 py-3 text-sm font-medium transition hover:bg-muted/40"
+                    >
                         Create maintenance request
                     </summary>
                     <form
-                        class="grid gap-3 border-t border-border/60 p-4 sm:grid-cols-2"
+                        class="grid w-full min-w-0 gap-3.5 border-t border-border/60 p-4 sm:grid-cols-2"
                         @submit.prevent="submitMaintenance"
                     >
-                        <label class="grid gap-1 text-sm font-medium"
-                            >Maintenance type<select
+                        <label
+                            class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                        >
+                            <span>Maintenance type</span>
+                            <select
                                 v-model="maintenanceForm.maintenance_type"
-                                class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
+                                class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                             >
                                 <option value="preventive">
                                     Preventive maintenance
@@ -527,32 +595,44 @@ function removeAttachment(record: Attachment): void {
                                 <option value="inspection">Inspection</option>
                                 <option value="repair">Repair</option>
                                 <option value="other">Other</option>
-                            </select></label
+                            </select>
+                        </label>
+                        <label
+                            class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
                         >
-                        <label class="grid gap-1 text-sm font-medium"
-                            >Reported date<input
+                            <span>Reported date</span>
+                            <input
                                 v-model="maintenanceForm.reported_date"
                                 required
                                 type="date"
-                                class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
-                        /></label>
+                                class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                            />
+                        </label>
                         <label
-                            class="grid gap-1 text-sm font-medium sm:col-span-2"
-                            >Reported issue<textarea
+                            class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground sm:col-span-2"
+                        >
+                            <span>Reported issue</span>
+                            <textarea
                                 v-model="maintenanceForm.reported_issue"
                                 required
                                 rows="3"
                                 placeholder="Describe the issue in clear, practical terms"
-                                class="rounded-md border border-input bg-background px-3 py-2" /><InputError
+                                class="w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                            />
+                            <InputError
                                 :message="
                                     maintenanceForm.errors.reported_issue ||
                                     maintenanceForm.errors.asset_id
                                 "
-                        /></label>
-                        <label class="grid gap-1 text-sm font-medium"
-                            >Assigned personnel<select
+                            />
+                        </label>
+                        <label
+                            class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                        >
+                            <span>Assigned personnel</span>
+                            <select
                                 v-model="maintenanceForm.assigned_to"
-                                class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
+                                class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                             >
                                 <option value="">Assign later</option>
                                 <option
@@ -562,24 +642,30 @@ function removeAttachment(record: Attachment): void {
                                 >
                                     {{ user.name }}
                                 </option>
-                            </select></label
+                            </select>
+                        </label>
+                        <label
+                            class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
                         >
-                        <label class="grid gap-1 text-sm font-medium"
-                            >Scheduled service date<input
+                            <span>Scheduled service date</span>
+                            <input
                                 v-model="maintenanceForm.scheduled_for"
                                 type="date"
-                                class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
-                        /></label>
+                                class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                            />
+                        </label>
                         <div class="flex justify-end sm:col-span-2">
                             <Button
                                 type="submit"
+                                class="h-9 rounded-lg px-4 text-xs font-semibold shadow-xs"
                                 :disabled="maintenanceForm.processing"
-                                >{{
+                            >
+                                {{
                                     maintenanceForm.processing
                                         ? 'Creating request…'
                                         : 'Create Maintenance Request'
-                                }}</Button
-                            >
+                                }}
+                            </Button>
                         </div>
                     </form>
                 </details>
@@ -629,23 +715,26 @@ function removeAttachment(record: Attachment): void {
                             (isAdmin ||
                                 auth.roles.includes('Property Custodian'))
                         "
-                        class="mt-3 rounded-lg border border-border/60"
+                        class="mt-3 overflow-hidden rounded-lg border border-border/60 bg-muted/20"
                     >
                         <summary
-                            class="cursor-pointer px-3 py-2 text-sm font-medium"
+                            class="cursor-pointer px-3 py-2 text-xs font-semibold tracking-wider text-muted-foreground uppercase transition hover:bg-muted/40"
                         >
                             Service details
                         </summary>
                         <div
-                            class="grid gap-3 border-t border-border/60 p-3 sm:grid-cols-2"
+                            class="grid w-full min-w-0 gap-3 border-t border-border/60 p-3 sm:grid-cols-2"
                         >
-                            <label class="grid gap-1 text-sm font-medium"
-                                >Assigned personnel<select
+                            <label
+                                class="grid w-full min-w-0 gap-1 text-xs font-medium text-foreground"
+                            >
+                                <span>Assigned personnel</span>
+                                <select
                                     v-model="
                                         maintenanceDetails[record.id]
                                             .assigned_to
                                     "
-                                    class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
+                                    class="h-9 w-full max-w-full min-w-0 rounded-md border border-input bg-background px-2.5 text-xs text-foreground transition focus-visible:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none"
                                 >
                                     <option value="">Not assigned</option>
                                     <option
@@ -655,28 +744,39 @@ function removeAttachment(record: Attachment): void {
                                     >
                                         {{ user.name }}
                                     </option>
-                                </select></label
+                                </select>
+                            </label>
+                            <label
+                                class="grid w-full min-w-0 gap-1 text-xs font-medium text-foreground"
                             >
-                            <label class="grid gap-1 text-sm font-medium"
-                                >Scheduled service date<input
+                                <span>Scheduled service date</span>
+                                <input
                                     v-model="
                                         maintenanceDetails[record.id]
                                             .scheduled_for
                                     "
                                     type="date"
-                                    class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
-                            /></label>
-                            <label class="grid gap-1 text-sm font-medium"
-                                >Service provider<input
+                                    class="h-9 w-full max-w-full min-w-0 rounded-md border border-input bg-background px-2.5 text-xs text-foreground transition focus-visible:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none"
+                                />
+                            </label>
+                            <label
+                                class="grid w-full min-w-0 gap-1 text-xs font-medium text-foreground"
+                            >
+                                <span>Service provider</span>
+                                <input
                                     v-model="
                                         maintenanceDetails[record.id]
                                             .service_provider
                                     "
                                     placeholder="Internal team or service provider"
-                                    class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
-                            /></label>
-                            <label class="grid gap-1 text-sm font-medium"
-                                >Repair cost<input
+                                    class="h-9 w-full max-w-full min-w-0 rounded-md border border-input bg-background px-2.5 text-xs text-foreground transition focus-visible:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none"
+                                />
+                            </label>
+                            <label
+                                class="grid w-full min-w-0 gap-1 text-xs font-medium text-foreground"
+                            >
+                                <span>Repair cost</span>
+                                <input
                                     v-model="
                                         maintenanceDetails[record.id]
                                             .repair_cost
@@ -685,32 +785,37 @@ function removeAttachment(record: Attachment): void {
                                     step="0.01"
                                     type="number"
                                     placeholder="0.00"
-                                    class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
-                            /></label>
+                                    class="h-9 w-full max-w-full min-w-0 rounded-md border border-input bg-background px-2.5 text-xs text-foreground transition focus-visible:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none"
+                                />
+                            </label>
                             <label
-                                class="grid gap-1 text-sm font-medium sm:col-span-2"
-                                >Findings<textarea
+                                class="grid w-full min-w-0 gap-1 text-xs font-medium text-foreground sm:col-span-2"
+                            >
+                                <span>Findings</span>
+                                <textarea
                                     v-model="
                                         maintenanceDetails[record.id].findings
                                     "
                                     rows="2"
                                     placeholder="Record the inspection or repair findings"
-                                    class="rounded-md border border-input bg-background px-3 py-2"
+                                    class="w-full max-w-full min-w-0 rounded-md border border-input bg-background px-2.5 py-2 text-xs text-foreground transition focus-visible:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none"
                                 />
                             </label>
                             <label
-                                class="grid gap-1 text-sm font-medium sm:col-span-2"
-                                >Internal notes<textarea
+                                class="grid w-full min-w-0 gap-1 text-xs font-medium text-foreground sm:col-span-2"
+                            >
+                                <span>Internal notes</span>
+                                <textarea
                                     v-model="
                                         maintenanceDetails[record.id].notes
                                     "
                                     rows="2"
                                     placeholder="Add details for the maintenance history"
-                                    class="rounded-md border border-input bg-background px-3 py-2"
+                                    class="w-full max-w-full min-w-0 rounded-md border border-input bg-background px-2.5 py-2 text-xs text-foreground transition focus-visible:border-primary/50 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:outline-none"
                                 />
                             </label>
                             <p
-                                class="text-xs text-muted-foreground sm:col-span-2"
+                                class="text-[11px] text-muted-foreground sm:col-span-2"
                             >
                                 These details are saved with the next status
                                 change.
@@ -794,19 +899,22 @@ function removeAttachment(record: Attachment): void {
                 </p>
             </section>
 
-            <aside class="space-y-6">
-                <section class="space-y-3" aria-labelledby="transfer-title">
-                    <div>
+            <aside class="min-w-0 space-y-6">
+                <section
+                    class="min-w-0 space-y-3"
+                    aria-labelledby="transfer-title"
+                >
+                    <div class="min-w-0">
                         <h2
                             id="transfer-title"
                             class="flex items-center gap-2 text-lg font-semibold"
                         >
                             <MapPin
                                 aria-hidden="true"
-                                class="h-5 w-5"
+                                class="h-5 w-5 text-primary"
                             />Location transfers
                         </h2>
-                        <p class="text-sm text-muted-foreground">
+                        <p class="text-xs text-muted-foreground">
                             A transfer changes physical location only.
                             Accountability still requires the handover workflow.
                         </p>
@@ -816,66 +924,97 @@ function removeAttachment(record: Attachment): void {
                             can.createTransfer &&
                             asset.lifecycle_status === 'active'
                         "
-                        class="grid gap-3 rounded-xl border border-border/70 bg-card p-4"
+                        class="w-full min-w-0 overflow-hidden rounded-xl border border-border/70 bg-card p-4 shadow-xs"
                         @submit.prevent="submitTransfer"
                     >
-                        <label class="grid gap-1 text-sm font-medium"
-                            >Destination<select
-                                v-model="transferForm.to_location_id"
-                                required
-                                class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
+                        <div class="grid w-full min-w-0 gap-3.5">
+                            <label
+                                class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
                             >
-                                <option value="" disabled>
-                                    Select a location
-                                </option>
-                                <option
-                                    v-for="location in locations"
-                                    :key="location.id"
-                                    :value="String(location.id)"
+                                <span>Destination</span>
+                                <select
+                                    v-model="transferForm.to_location_id"
+                                    required
+                                    class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                                 >
-                                    {{ location.code }} — {{ location.name }}
-                                </option></select
-                            ><InputError
-                                :message="
-                                    transferForm.errors.to_location_id
-                                " /></label
-                        ><label class="grid gap-1 text-sm font-medium"
-                            >Reason<textarea
-                                v-model="transferForm.reason"
-                                required
-                                rows="2"
-                                placeholder="Why is this asset moving?"
-                                class="rounded-md border border-input bg-background px-3 py-2"
-                            /></label
-                        ><label class="grid gap-1 text-sm font-medium"
-                            >Transfer date<input
-                                v-model="transferForm.transfer_date"
-                                type="date"
-                                required
-                                class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9" /></label
-                        ><Button
-                            type="submit"
-                            :disabled="transferForm.processing"
-                            >Submit Transfer Request</Button
-                        >
+                                    <option value="" disabled>
+                                        Select a location
+                                    </option>
+                                    <option
+                                        v-for="location in locations"
+                                        :key="location.id"
+                                        :value="String(location.id)"
+                                    >
+                                        {{ location.code }} —
+                                        {{ location.name }}
+                                    </option>
+                                </select>
+                                <InputError
+                                    :message="
+                                        transferForm.errors.to_location_id
+                                    "
+                                />
+                            </label>
+                            <label
+                                class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                            >
+                                <span>Reason</span>
+                                <textarea
+                                    v-model="transferForm.reason"
+                                    required
+                                    rows="2"
+                                    placeholder="Why is this asset moving?"
+                                    class="w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                                />
+                            </label>
+                            <label
+                                class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                            >
+                                <span>Transfer date</span>
+                                <input
+                                    v-model="transferForm.transfer_date"
+                                    type="date"
+                                    required
+                                    class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                                />
+                            </label>
+                            <Button
+                                type="submit"
+                                class="h-9 w-full rounded-lg text-xs font-semibold shadow-xs"
+                                :disabled="transferForm.processing"
+                            >
+                                {{
+                                    transferForm.processing
+                                        ? 'Submitting…'
+                                        : 'Submit Transfer Request'
+                                }}
+                            </Button>
+                        </div>
                     </form>
                     <article
                         v-for="record in asset.transfers"
                         :key="record.id"
-                        class="rounded-xl border border-border/70 bg-card p-4 text-sm"
+                        class="w-full min-w-0 overflow-hidden rounded-xl border border-border/70 bg-card p-4 text-sm shadow-xs"
                     >
-                        <div class="flex justify-between gap-2">
+                        <div class="flex items-start justify-between gap-2">
                             <strong
-                                >{{
-                                    record.from_location?.name ?? 'Unrecorded'
-                                }}
-                                → {{ record.to_location.name }}</strong
-                            ><span class="text-xs text-muted-foreground">{{
-                                label(record.status)
-                            }}</span>
+                                class="min-w-0 leading-tight font-semibold break-words text-foreground"
+                            >
+                                {{ record.from_location?.name ?? 'Unrecorded' }}
+                                → {{ record.to_location.name }}
+                            </strong>
+                            <span
+                                class="shrink-0 rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground"
+                            >
+                                {{ label(record.status) }}
+                            </span>
                         </div>
-                        <p class="mt-2">{{ record.reason }}</p>
-                        <p class="mt-2 text-xs text-muted-foreground">
+                        <p
+                            class="mt-2 text-xs leading-relaxed break-words text-muted-foreground"
+                        >
+                            {{ record.reason }}
+                        </p>
+                        <p class="mt-2 text-[11px] text-muted-foreground">
                             Requested by {{ record.initiator.name }} for
                             {{ formatDate(record.transfer_date) }}
                         </p>
@@ -931,34 +1070,41 @@ function removeAttachment(record: Attachment): void {
             </aside>
         </div>
 
-        <section class="space-y-4" aria-labelledby="lifecycle-title">
+        <section class="min-w-0 space-y-4" aria-labelledby="lifecycle-title">
             <div>
                 <h2
                     id="lifecycle-title"
                     class="flex items-center gap-2 text-lg font-semibold"
                 >
-                    <ShieldCheck aria-hidden="true" class="h-5 w-5" />Lifecycle
-                    and condition history
+                    <ShieldCheck
+                        aria-hidden="true"
+                        class="h-5 w-5 text-primary"
+                    />Lifecycle and condition history
                 </h2>
-                <p class="text-sm text-muted-foreground">
+                <p class="text-xs text-muted-foreground">
                     Condition changes are separate from retirement and disposal.
                 </p>
             </div>
             <details
                 v-if="can.createLifecycle && lifecycleOptions.length > 0"
-                class="rounded-xl border border-border/70 bg-card"
+                class="overflow-hidden rounded-xl border border-border/70 bg-card shadow-xs"
             >
-                <summary class="cursor-pointer px-4 py-3 font-medium">
+                <summary
+                    class="cursor-pointer px-4 py-3 text-sm font-medium transition hover:bg-muted/40"
+                >
                     Propose a lifecycle or condition change
                 </summary>
                 <form
-                    class="grid gap-3 border-t border-border/60 p-4 md:grid-cols-3"
+                    class="grid w-full min-w-0 gap-3.5 border-t border-border/60 p-4 md:grid-cols-3"
                     @submit.prevent="submitLifecycle"
                 >
-                    <label class="grid gap-1 text-sm font-medium"
-                        >Change type<select
+                    <label
+                        class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                    >
+                        <span>Change type</span>
+                        <select
                             v-model="lifecycleForm.event_type"
-                            class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
+                            class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                         >
                             <option
                                 v-for="option in lifecycleOptions"
@@ -967,73 +1113,105 @@ function removeAttachment(record: Attachment): void {
                             >
                                 {{ option.label }}
                             </option>
-                        </select></label
-                    ><label
+                        </select>
+                    </label>
+                    <label
                         v-if="lifecycleForm.event_type === 'condition_change'"
-                        class="grid gap-1 text-sm font-medium"
-                        >New condition<select
+                        class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                    >
+                        <span>New condition</span>
+                        <select
                             v-model="lifecycleForm.condition_status"
                             required
-                            class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9"
+                            class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                         >
                             <option value="" disabled>Select condition</option>
                             <option value="serviceable">Serviceable</option>
                             <option value="unserviceable">Unserviceable</option>
                             <option value="damaged">Damaged</option>
-                        </select></label
-                    ><label class="grid gap-1 text-sm font-medium"
-                        >Proposed date<input
+                        </select>
+                    </label>
+                    <label
+                        class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                    >
+                        <span>Proposed date</span>
+                        <input
                             v-model="lifecycleForm.proposed_for"
                             type="date"
-                            class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9" /></label
-                    ><label
+                            class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                        />
+                    </label>
+                    <label
                         v-if="
                             ['retirement', 'disposal'].includes(
                                 lifecycleForm.event_type,
                             )
                         "
-                        class="grid gap-1 text-sm font-medium"
-                        >Method<input
+                        class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                    >
+                        <span>Method</span>
+                        <input
                             v-model="lifecycleForm.method"
                             placeholder="Example: Transfer to disposal committee"
-                            class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9" /></label
-                    ><label
+                            class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                        />
+                    </label>
+                    <label
                         v-if="
                             ['retirement', 'disposal'].includes(
                                 lifecycleForm.event_type,
                             )
                         "
-                        class="grid gap-1 text-sm font-medium md:col-span-2"
-                        >Supporting reference<input
+                        class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground md:col-span-2"
+                    >
+                        <span>Supporting reference</span>
+                        <input
                             v-model="lifecycleForm.supporting_reference"
                             placeholder="Document, resolution, or inspection reference"
-                            class="min-h-11 rounded-md border border-input bg-background px-3 sm:min-h-9" /></label
-                    ><label class="grid gap-1 text-sm font-medium md:col-span-3"
-                        >Reason<textarea
+                            class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                        />
+                    </label>
+                    <label
+                        class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground md:col-span-3"
+                    >
+                        <span>Reason</span>
+                        <textarea
                             v-model="lifecycleForm.reason"
                             required
                             rows="3"
                             placeholder="Explain why this change is needed"
-                            class="rounded-md border border-input bg-background px-3 py-2" /><InputError
+                            class="w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                        />
+                        <InputError
                             :message="
                                 lifecycleForm.errors.event_type ||
                                 lifecycleForm.errors.reason
                             "
-                    /></label>
-                    <label class="grid gap-1 text-sm font-medium md:col-span-3"
-                        >Review notes<textarea
+                        />
+                    </label>
+                    <label
+                        class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground md:col-span-3"
+                    >
+                        <span>Review notes</span>
+                        <textarea
                             v-model="lifecycleForm.notes"
                             rows="2"
                             placeholder="Add any details reviewers should consider"
-                            class="rounded-md border border-input bg-background px-3 py-2"
+                            class="w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground transition placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                         />
                     </label>
                     <div class="flex justify-end md:col-span-3">
                         <Button
                             type="submit"
+                            class="h-9 rounded-lg px-4 text-xs font-semibold shadow-xs"
                             :disabled="lifecycleForm.processing"
-                            >Submit for Approval</Button
                         >
+                            {{
+                                lifecycleForm.processing
+                                    ? 'Submitting…'
+                                    : 'Submit for Approval'
+                            }}
+                        </Button>
                     </div>
                 </form>
             </details>
@@ -1041,17 +1219,21 @@ function removeAttachment(record: Attachment): void {
                 <article
                     v-for="record in asset.lifecycle_events"
                     :key="record.id"
-                    class="rounded-xl border border-border/70 bg-card p-4"
+                    class="rounded-xl border border-border/70 bg-card p-4 shadow-xs"
                 >
                     <div class="flex items-start justify-between gap-3">
-                        <div>
-                            <h3 class="font-semibold">
+                        <div class="min-w-0">
+                            <h3 class="font-semibold text-foreground">
                                 {{ label(record.event_type) }}
                             </h3>
-                            <p class="mt-1 text-sm">{{ record.reason }}</p>
+                            <p
+                                class="mt-1 text-sm break-words text-muted-foreground"
+                            >
+                                {{ record.reason }}
+                            </p>
                         </div>
                         <span
-                            class="rounded-full bg-muted px-2.5 py-1 text-xs"
+                            class="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground"
                             >{{ label(record.status) }}</span
                         >
                     </div>
@@ -1094,34 +1276,44 @@ function removeAttachment(record: Attachment): void {
             </div>
         </section>
 
-        <section class="space-y-4" aria-labelledby="documents-title">
+        <section class="min-w-0 space-y-4" aria-labelledby="documents-title">
             <div>
                 <h2
                     id="documents-title"
                     class="flex items-center gap-2 text-lg font-semibold"
                 >
-                    <FileText aria-hidden="true" class="h-5 w-5" />Supporting
-                    documents
+                    <FileText
+                        aria-hidden="true"
+                        class="h-5 w-5 text-primary"
+                    />Supporting documents
                 </h2>
-                <p class="text-sm text-muted-foreground">
+                <p class="text-xs text-muted-foreground">
                     Files are stored privately and can only be downloaded
                     through an authorized PRISM session.
                 </p>
             </div>
             <form
-                class="grid gap-3 rounded-xl border border-border/70 bg-card p-4 md:grid-cols-4 md:items-end"
+                class="grid w-full min-w-0 gap-3.5 rounded-xl border border-border/70 bg-card p-4 shadow-xs md:grid-cols-4 md:items-end"
                 enctype="multipart/form-data"
                 @submit.prevent="submitAttachment"
             >
-                <label class="grid min-w-0 gap-1 text-sm font-medium"
-                    >Document title<input
+                <label
+                    class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                >
+                    <span>Document title</span>
+                    <input
                         v-model="attachmentForm.title"
                         required
-                        class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 sm:min-h-9" /></label
-                ><label class="grid min-w-0 gap-1 text-sm font-medium"
-                    >Category<select
+                        class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
+                    />
+                </label>
+                <label
+                    class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                >
+                    <span>Category</span>
+                    <select
                         v-model="attachmentForm.category"
-                        class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 sm:min-h-9"
+                        class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
                     >
                         <option value="receipt">Receipt</option>
                         <option value="acknowledgment">Acknowledgment</option>
@@ -1130,34 +1322,41 @@ function removeAttachment(record: Attachment): void {
                         <option value="transfer">Transfer</option>
                         <option value="disposal">Disposal</option>
                         <option value="other">Other</option>
-                    </select></label
-                ><label class="grid min-w-0 gap-1 text-sm font-medium"
-                    >File (up to 10 MB)<input
+                    </select>
+                </label>
+                <label
+                    class="grid w-full min-w-0 gap-1.5 text-xs font-medium text-foreground"
+                >
+                    <span>File (up to 10 MB)</span>
+                    <input
                         required
                         type="file"
                         accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                        class="min-h-11 w-full max-w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        @change="setFile" /><InputError
-                        :message="attachmentForm.errors.file" /></label
-                ><Button
+                        class="h-10 w-full max-w-full min-w-0 rounded-lg border border-input bg-background px-3 py-1.5 text-xs text-foreground transition file:mr-2 file:rounded-md file:border-0 file:bg-muted file:px-2.5 file:py-1 file:text-xs file:font-medium file:text-foreground hover:file:bg-muted/80"
+                        @change="setFile"
+                    />
+                    <InputError :message="attachmentForm.errors.file" />
+                </label>
+                <Button
                     type="submit"
-                    class="w-full"
+                    class="h-10 w-full rounded-lg text-xs font-semibold shadow-xs"
                     :disabled="attachmentForm.processing"
-                    >{{
+                >
+                    {{
                         attachmentForm.processing
                             ? 'Uploading…'
                             : 'Upload Document'
-                    }}</Button
-                >
+                    }}
+                </Button>
             </form>
             <div class="grid gap-3 md:grid-cols-2">
                 <article
                     v-for="record in asset.attachments"
                     :key="record.id"
-                    class="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-card p-4"
+                    class="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-xs"
                 >
                     <div class="min-w-0">
-                        <h3 class="truncate font-semibold">
+                        <h3 class="truncate font-semibold text-foreground">
                             {{ record.title }}
                         </h3>
                         <p class="truncate text-sm text-muted-foreground">
@@ -1168,12 +1367,12 @@ function removeAttachment(record: Attachment): void {
                             Uploaded by {{ record.uploader.name }}
                         </p>
                     </div>
-                    <div class="flex shrink-0 gap-1">
+                    <div class="flex shrink-0 gap-1.5">
                         <Button size="sm" variant="outline" as-child
                             ><a :href="downloadAttachment(record.id).url"
                                 ><Download
                                     aria-hidden="true"
-                                    class="mr-1 h-4 w-4"
+                                    class="mr-1 h-3.5 w-3.5"
                                 />Download</a
                             ></Button
                         ><Button

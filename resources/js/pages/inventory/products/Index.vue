@@ -1,9 +1,29 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { Printer } from 'lucide-vue-next';
+import {
+    AlertTriangle,
+    Boxes,
+    Eye,
+    FileSpreadsheet,
+    FileText,
+    Package,
+    Pencil,
+    Plus,
+    Printer,
+    RotateCcw,
+    SlidersHorizontal,
+    Tag,
+    Trash2,
+    X,
+} from 'lucide-vue-next';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import AdminCodeBadge from '@/components/admin/AdminCodeBadge.vue';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
+import AdminTableShell from '@/components/admin/AdminTableShell.vue';
+import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
 import TableSkeleton from '@/components/TableSkeleton.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -27,14 +47,14 @@ import {
 import { useBulkSelection } from '@/composables/useBulkSelection';
 import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {
-    index as productsIndex,
-    create as productsCreate,
     bulkActivate as productsBulkActivate,
     bulkChangeCategory as productsBulkChangeCategory,
     bulkDeactivate as productsBulkDeactivate,
-    show as productsShow,
-    edit as productsEdit,
+    create as productsCreate,
     destroy as productsDestroy,
+    edit as productsEdit,
+    index as productsIndex,
+    show as productsShow,
 } from '@/routes/inventory/products';
 import { sheet as productLabelsSheet } from '@/routes/inventory/products/labels';
 
@@ -85,6 +105,139 @@ const props = defineProps<{
     can: { create: boolean; bulkUpdate: boolean };
 }>();
 
+defineOptions({
+    name: 'InventoryProductIndexPage',
+    inheritAttrs: false,
+    layout: {
+        breadcrumbs: [
+            { title: 'Inventory', href: productsIndex() },
+            { title: 'Products', href: productsIndex() },
+        ],
+    },
+});
+
+// ── Search & Filter State ──
+const search = ref(props.filters.search ?? '');
+const type = ref(props.filters.type ?? '');
+const categoryId = ref<string>(
+    props.filters.category_id ? String(props.filters.category_id) : '',
+);
+const originId = ref<string>(
+    props.filters.origin_id ? String(props.filters.origin_id) : '',
+);
+const supplierId = ref<string>(
+    props.filters.supplier_id ? String(props.filters.supplier_id) : '',
+);
+const active = ref<string>(
+    props.filters.active === null ? '' : props.filters.active ? '1' : '0',
+);
+
+const showMobileFilters = ref(false);
+
+const hasActiveFilters = computed(() => {
+    return (
+        Boolean(search.value.trim()) ||
+        Boolean(type.value) ||
+        Boolean(categoryId.value) ||
+        Boolean(originId.value) ||
+        Boolean(supplierId.value) ||
+        active.value !== ''
+    );
+});
+
+const activeFilterCount = computed(() => {
+    let count = 0;
+
+    if (search.value.trim()) {
+        count++;
+    }
+
+    if (type.value) {
+        count++;
+    }
+
+    if (categoryId.value) {
+        count++;
+    }
+
+    if (originId.value) {
+        count++;
+    }
+
+    if (supplierId.value) {
+        count++;
+    }
+
+    if (active.value !== '') {
+        count++;
+    }
+
+    return count;
+});
+
+function clearAllFilters(): void {
+    search.value = '';
+    type.value = '';
+    categoryId.value = '';
+    originId.value = '';
+    supplierId.value = '';
+    active.value = '';
+}
+
+// ── Overview Statistics (from current catalog & page context) ──
+const stats = computed(() => {
+    const list = props.products.data;
+    const consumables = list.filter((p) => p.type === 'consumable');
+    const assets = list.filter((p) => p.type === 'asset');
+    const lowStock = consumables.filter(
+        (p) => (p.on_hand_qty ?? 0) <= p.reorder_threshold,
+    );
+    const inactive = list.filter((p) => !p.is_active);
+
+    return {
+        total: props.products.total,
+        pageCount: list.length,
+        consumablesCount: consumables.length,
+        assetsCount: assets.length,
+        lowStockCount: lowStock.length,
+        inactiveCount: inactive.length,
+    };
+});
+
+// ── Stock Status Helpers ──
+function stockLabel(product: ProductRow): string {
+    if (product.type !== 'consumable') {
+        return 'Asset tracked';
+    }
+
+    const onHand = product.on_hand_qty ?? 0;
+
+    if (onHand <= 0) {
+        return 'Out of stock';
+    }
+
+    if (onHand <= product.reorder_threshold) {
+        return 'Low stock';
+    }
+
+    return 'In stock';
+}
+
+function stockToneClass(product: ProductRow): string {
+    const label = stockLabel(product);
+
+    if (label === 'Out of stock') {
+        return 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:border-rose-400/20 dark:bg-rose-400/10 dark:text-rose-300';
+    }
+
+    if (label === 'Low stock') {
+        return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300';
+    }
+
+    return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-300';
+}
+
+// ── Delete Dialog ──
 const selectedProduct = ref<ProductRow | null>(null);
 const deleteDialogOpen = ref(false);
 const deleteReason = ref('');
@@ -139,7 +292,6 @@ function confirmDelete(): void {
             selectedProduct.value = null;
             deleteReason.value = '';
             deleteReasonCustom.value = '';
-            // Reload page to reflect deleted item in trash
             router.reload({
                 only: ['products'],
             } as Record<string, unknown>);
@@ -147,7 +299,7 @@ function confirmDelete(): void {
     });
 }
 
-// ── Bulk actions ──
+// ── Bulk Actions ──
 const bulkCategoryDialogOpen = ref(false);
 const bulkCategoryId = ref<string>('');
 const bulkActionDialogOpen = ref(false);
@@ -227,27 +379,27 @@ function openBulkLabelsFromHeader(): void {
 }
 
 function confirmFilteredLabels(): void {
-    const query: Record<string, string> = {};
-    query.selection_scope = 'filtered';
+    const queryParams: Record<string, string> = {};
+    queryParams.selection_scope = 'filtered';
 
     if (search.value) {
-        query.search = search.value;
+        queryParams.search = search.value;
     }
 
     if (type.value) {
-        query.type = type.value;
+        queryParams.type = type.value;
     }
 
     if (categoryId.value) {
-        query.category_id = categoryId.value;
+        queryParams.category_id = categoryId.value;
     }
 
     if (active.value) {
-        query.active = active.value;
+        queryParams.active = active.value;
     }
 
     labelScopeDialogOpen.value = false;
-    router.visit(productLabelsSheet.url({ query }));
+    router.visit(productLabelsSheet.url({ query: queryParams }));
 }
 
 function confirmBulkAction(): void {
@@ -280,64 +432,7 @@ function confirmBulkAction(): void {
     );
 }
 
-defineOptions({
-    name: 'InventoryProductIndexPage',
-    inheritAttrs: false,
-    layout: {
-        breadcrumbs: [
-            { title: 'Inventory', href: productsIndex() },
-            { title: 'Products', href: productsIndex() },
-        ],
-    },
-});
-
-const search = ref(props.filters.search ?? '');
-const type = ref(props.filters.type ?? '');
-const categoryId = ref<string>(
-    props.filters.category_id ? String(props.filters.category_id) : '',
-);
-const originId = ref<string>(
-    props.filters.origin_id ? String(props.filters.origin_id) : '',
-);
-const supplierId = ref<string>(
-    props.filters.supplier_id ? String(props.filters.supplier_id) : '',
-);
-const active = ref<string>(
-    props.filters.active === null ? '' : props.filters.active ? '1' : '0',
-);
-
-function stockLabel(product: ProductRow): string {
-    if (product.type !== 'consumable') {
-        return 'Not applicable';
-    }
-
-    const onHand = product.on_hand_qty ?? 0;
-
-    if (onHand <= 0) {
-        return 'Out of stock';
-    }
-
-    if (onHand <= product.reorder_threshold) {
-        return 'Low stock';
-    }
-
-    return 'In stock';
-}
-
-function stockToneClass(product: ProductRow): string {
-    const label = stockLabel(product);
-
-    if (label === 'Out of stock') {
-        return 'bg-rose-500/10 text-rose-700 dark:text-rose-300';
-    }
-
-    if (label === 'Low stock') {
-        return 'bg-amber-500/10 text-amber-700 dark:text-amber-300';
-    }
-
-    return 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
-}
-
+// ── Query & Debounced Filtering ──
 const query = computed(() => ({
     search: search.value || undefined,
     type: type.value || undefined,
@@ -384,37 +479,85 @@ onBeforeUnmount(() => {
     <Head title="Products" />
 
     <div
-        class="flex flex-col gap-6 p-4 sm:p-6"
+        class="flex flex-col gap-6 p-4 sm:p-6 lg:p-8"
         data-testid="products-index-page"
     >
+        <!-- Page Header & Action Controls -->
         <div
-            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
         >
-            <Heading
-                variant="small"
-                title="Products"
-                description="Find assets and consumables, review stock levels, and manage product records."
-            />
+            <div class="space-y-1">
+                <Heading
+                    variant="small"
+                    title="Products"
+                    description="Find assets and consumables, review stock levels, and manage catalog records."
+                />
+            </div>
 
             <div class="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" as-child class="rounded-lg">
-                    <a :href="props.exportUrls.csv">Download CSV</a>
-                </Button>
-                <Button variant="outline" size="sm" as-child class="rounded-lg">
-                    <a :href="props.exportUrls.pdf">Download PDF</a>
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    class="gap-1.5 rounded-lg"
-                    @click="openBulkLabelsFromHeader"
+                <!-- Secondary / Export Actions -->
+                <div
+                    class="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/20 p-0.5"
                 >
-                    <Printer class="h-3.5 w-3.5 text-primary" />
-                    <span>Print labels</span>
-                </Button>
-                <Button variant="outline" size="sm" as-child class="rounded-lg">
-                    <Link href="/inventory/products/trash">Trash</Link>
-                </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        as-child
+                        class="h-8 gap-1.5 rounded-md px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                        <a
+                            :href="props.exportUrls.csv"
+                            title="Export catalog as CSV"
+                        >
+                            <FileSpreadsheet
+                                class="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+                            />
+                            <span class="hidden sm:inline">CSV</span>
+                        </a>
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        as-child
+                        class="h-8 gap-1.5 rounded-md px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                        <a
+                            :href="props.exportUrls.pdf"
+                            title="Export catalog as PDF"
+                        >
+                            <FileText
+                                class="h-3.5 w-3.5 text-rose-600 dark:text-rose-400"
+                            />
+                            <span class="hidden sm:inline">PDF</span>
+                        </a>
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-8 gap-1.5 rounded-md px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                        @click="openBulkLabelsFromHeader"
+                        title="Print QR code labels"
+                    >
+                        <Printer class="h-3.5 w-3.5 text-primary" />
+                        <span>Print labels</span>
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        as-child
+                        class="h-8 gap-1.5 rounded-md px-2.5 text-xs text-muted-foreground hover:text-foreground"
+                    >
+                        <Link
+                            href="/inventory/products/trash"
+                            title="View deleted products in trash"
+                        >
+                            <Trash2 class="h-3.5 w-3.5 text-muted-foreground" />
+                            <span class="hidden sm:inline">Trash</span>
+                        </Link>
+                    </Button>
+                </div>
+
+                <!-- Primary Action: Dominant & Accessible -->
                 <Button
                     v-if="can.create"
                     as-child
@@ -422,412 +565,543 @@ onBeforeUnmount(() => {
                     data-test="new-product-button"
                     data-testid="new-product-button"
                     data-shortcut-action="new"
-                    class="rounded-lg shadow-sm"
+                    class="h-11 min-h-11 gap-1.5 rounded-lg px-4 font-medium shadow-xs sm:h-9 sm:min-h-9"
                 >
-                    <Link :href="productsCreate()">New product</Link>
+                    <Link :href="productsCreate()">
+                        <Plus class="h-4 w-4" />
+                        <span>New product</span>
+                    </Link>
                 </Button>
             </div>
         </div>
 
-        <div class="flex flex-col gap-3">
-            <fieldset
-                class="grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
-            >
-                <legend class="sr-only">Filter products</legend>
-                <label
-                    class="grid gap-1 text-xs font-medium text-muted-foreground"
-                >
-                    Search
-                    <Input
-                        v-model="search"
-                        name="product_search"
-                        data-testid="product-search-input"
-                        data-shortcut="search"
-                        autocomplete="off"
-                        placeholder="Enter a SKU or product name…"
-                        class="h-10 rounded-lg"
-                    />
-                </label>
-
-                <label
-                    class="grid gap-1 text-xs font-medium text-muted-foreground"
-                >
-                    Product type
-                    <select
-                        v-model="type"
-                        name="product_type"
-                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
-                    >
-                        <option value="">All types</option>
-                        <option value="consumable">Consumables</option>
-                        <option value="asset">Assets</option>
-                    </select>
-                </label>
-
-                <label
-                    class="grid gap-1 text-xs font-medium text-muted-foreground"
-                >
-                    Category
-                    <select
-                        v-model="categoryId"
-                        name="category_id"
-                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
-                    >
-                        <option value="">All categories</option>
-                        <option
-                            v-for="c in categories"
-                            :key="c.id"
-                            :value="String(c.id)"
-                        >
-                            {{ c.name }}
-                        </option>
-                    </select>
-                </label>
-
-                <label
-                    class="grid gap-1 text-xs font-medium text-muted-foreground"
-                >
-                    Origin
-                    <select
-                        v-model="originId"
-                        name="origin_id"
-                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
-                    >
-                        <option value="">All origins</option>
-                        <option
-                            v-for="s in origins"
-                            :key="s.id"
-                            :value="String(s.id)"
-                        >
-                            {{ s.name }}
-                        </option>
-                    </select>
-                </label>
-
-                <label
-                    class="grid gap-1 text-xs font-medium text-muted-foreground"
-                >
-                    Supplier
-                    <select
-                        v-model="supplierId"
-                        name="supplier_id"
-                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
-                    >
-                        <option value="">All suppliers</option>
-                        <option
-                            v-for="supplier in suppliers"
-                            :key="supplier.id"
-                            :value="String(supplier.id)"
-                        >
-                            {{ supplier.name }}
-                        </option>
-                    </select>
-                </label>
-
-                <label
-                    class="grid gap-1 text-xs font-medium text-muted-foreground"
-                >
-                    Record status
-                    <select
-                        v-model="active"
-                        name="active"
-                        class="h-11 rounded-lg border border-input bg-background px-3 text-sm transition-colors focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:h-10"
-                    >
-                        <option value="">All statuses</option>
-                        <option value="1">Active</option>
-                        <option value="0">Inactive</option>
-                    </select>
-                </label>
-            </fieldset>
-
-            <!-- Bulk action bar -->
+        <!-- Catalog Metrics Summary -->
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
             <div
-                v-if="props.can.bulkUpdate && hasSelection"
-                class="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm"
+                class="flex flex-col rounded-xl border border-border/60 bg-card p-3.5 shadow-2xs"
             >
-                <span class="font-medium text-primary"
-                    >{{ selectedIds.size }} selected</span
+                <div
+                    class="flex items-center justify-between text-xs font-medium text-muted-foreground"
                 >
-                <div class="ml-auto flex flex-wrap gap-2">
-                    <Button
-                        variant="secondary"
-                        size="sm"
-                        class="h-7 gap-1.5 rounded-lg text-xs font-semibold text-primary"
-                        @click="openBulkLabels"
-                    >
-                        <Printer class="h-3.5 w-3.5" />
-                        <span>Print labels</span>
-                    </Button>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class="h-7 rounded-lg text-xs"
-                        @click="runBulkActivate"
-                        >Activate</Button
-                    >
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class="h-7 rounded-lg text-xs"
-                        @click="runBulkDeactivate"
-                        >Deactivate</Button
-                    >
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class="h-7 rounded-lg text-xs"
-                        @click="openBulkCategoryDialog"
-                        >Change category</Button
-                    >
+                    <span>Total catalog</span>
+                    <Package class="h-4 w-4 text-primary/70" />
+                </div>
+                <div
+                    class="mt-2 text-2xl font-bold tracking-tight text-foreground"
+                >
+                    {{ stats.total }}
+                </div>
+                <div class="mt-0.5 text-[11px] text-muted-foreground">
+                    {{ stats.pageCount }} on this page
                 </div>
             </div>
 
             <div
-                v-if="isRefreshing"
-                class="rounded-xl border border-border/60 bg-card p-4 shadow-sm"
+                class="flex flex-col rounded-xl border border-border/60 bg-card p-3.5 shadow-2xs"
             >
-                <TableSkeleton :rows="6" :columns="10" />
+                <div
+                    class="flex items-center justify-between text-xs font-medium text-muted-foreground"
+                >
+                    <span>Consumables</span>
+                    <Boxes class="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div
+                    class="mt-2 text-2xl font-bold tracking-tight text-foreground"
+                >
+                    {{ stats.consumablesCount }}
+                </div>
+                <div class="mt-0.5 text-[11px] text-muted-foreground">
+                    Issued by quantity
+                </div>
             </div>
 
-            <div v-else class="grid gap-4">
-                <div class="grid gap-3 md:hidden">
-                    <div
-                        v-if="products.data.length === 0"
-                        class="rounded-xl border border-dashed border-border/60 p-8 text-center text-sm text-muted-foreground"
+            <div
+                class="flex flex-col rounded-xl border border-border/60 bg-card p-3.5 shadow-2xs"
+            >
+                <div
+                    class="flex items-center justify-between text-xs font-medium text-muted-foreground"
+                >
+                    <span>Asset products</span>
+                    <Tag class="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                </div>
+                <div
+                    class="mt-2 text-2xl font-bold tracking-tight text-foreground"
+                >
+                    {{ stats.assetsCount }}
+                </div>
+                <div class="mt-0.5 text-[11px] text-muted-foreground">
+                    Property tagged
+                </div>
+            </div>
+
+            <div
+                class="flex flex-col rounded-xl border border-border/60 bg-card p-3.5 shadow-2xs"
+            >
+                <div
+                    class="flex items-center justify-between text-xs font-medium text-muted-foreground"
+                >
+                    <span>Low stock alerts</span>
+                    <AlertTriangle class="h-4 w-4 text-rose-500" />
+                </div>
+                <div
+                    class="mt-2 text-2xl font-bold tracking-tight"
+                    :class="
+                        stats.lowStockCount > 0
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-foreground'
+                    "
+                >
+                    {{ stats.lowStockCount }}
+                </div>
+                <div class="mt-0.5 text-[11px] text-muted-foreground">
+                    At/below threshold
+                </div>
+            </div>
+
+            <div
+                class="col-span-2 flex flex-col rounded-xl border border-border/60 bg-card p-3.5 shadow-2xs sm:col-span-4 lg:col-span-1"
+            >
+                <div
+                    class="flex items-center justify-between text-xs font-medium text-muted-foreground"
+                >
+                    <span>Inactive</span>
+                    <span class="h-2 w-2 rounded-full bg-muted-foreground/40" />
+                </div>
+                <div
+                    class="mt-2 text-2xl font-bold tracking-tight text-foreground"
+                >
+                    {{ stats.inactiveCount }}
+                </div>
+                <div class="mt-0.5 text-[11px] text-muted-foreground">
+                    Archived from catalog
+                </div>
+            </div>
+        </div>
+
+        <!-- Search & Filter Controls -->
+        <div
+            class="rounded-xl border border-border/70 bg-card/95 p-4 shadow-2xs ring-1 ring-black/2 dark:border-border/60 dark:bg-card/90 dark:ring-white/3"
+        >
+            <div class="flex flex-col gap-3">
+                <!-- Mobile Filter Header Toggle -->
+                <div class="flex items-center justify-between sm:hidden">
+                    <span
+                        class="text-xs font-semibold tracking-wide text-foreground uppercase"
+                        >Search & Filters</span
                     >
-                        No products are available in this view. Try changing or
-                        clearing a search filter.
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        class="h-8 gap-1.5 rounded-lg text-xs"
+                        @click="showMobileFilters = !showMobileFilters"
+                    >
+                        <SlidersHorizontal class="h-3.5 w-3.5" />
+                        <span>{{
+                            showMobileFilters ? 'Hide filters' : 'Show filters'
+                        }}</span>
+                        <Badge
+                            v-if="activeFilterCount > 0"
+                            variant="secondary"
+                            class="h-5 px-1.5 text-[10px]"
+                        >
+                            {{ activeFilterCount }}
+                        </Badge>
+                    </Button>
+                </div>
+
+                <fieldset
+                    class="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+                    :class="{ 'hidden sm:grid': !showMobileFilters }"
+                >
+                    <legend class="sr-only">Filter products</legend>
+
+                    <!-- Search Input -->
+                    <label
+                        class="grid min-w-0 gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                        <span>Search</span>
+                        <div class="relative min-w-0">
+                            <Input
+                                v-model="search"
+                                name="product_search"
+                                data-testid="product-search-input"
+                                data-shortcut="search"
+                                autocomplete="off"
+                                placeholder="SKU or product name…"
+                                class="h-10 w-full rounded-lg pr-8 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-2"
+                            />
+                            <button
+                                v-if="search"
+                                type="button"
+                                class="absolute top-1/2 right-2.5 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                aria-label="Clear search text"
+                                @click="search = ''"
+                            >
+                                <X class="h-3.5 w-3.5" />
+                            </button>
+                        </div>
+                    </label>
+
+                    <!-- Product Type -->
+                    <label
+                        class="grid min-w-0 gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                        <span>Product type</span>
+                        <select
+                            v-model="type"
+                            name="product_type"
+                            aria-label="Product type"
+                            class="h-10 w-full min-w-0 truncate rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        >
+                            <option value="">All types</option>
+                            <option value="consumable">Consumables</option>
+                            <option value="asset">Assets</option>
+                        </select>
+                    </label>
+
+                    <!-- Category -->
+                    <label
+                        class="grid min-w-0 gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                        <span>Category</span>
+                        <select
+                            v-model="categoryId"
+                            name="category_id"
+                            aria-label="Category"
+                            class="h-10 w-full min-w-0 truncate rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        >
+                            <option value="">All categories</option>
+                            <option
+                                v-for="c in categories"
+                                :key="c.id"
+                                :value="String(c.id)"
+                            >
+                                {{ c.name }}
+                            </option>
+                        </select>
+                    </label>
+
+                    <!-- Origin -->
+                    <label
+                        class="grid min-w-0 gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                        <span>Origin</span>
+                        <select
+                            v-model="originId"
+                            name="origin_id"
+                            aria-label="Origin"
+                            class="h-10 w-full min-w-0 truncate rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        >
+                            <option value="">All origins</option>
+                            <option
+                                v-for="s in origins"
+                                :key="s.id"
+                                :value="String(s.id)"
+                            >
+                                {{ s.name }}
+                            </option>
+                        </select>
+                    </label>
+
+                    <!-- Supplier -->
+                    <label
+                        class="grid min-w-0 gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                        <span>Supplier</span>
+                        <select
+                            v-model="supplierId"
+                            name="supplier_id"
+                            aria-label="Supplier"
+                            class="h-10 w-full min-w-0 truncate rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        >
+                            <option value="">All suppliers</option>
+                            <option
+                                v-for="supplier in suppliers"
+                                :key="supplier.id"
+                                :value="String(supplier.id)"
+                            >
+                                {{ supplier.name }}
+                            </option>
+                        </select>
+                    </label>
+
+                    <!-- Record Status -->
+                    <label
+                        class="grid min-w-0 gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                        <span>Record status</span>
+                        <select
+                            v-model="active"
+                            name="active"
+                            aria-label="Record status"
+                            class="h-10 w-full min-w-0 truncate rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        >
+                            <option value="">All statuses</option>
+                            <option value="1">Active</option>
+                            <option value="0">Inactive</option>
+                        </select>
+                    </label>
+                </fieldset>
+
+                <!-- Active Filter Tags & Clear Filters Action -->
+                <div
+                    v-if="hasActiveFilters"
+                    class="flex flex-wrap items-center justify-between gap-2 border-t border-border/40 pt-3"
+                >
+                    <div
+                        class="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground"
+                    >
+                        <span class="font-medium">Active filters:</span>
+                        <Badge
+                            v-if="search"
+                            variant="secondary"
+                            class="h-6 gap-1 rounded-md px-2 text-[11px] font-normal"
+                        >
+                            Search: "{{ search }}"
+                            <button
+                                type="button"
+                                class="hover:text-foreground"
+                                aria-label="Remove search filter"
+                                @click="search = ''"
+                            >
+                                <X class="h-3 w-3" />
+                            </button>
+                        </Badge>
+                        <Badge
+                            v-if="type"
+                            variant="secondary"
+                            class="h-6 gap-1 rounded-md px-2 text-[11px] font-normal"
+                        >
+                            Type:
+                            {{
+                                type === 'consumable' ? 'Consumables' : 'Assets'
+                            }}
+                            <button
+                                type="button"
+                                class="hover:text-foreground"
+                                aria-label="Remove type filter"
+                                @click="type = ''"
+                            >
+                                <X class="h-3 w-3" />
+                            </button>
+                        </Badge>
+                        <Badge
+                            v-if="categoryId"
+                            variant="secondary"
+                            class="h-6 gap-1 rounded-md px-2 text-[11px] font-normal"
+                        >
+                            Category:
+                            {{
+                                categories.find(
+                                    (c) => String(c.id) === categoryId,
+                                )?.name
+                            }}
+                            <button
+                                type="button"
+                                class="hover:text-foreground"
+                                aria-label="Remove category filter"
+                                @click="categoryId = ''"
+                            >
+                                <X class="h-3 w-3" />
+                            </button>
+                        </Badge>
+                        <Badge
+                            v-if="originId"
+                            variant="secondary"
+                            class="h-6 gap-1 rounded-md px-2 text-[11px] font-normal"
+                        >
+                            Origin:
+                            {{
+                                origins.find((o) => String(o.id) === originId)
+                                    ?.name
+                            }}
+                            <button
+                                type="button"
+                                class="hover:text-foreground"
+                                aria-label="Remove origin filter"
+                                @click="originId = ''"
+                            >
+                                <X class="h-3 w-3" />
+                            </button>
+                        </Badge>
+                        <Badge
+                            v-if="supplierId"
+                            variant="secondary"
+                            class="h-6 gap-1 rounded-md px-2 text-[11px] font-normal"
+                        >
+                            Supplier:
+                            {{
+                                suppliers.find(
+                                    (s) => String(s.id) === supplierId,
+                                )?.name
+                            }}
+                            <button
+                                type="button"
+                                class="hover:text-foreground"
+                                aria-label="Remove supplier filter"
+                                @click="supplierId = ''"
+                            >
+                                <X class="h-3 w-3" />
+                            </button>
+                        </Badge>
+                        <Badge
+                            v-if="active !== ''"
+                            variant="secondary"
+                            class="h-6 gap-1 rounded-md px-2 text-[11px] font-normal"
+                        >
+                            Status: {{ active === '1' ? 'Active' : 'Inactive' }}
+                            <button
+                                type="button"
+                                class="hover:text-foreground"
+                                aria-label="Remove status filter"
+                                @click="active = ''"
+                            >
+                                <X class="h-3 w-3" />
+                            </button>
+                        </Badge>
                     </div>
 
-                    <div
-                        v-for="p in products.data"
-                        :key="p.id"
-                        :data-testid="`product-mobile-row-${p.sku}`"
-                        class="rounded-xl border border-border/60 bg-card p-4 shadow-sm transition-colors"
-                        :class="{ 'bg-primary/5': selectedIds.has(p.id) }"
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 gap-1.5 rounded-md px-2 text-xs text-muted-foreground hover:text-foreground"
+                        @click="clearAllFilters"
                     >
-                        <div class="flex items-start justify-between gap-3">
-                            <div class="flex items-start gap-3">
-                                <Checkbox
-                                    v-if="props.can.bulkUpdate"
-                                    :model-value="selectedIds.has(p.id)"
-                                    @update:model-value="
-                                        () => toggleSelect(p.id)
-                                    "
-                                    aria-label="Select product"
-                                    class="mt-1"
-                                />
-                                <div>
-                                    <div class="font-medium">{{ p.name }}</div>
-                                    <div
-                                        class="font-mono text-[11px] text-muted-foreground"
-                                    >
-                                        {{ p.sku }}
-                                    </div>
-                                </div>
-                            </div>
-                            <span
-                                class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
-                                :class="
-                                    p.is_active
-                                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                                        : 'bg-muted text-muted-foreground'
-                                "
-                            >
-                                <span
-                                    class="h-1 w-1 rounded-full"
-                                    :class="
-                                        p.is_active
-                                            ? 'bg-emerald-500'
-                                            : 'bg-muted-foreground/40'
-                                    "
-                                />
-                                {{ p.is_active ? 'Active' : 'Inactive' }}
-                            </span>
-                        </div>
+                        <RotateCcw class="h-3.5 w-3.5" />
+                        <span>Clear all filters</span>
+                    </Button>
+                </div>
+            </div>
+        </div>
 
-                        <div class="mt-3 grid gap-2 text-sm">
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground">Type</span>
-                                <span
-                                    class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
-                                    :class="
-                                        p.type === 'consumable'
-                                            ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                                            : 'bg-sky-500/10 text-sky-700 dark:text-sky-400'
-                                    "
-                                >
-                                    {{ p.type }}
-                                </span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground"
-                                    >Category</span
-                                >
-                                <span>{{ p.category ?? '—' }}</span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground"
-                                    >Origin</span
-                                >
-                                <span>{{ p.origin ?? '—' }}</span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground"
-                                    >Supplier</span
-                                >
-                                <span>{{ p.supplier ?? '—' }}</span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground"
-                                    >On hand</span
-                                >
-                                <span class="text-right">
-                                    <span class="block">{{
-                                        p.type === 'consumable'
-                                            ? (p.on_hand_qty ?? 0)
-                                            : '—'
-                                    }}</span>
-                                    <span
-                                        v-if="p.type === 'consumable'"
-                                        class="mt-1 inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium"
-                                        :class="stockToneClass(p)"
-                                    >
-                                        {{ stockLabel(p) }}
-                                    </span>
-                                </span>
-                            </div>
-                            <div
-                                class="flex items-center justify-between gap-3"
-                            >
-                                <span class="text-muted-foreground"
-                                    >Assets</span
-                                >
-                                <span>{{
-                                    p.type === 'asset' ? p.assets_count : '—'
-                                }}</span>
-                            </div>
-                        </div>
+        <!-- Bulk Selection Action Bar -->
+        <div
+            v-if="props.can.bulkUpdate && hasSelection"
+            class="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/5 px-4 py-3 shadow-2xs dark:border-primary/30 dark:bg-primary/10"
+        >
+            <div class="flex items-center gap-2">
+                <span
+                    class="inline-flex h-6 items-center rounded-full bg-primary/15 px-2.5 text-xs font-semibold text-primary"
+                >
+                    {{ selectedIds.size }} selected
+                </span>
+                <button
+                    type="button"
+                    class="text-xs text-muted-foreground hover:text-foreground hover:underline"
+                    @click="clearSelection"
+                >
+                    Clear selection
+                </button>
+            </div>
 
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                as-child
-                                data-test="view-product-button-mobile"
-                                data-testid="view-product-button-mobile"
-                            >
-                                <Link :href="productsShow(p.id)"
-                                    >View Details</Link
-                                >
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                as-child
-                                data-test="edit-product-button-mobile"
-                                data-testid="edit-product-button-mobile"
-                            >
-                                <Link :href="productsEdit(p.id)">Edit</Link>
-                            </Button>
-                            <Button
-                                v-if="p.can_delete"
-                                variant="ghost"
-                                size="sm"
-                                class="text-rose-600 hover:text-rose-700"
-                                @click="openDeleteDialog(p)"
-                            >
-                                Move to Trash
-                            </Button>
-                        </div>
-                    </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="h-8 gap-1.5 rounded-lg border-primary/30 text-xs font-semibold text-primary hover:bg-primary/10"
+                    @click="openBulkLabels"
+                >
+                    <Printer class="h-3.5 w-3.5" />
+                    <span>Print labels</span>
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="h-8 rounded-lg text-xs"
+                    @click="runBulkActivate"
+                >
+                    Activate
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="h-8 rounded-lg text-xs"
+                    @click="runBulkDeactivate"
+                >
+                    Deactivate
+                </Button>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="h-8 rounded-lg text-xs"
+                    @click="openBulkCategoryDialog"
+                >
+                    Change category
+                </Button>
+            </div>
+        </div>
+
+        <!-- Loading Feedback -->
+        <div
+            v-if="isRefreshing"
+            class="rounded-xl border border-border/60 bg-card p-6 shadow-2xs"
+        >
+            <TableSkeleton :rows="6" :columns="10" />
+        </div>
+
+        <!-- Main Product Content -->
+        <div v-else class="flex flex-col gap-4">
+            <!-- Mobile Card Layout (< 768px) -->
+            <div class="grid gap-3 md:hidden">
+                <div
+                    v-if="products.data.length === 0"
+                    class="rounded-xl border border-dashed border-border/70 p-8 text-center"
+                >
+                    <EmptyState
+                        icon="product"
+                        :title="
+                            hasActiveFilters
+                                ? 'No products match your filters'
+                                : 'No products in catalog'
+                        "
+                        :description="
+                            hasActiveFilters
+                                ? 'Try adjusting or clearing your search criteria to see products.'
+                                : 'Get started by creating your first product record.'
+                        "
+                        :action-label="
+                            hasActiveFilters
+                                ? 'Clear all filters'
+                                : 'Add Product'
+                        "
+                        :action-href="
+                            hasActiveFilters ? undefined : productsCreate().url
+                        "
+                        @action="
+                            hasActiveFilters ? clearAllFilters() : undefined
+                        "
+                    />
                 </div>
 
                 <div
-                    class="hidden overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm md:block"
+                    v-for="p in products.data"
+                    :key="p.id"
+                    :data-testid="`product-mobile-row-${p.sku}`"
+                    class="flex flex-col rounded-xl border border-border/70 bg-card p-4 shadow-2xs transition-colors hover:border-border"
+                    :class="{
+                        'border-primary/40 bg-primary/3 ring-1 ring-primary/20':
+                            selectedIds.has(p.id),
+                    }"
                 >
-                    <table class="min-w-full text-sm">
-                        <caption class="sr-only">
-                            Products with stock levels, record status, and
-                            available actions
-                        </caption>
-                        <thead class="bg-muted/40 text-left">
-                            <tr
-                                class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
-                            >
-                                <th v-if="props.can.bulkUpdate" class="w-10">
-                                    <Checkbox
-                                        :model-value="
-                                            allSelected
-                                                ? true
-                                                : someSelected
-                                                  ? 'indeterminate'
-                                                  : false
-                                        "
-                                        @update:model-value="toggleSelectAll"
-                                        aria-label="Select all products"
-                                    />
-                                </th>
-                                <th scope="col">SKU</th>
-                                <th scope="col">Name</th>
-                                <th scope="col">Type</th>
-                                <th scope="col">Category</th>
-                                <th scope="col">Supplier</th>
-                                <th scope="col">Origin</th>
-                                <th scope="col" class="text-right">On hand</th>
-                                <th scope="col" class="text-right">Assets</th>
-                                <th scope="col" class="text-right">Status</th>
-                                <th scope="col" class="text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-border/60/60 divide-y">
-                            <tr v-if="products.data.length === 0">
-                                <td
-                                    class="px-4 py-8 text-center text-sm text-muted-foreground"
-                                    :colspan="props.can.bulkUpdate ? 11 : 10"
-                                >
-                                    No products are available in this view. Try
-                                    changing or clearing a search filter.
-                                </td>
-                            </tr>
-
-                            <tr
-                                v-for="p in products.data"
-                                :key="p.id"
-                                :data-testid="`product-row-${p.sku}`"
-                                class="group transition-colors hover:bg-muted/40 [&>td]:px-4 [&>td]:py-3"
-                                :class="{
-                                    'bg-primary/5': selectedIds.has(p.id),
-                                }"
-                            >
-                                <td v-if="props.can.bulkUpdate">
-                                    <Checkbox
-                                        :model-value="selectedIds.has(p.id)"
-                                        @update:model-value="
-                                            () => toggleSelect(p.id)
-                                        "
-                                        aria-label="Select product"
-                                    />
-                                </td>
-                                <td
-                                    class="font-mono text-[11px] text-muted-foreground"
-                                >
-                                    {{ p.sku }}
-                                </td>
-                                <td class="font-medium">{{ p.name }}</td>
-                                <td>
+                    <!-- Card Top: Select + Name + Status -->
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-start gap-3">
+                            <Checkbox
+                                v-if="props.can.bulkUpdate"
+                                :model-value="selectedIds.has(p.id)"
+                                @update:model-value="() => toggleSelect(p.id)"
+                                aria-label="Select product"
+                                class="mt-1"
+                            />
+                            <div>
+                                <div class="font-medium text-foreground">
+                                    {{ p.name }}
+                                </div>
+                                <div class="mt-1 flex items-center gap-2">
+                                    <AdminCodeBadge :value="p.sku" />
                                     <span
-                                        class="inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
+                                        class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wider uppercase"
                                         :class="
                                             p.type === 'consumable'
                                                 ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
@@ -836,341 +1110,691 @@ onBeforeUnmount(() => {
                                     >
                                         {{ p.type }}
                                     </span>
-                                </td>
-                                <td class="text-muted-foreground">
-                                    {{ p.category ?? '—' }}
-                                </td>
-                                <td class="text-muted-foreground">
-                                    {{ p.supplier ?? '—' }}
-                                </td>
-                                <td class="text-muted-foreground">
-                                    {{ p.origin ?? '—' }}
-                                </td>
-                                <td class="text-right">
-                                    <span
-                                        v-if="p.type === 'consumable'"
-                                        class="font-mono text-xs font-medium"
-                                    >
-                                        {{ p.on_hand_qty ?? 0 }}
-                                        <span
-                                            class="mt-1 inline-flex rounded-full px-2 py-0.5 font-sans text-[11px] font-medium"
-                                            :class="stockToneClass(p)"
-                                        >
-                                            {{ stockLabel(p) }}
-                                        </span>
-                                    </span>
-                                    <span v-else class="text-muted-foreground"
-                                        >—</span
-                                    >
-                                </td>
-                                <td class="text-right">
-                                    <span
-                                        v-if="p.type === 'asset'"
-                                        class="font-mono text-xs font-medium"
-                                        >{{ p.assets_count }}</span
-                                    >
-                                    <span v-else class="text-muted-foreground"
-                                        >—</span
-                                    >
-                                </td>
-                                <td class="text-right">
-                                    <span
-                                        class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
-                                        :class="
-                                            p.is_active
-                                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                                                : 'bg-muted text-muted-foreground'
-                                        "
-                                    >
-                                        <span
-                                            class="h-1 w-1 rounded-full"
-                                            :class="
-                                                p.is_active
-                                                    ? 'bg-emerald-500'
-                                                    : 'bg-muted-foreground/40'
-                                            "
-                                        />
-                                        {{
-                                            p.is_active ? 'Active' : 'Inactive'
-                                        }}
-                                    </span>
-                                </td>
-                                <td class="text-right">
-                                    <div
-                                        class="flex items-center justify-end gap-1"
-                                    >
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            as-child
-                                            data-test="view-product-button"
-                                            data-testid="view-product-button"
-                                            class="h-8 rounded-lg text-xs opacity-60 transition-opacity group-hover:opacity-100"
-                                        >
-                                            <Link :href="productsShow(p.id)"
-                                                >View Details</Link
-                                            >
-                                        </Button>
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            as-child
-                                            data-test="edit-product-button"
-                                            data-testid="edit-product-button"
-                                            class="h-8 rounded-lg text-xs opacity-60 transition-opacity group-hover:opacity-100"
-                                        >
-                                            <Link :href="productsEdit(p.id)"
-                                                >Edit</Link
-                                            >
-                                        </Button>
-                                        <Button
-                                            v-if="p.can_delete"
-                                            variant="ghost"
-                                            size="sm"
-                                            class="h-8 rounded-lg text-xs text-rose-600 opacity-60 transition-opacity group-hover:opacity-100 hover:text-rose-700"
-                                            @click="openDeleteDialog(p)"
-                                        >
-                                            Move to Trash
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <span
+                            class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+                            :class="
+                                p.is_active
+                                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                    : 'bg-muted text-muted-foreground'
+                            "
+                        >
+                            <span
+                                class="h-1.5 w-1.5 rounded-full"
+                                :class="
+                                    p.is_active
+                                        ? 'bg-emerald-500'
+                                        : 'bg-muted-foreground/40'
+                                "
+                            />
+                            {{ p.is_active ? 'Active' : 'Inactive' }}
+                        </span>
+                    </div>
+
+                    <!-- Card Body: Key Attributes -->
+                    <div
+                        class="mt-3.5 grid grid-cols-2 gap-2 border-t border-border/40 pt-3 text-xs"
+                    >
+                        <div>
+                            <span class="text-muted-foreground">Category:</span>
+                            <span class="ml-1 font-medium text-foreground">{{
+                                p.category ?? 'Not assigned'
+                            }}</span>
+                        </div>
+                        <div>
+                            <span class="text-muted-foreground">Origin:</span>
+                            <span class="ml-1 font-medium text-foreground">{{
+                                p.origin ?? 'Not specified'
+                            }}</span>
+                        </div>
+                        <div class="col-span-2">
+                            <span class="text-muted-foreground">Supplier:</span>
+                            <span class="ml-1 font-medium text-foreground">{{
+                                p.supplier ?? 'No preferred supplier'
+                            }}</span>
+                        </div>
+                        <div
+                            class="col-span-2 flex items-center justify-between border-t border-border/30 pt-2"
+                        >
+                            <span class="text-muted-foreground">
+                                {{
+                                    p.type === 'consumable'
+                                        ? 'Stock On Hand:'
+                                        : 'Registered Assets:'
+                                }}
+                            </span>
+                            <div
+                                v-if="p.type === 'consumable'"
+                                class="flex items-center gap-2"
+                            >
+                                <span
+                                    class="font-mono font-semibold text-foreground"
+                                    >{{ p.on_hand_qty ?? 0 }}</span
+                                >
+                                <span
+                                    class="inline-flex rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                                    :class="stockToneClass(p)"
+                                >
+                                    {{ stockLabel(p) }}
+                                </span>
+                            </div>
+                            <div v-else>
+                                <span
+                                    class="font-mono font-semibold text-foreground"
+                                    >{{ p.assets_count }} items</span
+                                >
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Card Actions (>= 44px touch targets) -->
+                    <div
+                        class="mt-4 flex flex-wrap items-center gap-2 border-t border-border/40 pt-3"
+                    >
+                        <Button
+                            variant="secondary"
+                            size="sm"
+                            as-child
+                            data-test="view-product-button-mobile"
+                            data-testid="view-product-button-mobile"
+                            class="h-11 min-h-11 flex-1 rounded-lg text-xs font-medium"
+                        >
+                            <Link :href="productsShow(p.id)">
+                                <Eye class="mr-1.5 h-3.5 w-3.5" />
+                                <span>View Details</span>
+                            </Link>
+                        </Button>
+
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            as-child
+                            data-test="edit-product-button-mobile"
+                            data-testid="edit-product-button-mobile"
+                            class="h-11 min-h-11 rounded-lg px-3 text-xs"
+                        >
+                            <Link :href="productsEdit(p.id)">
+                                <Pencil class="h-3.5 w-3.5" />
+                                <span class="sr-only">Edit</span>
+                            </Link>
+                        </Button>
+
+                        <Button
+                            v-if="p.can_delete"
+                            variant="ghost"
+                            size="sm"
+                            class="h-11 min-h-11 rounded-lg px-3 text-xs text-rose-600 hover:bg-rose-500/10 hover:text-rose-700"
+                            aria-label="Move to trash"
+                            @click="openDeleteDialog(p)"
+                        >
+                            <Trash2 class="h-3.5 w-3.5" />
+                        </Button>
+                    </div>
                 </div>
             </div>
 
-            <Dialog v-model:open="deleteDialogOpen">
-                <DialogContent>
-                    <DialogHeader class="space-y-3">
-                        <DialogTitle>Move product to trash?</DialogTitle>
-                        <DialogDescription>
-                            This will move
-                            <strong>{{ selectedProduct?.name }}</strong> ({{
-                                selectedProduct?.sku
-                            }}) to the trash. You can restore it later if
-                            needed.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div class="grid gap-4 py-4">
-                        <div class="grid gap-2">
-                            <Label for="delete-reason"
-                                >Reason for deletion
-                                <span class="text-rose-500">*</span></Label
-                            >
-                            <Select v-model="deleteReason">
-                                <SelectTrigger id="delete-reason">
-                                    <SelectValue
-                                        placeholder="Select a reason..."
-                                    />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem
-                                        v-for="reason in deletionReasons"
-                                        :key="reason.value"
-                                        :value="reason.value"
-                                    >
-                                        {{ reason.label }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div v-if="isOtherReason" class="grid gap-2">
-                            <Label for="delete-reason-custom"
-                                >Please specify
-                                <span class="text-rose-500">*</span></Label
-                            >
-                            <textarea
-                                id="delete-reason-custom"
-                                v-model="deleteReasonCustom"
-                                placeholder="Enter your reason..."
-                                rows="3"
-                                class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                            ></textarea>
-                        </div>
-                    </div>
-                    <DialogFooter class="gap-2">
-                        <DialogClose as-child>
-                            <Button variant="secondary">Cancel</Button>
-                        </DialogClose>
-                        <Button
-                            variant="destructive"
-                            :disabled="!canConfirmDelete"
-                            @click="confirmDelete"
-                            >Move to Trash</Button
-                        >
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <Dialog v-model:open="labelScopeDialogOpen">
-                <DialogContent>
-                    <DialogHeader class="space-y-3">
-                        <DialogTitle
-                            >Print labels for filtered products?</DialogTitle
-                        >
-                        <DialogDescription>
-                            No products are selected. This will prepare one
-                            label for every active product matching the current
-                            search, type, and category filters, up to the
-                            500-label safety limit.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div
-                        class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200"
+            <!-- Desktop Table Layout (>= 768px) -->
+            <div class="hidden md:block">
+                <AdminTableShell min-width="1360px">
+                    <caption class="sr-only">
+                        Products catalog with SKU, type, stock levels, and
+                        administrative actions
+                    </caption>
+                    <colgroup>
+                        <col v-if="props.can.bulkUpdate" class="w-12" />
+                        <col class="w-36" />
+                        <col class="w-65" />
+                        <col class="w-36" />
+                        <col class="w-44" />
+                        <col class="w-44" />
+                        <col class="w-32" />
+                        <col class="w-32" />
+                        <col class="w-32" />
+                        <col class="w-44" />
+                    </colgroup>
+                    <thead
+                        class="border-b border-border/70 bg-muted/40 text-left text-xs font-semibold tracking-wider text-muted-foreground uppercase"
                     >
-                        To print only the current page, cancel and select the
-                        products using the checkboxes first.
-                    </div>
-                    <DialogFooter class="gap-2">
-                        <DialogClose as-child>
-                            <Button variant="secondary">Cancel</Button>
-                        </DialogClose>
-                        <Button @click="confirmFilteredLabels">
-                            Continue to label preview
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
-            <!-- Bulk change category dialog -->
-            <Dialog v-model:open="bulkCategoryDialogOpen">
-                <DialogContent>
-                    <DialogHeader class="space-y-3">
-                        <DialogTitle>Change category</DialogTitle>
-                        <DialogDescription>
-                            Update the category for
-                            <strong
-                                >{{ selectedIds.size }} selected
-                                {{
-                                    selectedIds.size === 1
-                                        ? 'product'
-                                        : 'products'
-                                }}</strong
-                            >.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div class="grid gap-4 py-4">
-                        <div class="grid gap-2">
-                            <Label for="bulk-category"
-                                >Category
-                                <span class="text-rose-500">*</span></Label
+                        <tr>
+                            <th v-if="props.can.bulkUpdate" class="px-4 py-3.5">
+                                <Checkbox
+                                    :model-value="
+                                        allSelected
+                                            ? true
+                                            : someSelected
+                                              ? 'indeterminate'
+                                              : false
+                                    "
+                                    @update:model-value="toggleSelectAll"
+                                    aria-label="Select all products"
+                                />
+                            </th>
+                            <th scope="col" class="px-4 py-3.5">SKU</th>
+                            <th scope="col" class="px-4 py-3.5">
+                                Product Name
+                            </th>
+                            <th scope="col" class="px-4 py-3.5">Type</th>
+                            <th scope="col" class="px-4 py-3.5">Category</th>
+                            <th scope="col" class="px-4 py-3.5">Supplier</th>
+                            <th scope="col" class="px-4 py-3.5">Origin</th>
+                            <th scope="col" class="px-4 py-3.5 text-right">
+                                Inventory
+                            </th>
+                            <th scope="col" class="px-4 py-3.5 text-center">
+                                Status
+                            </th>
+                            <th scope="col" class="px-4 py-3.5 text-right">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border/60">
+                        <tr v-if="products.data.length === 0">
+                            <td
+                                class="p-0 text-center"
+                                :colspan="props.can.bulkUpdate ? 10 : 9"
                             >
-                            <Select v-model="bulkCategoryId">
-                                <SelectTrigger id="bulk-category">
-                                    <SelectValue
-                                        placeholder="Select a category..."
+                                <EmptyState
+                                    icon="product"
+                                    :title="
+                                        hasActiveFilters
+                                            ? 'No products match your filters'
+                                            : 'No products in catalog'
+                                    "
+                                    :description="
+                                        hasActiveFilters
+                                            ? 'Try adjusting or clearing your search criteria to see products.'
+                                            : 'Get started by creating your first product record.'
+                                    "
+                                    :action-label="
+                                        hasActiveFilters
+                                            ? 'Clear all filters'
+                                            : 'Add Product'
+                                    "
+                                    :action-href="
+                                        hasActiveFilters
+                                            ? undefined
+                                            : productsCreate().url
+                                    "
+                                    @action="
+                                        hasActiveFilters
+                                            ? clearAllFilters()
+                                            : undefined
+                                    "
+                                />
+                            </td>
+                        </tr>
+
+                        <tr
+                            v-for="p in products.data"
+                            :key="p.id"
+                            :data-testid="`product-row-${p.sku}`"
+                            class="group transition-colors hover:bg-muted/30"
+                            :class="{
+                                'bg-primary/5 hover:bg-primary/8':
+                                    selectedIds.has(p.id),
+                            }"
+                        >
+                            <!-- Bulk selection checkbox -->
+                            <td v-if="props.can.bulkUpdate" class="px-4 py-3">
+                                <Checkbox
+                                    :model-value="selectedIds.has(p.id)"
+                                    @update:model-value="
+                                        () => toggleSelect(p.id)
+                                    "
+                                    aria-label="Select product"
+                                />
+                            </td>
+
+                            <!-- SKU Badge -->
+                            <td class="px-4 py-3">
+                                <AdminCodeBadge :value="p.sku" />
+                            </td>
+
+                            <!-- Product Name -->
+                            <td class="px-4 py-3">
+                                <Link
+                                    :href="productsShow(p.id)"
+                                    class="line-clamp-2 font-medium text-foreground hover:text-primary hover:underline"
+                                >
+                                    {{ p.name }}
+                                </Link>
+                            </td>
+
+                            <!-- Product Type Badge -->
+                            <td class="px-4 py-3 whitespace-nowrap">
+                                <span
+                                    class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-xs font-medium capitalize"
+                                    :class="
+                                        p.type === 'consumable'
+                                            ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                                            : 'bg-sky-500/10 text-sky-700 dark:text-sky-400'
+                                    "
+                                >
+                                    <Boxes
+                                        v-if="p.type === 'consumable'"
+                                        class="h-3.5 w-3.5"
                                     />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem
-                                        v-for="c in categories"
-                                        :key="c.id"
-                                        :value="String(c.id)"
+                                    <Tag v-else class="h-3.5 w-3.5" />
+                                    {{ p.type }}
+                                </span>
+                            </td>
+
+                            <!-- Category -->
+                            <td
+                                class="truncate px-4 py-3 text-muted-foreground"
+                            >
+                                {{ p.category ?? '—' }}
+                            </td>
+
+                            <!-- Supplier -->
+                            <td
+                                class="truncate px-4 py-3 text-muted-foreground"
+                                :title="p.supplier ?? undefined"
+                            >
+                                {{ p.supplier ?? '—' }}
+                            </td>
+
+                            <!-- Origin -->
+                            <td
+                                class="truncate px-4 py-3 text-muted-foreground"
+                            >
+                                {{ p.origin ?? '—' }}
+                            </td>
+
+                            <!-- Inventory summary -->
+                            <td class="px-4 py-3 text-right">
+                                <div
+                                    v-if="p.type === 'consumable'"
+                                    class="flex flex-col items-end gap-1"
+                                >
+                                    <span
+                                        class="font-mono text-xs font-semibold text-foreground"
                                     >
-                                        {{ c.name }}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <DialogFooter class="gap-2">
-                        <DialogClose as-child>
-                            <Button
-                                variant="secondary"
-                                :disabled="bulkActionProcessing"
-                                >Cancel</Button
-                            >
-                        </DialogClose>
-                        <Button
-                            :disabled="!bulkCategoryId || bulkActionProcessing"
-                            @click="confirmBulkCategory"
-                            >{{
-                                bulkActionProcessing
-                                    ? 'Updating…'
-                                    : 'Update Category'
-                            }}</Button
-                        >
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                                        {{ p.on_hand_qty ?? 0 }}
+                                    </span>
+                                    <span
+                                        class="inline-flex items-center rounded-full border px-2 py-0.5 font-sans text-[10px] font-medium"
+                                        :class="stockToneClass(p)"
+                                    >
+                                        {{ stockLabel(p) }}
+                                    </span>
+                                </div>
+                                <div v-else class="text-right">
+                                    <span
+                                        class="font-mono text-xs font-semibold text-foreground"
+                                    >
+                                        {{ p.assets_count }}
+                                    </span>
+                                    <span
+                                        class="block text-[11px] text-muted-foreground"
+                                        >assets</span
+                                    >
+                                </div>
+                            </td>
 
-            <Dialog v-model:open="bulkActionDialogOpen">
-                <DialogContent>
-                    <DialogHeader class="space-y-3">
-                        <DialogTitle>
-                            {{
-                                pendingBulkAction === 'activate'
-                                    ? 'Activate selected products?'
-                                    : 'Deactivate selected products?'
-                            }}
-                        </DialogTitle>
-                        <DialogDescription>
-                            This will update
-                            <strong
-                                >{{ selectedIds.size }} selected
-                                {{
-                                    selectedIds.size === 1
-                                        ? 'product'
-                                        : 'products'
-                                }}</strong
-                            >
-                            and keep the current filters and page state intact.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter class="gap-2">
-                        <DialogClose as-child>
-                            <Button
-                                variant="secondary"
-                                :disabled="bulkActionProcessing"
-                                >Cancel</Button
-                            >
-                        </DialogClose>
-                        <Button
-                            :disabled="bulkActionProcessing"
-                            @click="confirmBulkAction"
-                        >
-                            {{
-                                bulkActionProcessing
-                                    ? 'Updating…'
-                                    : pendingBulkAction === 'activate'
-                                      ? 'Confirm activate'
-                                      : 'Confirm deactivate'
-                            }}
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                            <!-- Status Badge -->
+                            <td class="px-4 py-3 text-center whitespace-nowrap">
+                                <span
+                                    class="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium"
+                                    :class="
+                                        p.is_active
+                                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                            : 'bg-muted text-muted-foreground'
+                                    "
+                                >
+                                    <span
+                                        class="h-1.5 w-1.5 rounded-full"
+                                        :class="
+                                            p.is_active
+                                                ? 'bg-emerald-500'
+                                                : 'bg-muted-foreground/40'
+                                        "
+                                    />
+                                    {{ p.is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                            </td>
 
+                            <!-- Actions -->
+                            <td class="px-4 py-3 text-right whitespace-nowrap">
+                                <div
+                                    class="flex items-center justify-end gap-1.5 whitespace-nowrap"
+                                >
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        as-child
+                                        data-test="view-product-button"
+                                        data-testid="view-product-button"
+                                        class="h-8 rounded-lg px-2 text-xs text-muted-foreground hover:text-foreground"
+                                        title="View product details"
+                                    >
+                                        <Link :href="productsShow(p.id)">
+                                            <Eye class="mr-1 h-3.5 w-3.5" />
+                                            <span>View</span>
+                                        </Link>
+                                    </Button>
+
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        as-child
+                                        data-test="edit-product-button"
+                                        data-testid="edit-product-button"
+                                        class="h-8 rounded-lg px-2 text-xs text-muted-foreground hover:text-foreground"
+                                        title="Edit product"
+                                    >
+                                        <Link :href="productsEdit(p.id)">
+                                            <Pencil class="h-3.5 w-3.5" />
+                                            <span class="sr-only">Edit</span>
+                                        </Link>
+                                    </Button>
+
+                                    <Button
+                                        v-if="p.can_delete"
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-8 rounded-lg px-2 text-xs text-rose-600 hover:bg-rose-500/10 hover:text-rose-700"
+                                        title="Move to trash"
+                                        @click="openDeleteDialog(p)"
+                                    >
+                                        <Trash2 class="h-3.5 w-3.5" />
+                                        <span class="sr-only"
+                                            >Move to Trash</span
+                                        >
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </AdminTableShell>
+            </div>
+
+            <!-- Pagination & Result Summary -->
             <div
-                v-if="products.links.length"
-                class="flex flex-wrap items-center justify-center gap-1"
+                v-if="products.links.length > 3 || products.total > 0"
+                class="flex flex-col items-center justify-between gap-3 pt-2 sm:flex-row"
             >
-                <Button
-                    v-for="(link, i) in products.links"
-                    :key="i"
-                    variant="ghost"
-                    size="sm"
-                    :disabled="!link.url"
-                    as-child
-                    class="h-8 rounded-lg text-xs"
-                    :class="
-                        link.active
-                            ? 'bg-primary/10 font-medium text-primary'
-                            : ''
-                    "
-                >
-                    <Link
-                        v-if="link.url"
-                        :href="link.url"
-                        preserve-scroll
-                        preserve-state
-                    >
-                        <span v-html="link.label" />
-                    </Link>
-                    <span v-else v-html="link.label" />
-                </Button>
+                <div class="text-xs text-muted-foreground">
+                    Showing
+                    <span class="font-medium text-foreground">{{
+                        (products.current_page - 1) * products.per_page +
+                        (products.data.length > 0 ? 1 : 0)
+                    }}</span>
+                    to
+                    <span class="font-medium text-foreground">{{
+                        Math.min(
+                            products.current_page * products.per_page,
+                            products.total,
+                        )
+                    }}</span>
+                    of
+                    <span class="font-medium text-foreground">{{
+                        products.total
+                    }}</span>
+                    results
+                </div>
+
+                <AdminPagination :links="products.links" />
             </div>
         </div>
+
+        <!-- Delete to Trash Dialog -->
+        <Dialog v-model:open="deleteDialogOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader class="space-y-2">
+                    <DialogTitle
+                        class="flex items-center gap-2 text-rose-600 dark:text-rose-400"
+                    >
+                        <Trash2 class="h-5 w-5" />
+                        <span>Move product to trash?</span>
+                    </DialogTitle>
+                    <DialogDescription class="text-sm text-muted-foreground">
+                        This will move
+                        <strong class="text-foreground">{{
+                            selectedProduct?.name
+                        }}</strong>
+                        <span
+                            v-if="selectedProduct?.sku"
+                            class="font-mono text-xs"
+                        >
+                            ({{ selectedProduct.sku }})</span
+                        >
+                        to the trash. You can restore it later if needed.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="grid gap-4 py-2">
+                    <div class="grid gap-2">
+                        <Label
+                            for="delete-reason"
+                            class="text-xs font-semibold"
+                        >
+                            Reason for deletion
+                            <span class="text-rose-500">*</span>
+                        </Label>
+                        <Select v-model="deleteReason">
+                            <SelectTrigger
+                                id="delete-reason"
+                                class="h-10 rounded-lg text-sm"
+                            >
+                                <SelectValue placeholder="Select a reason..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="reason in deletionReasons"
+                                    :key="reason.value"
+                                    :value="reason.value"
+                                >
+                                    {{ reason.label }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+
+                    <div v-if="isOtherReason" class="grid gap-2">
+                        <Label
+                            for="delete-reason-custom"
+                            class="text-xs font-semibold"
+                        >
+                            Please specify reason
+                            <span class="text-rose-500">*</span>
+                        </Label>
+                        <textarea
+                            id="delete-reason-custom"
+                            v-model="deleteReasonCustom"
+                            placeholder="Enter specific reason for deletion..."
+                            rows="3"
+                            class="flex min-h-20 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                        />
+                    </div>
+                </div>
+
+                <DialogFooter class="gap-2 sm:justify-end">
+                    <DialogClose as-child>
+                        <Button variant="outline" class="rounded-lg"
+                            >Cancel</Button
+                        >
+                    </DialogClose>
+                    <Button
+                        variant="destructive"
+                        :disabled="!canConfirmDelete"
+                        class="rounded-lg"
+                        @click="confirmDelete"
+                    >
+                        Move to Trash
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Print Labels for Filtered Products Scope Dialog -->
+        <Dialog v-model:open="labelScopeDialogOpen">
+            <DialogContent class="sm:max-w-lg">
+                <DialogHeader class="space-y-2">
+                    <DialogTitle class="flex items-center gap-2">
+                        <Printer class="h-5 w-5 text-primary" />
+                        <span>Print labels for filtered products?</span>
+                    </DialogTitle>
+                    <DialogDescription class="text-sm text-muted-foreground">
+                        No products are selected. This will prepare one label
+                        for every active product matching the current search,
+                        type, and category filters, up to the 500-label safety
+                        limit.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div
+                    class="rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5 text-xs text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300"
+                >
+                    <div class="flex items-start gap-2">
+                        <AlertTriangle
+                            class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
+                        />
+                        <div>
+                            To print only specific products, close this modal
+                            and use the row selection checkboxes first.
+                        </div>
+                    </div>
+                </div>
+
+                <DialogFooter class="gap-2 sm:justify-end">
+                    <DialogClose as-child>
+                        <Button variant="outline" class="rounded-lg"
+                            >Cancel</Button
+                        >
+                    </DialogClose>
+                    <Button class="rounded-lg" @click="confirmFilteredLabels">
+                        Continue to label preview
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Bulk Change Category Dialog -->
+        <Dialog v-model:open="bulkCategoryDialogOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader class="space-y-2">
+                    <DialogTitle>Change category</DialogTitle>
+                    <DialogDescription class="text-sm text-muted-foreground">
+                        Update the category for
+                        <strong class="text-foreground"
+                            >{{ selectedIds.size }} selected
+                            {{
+                                selectedIds.size === 1 ? 'product' : 'products'
+                            }}</strong
+                        >.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <div class="grid gap-4 py-2">
+                    <div class="grid gap-2">
+                        <Label
+                            for="bulk-category"
+                            class="text-xs font-semibold"
+                        >
+                            Category
+                            <span class="text-rose-500">*</span>
+                        </Label>
+                        <Select v-model="bulkCategoryId">
+                            <SelectTrigger
+                                id="bulk-category"
+                                class="h-10 rounded-lg text-sm"
+                            >
+                                <SelectValue
+                                    placeholder="Select a category..."
+                                />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="c in categories"
+                                    :key="c.id"
+                                    :value="String(c.id)"
+                                >
+                                    {{ c.name }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+
+                <DialogFooter class="gap-2 sm:justify-end">
+                    <DialogClose as-child>
+                        <Button
+                            variant="outline"
+                            :disabled="bulkActionProcessing"
+                            class="rounded-lg"
+                        >
+                            Cancel
+                        </Button>
+                    </DialogClose>
+                    <Button
+                        :disabled="!bulkCategoryId || bulkActionProcessing"
+                        class="rounded-lg"
+                        @click="confirmBulkCategory"
+                    >
+                        {{
+                            bulkActionProcessing
+                                ? 'Updating…'
+                                : 'Update Category'
+                        }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        <!-- Bulk Activate / Deactivate Confirmation Dialog -->
+        <Dialog v-model:open="bulkActionDialogOpen">
+            <DialogContent class="sm:max-w-md">
+                <DialogHeader class="space-y-2">
+                    <DialogTitle>
+                        {{
+                            pendingBulkAction === 'activate'
+                                ? 'Activate selected products?'
+                                : 'Deactivate selected products?'
+                        }}
+                    </DialogTitle>
+                    <DialogDescription class="text-sm text-muted-foreground">
+                        This will update the active status for
+                        <strong class="text-foreground"
+                            >{{ selectedIds.size }} selected
+                            {{
+                                selectedIds.size === 1 ? 'product' : 'products'
+                            }}</strong
+                        >
+                        while preserving current filter and page navigation
+                        states.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <DialogFooter class="gap-2 sm:justify-end">
+                    <DialogClose as-child>
+                        <Button
+                            variant="outline"
+                            :disabled="bulkActionProcessing"
+                            class="rounded-lg"
+                        >
+                            Cancel
+                        </Button>
+                    </DialogClose>
+                    <Button
+                        :disabled="bulkActionProcessing"
+                        class="rounded-lg"
+                        @click="confirmBulkAction"
+                    >
+                        {{
+                            bulkActionProcessing
+                                ? 'Updating…'
+                                : pendingBulkAction === 'activate'
+                                  ? 'Confirm activate'
+                                  : 'Confirm deactivate'
+                        }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>
