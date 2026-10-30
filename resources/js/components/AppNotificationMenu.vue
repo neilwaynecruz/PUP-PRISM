@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
 import { Bell, CheckCheck, LoaderCircle, Radio } from 'lucide-vue-next';
-import { computed } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -24,6 +24,29 @@ const {
     openNotification,
     unreadCount,
 } = useRealtimeNotifications();
+
+/*
+ * The menu is modal, so while it is open the page body ignores pointer events.
+ * It must close before any navigation it starts; otherwise it stays open behind the
+ * next page and leaves Search, notifications, and the profile menu unclickable.
+ */
+const open = ref(false);
+let removeNavigateListener: (() => void) | undefined;
+
+onMounted(() => {
+    removeNavigateListener = router.on('navigate', () => {
+        open.value = false;
+    });
+});
+
+onBeforeUnmount(() => removeNavigateListener?.());
+
+function openNotificationAndClose(
+    notification: (typeof notifications.value)[number],
+): void {
+    open.value = false;
+    openNotification(notification);
+}
 
 const connectionTone = computed(() => {
     switch (connectionStatus.value) {
@@ -53,7 +76,7 @@ function formatTimestamp(timestamp: string | null): string {
 </script>
 
 <template>
-    <DropdownMenu>
+    <DropdownMenu v-model:open="open">
         <DropdownMenuTrigger as-child>
             <Button
                 type="button"
@@ -129,7 +152,8 @@ function formatTimestamp(timestamp: string | null): string {
                     :key="notification.id"
                     type="button"
                     class="flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition-colors hover:bg-muted/70"
-                    @click="openNotification(notification)"
+                    data-testid="notification-menu-item"
+                    @click="openNotificationAndClose(notification)"
                 >
                     <span
                         class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
@@ -191,6 +215,7 @@ function formatTimestamp(timestamp: string | null): string {
                     <Link
                         :href="notificationsIndex().url"
                         class="font-medium text-primary hover:underline"
+                        @click="open = false"
                     >
                         View notification history
                     </Link>

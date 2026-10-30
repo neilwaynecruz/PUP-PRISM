@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { onBeforeUnmount, ref, watch } from 'vue';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -157,7 +158,7 @@ function severityToneClass(severity: string): string {
             <Button
                 variant="outline"
                 size="sm"
-                class="rounded-lg"
+                class="min-h-11 rounded-lg sm:min-h-8"
                 :disabled="unreadCount === 0 || markingAllRead"
                 @click="markAllRead"
             >
@@ -243,52 +244,63 @@ function severityToneClass(severity: string): string {
             <article
                 v-for="notification in notifications.data"
                 :key="notification.id"
-                class="flex items-start gap-4 border-b border-border/60 px-4 py-4 last:border-b-0"
+                class="flex flex-col gap-3 border-b border-border/60 px-4 py-4 last:border-b-0 sm:flex-row sm:items-start sm:gap-4"
             >
-                <span
-                    aria-hidden="true"
-                    class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
-                    :class="notification.readAt ? 'bg-border' : 'bg-primary'"
-                />
-                <div class="min-w-0 flex-1">
-                    <div
-                        class="flex flex-wrap items-center justify-between gap-2"
-                    >
-                        <h2 class="text-sm font-semibold">
-                            {{ notification.title }}
-                            <span class="sr-only">
-                                — {{ notification.readAt ? 'Read' : 'Unread' }}
+                <div class="flex min-w-0 flex-1 items-start gap-3">
+                    <span
+                        aria-hidden="true"
+                        class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full"
+                        :class="
+                            notification.readAt ? 'bg-border' : 'bg-primary'
+                        "
+                    />
+                    <div class="min-w-0 flex-1">
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-2"
+                        >
+                            <h2 class="text-sm font-semibold">
+                                {{ notification.title }}
+                                <span class="sr-only">
+                                    —
+                                    {{
+                                        notification.readAt ? 'Read' : 'Unread'
+                                    }}
+                                </span>
+                            </h2>
+                            <span class="text-xs text-muted-foreground">
+                                {{ formatTimestamp(notification.createdAt) }}
                             </span>
-                        </h2>
-                        <span class="text-xs text-muted-foreground">
-                            {{ formatTimestamp(notification.createdAt) }}
-                        </span>
-                    </div>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        {{ notification.message }}
-                    </p>
-                    <div
-                        class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground"
-                    >
-                        <span
-                            class="rounded-full bg-muted px-2 py-0.5 capitalize"
+                        </div>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            {{ notification.message }}
+                        </p>
+                        <div
+                            class="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground"
                         >
-                            {{ formatLabel(notification.category) }}
-                        </span>
-                        <span
-                            class="rounded-full px-2 py-0.5"
-                            :class="severityToneClass(notification.severity)"
-                        >
-                            {{ formatLabel(notification.severity) }}
-                        </span>
+                            <span
+                                class="rounded-full bg-muted px-2 py-0.5 capitalize"
+                            >
+                                {{ formatLabel(notification.category) }}
+                            </span>
+                            <span
+                                class="rounded-full px-2 py-0.5"
+                                :class="
+                                    severityToneClass(notification.severity)
+                                "
+                            >
+                                {{ formatLabel(notification.severity) }}
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div class="flex shrink-0 flex-col gap-2">
+                <div
+                    class="flex flex-wrap items-center gap-2 pl-5 sm:shrink-0 sm:flex-col sm:items-end sm:pl-0"
+                >
                     <Button
                         v-if="!notification.readAt"
                         variant="outline"
                         size="sm"
-                        class="rounded-lg"
+                        class="min-h-11 rounded-lg sm:min-h-8"
                         @click="markRead(notification.id)"
                     >
                         Mark as Read
@@ -298,7 +310,7 @@ function severityToneClass(severity: string): string {
                         variant="ghost"
                         size="sm"
                         as-child
-                        class="rounded-lg"
+                        class="min-h-11 rounded-lg sm:min-h-8"
                     >
                         <Link :href="notification.url">View Details</Link>
                     </Button>
@@ -306,31 +318,9 @@ function severityToneClass(severity: string): string {
             </article>
         </div>
 
-        <div
-            v-if="notifications.links.length"
-            aria-label="Notification pages"
-            class="flex flex-wrap items-center justify-center gap-1"
-        >
-            <Button
-                v-for="(link, index) in notifications.links"
-                :key="index"
-                variant="ghost"
-                size="sm"
-                :disabled="!link.url"
-                as-child
-                class="h-8 rounded-lg text-xs"
-                :class="link.active ? 'bg-primary/10 text-primary' : ''"
-            >
-                <Link
-                    v-if="link.url"
-                    :href="link.url"
-                    preserve-scroll
-                    preserve-state
-                >
-                    <span v-html="link.label" />
-                </Link>
-                <span v-else v-html="link.label" />
-            </Button>
-        </div>
+        <AdminPagination
+            :links="notifications.links"
+            label="Notification pages"
+        />
     </div>
 </template>

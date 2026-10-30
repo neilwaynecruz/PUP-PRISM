@@ -59,8 +59,8 @@ class TrashController extends Controller
             ->with(['deletedBy:id,name,email'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
-                    $query->where('sku', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%");
+                    $query->whereLike('sku', "%{$search}%")
+                        ->orWhereLike('name', "%{$search}%");
                 });
             })
             ->orderByDesc('deleted_at')
@@ -93,9 +93,9 @@ class TrashController extends Controller
             ->with(['asset.product:id,name', 'deletedBy:id,name,email'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->whereHas('asset', function ($query) use ($search) {
-                    $query->where('tag_code', 'like', "%{$search}%")
+                    $query->whereLike('tag_code', "%{$search}%")
                         ->orWhereHas('product', function ($query) use ($search) {
-                            $query->where('name', 'like', "%{$search}%");
+                            $query->whereLike('name', "%{$search}%");
                         });
                 });
             })
@@ -129,7 +129,7 @@ class TrashController extends Controller
             ->with(['requester:id,name,email', 'deletedBy:id,name,email'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->whereHas('requester', function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%");
+                    $query->whereLike('name', "%{$search}%");
                 });
             })
             ->orderByDesc('deleted_at')

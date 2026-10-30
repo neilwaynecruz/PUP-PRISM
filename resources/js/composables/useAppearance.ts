@@ -85,6 +85,19 @@ export function initializeTheme(): void {
 
 const appearance = ref<Appearance>('system');
 
+/*
+ * The OS colour preference is only known in the browser. It starts as `false`, exactly
+ * what the server renders with, and is read after mount. Reading it during render made
+ * the first client render differ from the server HTML; that hydration mismatch corrupted
+ * Vue's DOM tracking and later Inertia visits stopped rendering until a full reload.
+ */
+const systemPrefersDark = ref(false);
+let systemPreferenceListenerAttached = false;
+
+function syncSystemPreference(): void {
+    systemPrefersDark.value = prefersDark();
+}
+
 export function useAppearance(): UseAppearanceReturn {
     onMounted(() => {
         const savedAppearance = localStorage.getItem(
@@ -94,11 +107,18 @@ export function useAppearance(): UseAppearanceReturn {
         if (savedAppearance) {
             appearance.value = savedAppearance;
         }
+
+        syncSystemPreference();
+
+        if (!systemPreferenceListenerAttached) {
+            mediaQuery()?.addEventListener('change', syncSystemPreference);
+            systemPreferenceListenerAttached = true;
+        }
     });
 
     const resolvedAppearance = computed<ResolvedAppearance>(() => {
         if (appearance.value === 'system') {
-            return prefersDark() ? 'dark' : 'light';
+            return systemPrefersDark.value ? 'dark' : 'light';
         }
 
         return appearance.value;

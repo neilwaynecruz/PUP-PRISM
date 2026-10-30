@@ -31,10 +31,10 @@ class SupplierController extends Controller
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($nestedQuery) use ($search) {
                     $nestedQuery
-                        ->where('name', 'like', "%{$search}%")
-                        ->orWhere('contact_person', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
-                        ->orWhere('phone', 'like', "%{$search}%");
+                        ->whereLike('name', "%{$search}%")
+                        ->orWhereLike('contact_person', "%{$search}%")
+                        ->orWhereLike('email', "%{$search}%")
+                        ->orWhereLike('phone', "%{$search}%");
                 });
             })
             ->when($active !== null, fn ($query) => $query->where('is_active', $active))

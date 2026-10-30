@@ -19,6 +19,7 @@ import {
     watch,
 } from 'vue';
 import BookingController from '@/actions/App/Http/Controllers/Inventory/BookingController';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
@@ -149,6 +150,7 @@ const deleteDialogOpen = ref(false);
 const deleteReason = ref('');
 const deleteReasonCustom = ref('');
 const isCompactCalendar = ref(false);
+const isTabletCalendar = ref(false);
 const calendarComponent = ref<InstanceType<typeof FullCalendar> | null>(null);
 
 const deletionReasons = [
@@ -499,17 +501,30 @@ const events = computed(() =>
 
 const calendarOptions = computed<CalendarOptions>(() => ({
     plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
-    initialView: isCompactCalendar.value ? 'timeGridDay' : 'dayGridMonth',
+    initialView: isCompactCalendar.value
+        ? 'timeGridDay'
+        : isTabletCalendar.value
+          ? 'timeGridThreeDay'
+          : 'dayGridMonth',
+    views: {
+        timeGridThreeDay: {
+            type: 'timeGrid',
+            duration: { days: 3 },
+            buttonText: '3 Days',
+        },
+    },
     headerToolbar: {
         left: 'prev,next today',
         center: 'title',
         right: isCompactCalendar.value
             ? 'timeGridDay,dayGridMonth'
-            : 'dayGridMonth,timeGridWeek,timeGridDay',
+            : isTabletCalendar.value
+              ? 'timeGridThreeDay,dayGridMonth,timeGridDay'
+              : 'dayGridMonth,timeGridThreeDay,timeGridWeek,timeGridDay',
     },
     buttonText: { today: 'Today', month: 'Month', week: 'Week', day: 'Day' },
     events: events.value,
-    height: isCompactCalendar.value ? 520 : 620,
+    height: isCompactCalendar.value ? 520 : isTabletCalendar.value ? 560 : 620,
     dayMaxEventRows: isCompactCalendar.value ? 2 : 3,
     eventDisplay: 'block',
     nowIndicator: true,
@@ -536,6 +551,7 @@ const listQuery = computed(() => ({
 
 let assetSearchTimer: number | undefined;
 let compactCalendarMediaQuery: MediaQueryList | null = null;
+let tabletCalendarMediaQuery: MediaQueryList | null = null;
 let isComponentActive = true;
 
 watch([assetSearch, listSearch, listStatus, listDateFrom, listDateTo], () => {
@@ -564,16 +580,25 @@ onBeforeUnmount(() => {
         'change',
         syncCompactCalendarMode,
     );
+    tabletCalendarMediaQuery?.removeEventListener(
+        'change',
+        syncCompactCalendarMode,
+    );
 });
 
 function syncCompactCalendarMode(): void {
     isCompactCalendar.value = compactCalendarMediaQuery?.matches ?? false;
+    isTabletCalendar.value = tabletCalendarMediaQuery?.matches ?? false;
 
     void nextTick(() => {
         calendarComponent.value
             ?.getApi()
             .changeView(
-                isCompactCalendar.value ? 'timeGridDay' : 'dayGridMonth',
+                isCompactCalendar.value
+                    ? 'timeGridDay'
+                    : isTabletCalendar.value
+                      ? 'timeGridThreeDay'
+                      : 'dayGridMonth',
             );
     });
 }
@@ -584,8 +609,15 @@ onMounted(() => {
     }
 
     compactCalendarMediaQuery = window.matchMedia('(max-width: 767px)');
+    tabletCalendarMediaQuery = window.matchMedia(
+        '(min-width: 768px) and (max-width: 1023px)',
+    );
     syncCompactCalendarMode();
     compactCalendarMediaQuery.addEventListener(
+        'change',
+        syncCompactCalendarMode,
+    );
+    tabletCalendarMediaQuery.addEventListener(
         'change',
         syncCompactCalendarMode,
     );
@@ -1263,7 +1295,7 @@ function selectedBookingRequestLabel(): string {
                                     variant="ghost"
                                     size="sm"
                                     as-child
-                                    class="h-7 rounded-lg text-xs"
+                                    class="min-h-11 rounded-lg text-xs sm:h-8 sm:min-h-8"
                                 >
                                     <Link
                                         :href="`/inventory/bookings/${booking.id}`"
@@ -1286,7 +1318,7 @@ function selectedBookingRequestLabel(): string {
                                             data-test="approve-booking-button"
                                             data-testid="approve-booking-button"
                                             size="sm"
-                                            class="h-7 rounded-lg text-xs"
+                                            class="min-h-11 rounded-lg text-xs sm:h-8 sm:min-h-8"
                                             >Approve</Button
                                         >
                                     </Form>
@@ -1294,7 +1326,7 @@ function selectedBookingRequestLabel(): string {
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        class="h-7 rounded-lg text-xs"
+                                        class="min-h-11 rounded-lg text-xs sm:h-8 sm:min-h-8"
                                         @click="selectedRejectBooking = booking"
                                         >Reject</Button
                                     >
@@ -1303,7 +1335,7 @@ function selectedBookingRequestLabel(): string {
                                     v-if="booking.can_delete"
                                     variant="ghost"
                                     size="sm"
-                                    class="h-7 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                                    class="min-h-11 rounded-lg text-xs text-rose-600 hover:text-rose-700 sm:h-8 sm:min-h-8"
                                     @click="openDeleteDialog(booking)"
                                     >Move to Trash</Button
                                 >
@@ -1494,7 +1526,7 @@ function selectedBookingRequestLabel(): string {
                                     variant="ghost"
                                     size="sm"
                                     as-child
-                                    class="h-7 rounded-lg text-xs"
+                                    class="min-h-11 rounded-lg text-xs sm:h-8 sm:min-h-8"
                                 >
                                     <Link
                                         :href="`/inventory/bookings/${booking.id}`"
@@ -1505,7 +1537,7 @@ function selectedBookingRequestLabel(): string {
                                     v-if="booking.can_delete"
                                     variant="ghost"
                                     size="sm"
-                                    class="h-7 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                                    class="min-h-11 rounded-lg text-xs text-rose-600 hover:text-rose-700 sm:h-8 sm:min-h-8"
                                     @click="openDeleteDialog(booking)"
                                     >Move to Trash</Button
                                 >
@@ -1550,30 +1582,11 @@ function selectedBookingRequestLabel(): string {
                         </div>
                     </div>
 
-                    <div
-                        v-if="bookings.links.length"
-                        class="mt-4 flex flex-wrap items-center justify-center gap-1"
-                    >
-                        <Button
-                            v-for="(link, index) in bookings.links"
-                            :key="index"
-                            variant="ghost"
-                            size="sm"
-                            :disabled="!link.url"
-                            as-child
-                            class="h-8 rounded-lg px-3 text-xs"
-                        >
-                            <Link
-                                v-if="link.url"
-                                :href="link.url"
-                                preserve-scroll
-                                preserve-state
-                            >
-                                <span v-html="link.label" />
-                            </Link>
-                            <span v-else v-html="link.label" />
-                        </Button>
-                    </div>
+                    <AdminPagination
+                        :links="bookings.links"
+                        label="Booking pages"
+                        class="mt-4"
+                    />
                 </div>
             </div>
         </div>

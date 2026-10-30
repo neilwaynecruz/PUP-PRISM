@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Foundation\Testing\LazilyRefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
 
@@ -61,4 +63,32 @@ function expectResponsePreventsClientCaching(TestResponse $response): void
     expect($cacheControl)->toContain('no-cache');
     expect($cacheControl)->toContain('must-revalidate');
     expect($cacheControl)->toContain('private');
+}
+
+/**
+ * Run a callback against the PostgreSQL testing database inside a rolled-back transaction.
+ *
+ * A query on the default connection runs first, so LazilyRefreshDatabase refreshes the
+ * in-memory SQLite database and never the shared PostgreSQL testing database.
+ */
+function withPostgresTestingDatabase(callable $callback): void
+{
+    try {
+        DB::connection('pgsql_testing')->getPdo();
+    } catch (Throwable $exception) {
+        test()->markTestSkipped('PostgreSQL testing connection unavailable: '.$exception->getMessage());
+    }
+
+    User::query()->exists();
+
+    $originalConnection = config('database.default');
+    config(['database.default' => 'pgsql_testing']);
+    DB::connection('pgsql_testing')->beginTransaction();
+
+    try {
+        $callback();
+    } finally {
+        DB::connection('pgsql_testing')->rollBack();
+        config(['database.default' => $originalConnection]);
+    }
 }

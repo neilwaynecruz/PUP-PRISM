@@ -52,8 +52,8 @@ class ProductController extends Controller
             ->withCount('assets')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
-                    $query->where('sku', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%");
+                    $query->whereLike('sku', "%{$search}%")
+                        ->orWhereLike('name', "%{$search}%");
                 });
             })
             ->when($type !== '', fn ($query) => $query->where('type', $type))
@@ -401,8 +401,8 @@ class ProductController extends Controller
             ])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($q) use ($search) {
-                    $q->where('sku', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%");
+                    $q->whereLike('sku', "%{$search}%")
+                        ->orWhereLike('name', "%{$search}%");
                 });
             })
             ->when($dateFrom, fn ($q) => $q->whereDate('deleted_at', '>=', $dateFrom))

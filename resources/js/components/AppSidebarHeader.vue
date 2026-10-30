@@ -37,7 +37,6 @@ function openGlobalSearch(): void {
         <div class="flex items-center gap-2.5">
             <SidebarTrigger
                 class="-ml-1 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label="Toggle navigation menu"
             />
             <template v-if="breadcrumbs && breadcrumbs.length > 0">
                 <Breadcrumbs :breadcrumbs="breadcrumbs" />

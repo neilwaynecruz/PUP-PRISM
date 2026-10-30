@@ -51,8 +51,8 @@ class ForecastController extends Controller
             ])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($nested) use ($search) {
-                    $nested->where('sku', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%");
+                    $nested->whereLike('sku', "%{$search}%")
+                        ->orWhereLike('name', "%{$search}%");
                 });
             })
             ->when($method !== '', function ($query) use ($method) {

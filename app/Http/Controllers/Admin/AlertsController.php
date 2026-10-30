@@ -42,11 +42,11 @@ class AlertsController extends Controller
         if ($filters['search'] !== '') {
             $query->where(function ($builder) use ($filters): void {
                 $builder
-                    ->where('message', 'like', "%{$filters['search']}%")
+                    ->whereLike('message', "%{$filters['search']}%")
                     ->orWhereHas('product', function ($productQuery) use ($filters): void {
                         $productQuery
-                            ->where('name', 'like', "%{$filters['search']}%")
-                            ->orWhere('sku', 'like', "%{$filters['search']}%");
+                            ->whereLike('name', "%{$filters['search']}%")
+                            ->orWhereLike('sku', "%{$filters['search']}%");
                     });
             });
         }

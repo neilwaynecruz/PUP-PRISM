@@ -49,8 +49,8 @@ class PurchaseOrderController extends Controller
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($nestedQuery) use ($search) {
                     $nestedQuery
-                        ->where('po_number', 'like', "%{$search}%")
-                        ->orWhereHas('supplier', fn ($supplierQuery) => $supplierQuery->where('name', 'like', "%{$search}%"));
+                        ->whereLike('po_number', "%{$search}%")
+                        ->orWhereHas('supplier', fn ($supplierQuery) => $supplierQuery->whereLike('name', "%{$search}%"));
                 });
             })
             ->when($status !== '', fn ($query) => $query->where('status', $status))

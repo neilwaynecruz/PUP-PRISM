@@ -78,6 +78,70 @@ const viewports = [
 ] as const;
 
 test.describe('Phase 3 visual review', () => {
+    test('dashboard remains balanced in both themes across representative viewports', async ({
+        page,
+    }, testInfo) => {
+        test.setTimeout(180_000);
+
+        const browserErrors: string[] = [];
+        page.on('pageerror', (error) => browserErrors.push(error.message));
+        page.on('console', (message) => {
+            const text = message.text();
+
+            if (
+                message.type() === 'error' &&
+                !text.includes('fonts.googleapis.com') &&
+                !text.includes('ERR_NETWORK_ACCESS_DENIED') &&
+                !(
+                    text.includes('WebSocket connection to') &&
+                    text.includes('localhost:8080')
+                )
+            ) {
+                browserErrors.push(text);
+            }
+        });
+
+        await loginAs(page, 'admin@e2e.test');
+
+        for (const appearance of ['light', 'dark'] as const) {
+            await page.evaluate((value) => {
+                localStorage.setItem('appearance', value);
+            }, appearance);
+
+            for (const viewport of viewports) {
+                await page.setViewportSize(viewport);
+                await page.goto('/dashboard');
+                await expect(page.getByTestId('dashboard-page')).toBeVisible();
+
+                if (appearance === 'dark') {
+                    await expect(page.locator('html')).toHaveClass(/dark/);
+                } else {
+                    await expect(page.locator('html')).not.toHaveClass(/dark/);
+                }
+
+                const overflow = await page.evaluate(
+                    () =>
+                        document.documentElement.scrollWidth -
+                        document.documentElement.clientWidth,
+                );
+
+                expect(
+                    overflow,
+                    `dashboard overflow at ${viewport.name} in ${appearance} mode`,
+                ).toBeLessThanOrEqual(1);
+
+                await page.screenshot({
+                    path: testInfo.outputPath(
+                        `dashboard-focused-${viewport.name}-${appearance}.png`,
+                    ),
+                    fullPage: true,
+                });
+            }
+        }
+
+        expect(browserErrors).toEqual([]);
+    });
+
     test('login and key pages remain balanced across viewports', async ({
         page,
     }, testInfo) => {

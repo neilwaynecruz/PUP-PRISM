@@ -1,226 +1,405 @@
-# PUP-PRISM Responsive Design Optimization Report
+# PUP-PRISM Responsive Design, Workflow Efficiency, and Verification Report
 
-**Review date:** 2026-10-30  
-**Repository:** `C:\laragon\www\PUP_PRISM`  
-**Branch:** `main` (tracking `origin/main`)  
-**Completion verdict:** **PARTIALLY VERIFIED**
+**Review date:** 2026-10-30
 
-The requested application changes and automated regression gates are complete, and two responsive visual passes were performed. The result is not marked `VERIFIED` because physical Android/iOS/iPad/Samsung devices and native macOS Safari were not available, and the locked dependency audits report unresolved security advisories that require an explicitly authorized dependency-upgrade task.
+**Repository:** `C:\laragon\www\PUP_PRISM`
 
-## 1. Initial findings
+**Branch:** `main` tracking `origin/main`
 
-- The worktree was already extensively modified. All existing Stock Movements and other in-progress work was preserved; no reset, checkout, dependency upgrade, commit, push, merge, or deployment was performed.
-- The active Tailwind v4 theme in `resources/css/app.css` still used blue as its primary semantic color. `design-system.css` contained maroon/gold declarations but was not imported by the active application bundle.
-- Stock Movements had lost the established `data-testid="movements-index-page"` page contract, which broke the navigation specification.
-- Receiving's single-item form exposed `tag_codes_text` as a UI helper but submitted `tag_codes` without declaring and initializing that backend-contract field in the form type.
-- The shared mobile shell was generally sound, but close controls, pagination, dialog height, safe-area behavior, skip-link focus, and several touch targets needed refinement.
-- Departments, Positions, Categories, and Origins used desktop tables without an equivalent compact mobile record presentation. Locations had a dense create row that clipped at desktop/tablet transition widths.
-- Bookings displayed a mobile helper that described a day view, but FullCalendar remained in month view because changing `initialView` after mount does not update the live calendar instance.
-- Existing Settings are personal account preferences only. No secure requirement exists for exposing server `.env` configuration.
+**Status:** **PARTIALLY VERIFIED**
 
-## 2. Branding decision and theme changes
+The current implementation passes the configured TypeScript, ESLint, Prettier, Pint, Vite, relevant Pest, Chromium navigation, responsive/accessibility, Dashboard visual, full Phase 3 visual, and Phase 5 forecasting visual checks. It is not marked fully verified because no physical iPhone, iPad, Android, or Samsung Internet device was available, assistive-technology sessions were not performed, and Firefox/WebKit were not rerun after the final navigation and Dashboard changes.
 
-The approved maroon-and-gold identity is implemented through active semantic tokens rather than a blind blue replacement.
+No commit, push, merge, deployment, dependency change, or secret exposure was performed.
 
-- Light primary: `#7a1538` (institutional maroon).
-- Light secondary accent: `#9a6b00` (restrained accessible gold).
-- Dark primary: `#d26a84` (readable maroon tint on dark surfaces).
-- Dark secondary accent: `#e4b94f`.
-- Warm neutral backgrounds, cards, borders, popovers, sidebar states, focus rings, and chart tokens were defined for both themes.
-- Primary buttons, links, active navigation, hover/focus states, authentication surfaces, and PWA browser theme colors now use the semantic brand system.
-- Success, warning, destructive, information, and data-visualization colors remain distinct. Legitimate blue is retained for information/status/chart data and the supplied geometric logo artwork.
-- The inactive legacy `design-system.css` was not deleted because removal was not necessary and its future consumers could not be disproved.
-- Measured token contrast: light primary on primary foreground `10.54:1`; dark primary `5.50:1`; light gold `4.69:1`.
+## 1. Initial findings and preserved work
 
-Manual screenshot review confirmed the identity on the authentication page, dashboard, sidebar, cards, forms, tables, booking calendar, settings, master-data pages, alerts/status surfaces, and mobile headers in both appearance modes. Gold is an accent, not a large decorative background.
+At the start of this continuation pass, the worktree already contained 36 tracked modified files from earlier responsive-design work. Those changes included the maroon-and-gold migration, master-data refinements, Bookings adaptations, Receiving and Stock Movements fixes, Settings refinements, and Playwright coverage. They were preserved.
 
-## 3. Stock Movements correction
+The most important reproducible findings were:
 
-- Restored `data-testid="movements-index-page"` on the current page-level root in `resources/js/pages/inventory/movements/Index.vue`.
-- Preserved the existing uncommitted redesign, filters, export actions, adjustment workflow, cycle-count workflow, scanner access, and product browser.
-- Navigation and regression tests pass. The phone screenshot confirms accessible manual selection, `Scan SKU`, consumable selection, filters, date controls, and empty ledger state.
+- The Dashboard light theme used too many tinted surfaces and decorative color washes.
+- The navigation trigger did not expose its state or controlled element, and close paths did not share one reliable state transition.
+- The JavaScript `max-width: 768px` breakpoint conflicted with Tailwind's `md` boundary.
+- The drawer did not subscribe to `app:close-overlays` and used Inertia `success` rather than the broader `navigate` event.
+- Mobile open state could survive a mobile-to-desktop-to-mobile transition.
+- Dashboard custom dates allowed an invalid reverse range without immediate accessible feedback.
+- Purchase-order receipt idempotency checked the cache before obtaining a request lock. A lock timeout could also be misreported as success.
+- The existing report overstated current browser/device evidence.
 
-## 4. Receiving TypeScript correction
+## 2. Completed checklist
 
-The correction was made at the data-contract source rather than with `any`, `@ts-ignore`, or an unsafe cast.
+- [x] Preserve pre-existing work and role-based navigation.
+- [x] Retain semantic maroon/gold tokens and distinct status colors.
+- [x] Neutralize the Dashboard light-mode canvas and analytical cards.
+- [x] Keep Dashboard dark mode readable with differentiated surfaces.
+- [x] Add accessible Dashboard date-range error prevention.
+- [x] Correct drawer state, route close, breakpoint state, and trigger semantics.
+- [x] Verify backdrop, Escape, focus, active state, scroll lock, and desktop collapse.
+- [x] Serialize identical receiving requests before the idempotency check.
+- [x] Fail visibly on lock contention instead of returning false success.
+- [x] Preserve partial receiving, quantity/tag validation, locking, audit logs, and realtime ordering.
+- [x] Recheck Stock Movements navigation and Receiving transaction tests.
+- [x] Complete two verification passes and inspect screenshots.
+- [x] Document unavailable environments and limitations.
 
-- `SingleReceivingForm` now declares the UI-only `tag_codes_text` and the submitted API field `tag_codes: string[] | null`.
-- `tag_codes` is initialized, derived from the entered newline/comma-delimited tag text before submission, and sent to the backend.
-- The transform removes only the UI helper while preserving the typed API payload.
-- Vue TypeScript checking passes.
-- Receiving regression coverage passes for scanner/manual SKU/name/catalog selection, partial receiving, quantity validation, duplicate prevention, stock updates, and purchase-order receiving safeguards.
-- The mobile screenshot confirms camera-independent alternatives remain available: Browse Catalog, Scan SKU, product-name search, and manual SKU entry.
+## 3. Branding and Dashboard design
 
-## 5. Existing Settings scope and security limitations
+The approved direction remains institutional maroon for primary actions, focus, selection, and active navigation; restrained gold for secondary emphasis; neutral surfaces for structure; and green/amber/red/blue-cyan for semantic states.
 
-Reviewed personal settings routes: Profile, Security, API Tokens, Appearance, and Notifications.
+`resources/css/app.css` supplies semantic primary, accent, surface, input, table-border, disabled, and status values for both themes. No blind global replacement was performed.
 
-- Settings explicitly state that changes apply only to the current account.
-- Appearance and personal preference controls remain responsive and keyboard accessible.
-- API tokens remain a personal, authorized feature and are revealed only by the existing controlled workflow.
-- No frontend route reads or edits `APP_KEY`, database passwords, broadcast credentials, or other `.env` secrets.
-- Server infrastructure, queues, database connections, mail, Reverb, storage, and application keys remain server-side configuration.
-- No new system-wide settings module was created.
+`Dashboard.vue` now:
 
-Administrative configuration that is intentionally unavailable in the UI includes database credentials, application keys, mail/broadcast credentials, queue infrastructure, filesystem credentials, and deployment/runtime environment values.
+- Uses a neutral constrained page surface instead of a pink canvas.
+- Uses `bg-card`, structural borders, and minimal `shadow-xs` elevation.
+- Removes decorative KPI blur blobs, full-card pastel washes, and hover-lift effects.
+- Keeps color on compact icons, indicators, badges, and chart series.
+- Uses two KPI columns on phones, three at intermediate widths, and six on large desktops.
+- Uses neutral cards for trends, summaries, purchase orders, supplier performance, exception lists, and recovery information.
+- Replaces hardcoded inventory links with Wayfinder route functions.
+- Constrains large-screen width for readable proportions.
 
-## 6. Five master-data page reviews
+Light mode now has neutral backgrounds, white cards, gray borders, strong headings, maroon actions, and limited gold. Dark mode uses differentiated charcoal/maroon surfaces, visible borders, and controlled status colors. The predictive panel retains a subtle institutional tint to distinguish it as analysis, but the overall page no longer reads as pink or visually noisy.
 
-| Page | Findings and verification |
+## 4. Manual-input and efficiency audit
+
+Inputs were classified as required manual, derived, prepopulated/editable, searchable, scan-assisted, reusable preference, conditional, system-generated, approval-controlled, or sensitive/non-automatable.
+
+| Workflow | Efficiency/error-prevention pattern | Inputs intentionally manual |
+|---|---|---|
+| Dashboard | Today/week/month presets; invalid custom range is announced and blocked. | Custom dates when presets do not fit. |
+| Products | Search/filter, master-data selections, bulk labels, duplicate controls. | Identity, classification, reorder policy, descriptions. |
+| Assets | QR/tag lookup, search, lifecycle display, product/location selection. | Physical tag confirmation, condition, custody, disposal decisions. |
+| Suppliers | Existing records are selected instead of retyped; responsive filtering/cards. | Legal/contact data and activation decisions. |
+| Purchase Orders | Supplier/product selection and calculated line/order summaries retained. | Quantity, negotiated overrides, notes, submission, approval. |
+| Receiving | PO lines/reference context, remaining quantities, partial receipts, asset-only tags, scanner, SKU, name search, catalog browsing. | Delivered quantity, physical tags, exceptions, final confirmation. |
+| Stock Movements | Search, QR/manual identifiers, structured movement types. | Count/adjustment quantity and audit reason. |
+| Counts/Reconciliation | Expected stock is reference data; variance is derived. | Physical quantity and variance reason. |
+| Forecasting | Forecast, confidence, horizon, and recommendation are derived decision support. | Whether to act; no automatic purchasing or stock changes. |
+| Handover/Transfers/Lifecycle/Maintenance | Asset search/scan and related-record selection. | Recipient, condition, signatures, outcome, approvals. |
+| Bookings | Adaptive calendar, availability context, resource selection, conflict validation. | Resource, time range, purpose, confirmation, approval. |
+| Requisitions | Catalog/search/scanner selection and structured lines. | Quantity, justification, submission, approval. |
+| QR/Bulk Labels | Existing records drive labels; manual lookup remains available. | Print/layout confirmation and physical application. |
+| Users/Master Data | Searchable relationships, normalization/duplicates, filters, status controls. | Identity, role, ownership, and deactivation impact. |
+| Personal Settings | Appearance/notifications are reusable preferences. | Password, 2FA, token, and security actions. |
+
+No speculative autosave, silent submission, automatic approval, or browser storage of sensitive values was introduced. No large dataset was preloaded merely to mimic server search.
+
+## 5. Receiving reliability
+
+`InventoryService::receivePurchaseOrder()` now obtains a cache lock before checking/writing its idempotency token. Identical requests cannot both pass the cache check before one records completion.
+
+Retained safeguards:
+
+- Purchase-order, line, and product row locks with stable ordering.
+- Partial receiving and receipt-status transitions.
+- Positive and remaining-quantity validation.
+- Asset-tag uniqueness checks.
+- Atomic stock, purchase-order, and audit updates.
+- Realtime dispatch only after commit.
+
+The request lock has a 120-second lease and waits up to 5 seconds. Timeout now throws a clear `RuntimeException` instead of returning a fresh order that could appear successful. The regression holds the lock, expects the failure, and confirms quantities, stock, and movements remain unchanged. The configured PostgreSQL concurrency test was also run.
+
+## 6. Navigation toggle correction
+
+### Root cause and fix
+
+- The mobile query is now `(width < 48rem)`, matching Tailwind's pre-`md` behavior.
+- `app:close-overlays` and Inertia `navigate` close the drawer.
+- Listeners are removed when the provider unmounts.
+- Leaving mobile mode clears `openMobile`, preventing unexpected reopening after orientation/breakpoint changes.
+- Mobile and desktop containers expose `id="app-navigation-sidebar"`.
+- The trigger exposes `aria-controls`, accurate `aria-expanded`, and dynamic Open/Close or Expand/Collapse labels.
+- The competing static header label was removed.
+- Existing Reka UI dialog behavior supplies focus containment, Escape/backdrop dismissal, and focus restoration.
+
+Tests verify first-click opening, explicit close, backdrop close, Escape, focus entry/trapping, focus restoration, body scroll lock, route-close behavior, active Products state, breakpoint reset, and desktop collapse/expand.
+
+## 7. Shared responsive improvements
+
+- Mobile record cards paired with desktop tables for Users, Suppliers, Notifications, inventory trash, booking trash, and requisition trash.
+- Shared `AdminPagination` on relevant list/trash pages.
+- `min-h-11` essential phone controls.
+- Safe-area/dynamic-height handling in drawer and scanner/dialog surfaces.
+- Bookings: day view on phones, three-day view on tablets, month view on desktop.
+- Shared master-data cards, badges, filters, forms, validation, empty states, and dialogs.
+- Notification preferences adapt without duplicate input IDs.
+- Responsive settings navigation and appearance controls.
+
+## 8. Module coverage
+
+The full Phase 3 suite rendered 28 authenticated page families at 390×844, 834×1112, and 1440×900 in both themes. The responsive suite separately exercised 320, 360, 375, 390, 430, 768, 834, 1024, 1280, 1440, and 844×390 landscape.
+
+| Module/page family | Reviewed result |
 |---|---|
-| Departments | Labeled search/status filters; compact mobile cards with code, active state, position count, and edit action; desktop table retained; form/dialog/empty states reviewed; case-insensitive duplicate prevention covered by tests. |
-| Positions | Labeled search/department/status filters; mobile cards preserve title, code, department, state, and edit action; tablet/desktop table uses controlled horizontal overflow; duplicate validation remains scoped correctly to department. |
-| Categories | Mobile cards and desktop table preserve product count, state, and edit action; labeled search/status controls; empty state and case-insensitive duplicate validation verified. |
-| Origins | Mobile cards and desktop table preserve product count, state, and edit action; labeled search/status controls; empty state and case-insensitive duplicate validation verified. |
-| Locations | Responsive create form, department selector, action button, card grid, validation and empty state reviewed; desktop clipping fixed by rebalancing the large-screen grid. |
+| Dashboard | Themes, KPI grid, actions, charts, statuses, date validation, exports, forecast widget, overflow. |
+| Products/Assets | Lists/cards, filters, QR/manual alternatives, bulk labels, lifecycle entry points. |
+| Suppliers/Purchase Orders | Supplier cards/filters, PO lists/forms, approvals, receiving links. |
+| Receiving/Stock Movements | Selection alternatives, partial safeguards, typed tags, page test ID, navigation. |
+| Counts/Reconciliation | Count/variance workflows; physical observations remain explicit. |
+| Forecasting | Forecast, Optimization/ABC, and Expiration/FEFO tabs passed dual-theme visual review. |
+| Handover/Transfers/Lifecycle/Maintenance | Asset selection and protected workflow actions reviewed. |
+| Bookings | Phone day, tablet three-day, desktop month, form, queue, dialogs, trash. |
+| Requisitions | Catalog/scanner/manual selection, responsive lists, approvals, trash. |
+| QR/Bulk Labels | Camera-independent fallback and responsive configuration. |
+| Audit Logs/Alerts/Operations Health | Filters, panels, navigation, responsive rendering. |
+| Reports/Notifications | Exports, history cards, filters, pagination, preferences. |
+| Users | Phone record cards and large-screen table explicitly tested. |
+| Master Data | Independent dual-theme phone/tablet/desktop test described below. |
+| Settings/Auth | Personal settings scope, responsive navigation, login, protected-route confirmation. |
+| PWA/offline | Source/route interfaces inspected; physical install/offline use unavailable. |
 
-All five pages were visually inspected in representative phone, tablet, and desktop screenshots across light and dark themes. Shared administration components were reused; no parallel component family was introduced.
+## 9. Master-data review
 
-## 7. Responsive improvements
+Departments, Positions, Categories, Origins, and Locations were independently exercised in both themes at phone, tablet, and desktop sizes.
 
-- Mobile navigation uses a dismissible, scrollable drawer with a visible 44px close target, safe-area padding, role-filtered groupings, active states, search, notifications, theme access, and profile controls.
-- Sidebar trigger and shared pagination targets are at least 44px on touch layouts.
-- Dialog and sheet content use dynamic viewport height (`dvh`), overscroll containment, internal scrolling, and safe padding so actions remain reachable with mobile keyboards.
-- Master-data tables switch to information-complete record cards on phones; denser tables remain on larger screens with controlled scrolling when required.
-- Booking uses a real `timeGridDay` view on phones and exposes Day/Month switching, rather than compressing a desktop month calendar.
-- Receiving and Stock Movements stack workflow cards and preserve scanner, manual entry, search, and browse alternatives.
-- Forms use responsive field grouping, readable labels, full-width mobile controls, native date/time inputs, and visible validation.
-- Dashboard cards stack into a practical single-column mobile flow and retain efficient multi-column layouts at larger widths.
-- PWA theme colors and authentication layouts match the application identity.
+Verified: labeled search, applicable department/status filters, mobile records, desktop layouts, create/edit forms, validation presentation, shared badges/counts/actions/dialogs, empty states, pagination patterns, duplicate prevention, 44px controls, and no tested overflow.
 
-Automated responsive coverage exercised widths `320`, `360`, `375`, `390`, `430`, `768`, `834`, `1024`, `1280`, and `1440`, including `844x390` phone landscape and `1024x768` tablet landscape. Browser zoom is not disabled. Safe areas, dynamic viewport height, overflow, drawer scrolling, touch targets, keyboard focus, and enlarged-content behavior were covered through implementation review and Playwright assertions.
+Locations additionally uses the shared language for search, filtering, creation, counts/status, and an accessible edit dialog. Shared administration components were reused.
 
-## 8. Module coverage matrix
+## 10. Settings and secrets
 
-Legend: **V** = rendered and/or workflow verified by E2E plus implementation review; **L** = limitation documented.
+Profile, security, appearance, notification, and API-token settings are personal settings. The frontend does not expose or edit `.env`, `APP_KEY`, database credentials, mail credentials, Reverb secrets, or infrastructure values.
 
-| Module or family | Status | Evidence summary |
-|---|---:|---|
-| Dashboard | V | Phone/tablet/desktop, both themes; cards, charts, recommendations, exports and empty states inspected. |
-| Products | V | Responsive cards/tables, filters, selection, labels, CRUD actions, manual/QR alternatives and regression specs. |
-| Assets | V | List/detail/workflow route family reviewed; status and selection behavior included in phase suites. |
-| Suppliers / Purchase Orders | V | Responsive route families, forms, tables, approval/receiving safeguards, PostgreSQL PO-number concurrency coverage. |
-| Receiving | V | Typed tag payload, scan/manual/search/catalog selection, partial receiving, validation, locking and stock updates. |
-| Stock Movements | V | Navigation contract, responsive workflow cards, ledger filters, adjustment/cycle-count paths. |
-| Physical Counts / Reconciliation | V | Responsive routes and database constraints; PostgreSQL physical-count concurrency test passed. |
-| Forecasting | V | Tablet/desktop and both themes; registry filters/table, status cards and visualization colors inspected. |
-| Handover | V | Responsive E2E and prior-phase regression suites pass. |
-| Bookings | V | True phone day calendar, tablet/desktop presentation, dialogs, availability/conflict and approval coverage. |
-| Requisitions | V | Responsive route and regression suites pass; status/action layouts retained. |
-| Maintenance / Asset Transfers / Asset Lifecycle | V | Asset operation route families and transfer concurrency safeguards reviewed; no feature removal. |
-| QR Scanning / Bulk Label Generation | V | Scanner and label-generation specs pass; manual identifier/search alternatives remain available when camera access is absent. |
-| Audit Logs / Alerts / Operations Health | V | Responsive monitoring pages, runtime status colors, warnings, cards and empty states inspected. |
-| Reports / exports | V | CSV/PDF actions retained across dashboard, products, bookings, forecasting and movement families. |
-| Notifications | V | Personal settings and notification UI included in route/theme review. |
-| Users | V | Responsive filters, roles, authorization presentation and table behavior reviewed. |
-| Departments / Positions / Categories / Origins / Locations | V | Independent review detailed above. |
-| Existing Settings / User Profile | V | Personal-only scope, responsive pages and security boundary verified. |
-| Login / Password recovery / 2FA | V | Fortify flows and authentication regression suites pass; login visually inspected. |
-| Registration | L | Public registration is not supported by the current route/configuration; it was not invented for this task. |
-| PWA installation / Offline interfaces | V/L | Manifest and theme metadata reviewed; existing PWA/offline interfaces retained. Browser install banners and true device offline transitions require real-device/browser-session verification. |
+No system-wide environment editor was created. A future administrative settings module would require a separate secure model, policies, audit trail, and explicit authorization.
 
-## 9. Android and iOS browser testing
+## 11. Accessibility
 
-- Chromium: responsive and workflow suites pass, including touch-enabled phone/tablet viewport emulation.
-- Firefox/Gecko: combined accessibility, responsive navigation, mobile workflows, and navigation tests pass `29/29`.
-- WebKit: combined accessibility, responsive navigation, mobile workflows, and navigation tests pass `29/29`. A WebKit skip-link failure was reproduced and fixed with explicit focusability before rerunning.
-- Android Chrome, iPhone Safari, iPad Safari, Chrome on iOS, and Samsung Internet behavior was approximated through Chromium/WebKit engines, touch capability, portrait/landscape viewports, native inputs, and responsive breakpoints.
+Automated Chromium verification covered headings, skip navigation, visible labels, connected date errors, drawer state/names, focus containment/restoration, Escape/backdrop/route dismissal, background scroll lock, mobile touch targets, active navigation state, dual-theme master data, and overflow.
 
-These are browser-engine simulations on Windows, not claims of native-device verification. Chrome on iOS uses WebKit in production; the WebKit project is useful compatibility evidence but is not a substitute for iOS Safari/Chrome running on Apple hardware.
+Manual NVDA, JAWS, VoiceOver, and TalkBack sessions were not performed and remain recommended.
 
-## 10. Real-device verification
+## 12. Performance
 
-No physical Android phone/tablet, iPhone, or iPad was connected. Samsung Internet and native macOS Safari were unavailable. No real-device result is marked as passed. A release candidate should still receive a short physical-device acceptance pass covering camera permissions, PWA installation, virtual-keyboard resizing, date/time pickers, safe areas, offline transitions, and lower-powered-device performance.
+- No dependency was added.
+- CSS grid/flex, existing conditional rendering, and shared components provide the adaptations.
+- Server search/pagination patterns were preserved.
+- Final Vite build: 12.21 seconds on this workstation.
+- Representative chunks: app 373.27 kB (92.61 kB gzip), Dashboard 230.64 kB (72.87 kB gzip), QR scanner 138.27 kB (51.14 kB gzip).
+- Dashboard and QR chunks merit future production profiling, but no speculative rewrite was made.
 
-## 11. Light and dark theme results
+## 13. Browser/device coverage
 
-- The final visual test captured 31 configured route families at `390x844`, `834x1112`, and `1440x900` in both themes.
-- The second pass completed `1/1` in `4.1m` with no monitored page/runtime error.
-- Manual sampling included dashboard, bookings, receiving, Stock Movements, products, forecasting, operations health, users, locations, settings profile/appearance, Departments, Positions, and login.
-- No sampled screenshot showed distorted logos, unreadable brand text, overlapping controls, broken card grids, or unexpected page-level horizontal overflow.
-- Status colors and data visualizations remain distinguishable from the maroon primary and gold accent.
+### Current pass
 
-## 12. Accessibility findings
+- Chromium via Playwright.
+- Phones: 320×720, 360×800, 375×812, 390×844, 430×932.
+- Phone landscape: 844×390.
+- Tablets: 768×1024, 834×1112, 1024×768.
+- Laptop/desktop: 1280×800, 1440×900.
+- Light and dark themes.
+- Full visual sweep: 28 authenticated routes × 3 viewports × 2 themes, plus login and six focused Dashboard screenshots.
+- Forecasting: three tabs × 5 viewports × 2 themes.
 
-- Visible focus uses semantic brand rings with sufficient contrast.
-- Skip links are explicitly focusable; the WebKit keyboard regression now passes.
-- Search/filter controls and master-data inputs have programmatic names.
-- Mobile drawer/dialog/sheet controls have reachable close actions and usable focus order.
-- Touch targets were increased for shared mobile navigation, close controls, and pagination.
-- Dialogs and sheets scroll within the viewport without trapping actions below the mobile keyboard.
-- Reduced-motion behavior and browser zoom remain enabled; no zoom-blocking viewport rule was added.
-- Automated accessibility/responsive coverage passed across Chromium, Firefox, and WebKit. This does not replace a full manual screen-reader audit with NVDA, VoiceOver, and TalkBack.
+### Unavailable
 
-## 13. Performance review
+- Physical Android/iOS phones and tablets.
+- Samsung Internet, Chrome on iOS, and native iOS/macOS Safari on hardware.
+- Fresh Firefox/WebKit reruns after final source changes.
+- Physical mobile-keyboard/native date-picker behavior.
 
-- No new frontend dependency was introduced.
-- Responsive behavior is primarily CSS/layout adaptation and existing component reuse, avoiding duplicate mobile application trees.
-- The E2E environment disables unavailable realtime broadcasting to prevent test-only reconnect noise and unnecessary network attempts; production broadcasting behavior is unchanged.
-- Latest E2E production-mode bundle observations: app `357.88 kB` (`89.13 kB` gzip), Dashboard `223.69 kB` (`71.81 kB` gzip), Receiving `293.16 kB` (`85.65 kB` gzip), QR scanner `138.27 kB` (`51.13 kB` gzip).
-- Receiving and Dashboard remain comparatively large candidates for a future measured code-splitting/performance task. No speculative architecture rewrite was made.
+Earlier report revisions recorded Firefox/WebKit success, but that is historical regression evidence rather than verification of the final source state.
 
-## 14. Actual test commands and results
+## 14. Actual test results
 
-| Command / suite | Result |
+| Command | Result |
 |---|---|
-| `composer ci:check` | **PASS** — ESLint, Prettier, Vue TypeScript, Pint, and full Pest suite; `532 passed`, `3891 assertions`, `1 skipped`, `89.68s`. Skip is the PostgreSQL-only constraint migration test under the SQLite CI run. |
-| Focused backend inventory/receiving/authorization suites | **PASS** — `48 passed`, `179 assertions`, `1` expected PostgreSQL-only skip. |
-| Dedicated PostgreSQL integration/concurrency tests using isolated `pup_prism_test` | **PASS** — `5 passed`, `30 assertions` (receiving locks, PO numbers, physical counts, transfers, duplicate PO recommendation). |
-| `npm run type-check` | **PASS**. |
-| `npm run lint:check` | **PASS**. |
-| `npm run format:check` | **PASS**. |
-| `vendor/bin/pint --dirty --format agent` | **PASS**. |
-| `npm run build` / `vite build --mode e2e` | **PASS** during both implementation and verification cycles. Final production build is rerun after this report. |
-| Chromium accessibility-responsive | **PASS** — `18/18`. |
-| Chromium mobile field workflows | **PASS** — `7/7`. |
-| Chromium navigation, receiving, bookings | **PASS** — `7/7`. |
-| Chromium prior-phase/auth/security/module regressions | **PASS** — `31/31`. |
-| Chromium final module visual review | **PASS** — `1/1`, `4.1m`; 31 route families × 3 viewports × 2 themes. |
-| Firefox combined compatibility | **PASS** — `29/29`. |
-| WebKit combined compatibility | **PASS** — `29/29` after the skip-link correction. |
-| `git --no-pager diff --check` | **PASS** — generated Wayfinder whitespace-only lines were formatted, then the check completed with no output. |
-| `composer audit --locked` | **FAIL/BLOCKED** — reports 51 advisories affecting 13 locked packages; the audit also warned that network access was unavailable and cached advisory data might be stale. Dependency changes require separate approval. |
-| `npm audit` | **FAIL** — one moderate `postcss-selector-parser <6.1.5` advisory; fix is available but was not applied without dependency-change authorization. |
-| PHPStan/Psalm/Intelephense CLI | **NOT AVAILABLE** — no configured project static-analysis script/package was found. PHP syntax/application tests and editor diagnostics were reviewed instead. |
+| `npm run type-check` | PASS — 0 errors. |
+| `npm run lint:check` | PASS — 0 errors. |
+| `npm run format:check` | PASS — all matched resource files formatted. |
+| `vendor/bin/pint --dirty --format agent` | PASS — `{"result":"pass"}`. |
+| `node node_modules/vite/bin/vite.js build` | PASS — 3,204 modules. |
+| Dashboard/Receiving/PostgreSQL Pest set | PASS — 25 tests, 135 assertions. |
+| `navigation.spec.ts --project=chromium` | PASS — 4 tests in 1.2 min. |
+| `accessibility-responsive.spec.ts --project=chromium` | PASS — 22 tests in 6.0 min. |
+| `phase3-visual-review.spec.ts --project=chromium` | PASS — 2 tests in 6.0 min. |
+| `phase5-visual-review.spec.ts --project=chromium` | PASS — 1 test in 41.1 sec. |
 
-## 15. Remaining limitations
+One initial Phase 3 invocation exceeded the orchestration tool's five-minute response limit. It was not counted as a test failure. The same command was rerun in a persistent session and passed in six minutes.
 
-1. Composer and npm advisory findings are unresolved pending an explicitly authorized, separately tested dependency-upgrade task.
-2. Physical Android/iOS/tablet hardware, Samsung Internet, and native macOS Safari were unavailable.
-3. NVDA, VoiceOver, and TalkBack manual sessions were not available.
-4. Camera permission prompts, actual barcode-camera quality, PWA install prompts, virtual-keyboard resizing, and offline transitions need physical-device acceptance testing.
-5. Large Dashboard and Receiving chunks are documented optimization candidates; no performance regression was introduced.
-6. The repository contained extensive pre-existing uncommitted work, so commit readiness requires the owner to separate or review unrelated changes before committing.
+## 15. Two verification passes
 
-## 16. Two independent verification passes
+### Pass 1
 
-### Pass 1 — implementation and targeted regression
+- Reviewed/preserved the existing diff.
+- Corrected Dashboard surfaces, routes, and date validation.
+- Corrected navigation semantics/events/breakpoint state.
+- Corrected receipt serialization and timeout behavior.
+- Ran targeted TypeScript, navigation, date, receipt, Pint, and build checks.
 
-- Reproduced the Stock Movements locator and Receiving type errors.
-- Implemented semantic theme tokens, shared responsive/a11y refinements, master-data mobile cards, location grid correction, and booking day-view synchronization.
-- Ran type, lint, format, build, focused backend, PostgreSQL, navigation, receiving, booking, responsive, accessibility, and compatibility tests.
-- Inspected initial screenshots. This pass found the Locations create-row clipping and the Bookings month/day mismatch; both were corrected.
+### Pass 2
 
-### Pass 2 — independent full verification
+- Rebuilt after the final navigation source change.
+- Ran full Chromium navigation and 22-case responsive/accessibility suites.
+- Ran the 25-test backend set.
+- Ran focused/full Phase 3 and Phase 5 visual suites.
+- Directly inspected Dashboard phone/tablet/desktop screenshots in both themes.
+- Reviewed final diff/stat and status.
 
-- Rebuilt the E2E application and reran the canonical CI gate.
-- Reran Chromium, Firefox, and WebKit responsive/workflow suites after source changes.
-- Reran the expanded module-wide visual sweep after all fixes: **PASS, 1/1 in 4.1m**.
-- Manually inspected retained light/dark phone/tablet/desktop screenshots. The corrected booking phone screenshot shows a genuine Day timeline; the Locations desktop selector and action remain within the grid.
-- Reviewed runtime console monitoring, final dependency audits, worktree state, and report evidence.
+## 16. Modified files and final status
 
-## 17. Final Git status
+The final worktree contains 41 modified tracked files and no untracked files.
 
-- Branch: `main...origin/main`.
-- Final status count after the report/build handoff: `128` modified/untracked entries.
-- The large dirty worktree predates and extends beyond this task. Existing user work was preserved.
-- Task-touched areas include active theme/PWA/auth surfaces, shared navigation/dialog/pagination components, dashboard/forecasting/bookings/receiving/movements pages, five master-data pages, Playwright configuration/specs, E2E environment setup, and this report.
-- No commit, push, merge, or deployment was performed.
+- Backend: `InventoryService.php`.
+- Theme: `resources/css/app.css`.
+- Shell/navigation/settings: AppSidebar, header, appearance/user menu, sidebar primitives/provider/trigger, settings layout.
+- Dashboard/forecasting: Dashboard, ForecastWidget, forecasting Index/Show.
+- Administration: Locations, Users, and Departments/Positions/Categories/Origins Index/Create/Edit.
+- Responsive lists: inventory Trash, Bookings Index/Trash, Requisitions Trash, Suppliers, Notifications, Notification Preferences.
+- Tests: Purchase Order Receiving Transactions, accessibility-responsive, Phase 3, Phase 4, Phase 5.
+- Documentation: this report.
 
-## 18. Completion verdict
+## 17. Limitations and commit readiness
 
-**PARTIALLY VERIFIED**
+1. Physical-device/native-browser verification is unavailable.
+2. Manual assistive-technology sessions are outstanding.
+3. Final-source cross-browser verification is Chromium-only.
+4. Multi-node receipt serialization requires a shared lock-capable production cache; database row locks still protect purchase-order/stock rows.
+5. The Dashboard remains intentionally information-rich and long on phones, although cards are compact.
+6. Dashboard/QR bundle sizes should be measured with production telemetry.
 
-The approved maroon-and-gold dual theme, Stock Movements contract, Receiving type correction, mobile navigation, adaptive forms/tables, booking day view, settings security boundary, master-data pages, automated regression gates, isolated PostgreSQL safeguards, and two visual verification passes are complete and passing in the available environment.
+No known critical/high-severity defect remains in the tested Chromium/backend scope. The changes are **technically ready for review**, but the broad 41-file diff should be logically grouped before any commit. Physical-device, assistive-technology, and final Firefox/WebKit checks are recommended before production release.
 
-The project cannot honestly be marked `VERIFIED` while locked dependency audits contain high/moderate advisories and the required physical Android/iOS/native-browser checks remain unavailable. No known application-level critical or high-severity functional/layout defect remains from the reproduced scope.
+**Final verdict: PARTIALLY VERIFIED.**
+
+---
+
+## 18. System reliability and usability audit (continuation, 2026-10-30)
+
+**Status of this pass: PARTIALLY VERIFIED** — every reproduced defect is fixed and covered by automated tests that pass, but physical devices, assistive-technology sessions, and two network-simulation tests in WebKit could not be run (see 18.11).
+
+The 41 in-progress tracked files listed in section 16 were preserved. Fixes in this pass were layered on top of them (`AppSidebar.vue` and `layouts/settings/Layout.vue` already contained in-progress edits; only the lines described below were added). No commit, push, merge, deploy, reset, or discard was performed, no dependencies were added, and no `.env` value or credential was read into code, tests, or this report.
+
+### 18.1 Initial failure baseline
+
+| Check | Result before changes |
+|---|---|
+| `npm run type-check` | Pass |
+| `npm run lint:check` | Pass |
+| `npm run format:check` | Pass |
+| Pest (SQLite) | Pass — which hid the backend defects below, because SQLite matches `LIKE` case-insensitively and treats unknown double-quoted identifiers as string literals |
+| Browser diagnostic sweep (30 routes, Chromium/Firefox/WebKit, admin) | All routes 200, no horizontal overflow; global-search page error, keyboard and state defects reproduced (18.2) |
+| Read-only PostgreSQL probe (dev database) | `LIKE '%lcd p%'` → 0 products; case-insensitive match → 1 |
+
+### 18.2 Reproduced defects and root causes
+
+| # | Defect (how reproduced) | Affected area | Root cause | Correction | Regression test |
+|---|---|---|---|---|---|
+| 1 | Searches miss records unless the user types the stored capitalisation (PostgreSQL probe) | All server-side searches: global search, products, assets, suppliers, purchase orders, stock movements, bookings, requisitions, handover, users, departments, positions, categories, origins, alerts, audit logs, trash, notifications, reports, API | 95 `where(..., 'like', ...)` calls; PostgreSQL `LIKE` is case-sensitive | Converted to Laravel `whereLike`/`orWhereLike` (compiles to `ILIKE` on PostgreSQL, `LIKE` on SQLite). The PO number generator's exact-prefix match was intentionally left case-sensitive | `CaseInsensitiveSearchTest` (source guard + real PostgreSQL search) |
+| 2 | Global search returned HTTP 500 for every query by Admins and Supply Heads (PostgreSQL error `column "reference_no" does not exist`) | Global search | Purchase-order search used a non-existent `reference_no` column; the column is `po_number`. SQLite silently treated `"reference_no"` as a string literal, so tests passed | Search and display `po_number`; numeric terms also match the record ID | `SearchReliabilityTest` (PO number + supplier name) |
+| 3 | Procurement CSV/PDF exports listed internal IDs instead of PO numbers | Reports | Same missing `reference_no` attribute (silently `null`, fell back to ID) | Use `po_number` | `SearchReliabilityTest` (procurement export) |
+| 4 | Notification history search and category filter returned HTTP 500 on PostgreSQL (`operator does not exist: text ->> text`) | Notifications | `notifications.data` is a `text` column; JSON-path filters need `jsonb` on PostgreSQL | Driver-aware expression (`data::jsonb ->> 'key'` on PostgreSQL, JSON path elsewhere); malformed date filters are ignored instead of reaching the database | `SearchReliabilityTest` (SQLite + real PostgreSQL) |
+| 5 | Asset results in global search opened the product page | Global search | URL built from `inventory.products.show` with the product ID | Link to `inventory.assets.show` | `SearchReliabilityTest` |
+| 6 | Searching `#12` found nothing | Global search | Only bare digits were treated as record numbers | Accept an optional leading `#` | `SearchReliabilityTest` |
+| 7 | Uncaught `focus is not a function` page error every time global search opened (all three browsers) | Global search dialog | Template ref pointed at the `Input` component instance, not the `<input>` | Focus the component's root element | E2E: opens focused, no page errors |
+| 8 | "No matching records found." flashed before the search had run, and again while a newer request was in flight (Chromium, Firefox) | Global search dialog | Empty state keyed on `!loading`; an aborted request's `finally` cleared `loading` while the newer request was pending | Track the term whose request completed and a request ID; only the newest request may update state; empty state shown only for the completed current term | E2E with delayed responses |
+| 9 | Arrow keys/Enter did nothing in global search | Global search dialog | No keyboard handling | Combobox/listbox semantics, `aria-activedescendant`, Arrow/Home/End/Enter, scroll-into-view, live result count | E2E keyboard selection |
+| 10 | Failed record search gave a dead-end message | Global search dialog | No retry path; message not announced | Alert role, distinct offline vs server wording, **Try again** button | E2E simulated 500 + retry |
+| 11 | Ctrl+K ignored while focus was in any field; ignored with Caps Lock | Keyboard shortcuts | Typing-target early return ran before the shortcut check; case-sensitive key check | Handle Ctrl/Cmd+K first, case-insensitively, and prevent the browser default | E2E Ctrl+K from a page field, all viewports |
+| 12 | Sidebar filter text and hidden menu items persisted after navigating | Sidebar navigation search | Persistent layout keeps component state across Inertia visits | Clear the filter on Inertia `navigate` | E2E sidebar filter cleared |
+| 13 | Active Settings page indicated only by colour | Settings navigation | No `aria-current` | `aria-current="page"` on the active link | E2E settings links |
+
+Checked and found working (no change needed): list-page searches debounce and route through Inertia, which cancels superseded visits and keeps query parameters for back/forward; requisition line search aborts superseded requests; theme switching applies immediately and persists across reloads; profile validation keeps input and shows the error beside the field; notification preference toggles persist; Security settings correctly require password confirmation; API-token and security forms already disable submit buttons while processing.
+
+### 18.3 Search corrections (summary)
+
+Global search is server-side (5 results per record type, policy-filtered) plus client-side page/action filtering. All list-page searches are server-side and paginated; no full datasets are loaded for searching. Leading/trailing spaces are trimmed server-side; clearing a query restores results; loading, empty, and failure states are now distinct and announced.
+
+### 18.4 Settings corrections
+
+Only one confirmed Settings defect (13). Verified by E2E: every Settings link (Profile, Security via password confirmation, API Tokens, Appearance, Notifications), theme persistence, profile validation and persistence, and notification-preference persistence. No interface for server configuration was added.
+
+### 18.5 Shared-component corrections
+
+The shared defects were in `GlobalSearchDialog.vue`, `useKeyboardShortcuts.ts`, `AppSidebar.vue`, and the Settings layout. No defect was found in the shared `Input`, `Dialog`, `DropdownMenu`, `Checkbox`, or pagination components; the focus error came from how the dialog referenced `Input`, not from `Input` itself.
+
+### 18.6 Module coverage
+
+Diagnostic sweep (admin, three browsers): Dashboard, Products, Assets, Physical Counts, Suppliers, Purchase Orders, Receiving, Stock Movements, Forecasting, Handover, Bookings, Requisitions, Audit Logs, Trash, Notifications, Alerts, Operations Health, Users, Departments, Positions, Categories, Origins, Locations, Bulk Label sheet, and all five Settings pages loaded with HTTP 200, no page errors, and no horizontal overflow. Workflow-level coverage came from the existing navigation, accessibility/responsive, handover, bookings, requisitions, auth, and security specs (Pass 2).
+
+### 18.7 Accessibility results
+
+Global search now exposes combobox/listbox roles, active-descendant, a polite live region, and an alert role for failures; Settings exposes the current page. Drawer focus restoration is verified for keyboard activation in all browsers. No manual screen-reader session was performed.
+
+### 18.8 Responsive results
+
+All ten required viewports (320×720, 360×800, 390×844, 430×932, 844×390, 768×1024, 834×1112, 1024×768, 1280×800, 1440×900) pass in Chromium, Firefox, and WebKit: drawer opens on first activation (below 768 px), Escape closes it and returns focus, desktop collapse/expand works (768 px and up), Ctrl+K search opens, no horizontal overflow, no page errors.
+
+### 18.9 Browser-console findings
+
+- Fixed: `focus is not a function` (global search, all browsers).
+- Environment only: Firefox in the sandbox could not download Google Fonts (no internet); FullCalendar's embedded icon font logs harmless glyph warnings in Firefox.
+- Not a defect: `/inventory/reports` returns 404 — it was a guessed URL in the diagnostic; no link points there (reports are export endpoints).
+
+### 18.10 Test commands and results
+
+| Command | Result |
+|---|---|
+| `php artisan test --compact` (full suite, after backend fixes) | 542 passed, 1 skipped (pre-existing skip) |
+| `php artisan test --compact tests/Feature/Search tests/Feature/Notifications tests/Feature/Inventory/ReportExportTest.php` (final) | 60 passed |
+| PostgreSQL-backed tests (`--filter=postgresql`) | 2 passed against `pgsql_testing`, inside rolled-back transactions; test data unchanged afterwards (100 products, 133 users) |
+| `npx playwright test tests/e2e/search-settings-reliability.spec.ts` (Chromium, Firefox, WebKit) | 61 passed, 2 skipped (WebKit, see 18.11) |
+| `npx playwright test navigation accessibility-responsive handover bookings requisitions auth security --project=chromium` | 34 passed |
+| `npm run type-check` / `lint:check` / `format:check` | Pass |
+| `npm run build` | Pass |
+| `vendor/bin/pint --dirty --format agent` | Pass |
+
+Regression tests were written to fail first: the source guard listed every case-sensitive search, the PostgreSQL test failed on the `reference_no` error, and the Settings E2E failed on the missing `aria-current`.
+
+### 18.11 Unavailable environments and remaining limitations
+
+1. **WebKit request interception:** a probe showed Playwright's `page.route` intercepts `fetch()` in Chromium and Firefox but not in this Windows WebKit build (intercepted 0 requests). The two tests that simulate slow or failing search responses are skipped in WebKit only, with the reason in the test; the same behaviour passes in Chromium and Firefox.
+2. No physical iPhone, iPad, Android, or Samsung Internet device; no manual screen-reader session.
+3. The `pgsql_testing` database has one pending migration (the handover cancellation fields); it does not affect the search tests.
+4. `LIKE` wildcards typed by users (`%`, `_`) are not escaped, so they act as wildcards. Low risk; not changed.
+5. Physical-device and assistive-technology limitations from section 17 still apply.
+
+### 18.12 Files changed in this pass
+
+- Backend search: 23 controllers/services converted to `whereLike` (`GlobalSearchService`, `NotificationController`, `ProcurementReportService`, `ProductInventoryReportService`, `StockMovementAuditReportService`, Admin/Inventory/Api controllers).
+- Frontend: `GlobalSearchDialog.vue`, `useKeyboardShortcuts.ts`, `AppSidebar.vue` (navigate listener only), `layouts/settings/Layout.vue` (`aria-current` only).
+- Tests: `tests/Pest.php` (`withPostgresTestingDatabase` helper), new `tests/Feature/Search/CaseInsensitiveSearchTest.php`, `tests/Feature/Search/SearchReliabilityTest.php`, `tests/e2e/search-settings-reliability.spec.ts`.
+- Generated: Wayfinder `resources/js/actions` and `resources/js/routes` files (line-number comments only, regenerated by the build).
+- Documentation: this section.
+
+### 18.13 Final Git status and commit readiness
+
+Branch `main` tracking `origin/main`; 70 tracked files modified (41 pre-existing in-progress files plus this pass) and 3 new test files; nothing staged or committed. Temporary diagnostic specs were deleted.
+
+**Commit readiness:** the search, notification, and report fixes are self-contained and suitable to commit as one change (backend + tests), separately from the in-progress responsive work. The data-correctness fixes (18.2 #1–#4) affect every PostgreSQL deployment and should be prioritised.
+
+**Final verdict for this pass: PARTIALLY VERIFIED.**
+
+### 18.14 Follow-up: header Search, notifications, and profile menu stopped responding
+
+**Reported:** Search, the notification bell, and the profile menu could not be clicked.
+
+**Reproduced (Chromium, 1536x864):** after opening the notification menu and choosing **View notification history** (or a notification), `<body>` kept `pointer-events: none; overflow: hidden` and the bell trigger stayed `data-state="open"` / `aria-expanded="true"` on the next page. `elementFromPoint` over Search, the bell, and the profile trigger returned `<html>`, so every click on the page was ignored. Opening and closing the menus without navigating, and navigating from the profile menu, did not reproduce it.
+
+**Root cause:** `AppNotificationMenu.vue` is a modal dropdown, but its history link is a plain Inertia `<Link>` and its notification rows are plain buttons that call `router.visit`. Unlike menu items, they do not close the menu, so it stayed open across the navigation (the layout persists) and kept the page body locked. No other dropdown in the app navigates this way.
+
+**Fix:** the menu's open state is controlled; it closes before navigating from a notification or the history link, and also on every Inertia `navigate` event (covers back/forward and any future links).
+
+**Regression tests:** `search-settings-reliability.spec.ts` › *Header and account menus* (history link and notification row; the row test seeds its own notification through the new `createUnreadNotification` E2E helper). With the fix temporarily reverted the history-link test failed on `pointer-events: none`; with the fix, both pass in Chromium, Firefox, and WebKit (6/6).
+
+**For an already-open browser tab:** reload once; the stuck state does not survive a full page load.
+
+### 18.15 Follow-up: Settings → Security only worked after a refresh
+
+**Reported:** clicking **Security** in My settings did not open the page until the browser was refreshed.
+
+**Evidence from the real browser** (`storage/logs/browser.log`, Laravel Boost capture, `http://localhost:8000`, Chrome): every SSR page load logged hydration mismatches in the sidebar footer, "rendered on server: Dark mode / moon icon" vs "expected on client: Light mode / sun icon" (52 occurrences today), followed by Vue update crashes (`insertBefore … not a child of this node`, `Cannot set properties of null (setting '__vnode')`, `Cannot read properties of null (reading 'parentNode')` inside the Inertia page update). Once Vue's DOM bookkeeping is corrupted, Inertia cannot render the next page, so links appear dead until a full reload.
+
+**Why it was not visible before:** the isolated E2E server does not server-render pages (it returns an empty `<div id="app">`), and the E2E browser used a light OS theme.
+
+**Root cause:** `useAppearance().resolvedAppearance` read `matchMedia('(prefers-color-scheme: dark)')` during render. The server has no window and always rendered the light-OS variant; a browser on a dark OS rendered the other variant on its first (hydration) pass.
+
+**Fix:** `resources/js/composables/useAppearance.ts` keeps the OS preference in a ref that starts as `false` (identical to the server) and is read after mount, with a single shared `change` listener. The first client render now matches the server; the theme toggle label and icon update immediately after mount as a normal reactive update.
+
+**Regression test:** `tests/e2e/ssr-hydration.spec.ts` reproduces local development exactly: it renders the page through the Vite dev SSR endpoint (`/__inertia_ssr`), serves that HTML with the development client from the same Vite server to a dark-OS browser, asserts that Vue actually hydrated `#app`, then navigates Profile → Appearance → Security and fails on any hydration warning or Vue update error. Without the fix it fails with the same four mismatches recorded in the real browser log; with the fix all three themes (System, Dark, Light) pass. It runs in Chromium and skips when the Vite dev server is not running.
+
+**Development note:** today's log also shows `[vite] Failed to reload … importing non-existent modules` errors. Those came from Wayfinder route files being regenerated concurrently (the dev server plus production builds started during this audit) and only affect an open development tab; avoid running `npm run build` while `npm run dev` is active.
+
+**Result:** `ssr-hydration.spec.ts` and `search-settings-reliability.spec.ts` in Chromium: 26 passed. Lint, format, and type-check pass.
+

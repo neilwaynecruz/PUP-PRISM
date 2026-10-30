@@ -26,8 +26,8 @@ class AssetController extends Controller
         $assets = Asset::query()
             ->with(['product:id,name,sku', 'position:id,title,department_id', 'position.department:id,name', 'currentLocation:id,code,name'])
             ->when($search !== '', fn ($query) => $query->where(
-                fn ($query) => $query->where('tag_code', 'like', "%{$search}%")
-                    ->orWhereHas('product', fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('sku', 'like', "%{$search}%")),
+                fn ($query) => $query->whereLike('tag_code', "%{$search}%")
+                    ->orWhereHas('product', fn ($query) => $query->whereLike('name', "%{$search}%")->orWhereLike('sku', "%{$search}%")),
             ))
             ->when($locationId, fn ($query) => $query->where('current_location_id', $locationId))
             ->when($lifecycleStatus !== '', fn ($query) => $query->where('lifecycle_status', $lifecycleStatus))

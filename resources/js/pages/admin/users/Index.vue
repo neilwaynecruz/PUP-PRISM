@@ -250,93 +250,179 @@ const roleBadgeClass: Record<string, string> = {
             </Button>
         </div>
 
-        <AdminTableShell min-width="860px">
-            <colgroup>
-                <col class="w-[30%]" />
-                <col class="w-[16%]" />
-                <col class="w-[28%]" />
-                <col class="w-[11%]" />
-                <col class="w-[9%]" />
-                <col class="w-[6%]" />
-            </colgroup>
-            <thead
-                class="border-b border-border/80 bg-muted/55 text-left text-xs tracking-wider text-muted-foreground uppercase"
+        <section
+            class="grid gap-3 md:hidden"
+            aria-label="User records"
+            data-testid="users-mobile-list"
+        >
+            <div
+                v-if="users.data.length === 0"
+                class="rounded-xl border border-dashed border-border bg-card px-4 py-10 text-center text-sm text-muted-foreground"
             >
-                <tr class="[&>th]:px-5 [&>th]:py-3.5 [&>th]:font-bold">
-                    <th>User</th>
-                    <th>Role</th>
-                    <th>Position</th>
-                    <th>Created</th>
-                    <th>Status</th>
-                    <th class="text-right">
-                        <span class="sr-only">Actions</span>
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-border/60">
-                <tr v-if="users.data.length === 0">
-                    <td
-                        colspan="6"
-                        class="px-5 py-10 text-center text-sm text-muted-foreground"
-                    >
-                        {{
-                            hasFilters
-                                ? 'No users match these filters.'
-                                : 'No users yet.'
-                        }}
-                    </td>
-                </tr>
+                {{
+                    hasFilters
+                        ? 'No users match these filters.'
+                        : 'No users yet.'
+                }}
+            </div>
 
-                <tr
-                    v-for="user in users.data"
-                    :key="user.id"
-                    class="transition-colors hover:bg-primary/[0.035] dark:hover:bg-primary/6 [&>td]:px-5 [&>td]:py-3.5 [&>td]:align-middle"
-                    :class="{ 'opacity-75': !user.is_active }"
-                >
-                    <td>
-                        <div class="truncate font-medium">{{ user.name }}</div>
-                        <div class="truncate text-xs text-muted-foreground">
+            <article
+                v-for="user in users.data"
+                :key="user.id"
+                class="rounded-xl border border-border/70 bg-card p-4 shadow-xs"
+                :class="{ 'opacity-75': !user.is_active }"
+            >
+                <div class="flex min-w-0 items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h2 class="truncate text-sm font-semibold">
+                            {{ user.name }}
+                        </h2>
+                        <p
+                            class="mt-0.5 text-xs break-all text-muted-foreground"
+                        >
                             {{ user.email }}
-                        </div>
-                    </td>
-                    <td>
-                        <span
-                            v-if="user.role"
-                            class="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap"
-                            :class="roleBadgeClass[user.role] ?? ''"
-                            >{{ user.role }}</span
-                        >
-                        <span v-else class="text-muted-foreground">—</span>
-                    </td>
-                    <td
-                        class="truncate text-muted-foreground"
-                        :title="user.position ?? undefined"
-                    >
-                        {{ user.position ?? 'No assigned position' }}
-                    </td>
-                    <td class="text-xs text-muted-foreground">
-                        {{ formatProvisionedAt(user.invited_at) }}
-                    </td>
-                    <td>
-                        <AdminStatusBadge :active="user.is_active" />
-                    </td>
-                    <td class="text-right">
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            class="h-8 rounded-lg px-3 text-xs font-semibold text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                            as-child
-                        >
-                            <Link
-                                :href="usersEdit(user.id)"
-                                :aria-label="`Edit ${user.name}`"
-                                >Edit</Link
+                        </p>
+                    </div>
+                    <AdminStatusBadge
+                        class="shrink-0"
+                        :active="user.is_active"
+                    />
+                </div>
+
+                <dl class="mt-4 grid grid-cols-2 gap-x-4 gap-y-3 text-xs">
+                    <div class="min-w-0">
+                        <dt class="text-muted-foreground">Role</dt>
+                        <dd class="mt-1">
+                            <span
+                                v-if="user.role"
+                                class="inline-flex max-w-full rounded-full border px-2.5 py-1 font-semibold whitespace-normal"
+                                :class="roleBadgeClass[user.role] ?? ''"
                             >
-                        </Button>
-                    </td>
-                </tr>
-            </tbody>
-        </AdminTableShell>
+                                {{ user.role }}
+                            </span>
+                            <span v-else class="text-muted-foreground">—</span>
+                        </dd>
+                    </div>
+                    <div class="min-w-0">
+                        <dt class="text-muted-foreground">Created</dt>
+                        <dd class="mt-1 font-medium">
+                            {{ formatProvisionedAt(user.invited_at) }}
+                        </dd>
+                    </div>
+                    <div class="col-span-2 min-w-0">
+                        <dt class="text-muted-foreground">Position</dt>
+                        <dd class="mt-1 font-medium break-words">
+                            {{ user.position ?? 'No assigned position' }}
+                        </dd>
+                    </div>
+                </dl>
+
+                <Button
+                    variant="outline"
+                    class="mt-4 min-h-11 w-full rounded-lg font-semibold"
+                    as-child
+                >
+                    <Link
+                        :href="usersEdit(user.id)"
+                        :aria-label="`Edit ${user.name}`"
+                    >
+                        Edit user
+                    </Link>
+                </Button>
+            </article>
+        </section>
+
+        <div class="hidden md:block">
+            <AdminTableShell min-width="860px">
+                <colgroup>
+                    <col class="w-[30%]" />
+                    <col class="w-[16%]" />
+                    <col class="w-[28%]" />
+                    <col class="w-[11%]" />
+                    <col class="w-[9%]" />
+                    <col class="w-[6%]" />
+                </colgroup>
+                <thead
+                    class="border-b border-border/80 bg-muted/55 text-left text-xs tracking-wider text-muted-foreground uppercase"
+                >
+                    <tr class="[&>th]:px-5 [&>th]:py-3.5 [&>th]:font-bold">
+                        <th>User</th>
+                        <th>Role</th>
+                        <th>Position</th>
+                        <th>Created</th>
+                        <th>Status</th>
+                        <th class="text-right">
+                            <span class="sr-only">Actions</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border/60">
+                    <tr v-if="users.data.length === 0">
+                        <td
+                            colspan="6"
+                            class="px-5 py-10 text-center text-sm text-muted-foreground"
+                        >
+                            {{
+                                hasFilters
+                                    ? 'No users match these filters.'
+                                    : 'No users yet.'
+                            }}
+                        </td>
+                    </tr>
+
+                    <tr
+                        v-for="user in users.data"
+                        :key="user.id"
+                        class="transition-colors hover:bg-primary/[0.035] dark:hover:bg-primary/6 [&>td]:px-5 [&>td]:py-3.5 [&>td]:align-middle"
+                        :class="{ 'opacity-75': !user.is_active }"
+                    >
+                        <td>
+                            <div class="truncate font-medium">
+                                {{ user.name }}
+                            </div>
+                            <div class="truncate text-xs text-muted-foreground">
+                                {{ user.email }}
+                            </div>
+                        </td>
+                        <td>
+                            <span
+                                v-if="user.role"
+                                class="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap"
+                                :class="roleBadgeClass[user.role] ?? ''"
+                                >{{ user.role }}</span
+                            >
+                            <span v-else class="text-muted-foreground">—</span>
+                        </td>
+                        <td
+                            class="truncate text-muted-foreground"
+                            :title="user.position ?? undefined"
+                        >
+                            {{ user.position ?? 'No assigned position' }}
+                        </td>
+                        <td class="text-xs text-muted-foreground">
+                            {{ formatProvisionedAt(user.invited_at) }}
+                        </td>
+                        <td>
+                            <AdminStatusBadge :active="user.is_active" />
+                        </td>
+                        <td class="text-right">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                class="h-8 rounded-lg px-3 text-xs font-semibold text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                                as-child
+                            >
+                                <Link
+                                    :href="usersEdit(user.id)"
+                                    :aria-label="`Edit ${user.name}`"
+                                    >Edit</Link
+                                >
+                            </Button>
+                        </td>
+                    </tr>
+                </tbody>
+            </AdminTableShell>
+        </div>
 
         <AdminPagination :links="users.links" />
     </div>

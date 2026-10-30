@@ -32,6 +32,7 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
   <Sheet v-else-if="isMobile" :open="openMobile" v-bind="$attrs" @update:open="setOpenMobile">
     <SheetContent
+      id="app-navigation-sidebar"
       data-sidebar="sidebar"
       data-slot="sidebar"
       data-mobile="true"
@@ -53,6 +54,7 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
   <div
     v-else
+    id="app-navigation-sidebar"
     class="group peer text-sidebar-foreground hidden md:block"
     data-slot="sidebar"
     :data-state="state"

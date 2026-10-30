@@ -35,10 +35,10 @@ class UserManagementController extends Controller
             ->when($filters['search'] !== '', function ($query) use ($filters) {
                 $query->where(function ($nestedQuery) use ($filters) {
                     $nestedQuery
-                        ->where('name', 'like', "%{$filters['search']}%")
-                        ->orWhere('email', 'like', "%{$filters['search']}%")
+                        ->whereLike('name', "%{$filters['search']}%")
+                        ->orWhereLike('email', "%{$filters['search']}%")
                         ->orWhereHas('roles', function ($roleQuery) use ($filters) {
-                            $roleQuery->where('name', 'like', "%{$filters['search']}%");
+                            $roleQuery->whereLike('name', "%{$filters['search']}%");
                         });
                 });
             })

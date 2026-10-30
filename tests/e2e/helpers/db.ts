@@ -114,3 +114,41 @@ export function getProductIdBySku(sku: string): number {
         database.close();
     }
 }
+
+/**
+ * Insert an unread in-app notification for a user directly into the isolated E2E database.
+ */
+export function createUnreadNotification(email: string, title: string, url: string): void {
+    const database = new DatabaseSync(E2E_DATABASE);
+
+    try {
+        const user = database
+            .prepare('select id from users where email = ? limit 1')
+            .get(email) as { id?: number } | undefined;
+
+        if (typeof user?.id !== 'number') {
+            throw new Error(`Unable to find user [${email}].`);
+        }
+
+        const now = new Date().toISOString().replace('T', ' ').slice(0, 19);
+
+        database
+            .prepare(
+                `
+                    insert into notifications (id, type, notifiable_type, notifiable_id, data, read_at, created_at, updated_at)
+                    values (?, ?, ?, ?, ?, null, ?, ?)
+                `,
+            )
+            .run(
+                crypto.randomUUID(),
+                'App\\Notifications\\E2eNotification',
+                'App\\Models\\User',
+                user.id,
+                JSON.stringify({ category: 'inventory', severity: 'info', title, message: title, url }),
+                now,
+                now,
+            );
+    } finally {
+        database.close();
+    }
+}

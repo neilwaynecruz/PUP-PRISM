@@ -19,6 +19,17 @@ export function useKeyboardShortcuts(): void {
     }
 
     function handleKeydown(event: KeyboardEvent): void {
+        const key = event.key.toLowerCase();
+
+        // Ctrl+K / Cmd+K → Global search. Works from any field (including with
+        // Caps Lock on) and keeps the browser from taking the shortcut.
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && key === 'k') {
+            event.preventDefault();
+            dispatchShortcutEvent('app:open-global-search');
+
+            return;
+        }
+
         const typing = isTypingTarget(event.target);
 
         if (typing && event.key !== 'Escape') {
@@ -26,14 +37,6 @@ export function useKeyboardShortcuts(): void {
         }
 
         const path = window.location.pathname;
-
-        // Ctrl+K / Cmd+K → Global search
-        if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-            event.preventDefault();
-            dispatchShortcutEvent('app:open-global-search');
-
-            return;
-        }
 
         // Ctrl+N / Cmd+N → New item (context-aware)
         if ((event.ctrlKey || event.metaKey) && event.key === 'n') {

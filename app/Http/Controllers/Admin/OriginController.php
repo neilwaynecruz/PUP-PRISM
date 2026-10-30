@@ -30,7 +30,7 @@ class OriginController extends Controller
 
         $origins = Origin::query()
             ->withCount('products')
-            ->when($filters['search'] !== '', fn ($query) => $query->where('name', 'like', "%{$filters['search']}%"))
+            ->when($filters['search'] !== '', fn ($query) => $query->whereLike('name', "%{$filters['search']}%"))
             ->when($filters['active'] !== null, fn ($query) => $query->where('is_active', $filters['active']))
             ->orderBy('name')
             ->paginate(12)

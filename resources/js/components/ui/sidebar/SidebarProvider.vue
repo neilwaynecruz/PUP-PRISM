@@ -3,7 +3,7 @@ import type { HTMLAttributes, Ref } from "vue"
 import { useEventListener, useMediaQuery, useVModel } from "@vueuse/core"
 import { router } from "@inertiajs/vue3"
 import { TooltipProvider } from "reka-ui"
-import { computed, onMounted, ref } from "vue"
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { cn } from "@/lib/utils"
 import { provideSidebarContext, SIDEBAR_COOKIE_MAX_AGE, SIDEBAR_COOKIE_NAME, SIDEBAR_KEYBOARD_SHORTCUT, SIDEBAR_WIDTH, SIDEBAR_WIDTH_ICON } from "./utils"
 
@@ -20,13 +20,19 @@ const emits = defineEmits<{
   "update:open": [open: boolean]
 }>()
 
-const mobileMediaQuery = useMediaQuery("(max-width: 768px)")
+const mobileMediaQuery = useMediaQuery("(width < 48rem)")
 const hasMounted = ref(false)
 const isMobile = computed(() => hasMounted.value && mobileMediaQuery.value)
 const openMobile = ref(false)
 
 onMounted(() => {
   hasMounted.value = true
+  window.addEventListener("app:close-overlays", closeMobileOverlay)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener("app:close-overlays", closeMobileOverlay)
+  removeNavigateListener()
 })
 
 const open = useVModel(props, "open", emits, {
@@ -45,12 +51,24 @@ function setOpenMobile(value: boolean) {
   openMobile.value = value
 }
 
+function closeMobileOverlay() {
+  if (openMobile.value) {
+    setOpenMobile(false)
+  }
+}
+
+watch(isMobile, (mobile) => {
+  if (!mobile) {
+    closeMobileOverlay()
+  }
+})
+
 // Helper to toggle the sidebar.
 function toggleSidebar() {
   return isMobile.value ? setOpenMobile(!openMobile.value) : setOpen(!open.value)
 }
 
-router.on("success", () => {
+const removeNavigateListener = router.on("navigate", () => {
   if (isMobile.value && openMobile.value) {
     setOpenMobile(false)
   }

@@ -46,19 +46,19 @@ class StockMovementController extends Controller
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->whereHas('product', function ($query) use ($search) {
-                        $query->where('sku', 'like', "%{$search}%")
-                            ->orWhere('name', 'like', "%{$search}%");
+                        $query->whereLike('sku', "%{$search}%")
+                            ->orWhereLike('name', "%{$search}%");
                     })
                         ->orWhereHas('asset', function ($query) use ($search) {
-                            $query->where('tag_code', 'like', "%{$search}%");
+                            $query->whereLike('tag_code', "%{$search}%");
                         })
                         ->orWhereHas('stockLot', function ($query) use ($search) {
-                            $query->where('reference_no', 'like', "%{$search}%");
+                            $query->whereLike('reference_no', "%{$search}%");
                         })
                         ->orWhereHas('performedBy', function ($query) use ($search) {
-                            $query->where('name', 'like', "%{$search}%");
+                            $query->whereLike('name', "%{$search}%");
                         })
-                        ->orWhere('notes', 'like', "%{$search}%");
+                        ->orWhereLike('notes', "%{$search}%");
                 });
             })
             ->orderBy($sort, $direction)

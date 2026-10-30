@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Database\Query\Expression;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -29,8 +32,8 @@ class NotificationController extends Controller
         if ($filters['search'] !== '') {
             $query->where(function ($builder) use ($filters): void {
                 $builder
-                    ->where('data->title', 'like', "%{$filters['search']}%")
-                    ->orWhere('data->message', 'like', "%{$filters['search']}%");
+                    ->whereLike($this->dataField('title'), "%{$filters['search']}%")
+                    ->orWhereLike($this->dataField('message'), "%{$filters['search']}%");
             });
         }
 
@@ -41,14 +44,15 @@ class NotificationController extends Controller
         };
 
         if ($filters['category'] !== '') {
-            $query->where('data->category', $filters['category']);
+            $query->where($this->dataField('category'), $filters['category']);
         }
 
-        if ($filters['date_from'] !== '') {
+        // Ignore malformed dates instead of letting the database reject the query.
+        if ($this->isValidDate($filters['date_from'])) {
             $query->whereDate('created_at', '>=', $filters['date_from']);
         }
 
-        if ($filters['date_to'] !== '') {
+        if ($this->isValidDate($filters['date_to'])) {
             $query->whereDate('created_at', '<=', $filters['date_to']);
         }
 
@@ -101,6 +105,26 @@ class NotificationController extends Controller
             ->update(['read_at' => now()]);
 
         return redirect()->back(303);
+    }
+
+    /**
+     * A key inside the notification payload, usable in where clauses.
+     *
+     * Laravel stores `notifications.data` as text, which PostgreSQL's JSON operators
+     * reject, so the column is cast to jsonb there. Other drivers read JSON paths from text.
+     */
+    private function dataField(string $key): Expression|string
+    {
+        if (DB::connection()->getDriverName() === 'pgsql') {
+            return DB::raw("(data::jsonb ->> '{$key}')");
+        }
+
+        return "data->{$key}";
+    }
+
+    private function isValidDate(string $value): bool
+    {
+        return $value !== '' && CarbonImmutable::hasFormat($value, 'Y-m-d');
     }
 
     /**

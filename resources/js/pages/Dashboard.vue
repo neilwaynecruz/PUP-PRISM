@@ -41,6 +41,10 @@ import Heading from '@/components/Heading.vue';
 import ForecastWidget from '@/components/inventory/ForecastWidget.vue';
 import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
+import { trash as inventoryTrash } from '@/routes/inventory';
+import { index as handoverIndex } from '@/routes/inventory/handover';
+import { index as productsIndex } from '@/routes/inventory/products';
+import { index as requisitionsIndex } from '@/routes/inventory/requisitions';
 
 Chart.register(
     BarController,
@@ -227,8 +231,19 @@ const openPurchaseOrdersCount = computed(() => {
 
 const fromDate = ref(props.dateRange.from ?? '');
 const toDate = ref(props.dateRange.to ?? '');
+const dateRangeError = computed(() => {
+    if (!fromDate.value || !toDate.value || fromDate.value <= toDate.value) {
+        return null;
+    }
+
+    return 'The end date must be on or after the start date.';
+});
 
 function applyDateRange(): void {
+    if (dateRangeError.value) {
+        return;
+    }
+
     router.get(
         dashboard(),
         {
@@ -642,14 +657,14 @@ function kpiCardClass(
     tone: 'blue' | 'amber' | 'rose' | 'purple' | 'cyan',
 ): string {
     const tones = {
-        blue: 'border-blue-500/25 from-blue-500/15 via-blue-500/5 hover:border-blue-400/45 hover:shadow-blue-950/30',
-        amber: 'border-amber-500/25 from-amber-500/15 via-amber-500/5 hover:border-amber-400/45 hover:shadow-amber-950/30',
-        rose: 'border-rose-500/25 from-rose-500/15 via-rose-500/5 hover:border-rose-400/45 hover:shadow-rose-950/30',
-        purple: 'border-violet-500/25 from-violet-500/15 via-violet-500/5 hover:border-violet-400/45 hover:shadow-violet-950/30',
-        cyan: 'border-cyan-500/25 from-cyan-500/15 via-cyan-500/5 hover:border-cyan-400/45 hover:shadow-cyan-950/30',
+        blue: 'border-border/70 border-t-blue-500/65 hover:border-blue-500/35',
+        amber: 'border-border/70 border-t-amber-500/65 hover:border-amber-500/35',
+        rose: 'border-border/70 border-t-rose-500/65 hover:border-rose-500/35',
+        purple: 'border-border/70 border-t-primary/70 hover:border-primary/35',
+        cyan: 'border-border/70 border-t-cyan-500/65 hover:border-cyan-500/35',
     };
 
-    return `group relative overflow-hidden rounded-2xl border bg-linear-to-br ${tones[tone]} to-card p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl`;
+    return `group relative overflow-hidden rounded-2xl border border-t-2 bg-card p-4 shadow-xs transition-[border-color,box-shadow] duration-200 hover:shadow-sm ${tones[tone]}`;
 }
 
 function iconBubbleClass(
@@ -659,7 +674,7 @@ function iconBubbleClass(
         blue: 'bg-blue-500/15 text-blue-600 ring-blue-500/20 dark:text-blue-300',
         amber: 'bg-amber-500/15 text-amber-600 ring-amber-500/20 dark:text-amber-300',
         rose: 'bg-rose-500/15 text-rose-600 ring-rose-500/20 dark:text-rose-300',
-        purple: 'bg-violet-500/15 text-violet-600 ring-violet-500/20 dark:text-violet-300',
+        purple: 'bg-primary/15 text-primary ring-primary/20',
         cyan: 'bg-cyan-500/15 text-cyan-600 ring-cyan-500/20 dark:text-cyan-300',
     };
 
@@ -718,7 +733,7 @@ function deletedBadgeClass(type: string): string {
     }
 
     if (value === 'requisition') {
-        return 'border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300';
+        return 'border-primary/20 bg-primary/10 text-primary';
     }
 
     return 'border-slate-500/20 bg-slate-500/10 text-slate-700 dark:text-slate-300';
@@ -736,7 +751,7 @@ function alertBadgeClass(type: string): string {
     }
 
     if (value.includes('forecast')) {
-        return 'border-violet-500/20 bg-violet-500/10 text-violet-700 dark:text-violet-300';
+        return 'border-primary/20 bg-primary/10 text-primary';
     }
 
     return 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300';
@@ -752,10 +767,10 @@ function restoreItem(url: string): void {
 
     <div
         data-testid="dashboard-page"
-        class="flex h-full flex-1 flex-col gap-6 overflow-x-hidden bg-[radial-gradient(circle_at_top_right,rgba(122,21,56,0.10),transparent_34%),radial-gradient(circle_at_18%_0%,rgba(154,107,0,0.07),transparent_28%)] p-4 sm:p-6"
+        class="mx-auto flex h-full w-full max-w-400 flex-1 flex-col gap-5 overflow-x-hidden bg-muted/15 p-4 sm:gap-6 sm:p-6 dark:bg-background"
     >
         <div
-            class="flex flex-col gap-4 rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur sm:flex-row sm:items-start sm:justify-between"
+            class="flex flex-col gap-4 rounded-2xl border border-border/70 bg-card p-5 shadow-xs sm:flex-row sm:items-start sm:justify-between"
         >
             <div>
                 <div
@@ -775,7 +790,7 @@ function restoreItem(url: string): void {
                     variant="outline"
                     size="sm"
                     as-child
-                    class="rounded-xl border-primary/25 bg-primary/10 text-primary shadow-sm transition-all hover:border-primary/50 hover:bg-primary/15"
+                    class="rounded-xl border-primary/25 bg-primary/8 text-primary shadow-xs transition-colors hover:border-primary/45 hover:bg-primary/12"
                 >
                     <a
                         :href="props.exportUrls.assetConditionsCsv"
@@ -789,7 +804,7 @@ function restoreItem(url: string): void {
                     variant="outline"
                     size="sm"
                     as-child
-                    class="rounded-xl border-brand-gold/30 bg-brand-gold/10 text-brand-gold shadow-sm transition-all hover:border-brand-gold/50 hover:bg-brand-gold/15"
+                    class="rounded-xl border-brand-gold/30 bg-brand-gold/8 text-brand-gold shadow-xs transition-colors hover:border-brand-gold/50 hover:bg-brand-gold/12"
                 >
                     <a
                         :href="props.exportUrls.assetConditionsPdf"
@@ -805,7 +820,7 @@ function restoreItem(url: string): void {
         <!-- Date Range Filter -->
         <fieldset
             v-if="canUseDateRange"
-            class="flex flex-col gap-4 rounded-2xl border border-border/60 bg-card/80 p-4 shadow-sm backdrop-blur xl:flex-row xl:items-center xl:justify-between"
+            class="flex flex-col gap-4 rounded-2xl border border-border/70 bg-card p-4 shadow-xs xl:flex-row xl:items-center xl:justify-between"
         >
             <legend class="sr-only">Dashboard date range</legend>
             <div class="flex flex-wrap gap-2">
@@ -849,6 +864,12 @@ function restoreItem(url: string): void {
                         v-model="fromDate"
                         name="dashboard_from"
                         type="date"
+                        :aria-invalid="Boolean(dateRangeError)"
+                        :aria-describedby="
+                            dateRangeError
+                                ? 'dashboard-date-range-error'
+                                : undefined
+                        "
                         class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm text-foreground shadow-inner shadow-black/5 transition-colors hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-ring/30 focus:outline-none sm:h-10 sm:text-xs"
                     />
                 </label>
@@ -860,6 +881,12 @@ function restoreItem(url: string): void {
                         v-model="toDate"
                         name="dashboard_to"
                         type="date"
+                        :aria-invalid="Boolean(dateRangeError)"
+                        :aria-describedby="
+                            dateRangeError
+                                ? 'dashboard-date-range-error'
+                                : undefined
+                        "
                         class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm text-foreground shadow-inner shadow-black/5 transition-colors hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-ring/30 focus:outline-none sm:h-10 sm:text-xs"
                     />
                 </label>
@@ -867,23 +894,29 @@ function restoreItem(url: string): void {
                     type="button"
                     variant="default"
                     size="sm"
+                    :disabled="Boolean(dateRangeError)"
                     class="h-10 rounded-xl px-5 text-xs font-semibold shadow-lg shadow-primary/20"
                     @click="applyDateRange"
                     >Apply Date Range</Button
                 >
             </div>
+            <p
+                v-if="dateRangeError"
+                id="dashboard-date-range-error"
+                role="alert"
+                class="text-sm font-medium text-destructive xl:basis-full"
+            >
+                {{ dateRangeError }}
+            </p>
         </fieldset>
 
         <!-- KPI Stats Row -->
         <div
             v-if="isAdmin"
-            class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+            class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-6"
         >
             <!-- 1. Issued Today -->
             <div :class="kpiCardClass('blue')">
-                <div
-                    class="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-blue-500/15 blur-2xl transition-opacity group-hover:opacity-80"
-                />
                 <div class="flex items-center justify-between">
                     <span
                         class="text-xs font-semibold tracking-wider text-blue-700 uppercase dark:text-blue-300"
@@ -905,9 +938,6 @@ function restoreItem(url: string): void {
 
             <!-- 2. Low Stock -->
             <div :class="kpiCardClass('amber')">
-                <div
-                    class="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-amber-500/15 blur-2xl"
-                />
                 <div class="flex items-center justify-between">
                     <span
                         class="text-xs font-semibold tracking-wider text-amber-700 uppercase dark:text-amber-300"
@@ -929,9 +959,6 @@ function restoreItem(url: string): void {
 
             <!-- 3. Near Expiry -->
             <div :class="kpiCardClass('rose')">
-                <div
-                    class="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-rose-500/15 blur-2xl"
-                />
                 <div class="flex items-center justify-between">
                     <span
                         class="text-xs font-semibold tracking-wider text-rose-700 uppercase dark:text-rose-300"
@@ -953,12 +980,9 @@ function restoreItem(url: string): void {
 
             <!-- 4. Pending Requisitions -->
             <div :class="kpiCardClass('purple')">
-                <div
-                    class="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-violet-500/15 blur-2xl"
-                />
                 <div class="flex items-center justify-between">
                     <span
-                        class="text-xs font-semibold tracking-wider text-violet-700 uppercase dark:text-violet-300"
+                        class="text-xs font-semibold tracking-wider text-primary uppercase"
                         >Pending Requisitions</span
                     >
                     <div :class="iconBubbleClass('purple')">
@@ -977,9 +1001,6 @@ function restoreItem(url: string): void {
 
             <!-- 5. Pending Bookings -->
             <div :class="kpiCardClass('cyan')">
-                <div
-                    class="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-cyan-500/15 blur-2xl"
-                />
                 <div class="flex items-center justify-between">
                     <span
                         class="text-xs font-semibold tracking-wider text-cyan-700 uppercase dark:text-cyan-300"
@@ -1001,9 +1022,6 @@ function restoreItem(url: string): void {
 
             <!-- 6. Critical Alerts -->
             <div :class="kpiCardClass('rose')">
-                <div
-                    class="pointer-events-none absolute -top-8 -right-8 h-24 w-24 rounded-full bg-pink-500/15 blur-2xl"
-                />
                 <div class="flex items-center justify-between">
                     <span
                         class="text-xs font-semibold tracking-wider text-rose-700 uppercase dark:text-rose-300"
@@ -1027,20 +1045,14 @@ function restoreItem(url: string): void {
         <!-- PRISM Intelligence Panel -->
         <div
             v-if="isAdmin"
-            class="relative overflow-hidden rounded-3xl border border-blue-500/25 bg-linear-to-br from-blue-950/20 via-card to-violet-950/20 p-5 shadow-xl shadow-blue-950/10"
+            class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
         >
             <div
-                class="pointer-events-none absolute -top-20 -right-16 h-56 w-56 rounded-full bg-blue-500/20 blur-3xl"
-            />
-            <div
-                class="pointer-events-none absolute bottom-0 left-1/3 h-32 w-32 rounded-full bg-violet-500/15 blur-3xl"
-            />
-            <div
-                class="relative mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
+                class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
             >
                 <div class="flex items-center gap-3">
                     <div
-                        class="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-500/15 text-blue-300 ring-1 ring-blue-400/20"
+                        class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/20"
                     >
                         <Sparkles class="h-5 w-5" />
                     </div>
@@ -1055,16 +1067,16 @@ function restoreItem(url: string): void {
                     </div>
                 </div>
                 <div
-                    class="rounded-2xl border border-blue-500/20 bg-blue-500/10 px-4 py-2 text-xs text-blue-700 dark:text-blue-200"
+                    class="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-medium text-primary"
                 >
                     Based on current system records
                 </div>
             </div>
 
-            <div class="relative grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 <!-- Observation 1: Low Stock -->
                 <div
-                    class="group rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-400/40 hover:bg-amber-500/15"
+                    class="rounded-2xl border border-l-2 border-border/70 border-l-amber-500/70 bg-muted/20 p-4 transition-[border-color,background-color,box-shadow] hover:border-amber-500/35 hover:bg-amber-500/5 hover:shadow-xs"
                 >
                     <div class="flex gap-3">
                         <div
@@ -1089,7 +1101,7 @@ function restoreItem(url: string): void {
                                 }}
                             </p>
                             <Link
-                                href="/inventory/products"
+                                :href="productsIndex()"
                                 class="mt-3 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-500/25 dark:text-amber-200"
                             >
                                 Adjust Stock
@@ -1101,7 +1113,7 @@ function restoreItem(url: string): void {
 
                 <!-- Observation 2: Near Expiry -->
                 <div
-                    class="group rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-400/40 hover:bg-rose-500/15"
+                    class="rounded-2xl border border-l-2 border-border/70 border-l-rose-500/70 bg-muted/20 p-4 transition-[border-color,background-color,box-shadow] hover:border-rose-500/35 hover:bg-rose-500/5 hover:shadow-xs"
                 >
                     <div class="flex gap-3">
                         <div
@@ -1128,7 +1140,7 @@ function restoreItem(url: string): void {
                                 }}
                             </p>
                             <Link
-                                href="/inventory/handover"
+                                :href="handoverIndex()"
                                 class="mt-3 inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-3 py-1 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-500/25 dark:text-rose-200"
                             >
                                 Initiate Handover
@@ -1140,7 +1152,7 @@ function restoreItem(url: string): void {
 
                 <!-- Observation 3: Pending Approvals -->
                 <div
-                    class="group rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-400/40 hover:bg-blue-500/15"
+                    class="rounded-2xl border border-l-2 border-border/70 border-l-primary/70 bg-muted/20 p-4 transition-[border-color,background-color,box-shadow] hover:border-primary/35 hover:bg-primary/5 hover:shadow-xs"
                 >
                     <div class="flex gap-3">
                         <div
@@ -1167,7 +1179,7 @@ function restoreItem(url: string): void {
                                 awaiting review.
                             </p>
                             <Link
-                                href="/inventory/requisitions"
+                                :href="requisitionsIndex()"
                                 class="mt-3 inline-flex items-center gap-1 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-500/25 dark:text-blue-200"
                             >
                                 Approve Requisitions
@@ -1350,7 +1362,7 @@ function restoreItem(url: string): void {
         <!-- Trends -->
         <div v-if="isAdmin" class="grid gap-6 lg:grid-cols-2">
             <div
-                class="overflow-hidden rounded-2xl border border-emerald-500/20 bg-linear-to-br from-emerald-500/10 via-card to-card p-5 shadow-sm transition-all hover:border-emerald-400/35 hover:shadow-lg hover:shadow-emerald-950/10"
+                class="overflow-hidden rounded-2xl border border-border/70 bg-card p-5 shadow-xs transition-[border-color,box-shadow] hover:border-emerald-500/30 hover:shadow-sm"
             >
                 <div class="mb-4 flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -1395,7 +1407,7 @@ function restoreItem(url: string): void {
             </div>
 
             <div
-                class="overflow-hidden rounded-2xl border border-blue-500/20 bg-linear-to-br from-blue-500/10 via-card to-card p-5 shadow-sm transition-all hover:border-blue-400/35 hover:shadow-lg hover:shadow-blue-950/10"
+                class="overflow-hidden rounded-2xl border border-border/70 bg-card p-5 shadow-xs transition-[border-color,box-shadow] hover:border-blue-500/30 hover:shadow-sm"
             >
                 <div class="mb-4 flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -1443,12 +1455,12 @@ function restoreItem(url: string): void {
         <!-- Summaries -->
         <div v-if="isAdmin" class="grid gap-6 lg:grid-cols-3">
             <div
-                class="rounded-2xl border border-violet-500/20 bg-linear-to-br from-violet-500/10 via-card to-card p-5 shadow-sm"
+                class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
             >
                 <div class="mb-4 flex items-center justify-between">
                     <div class="flex items-center gap-3">
                         <div
-                            class="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/15 text-violet-600 ring-1 ring-violet-500/20 dark:text-violet-300"
+                            class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/20"
                         >
                             <FileText class="h-4 w-4" />
                         </div>
@@ -1472,7 +1484,7 @@ function restoreItem(url: string): void {
                     <li
                         v-for="entry in summaryEntries(requisitionSummary)"
                         :key="entry.key"
-                        class="flex items-center justify-between rounded-xl border border-border/40 bg-background/50 p-3 transition-colors hover:border-violet-500/25 hover:bg-violet-500/5"
+                        class="flex items-center justify-between rounded-xl border border-border/40 bg-background/50 p-3 transition-colors hover:border-primary/25 hover:bg-primary/5"
                     >
                         <span class="font-medium text-foreground capitalize">{{
                             formatStatusLabel(entry.key)
@@ -1487,7 +1499,7 @@ function restoreItem(url: string): void {
             </div>
 
             <div
-                class="rounded-2xl border border-amber-500/20 bg-linear-to-br from-amber-500/10 via-card to-card p-5 shadow-sm"
+                class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
             >
                 <div class="mb-4 flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -1531,7 +1543,7 @@ function restoreItem(url: string): void {
             </div>
 
             <div
-                class="rounded-2xl border border-rose-500/20 bg-linear-to-br from-rose-500/10 via-card to-card p-5 shadow-sm"
+                class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
             >
                 <div class="mb-4 flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -1580,7 +1592,7 @@ function restoreItem(url: string): void {
             class="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]"
         >
             <div
-                class="rounded-2xl border border-blue-500/20 bg-linear-to-br from-blue-500/10 via-card to-card p-5 shadow-sm"
+                class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
             >
                 <div class="mb-4 flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -1639,7 +1651,7 @@ function restoreItem(url: string): void {
             </div>
 
             <div
-                class="rounded-2xl border border-emerald-500/20 bg-linear-to-br from-emerald-500/10 via-card to-card p-5 shadow-sm"
+                class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
             >
                 <div class="mb-4 flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -1708,7 +1720,7 @@ function restoreItem(url: string): void {
         <!-- Existing widgets -->
         <div v-if="isAdmin" class="grid gap-6 lg:grid-cols-2">
             <div
-                class="rounded-2xl border border-rose-500/20 bg-linear-to-br from-rose-500/10 via-card to-card p-5 shadow-sm"
+                class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
             >
                 <div class="mb-4 flex items-center justify-between">
                     <div class="flex items-center gap-3">
@@ -1737,7 +1749,7 @@ function restoreItem(url: string): void {
             </div>
 
             <div
-                class="rounded-2xl border border-amber-500/20 bg-linear-to-br from-amber-500/10 via-card to-card p-4 shadow-sm"
+                class="rounded-2xl border border-border/70 bg-card p-4 shadow-xs"
             >
                 <div class="mb-3 flex items-center justify-between">
                     <div class="flex items-center gap-2.5">
@@ -1807,7 +1819,7 @@ function restoreItem(url: string): void {
 
         <div
             v-if="isAdmin"
-            class="rounded-2xl border border-rose-500/20 bg-linear-to-br from-rose-500/10 via-card to-card p-5 shadow-sm"
+            class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
         >
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
@@ -1859,7 +1871,7 @@ function restoreItem(url: string): void {
         <!-- Recently Deleted Widget -->
         <div
             v-if="isAdmin && recentlyDeleted.length > 0"
-            class="rounded-2xl border border-slate-500/20 bg-linear-to-br from-slate-500/10 via-card to-card p-5 shadow-sm"
+            class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
         >
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-2">
@@ -1883,7 +1895,7 @@ function restoreItem(url: string): void {
                     as-child
                     class="rounded-xl border border-slate-500/20 bg-slate-500/10 text-slate-700 hover:bg-slate-500/15 dark:text-slate-200"
                 >
-                    <Link href="/inventory/trash">View Trash</Link>
+                    <Link :href="inventoryTrash()">View Trash</Link>
                 </Button>
             </div>
             <ul class="space-y-2 text-sm">
@@ -1928,7 +1940,7 @@ function restoreItem(url: string): void {
 
         <div
             v-if="isAdmin"
-            class="rounded-2xl border border-rose-500/20 bg-linear-to-br from-rose-500/10 via-card to-card p-5 shadow-sm"
+            class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
         >
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">

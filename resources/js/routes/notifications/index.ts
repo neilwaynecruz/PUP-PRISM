@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../wayfinder'
 /**
 * @see \App\Http\Controllers\NotificationController::index
- * @see app/Http/Controllers/NotificationController.php:13
+ * @see app/Http/Controllers/NotificationController.php:16
  * @route '/notifications'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\NotificationController::index
- * @see app/Http/Controllers/NotificationController.php:13
+ * @see app/Http/Controllers/NotificationController.php:16
  * @route '/notifications'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\NotificationController::index
- * @see app/Http/Controllers/NotificationController.php:13
+ * @see app/Http/Controllers/NotificationController.php:16
  * @route '/notifications'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\NotificationController::index
- * @see app/Http/Controllers/NotificationController.php:13
+ * @see app/Http/Controllers/NotificationController.php:16
  * @route '/notifications'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\NotificationController::index
- * @see app/Http/Controllers/NotificationController.php:13
+ * @see app/Http/Controllers/NotificationController.php:16
  * @route '/notifications'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\NotificationController::index
- * @see app/Http/Controllers/NotificationController.php:13
+ * @see app/Http/Controllers/NotificationController.php:16
  * @route '/notifications'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\NotificationController::index
- * @see app/Http/Controllers/NotificationController.php:13
+ * @see app/Http/Controllers/NotificationController.php:16
  * @route '/notifications'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\NotificationController::read
- * @see app/Http/Controllers/NotificationController.php:82
+ * @see app/Http/Controllers/NotificationController.php:86
  * @route '/notifications/{notification}/read'
  */
 export const read = (args: { notification: string | number } | [notification: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -94,7 +94,7 @@ read.definition = {
 
 /**
 * @see \App\Http\Controllers\NotificationController::read
- * @see app/Http/Controllers/NotificationController.php:82
+ * @see app/Http/Controllers/NotificationController.php:86
  * @route '/notifications/{notification}/read'
  */
 read.url = (args: { notification: string | number } | [notification: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -122,7 +122,7 @@ read.url = (args: { notification: string | number } | [notification: string | nu
 
 /**
 * @see \App\Http\Controllers\NotificationController::read
- * @see app/Http/Controllers/NotificationController.php:82
+ * @see app/Http/Controllers/NotificationController.php:86
  * @route '/notifications/{notification}/read'
  */
 read.put = (args: { notification: string | number } | [notification: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -132,7 +132,7 @@ read.put = (args: { notification: string | number } | [notification: string | nu
 
     /**
 * @see \App\Http\Controllers\NotificationController::read
- * @see app/Http/Controllers/NotificationController.php:82
+ * @see app/Http/Controllers/NotificationController.php:86
  * @route '/notifications/{notification}/read'
  */
     const readForm = (args: { notification: string | number } | [notification: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -147,7 +147,7 @@ read.put = (args: { notification: string | number } | [notification: string | nu
 
             /**
 * @see \App\Http\Controllers\NotificationController::read
- * @see app/Http/Controllers/NotificationController.php:82
+ * @see app/Http/Controllers/NotificationController.php:86
  * @route '/notifications/{notification}/read'
  */
         readForm.put = (args: { notification: string | number } | [notification: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -163,7 +163,7 @@ read.put = (args: { notification: string | number } | [notification: string | nu
     read.form = readForm
 /**
 * @see \App\Http\Controllers\NotificationController::readAll
- * @see app/Http/Controllers/NotificationController.php:97
+ * @see app/Http/Controllers/NotificationController.php:101
  * @route '/notifications/read-all'
  */
 export const readAll = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -178,7 +178,7 @@ readAll.definition = {
 
 /**
 * @see \App\Http\Controllers\NotificationController::readAll
- * @see app/Http/Controllers/NotificationController.php:97
+ * @see app/Http/Controllers/NotificationController.php:101
  * @route '/notifications/read-all'
  */
 readAll.url = (options?: RouteQueryOptions) => {
@@ -187,7 +187,7 @@ readAll.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\NotificationController::readAll
- * @see app/Http/Controllers/NotificationController.php:97
+ * @see app/Http/Controllers/NotificationController.php:101
  * @route '/notifications/read-all'
  */
 readAll.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -197,7 +197,7 @@ readAll.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
 
     /**
 * @see \App\Http\Controllers\NotificationController::readAll
- * @see app/Http/Controllers/NotificationController.php:97
+ * @see app/Http/Controllers/NotificationController.php:101
  * @route '/notifications/read-all'
  */
     const readAllForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -212,7 +212,7 @@ readAll.put = (options?: RouteQueryOptions): RouteDefinition<'put'> => ({
 
             /**
 * @see \App\Http\Controllers\NotificationController::readAll
- * @see app/Http/Controllers/NotificationController.php:97
+ * @see app/Http/Controllers/NotificationController.php:101
  * @route '/notifications/read-all'
  */
         readAllForm.put = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

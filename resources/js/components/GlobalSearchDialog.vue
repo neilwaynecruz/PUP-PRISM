@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { BookOpen, FileText, LoaderCircle, Search } from 'lucide-vue-next';
+import {
+    BookOpen,
+    FileText,
+    LoaderCircle,
+    RotateCcw,
+    Search,
+} from 'lucide-vue-next';
+import type { ComponentPublicInstance } from 'vue';
 import {
     computed,
     nextTick,
@@ -34,10 +41,14 @@ type EntityResult = {
 
 const open = ref(false);
 const query = ref('');
-const searchInput = ref<HTMLInputElement | null>(null);
+// The shared Input component renders a bare <input>, so its root element is the focus target.
+const searchInput = ref<ComponentPublicInstance | null>(null);
 const entityResults = ref<EntityResult[]>([]);
 const entityLoading = ref(false);
 const entityError = ref<string | null>(null);
+// The term whose request last finished; results only describe the query when they match.
+const completedTerm = ref<string | null>(null);
+const activeIndex = ref(-1);
 const { navigateTo } = useAppNavigation();
 const { searchItems } = useInventoryNavigation();
 
@@ -85,9 +96,53 @@ const filteredItems = computed(() => {
     });
 });
 
-const showEntityResults = computed(
-    () => query.value.trim().length >= 2 && !entityLoading.value,
+const currentTerm = computed(() => query.value.trim());
+
+const searchPending = computed(
+    () =>
+        currentTerm.value.length >= 2 &&
+        completedTerm.value !== currentTerm.value,
 );
+
+const showEntityResults = computed(
+    () =>
+        currentTerm.value.length >= 2 &&
+        completedTerm.value === currentTerm.value,
+);
+
+type ResultOption =
+    | { kind: 'entity'; key: string; entity: EntityResult }
+    | { kind: 'page'; key: string; item: InventorySearchItem };
+
+/** Every selectable result in display order, used for keyboard navigation. */
+const options = computed<ResultOption[]>(() => [
+    ...(showEntityResults.value
+        ? entityResults.value.map((entity) => ({
+              kind: 'entity' as const,
+              key: `entity-${entity.type}-${entity.id}`,
+              entity,
+          }))
+        : []),
+    ...filteredItems.value.map((item) => ({
+        kind: 'page' as const,
+        key: `page-${itemKey(item)}`,
+        item,
+    })),
+]);
+
+const activeOptionId = computed(() => {
+    const option = options.value[activeIndex.value];
+
+    return option ? `global-search-option-${option.key}` : undefined;
+});
+
+function optionId(key: string): string {
+    return `global-search-option-${key}`;
+}
+
+function isActive(key: string): boolean {
+    return options.value[activeIndex.value]?.key === key;
+}
 
 const entityTypeLabel: Record<string, string> = {
     product: 'Product',
@@ -100,19 +155,27 @@ const entityTypeLabel: Record<string, string> = {
 
 let entitySearchTimer: number | undefined;
 let entitySearchAbort: AbortController | null = null;
+let latestRequestId = 0;
 
 watch(query, (value) => {
     window.clearTimeout(entitySearchTimer);
+    activeIndex.value = -1;
 
     const term = value.trim();
 
     if (term.length < 2) {
+        latestRequestId += 1;
+        entitySearchAbort?.abort();
+        entitySearchAbort = null;
         entityResults.value = [];
         entityError.value = null;
         entityLoading.value = false;
-        entitySearchAbort?.abort();
-        entitySearchAbort = null;
+        completedTerm.value = null;
 
+        return;
+    }
+
+    if (term === completedTerm.value) {
         return;
     }
 
@@ -123,7 +186,9 @@ watch(query, (value) => {
 
 async function fetchEntityResults(term: string): Promise<void> {
     entitySearchAbort?.abort();
-    entitySearchAbort = new AbortController();
+    const controller = new AbortController();
+    entitySearchAbort = controller;
+    const requestId = ++latestRequestId;
     entityLoading.value = true;
     entityError.value = null;
 
@@ -136,38 +201,144 @@ async function fetchEntityResults(term: string): Promise<void> {
                     'X-Requested-With': 'XMLHttpRequest',
                 },
                 credentials: 'same-origin',
-                signal: entitySearchAbort.signal,
+                signal: controller.signal,
             },
         );
 
         if (!response.ok) {
-            throw new Error('Search request failed.');
+            throw new Error(
+                `Search request failed with status ${response.status}.`,
+            );
         }
 
-        const payload = (await response.json()) as { data: EntityResult[] };
+        const payload = (await response.json()) as { data?: EntityResult[] };
+
+        if (requestId !== latestRequestId) {
+            return;
+        }
+
         entityResults.value = payload.data ?? [];
     } catch (error) {
-        if (error instanceof DOMException && error.name === 'AbortError') {
+        // Superseded requests are aborted or ignored; only the newest one may update state.
+        if (requestId !== latestRequestId) {
             return;
         }
 
         entityResults.value = [];
-        entityError.value = 'Unable to search records right now.';
+        entityError.value =
+            error instanceof TypeError
+                ? 'Records could not be searched. Check your connection and try again.'
+                : 'Records could not be searched right now. Try again in a moment.';
     } finally {
-        entityLoading.value = false;
+        if (requestId === latestRequestId) {
+            entityLoading.value = false;
+            completedTerm.value = term;
+        }
+    }
+}
+
+function retrySearch(): void {
+    if (currentTerm.value.length >= 2) {
+        completedTerm.value = null;
+        void fetchEntityResults(currentTerm.value);
+    }
+}
+
+function moveActive(step: number): void {
+    const total = options.value.length;
+
+    if (total === 0) {
+        activeIndex.value = -1;
+
+        return;
+    }
+
+    activeIndex.value =
+        activeIndex.value === -1 && step < 0
+            ? total - 1
+            : (activeIndex.value + step + total) % total;
+
+    void nextTick(() => {
+        if (activeOptionId.value) {
+            document
+                .getElementById(activeOptionId.value)
+                ?.scrollIntoView({ block: 'nearest' });
+        }
+    });
+}
+
+function handleInputKeydown(event: KeyboardEvent): void {
+    switch (event.key) {
+        case 'ArrowDown':
+            event.preventDefault();
+            moveActive(1);
+            break;
+        case 'ArrowUp':
+            event.preventDefault();
+            moveActive(-1);
+            break;
+        case 'Home':
+            if (options.value.length > 0) {
+                event.preventDefault();
+                activeIndex.value = 0;
+            }
+
+            break;
+        case 'End':
+            if (options.value.length > 0) {
+                event.preventDefault();
+                activeIndex.value = options.value.length - 1;
+            }
+
+            break;
+        case 'Enter': {
+            // Enter opens the highlighted result, or the first one when nothing is highlighted
+            // and record results have finished loading.
+            const option =
+                options.value[activeIndex.value] ??
+                (searchPending.value ? undefined : options.value[0]);
+
+            if (!option) {
+                return;
+            }
+
+            event.preventDefault();
+
+            if (option.kind === 'entity') {
+                activateEntity(option.entity);
+            } else {
+                activateItem(option.item);
+            }
+
+            break;
+        }
+    }
+}
+
+function focusSearchInput(): void {
+    const element = searchInput.value?.$el;
+
+    if (element instanceof HTMLInputElement) {
+        element.focus();
     }
 }
 
 function openDialog(): void {
     open.value = true;
-    void nextTick(() => searchInput.value?.focus());
+    void nextTick(focusSearchInput);
 }
 
 function closeDialog(): void {
+    window.clearTimeout(entitySearchTimer);
+    entitySearchAbort?.abort();
+    latestRequestId += 1;
     open.value = false;
     query.value = '';
     entityResults.value = [];
     entityError.value = null;
+    entityLoading.value = false;
+    completedTerm.value = null;
+    activeIndex.value = -1;
 }
 
 function activateItem(item: InventorySearchItem): void {
@@ -236,22 +407,62 @@ onBeforeUnmount(() => {
                 <Input
                     ref="searchInput"
                     v-model="query"
+                    type="search"
+                    role="combobox"
+                    aria-label="Search records and pages"
+                    aria-autocomplete="list"
+                    aria-controls="global-search-results"
+                    :aria-expanded="options.length > 0"
+                    :aria-activedescendant="activeOptionId"
+                    autocomplete="off"
                     data-shortcut="search"
+                    data-testid="global-search-input"
                     placeholder="Search products, assets, requisitions, bookings..."
+                    @keydown="handleInputKeydown"
                 />
+                <p class="mt-2 text-xs text-muted-foreground">
+                    Use the arrow keys to move through results and Enter to open
+                    one.
+                </p>
             </div>
 
-            <div class="max-h-[420px] overflow-y-auto px-2 py-2">
+            <div
+                id="global-search-results"
+                role="listbox"
+                aria-label="Search results"
+                class="max-h-105 overflow-y-auto px-2 py-2"
+            >
+                <div class="sr-only" aria-live="polite">
+                    <template v-if="searchPending">Searching records…</template>
+                    <template v-else-if="showEntityResults && !entityError">
+                        {{ entityResults.length }} matching records.
+                    </template>
+                </div>
+
                 <div
-                    v-if="entityLoading"
+                    v-if="searchPending"
                     class="flex items-center gap-2 px-3 py-4 text-sm text-muted-foreground"
+                    data-testid="global-search-loading"
                 >
                     <LoaderCircle class="h-4 w-4 animate-spin" />
                     Searching records...
                 </div>
 
-                <div v-if="entityError" class="px-3 py-2 text-sm text-rose-600">
-                    {{ entityError }}
+                <div
+                    v-if="entityError && !searchPending"
+                    role="alert"
+                    class="mx-1 mb-2 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive"
+                    data-testid="global-search-error"
+                >
+                    <span>{{ entityError }}</span>
+                    <button
+                        type="button"
+                        class="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-semibold hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        @click="retrySearch"
+                    >
+                        <RotateCcw class="h-3.5 w-3.5" />
+                        Try again
+                    </button>
                 </div>
 
                 <div
@@ -265,10 +476,28 @@ onBeforeUnmount(() => {
                     </div>
                     <button
                         v-for="item in entityResults"
+                        :id="optionId(`entity-${item.type}-${item.id}`)"
                         :key="`${item.type}-${item.id}`"
                         type="button"
+                        role="option"
+                        tabindex="-1"
+                        :aria-selected="
+                            isActive(`entity-${item.type}-${item.id}`)
+                        "
                         class="flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted/60"
+                        :class="{
+                            'bg-muted ring-1 ring-primary/30': isActive(
+                                `entity-${item.type}-${item.id}`,
+                            ),
+                        }"
                         @click="activateEntity(item)"
+                        @mousemove="
+                            activeIndex = options.findIndex(
+                                (option) =>
+                                    option.key ===
+                                    `entity-${item.type}-${item.id}`,
+                            )
+                        "
                     >
                         <div
                             class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
@@ -305,8 +534,10 @@ onBeforeUnmount(() => {
                         !entityError
                     "
                     class="px-3 py-2 text-sm text-muted-foreground"
+                    data-testid="global-search-empty"
                 >
-                    No matching records found.
+                    No records match “{{ currentTerm }}”. Try a SKU, tag code,
+                    PO number, or name.
                 </div>
 
                 <div
@@ -317,10 +548,24 @@ onBeforeUnmount(() => {
 
                 <button
                     v-for="item in filteredItems"
+                    :id="optionId(`page-${itemKey(item)}`)"
                     :key="itemKey(item)"
                     type="button"
+                    role="option"
+                    tabindex="-1"
+                    :aria-selected="isActive(`page-${itemKey(item)}`)"
                     class="flex w-full items-start gap-3 rounded-lg px-3 py-3 text-left transition-colors hover:bg-muted/60"
+                    :class="{
+                        'bg-muted ring-1 ring-primary/30': isActive(
+                            `page-${itemKey(item)}`,
+                        ),
+                    }"
                     @click="activateItem(item)"
+                    @mousemove="
+                        activeIndex = options.findIndex(
+                            (option) => option.key === `page-${itemKey(item)}`,
+                        )
+                    "
                 >
                     <div
                         class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary"

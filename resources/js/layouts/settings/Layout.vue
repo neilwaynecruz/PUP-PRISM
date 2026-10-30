@@ -93,13 +93,18 @@ function isPendingItem(item: NavItem): boolean {
                         :key="toUrl(item.href)"
                         variant="ghost"
                         :class="[
-                            'w-full justify-start',
+                            'min-h-11 w-full justify-start sm:min-h-9',
                             { 'bg-muted': isCurrentOrParentUrl(item.href) },
                         ]"
                         as-child
                     >
                         <Link
                             :href="item.href"
+                            :aria-current="
+                                isCurrentOrParentUrl(item.href)
+                                    ? 'page'
+                                    : undefined
+                            "
                             class="flex items-center gap-2"
                             @click="closeOverlays()"
                         >

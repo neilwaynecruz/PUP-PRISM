@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
-import { LoaderCircle, Search, X } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { Bell, LoaderCircle, Moon, Search, Sun, X } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import AppLogoIcon from '@/components/AppLogoIcon.vue';
 import NavMain from '@/components/NavMain.vue';
 import NavUser from '@/components/NavUser.vue';
@@ -14,15 +14,34 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useAppearance } from '@/composables/useAppearance';
 import { useAppNavigation } from '@/composables/useAppNavigation';
 import { useInventoryNavigation } from '@/lib/inventoryNavigation';
 import { toUrl } from '@/lib/utils';
 import { dashboard } from '@/routes';
+import { index as notificationsIndex } from '@/routes/notifications';
 
 const { groupedNavItems } = useInventoryNavigation();
 const { closeOverlays, pendingPath } = useAppNavigation();
+const { resolvedAppearance, updateAppearance } = useAppearance();
+
+function toggleMobileTheme(): void {
+    updateAppearance(resolvedAppearance.value === 'dark' ? 'light' : 'dark');
+}
 
 const navSearchQuery = ref('');
+
+// The sidebar persists between Inertia visits, so a finished navigation must
+// clear the filter or the next page opens with a partially hidden menu.
+let removeNavigateListener: (() => void) | undefined;
+
+onMounted(() => {
+    removeNavigateListener = router.on('navigate', () => {
+        navSearchQuery.value = '';
+    });
+});
+
+onBeforeUnmount(() => removeNavigateListener?.());
 
 const filteredGroupedNavItems = computed(() => {
     const q = navSearchQuery.value.trim().toLowerCase();
@@ -116,7 +135,7 @@ function goToFirstMatch(): void {
                     type="search"
                     aria-label="Search navigation"
                     placeholder="Find page or module..."
-                    class="h-8 w-full rounded-lg border border-sidebar-border/60 bg-sidebar-accent/25 pr-7 pl-8 text-xs text-sidebar-foreground transition placeholder:text-sidebar-foreground/45 focus:border-primary/50 focus:bg-sidebar-accent/40 focus:ring-1 focus:ring-primary/40 focus:outline-none"
+                    class="min-h-11 w-full rounded-lg border border-sidebar-border/60 bg-sidebar-accent/25 pr-7 pl-8 text-xs text-sidebar-foreground transition placeholder:text-sidebar-foreground/45 focus:border-primary/50 focus:bg-sidebar-accent/40 focus:ring-1 focus:ring-primary/40 focus:outline-none md:h-8 md:min-h-8"
                     @keydown.enter.prevent="goToFirstMatch"
                 />
                 <button
@@ -154,6 +173,33 @@ function goToFirstMatch(): void {
         <SidebarFooter
             class="border-t border-sidebar-border/40 px-2 pt-2 pb-4 group-data-[collapsible=icon]:p-1.5"
         >
+            <div class="mb-1.5 grid grid-cols-2 gap-1.5 md:hidden">
+                <Link
+                    :href="notificationsIndex()"
+                    class="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-sidebar-border/60 bg-sidebar-accent/25 px-2.5 text-xs font-medium text-sidebar-foreground transition hover:bg-sidebar-accent/60"
+                    @click="closeOverlays()"
+                >
+                    <Bell class="h-3.5 w-3.5 text-primary" />
+                    <span>Alerts</span>
+                </Link>
+                <button
+                    type="button"
+                    aria-label="Toggle color theme"
+                    class="flex min-h-11 items-center justify-center gap-2 rounded-lg border border-sidebar-border/60 bg-sidebar-accent/25 px-2.5 text-xs font-medium text-sidebar-foreground transition hover:bg-sidebar-accent/60"
+                    @click="toggleMobileTheme"
+                >
+                    <Sun
+                        v-if="resolvedAppearance === 'dark'"
+                        class="h-3.5 w-3.5 text-brand-gold"
+                    />
+                    <Moon v-else class="h-3.5 w-3.5 text-primary" />
+                    <span>{{
+                        resolvedAppearance === 'dark'
+                            ? 'Light mode'
+                            : 'Dark mode'
+                    }}</span>
+                </button>
+            </div>
             <NavUser />
         </SidebarFooter>
     </Sidebar>

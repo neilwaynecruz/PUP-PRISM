@@ -33,8 +33,8 @@ class DepartmentController extends Controller
             ->when($filters['search'] !== '', function ($query) use ($filters): void {
                 $query->where(function ($nested) use ($filters): void {
                     $nested
-                        ->where('name', 'like', "%{$filters['search']}%")
-                        ->orWhere('code', 'like', "%{$filters['search']}%");
+                        ->whereLike('name', "%{$filters['search']}%")
+                        ->orWhereLike('code', "%{$filters['search']}%");
                 });
             })
             ->when($filters['active'] !== null, fn ($query) => $query->where('is_active', $filters['active']))

@@ -1,3 +1,4 @@
+Y
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
 import OriginController from '@/actions/App/Http/Controllers/Admin/OriginController';
@@ -36,20 +37,24 @@ const form = useForm({
         <Heading variant="small" :title="origin.name" />
         <MasterDataImpactPanel :warnings="impactWarnings" :usage="usage" />
         <form
-            class="grid max-w-xl gap-4"
+            class="grid max-w-xl gap-4 rounded-xl border border-border/70 bg-card p-5 shadow-xs"
             @submit.prevent="form.put(OriginController.update(origin.id).url)"
         >
             <div class="grid gap-2">
                 <Label for="name">Name</Label
-                ><Input id="name" v-model="form.name" required /><InputError
-                    :message="form.errors.name"
-                />
+                ><Input
+                    id="name"
+                    v-model="form.name"
+                    required
+                    class="min-h-11 sm:min-h-9"
+                /><InputError :message="form.errors.name" />
             </div>
-            <label class="flex items-center gap-2 text-sm"
+            <label
+                class="flex min-h-11 items-center gap-2.5 rounded-lg border border-border/60 bg-muted/20 px-3 text-sm font-medium sm:min-h-9"
                 ><input
                     v-model="form.is_active"
                     type="checkbox"
-                    class="rounded border-input"
+                    class="size-4 rounded border-input accent-primary"
                 />
                 Active</label
             >
@@ -59,20 +64,26 @@ const form = useForm({
                         v-if="can.deactivate"
                         type="button"
                         variant="outline"
+                        class="min-h-11 sm:min-h-9"
                         @click="router.patch(deactivate(origin.id).url)"
                         >Deactivate</Button
                     ><Button
                         v-if="can.delete"
                         type="button"
                         variant="destructive"
+                        class="min-h-11 sm:min-h-9"
                         @click="router.delete(destroy(origin.id).url)"
                         >Delete</Button
                     >
                 </div>
                 <div class="flex gap-2">
-                    <Button variant="ghost" as-child
+                    <Button variant="ghost" class="min-h-11 sm:min-h-9" as-child
                         ><Link :href="index()">Back</Link></Button
-                    ><Button :disabled="form.processing">Save</Button>
+                    ><Button
+                        class="min-h-11 sm:min-h-9"
+                        :disabled="form.processing"
+                        >Save</Button
+                    >
                 </div>
             </div>
         </form>

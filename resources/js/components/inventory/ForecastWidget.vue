@@ -114,21 +114,21 @@ function confidenceTone(score: number | null): string {
 
 <template>
     <section
-        class="relative overflow-hidden rounded-3xl border border-violet-500/25 bg-linear-to-br from-violet-950/25 via-card to-blue-950/20 shadow-xl shadow-violet-950/10"
+        class="relative overflow-hidden rounded-3xl border border-primary/25 bg-linear-to-br from-primary/10 via-card to-brand-gold/5 shadow-lg shadow-primary/5"
     >
         <div
-            class="pointer-events-none absolute -top-24 -left-20 h-64 w-64 rounded-full bg-violet-500/20 blur-3xl"
+            class="pointer-events-none absolute -top-24 -left-20 h-64 w-64 rounded-full bg-primary/12 blur-3xl"
         />
         <div
-            class="pointer-events-none absolute right-12 -bottom-24 h-64 w-64 rounded-full bg-cyan-500/15 blur-3xl"
+            class="pointer-events-none absolute right-12 -bottom-24 h-64 w-64 rounded-full bg-brand-gold/10 blur-3xl"
         />
-        <div class="relative border-b border-violet-500/15 px-5 py-5 sm:px-6">
+        <div class="relative border-b border-primary/15 px-5 py-5 sm:px-6">
             <div
                 class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between"
             >
                 <div>
                     <div
-                        class="flex items-center gap-2 text-xs font-semibold tracking-[0.24em] text-violet-700 uppercase dark:text-violet-300"
+                        class="flex items-center gap-2 text-xs font-semibold tracking-[0.24em] text-primary uppercase"
                     >
                         <Radar class="h-3.5 w-3.5" />
                         Predictive intelligence
@@ -174,7 +174,7 @@ function confidenceTone(score: number | null): string {
         </div>
 
         <div
-            class="relative grid gap-3 border-b border-violet-500/15 px-5 py-5 sm:px-6 md:grid-cols-3"
+            class="relative grid gap-3 border-b border-primary/15 px-5 py-5 sm:px-6 md:grid-cols-3"
         >
             <div
                 class="rounded-2xl border border-rose-500/25 bg-linear-to-br from-rose-500/15 via-card to-card p-4 shadow-sm"
@@ -252,7 +252,7 @@ function confidenceTone(score: number | null): string {
             >
                 <div class="flex items-center gap-3">
                     <div
-                        class="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-500/15 text-violet-600 ring-1 ring-violet-500/20 dark:text-violet-300"
+                        class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20"
                     >
                         <BrainCircuit class="h-4 w-4" />
                     </div>
@@ -401,7 +401,7 @@ function confidenceTone(score: number | null): string {
                                     v-if="item.recommended_reorder_qty > 0"
                                     size="sm"
                                     as-child
-                                    class="h-9 rounded-xl bg-violet-600 px-3 text-xs font-semibold text-white shadow-xs hover:bg-violet-700"
+                                    class="h-9 rounded-xl bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90"
                                 >
                                     <Link
                                         :href="
@@ -424,7 +424,7 @@ function confidenceTone(score: number | null): string {
                                     variant="ghost"
                                     size="sm"
                                     as-child
-                                    class="h-9 rounded-xl border border-violet-500/20 bg-violet-500/10 text-violet-700 hover:bg-violet-500/15 dark:text-violet-300"
+                                    class="h-9 rounded-xl border border-primary/20 bg-primary/10 text-primary hover:bg-primary/15"
                                 >
                                     <Link :href="productsShow(item.product_id)">
                                         View

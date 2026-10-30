@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
 import { onBeforeUnmount, ref, watch } from 'vue';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,30 +108,135 @@ onBeforeUnmount(() => {
                 description="Maintain vendor records, contacts, and procurement readiness."
             />
 
-            <Button v-if="can.create" as-child size="sm" class="rounded-lg">
+            <Button
+                v-if="can.create"
+                as-child
+                size="sm"
+                class="min-h-11 rounded-lg sm:min-h-8"
+            >
                 <Link :href="suppliersCreate()">New supplier</Link>
             </Button>
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Input
-                v-model="search"
-                placeholder="Search supplier, contact, or email..."
-                class="h-10 rounded-lg"
-            />
-
-            <select
-                v-model="active"
-                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+        <fieldset
+            class="grid gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-xs sm:grid-cols-2 lg:grid-cols-3"
+        >
+            <legend class="sr-only">Filter suppliers</legend>
+            <label
+                class="grid gap-1.5 text-xs font-medium text-muted-foreground sm:col-span-2 lg:col-span-2"
             >
-                <option value="">All statuses</option>
-                <option value="1">Active</option>
-                <option value="0">Inactive</option>
-            </select>
+                Search suppliers
+                <Input
+                    v-model="search"
+                    name="supplier_search"
+                    autocomplete="off"
+                    placeholder="Search supplier, contact, or email..."
+                    class="min-h-11 rounded-lg sm:min-h-10"
+                />
+            </label>
+
+            <label
+                class="grid gap-1.5 text-xs font-medium text-muted-foreground"
+            >
+                Status
+                <select
+                    v-model="active"
+                    name="supplier_status"
+                    class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm sm:min-h-10"
+                >
+                    <option value="">All statuses</option>
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
+                </select>
+            </label>
+        </fieldset>
+
+        <!-- Mobile Record Cards -->
+        <div
+            v-if="suppliers.data.length"
+            class="grid gap-3 md:hidden"
+            data-testid="suppliers-mobile-list"
+        >
+            <article
+                v-for="supplier in suppliers.data"
+                :key="`mobile-${supplier.id}`"
+                class="rounded-xl border border-border/70 bg-card p-4 shadow-xs"
+            >
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h2 class="font-semibold break-words text-foreground">
+                            {{ supplier.name }}
+                        </h2>
+                        <p
+                            class="mt-0.5 truncate text-xs text-muted-foreground"
+                        >
+                            {{ supplier.email ?? 'No email' }}
+                        </p>
+                    </div>
+                    <span
+                        class="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[11px] font-medium"
+                        :class="
+                            supplier.is_active
+                                ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                : 'bg-muted text-muted-foreground'
+                        "
+                    >
+                        {{ supplier.is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                </div>
+
+                <dl class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                        <dt class="text-xs text-muted-foreground">Contact</dt>
+                        <dd class="mt-0.5 font-medium text-foreground">
+                            {{ supplier.contact_person ?? '—' }}
+                        </dd>
+                        <dd class="text-xs text-muted-foreground">
+                            {{ supplier.phone ?? '—' }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">Lead time</dt>
+                        <dd class="mt-0.5 font-medium text-foreground">
+                            {{
+                                supplier.lead_time_days !== null
+                                    ? `${supplier.lead_time_days} ${supplier.lead_time_days === 1 ? 'day' : 'days'}`
+                                    : '—'
+                            }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">Products</dt>
+                        <dd class="mt-0.5 font-mono text-foreground">
+                            {{ supplier.products_count ?? 0 }}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">
+                            Purchase Orders
+                        </dt>
+                        <dd class="mt-0.5 font-mono text-foreground">
+                            {{ supplier.purchase_orders_count ?? 0 }}
+                        </dd>
+                    </div>
+                </dl>
+
+                <Button variant="outline" class="mt-4 min-h-11 w-full" as-child>
+                    <Link :href="suppliersShow(supplier.id)"
+                        >View Supplier</Link
+                    >
+                </Button>
+            </article>
+        </div>
+        <div
+            v-else
+            class="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground md:hidden"
+        >
+            No suppliers found.
         </div>
 
         <div
-            class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm"
+            class="hidden overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm md:block"
         >
             <table class="min-w-full text-sm">
                 <thead class="bg-muted/40 text-left">
@@ -210,30 +316,6 @@ onBeforeUnmount(() => {
             </table>
         </div>
 
-        <div
-            v-if="suppliers.links.length"
-            class="flex flex-wrap items-center justify-center gap-1"
-        >
-            <Button
-                v-for="(link, index) in suppliers.links"
-                :key="index"
-                variant="ghost"
-                size="sm"
-                :disabled="!link.url"
-                as-child
-                class="h-8 rounded-lg text-xs"
-                :class="link.active ? 'bg-primary/10 text-primary' : ''"
-            >
-                <Link
-                    v-if="link.url"
-                    :href="link.url"
-                    preserve-scroll
-                    preserve-state
-                >
-                    <span v-html="link.label" />
-                </Link>
-                <span v-else v-html="link.label" />
-            </Button>
-        </div>
+        <AdminPagination :links="suppliers.links" label="Supplier pages" />
     </div>
 </template>

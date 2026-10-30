@@ -79,9 +79,13 @@ function submit(): void {
         />
 
         <form class="space-y-6" @submit.prevent="submit">
-            <div class="overflow-x-auto rounded-lg border border-border">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-muted/50 text-left">
+            <div
+                class="overflow-x-auto rounded-xl border border-border/70 bg-card shadow-xs"
+            >
+                <table class="min-w-full text-sm max-md:block">
+                    <thead
+                        class="hidden bg-muted/50 text-left md:table-header-group"
+                    >
                         <tr>
                             <th class="px-4 py-3 font-medium">Event</th>
                             <th class="px-4 py-3 font-medium">Mail</th>
@@ -92,15 +96,17 @@ function submit(): void {
                             </th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody
+                        class="max-md:block max-md:divide-y max-md:divide-border/70"
+                    >
                         <tr
                             v-for="preference in form.preferences"
                             :key="preference.event_type"
-                            class="border-t border-border align-top"
+                            class="border-t border-border align-top max-md:block max-md:p-4 first:max-md:border-t-0"
                         >
                             <th
                                 scope="row"
-                                class="px-4 py-4 text-left font-normal"
+                                class="px-4 py-4 text-left font-normal max-md:block max-md:p-0 max-md:pb-3"
                             >
                                 <p class="font-medium text-foreground">
                                     {{ labelFor(preference.event_type) }}
@@ -109,7 +115,13 @@ function submit(): void {
                                     {{ descriptionFor(preference.event_type) }}
                                 </p>
                             </th>
-                            <td class="px-4 py-4">
+                            <td
+                                class="px-4 py-4 max-md:flex max-md:min-h-11 max-md:items-center max-md:justify-between max-md:border-t max-md:border-border/50 max-md:px-0 max-md:py-2"
+                            >
+                                <span
+                                    class="text-xs font-medium text-muted-foreground md:hidden"
+                                    >Mail</span
+                                >
                                 <Checkbox
                                     :id="`${preference.event_type}-mail`"
                                     :aria-label="`Email notifications for ${labelFor(preference.event_type)}`"
@@ -121,7 +133,13 @@ function submit(): void {
                                     "
                                 />
                             </td>
-                            <td class="px-4 py-4">
+                            <td
+                                class="px-4 py-4 max-md:flex max-md:min-h-11 max-md:items-center max-md:justify-between max-md:border-t max-md:border-border/50 max-md:px-0 max-md:py-2"
+                            >
+                                <span
+                                    class="text-xs font-medium text-muted-foreground md:hidden"
+                                    >In-app</span
+                                >
                                 <Checkbox
                                     :id="`${preference.event_type}-database`"
                                     :aria-label="`In-app notifications for ${labelFor(preference.event_type)}`"
@@ -133,7 +151,13 @@ function submit(): void {
                                     "
                                 />
                             </td>
-                            <td class="px-4 py-4">
+                            <td
+                                class="px-4 py-4 max-md:flex max-md:min-h-11 max-md:items-center max-md:justify-between max-md:border-t max-md:border-border/50 max-md:px-0 max-md:py-2"
+                            >
+                                <span
+                                    class="text-xs font-medium text-muted-foreground md:hidden"
+                                    >Realtime</span
+                                >
                                 <Checkbox
                                     :id="`${preference.event_type}-broadcast`"
                                     :aria-label="`Realtime notifications for ${labelFor(preference.event_type)}`"
@@ -145,10 +169,12 @@ function submit(): void {
                                     "
                                 />
                             </td>
-                            <td class="px-4 py-4">
+                            <td
+                                class="px-4 py-4 max-md:block max-md:border-t max-md:border-border/50 max-md:px-0 max-md:pt-3 max-md:pb-0"
+                            >
                                 <Label
                                     :for="`${preference.event_type}-digest`"
-                                    class="sr-only"
+                                    class="mb-1.5 block text-xs font-medium text-muted-foreground md:sr-only"
                                 >
                                     Email frequency for
                                     {{ labelFor(preference.event_type) }}
@@ -156,7 +182,7 @@ function submit(): void {
                                 <select
                                     :id="`${preference.event_type}-digest`"
                                     v-model="preference.digest_frequency"
-                                    class="h-9 w-full min-w-32 rounded-lg border border-input bg-background px-3 text-sm"
+                                    class="min-h-11 w-full min-w-32 rounded-lg border border-input bg-background px-3 text-sm sm:min-h-9"
                                 >
                                     <option value="instant">
                                         Instant email
@@ -178,7 +204,7 @@ function submit(): void {
                 <Button
                     type="submit"
                     size="sm"
-                    class="rounded-lg"
+                    class="min-h-11 rounded-lg sm:min-h-9"
                     :disabled="form.processing"
                 >
                     Save preferences

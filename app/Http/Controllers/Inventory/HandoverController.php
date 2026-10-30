@@ -406,10 +406,10 @@ class HandoverController extends Controller
             ->whereNotIn('status', [AssetStatus::Condemned, AssetStatus::Unserviceable])
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $nested) use ($search): void {
-                    $nested->where('tag_code', 'like', "%{$search}%")
-                        ->orWhereHas('product', fn (Builder $product) => $product->where('name', 'like', "%{$search}%"))
-                        ->orWhereHas('position', fn (Builder $position) => $position->where('title', 'like', "%{$search}%"))
-                        ->orWhereHas('currentLocation', fn (Builder $location) => $location->where('name', 'like', "%{$search}%"));
+                    $nested->whereLike('tag_code', "%{$search}%")
+                        ->orWhereHas('product', fn (Builder $product) => $product->whereLike('name', "%{$search}%"))
+                        ->orWhereHas('position', fn (Builder $position) => $position->whereLike('title', "%{$search}%"))
+                        ->orWhereHas('currentLocation', fn (Builder $location) => $location->whereLike('name', "%{$search}%"));
                 });
             })
             ->orderBy('tag_code')
@@ -561,12 +561,12 @@ class HandoverController extends Controller
             ->where('is_active', true)
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $nested) use ($search): void {
-                    $nested->where('name', 'like', "%{$search}%")
-                        ->orWhere('email', 'like', "%{$search}%")
+                    $nested->whereLike('name', "%{$search}%")
+                        ->orWhereLike('email', "%{$search}%")
                         ->orWhereHas('position', function (Builder $position) use ($search): void {
-                            $position->where('title', 'like', "%{$search}%")
-                                ->orWhere('code', 'like', "%{$search}%")
-                                ->orWhereHas('department', fn (Builder $department) => $department->where('name', 'like', "%{$search}%"));
+                            $position->whereLike('title', "%{$search}%")
+                                ->orWhereLike('code', "%{$search}%")
+                                ->orWhereHas('department', fn (Builder $department) => $department->whereLike('name', "%{$search}%"));
                         });
                 });
             })
@@ -625,9 +625,9 @@ class HandoverController extends Controller
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $nested) use ($search): void {
                     $nested->whereHas('asset', function (Builder $asset) use ($search): void {
-                        $asset->where('tag_code', 'like', "%{$search}%")
-                            ->orWhereHas('product', fn (Builder $product) => $product->where('name', 'like', "%{$search}%"));
-                    })->orWhereHas('toUser', fn (Builder $user) => $user->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%"));
+                        $asset->whereLike('tag_code', "%{$search}%")
+                            ->orWhereHas('product', fn (Builder $product) => $product->whereLike('name', "%{$search}%"));
+                    })->orWhereHas('toUser', fn (Builder $user) => $user->whereLike('name', "%{$search}%")->orWhereLike('email', "%{$search}%"));
                 });
             })
             ->orderByDesc('initiated_at')

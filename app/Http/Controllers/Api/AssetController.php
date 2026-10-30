@@ -30,7 +30,7 @@ class AssetController extends Controller
                 $query->where('product_id', $productId);
             })
             ->when($search !== '', function ($query) use ($search) {
-                $query->where('tag_code', 'like', "%{$search}%");
+                $query->whereLike('tag_code', "%{$search}%");
             })
             ->orderBy('tag_code')
             ->paginate($this->perPage($request))

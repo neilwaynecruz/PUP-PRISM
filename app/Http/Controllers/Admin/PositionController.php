@@ -36,9 +36,9 @@ class PositionController extends Controller
             ->when($filters['search'] !== '', function ($query) use ($filters): void {
                 $query->where(function ($nested) use ($filters): void {
                     $nested
-                        ->where('title', 'like', "%{$filters['search']}%")
-                        ->orWhere('code', 'like', "%{$filters['search']}%")
-                        ->orWhereHas('department', fn ($dept) => $dept->where('name', 'like', "%{$filters['search']}%"));
+                        ->whereLike('title', "%{$filters['search']}%")
+                        ->orWhereLike('code', "%{$filters['search']}%")
+                        ->orWhereHas('department', fn ($dept) => $dept->whereLike('name', "%{$filters['search']}%"));
                 });
             })
             ->when($filters['department_id'] > 0, fn ($query) => $query->where('department_id', $filters['department_id']))

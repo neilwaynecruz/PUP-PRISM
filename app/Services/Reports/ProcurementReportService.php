@@ -70,7 +70,7 @@ class ProcurementReportService extends AbstractTableReportService
     private function mapRow(PurchaseOrder $purchaseOrder, ?object $line): array
     {
         return [
-            'reference_no' => $purchaseOrder->reference_no ?? (string) $purchaseOrder->id,
+            'reference_no' => $purchaseOrder->po_number ?? (string) $purchaseOrder->id,
             'status' => $purchaseOrder->status instanceof PurchaseOrderStatus
                 ? $purchaseOrder->status->value
                 : (string) $purchaseOrder->status,

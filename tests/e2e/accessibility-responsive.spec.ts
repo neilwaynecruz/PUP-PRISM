@@ -85,6 +85,34 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
         await expect(page.locator('#main-content')).toBeFocused();
     });
 
+    test('dashboard date range prevents an invalid manual selection', async ({
+        page,
+    }) => {
+        await loginAs(page, 'admin@e2e.test');
+        await page.goto('/dashboard');
+
+        const startDate = page.getByLabel('From', { exact: true });
+        const endDate = page.getByLabel('To', { exact: true });
+        const applyButton = page.getByRole('button', {
+            name: 'Apply date range',
+        });
+
+        await startDate.fill('2026-10-30');
+        await endDate.fill('2026-10-01');
+
+        await expect(
+            page.getByRole('alert').filter({
+                hasText: 'The end date must be on or after the start date.',
+            }),
+        ).toBeVisible();
+        await expect(startDate).toHaveAttribute('aria-invalid', 'true');
+        await expect(endDate).toHaveAttribute('aria-invalid', 'true');
+        await expect(applyButton).toBeDisabled();
+
+        await endDate.fill('2026-10-30');
+        await expect(applyButton).toBeEnabled();
+    });
+
     test('filters have visible names that explain what they control', async ({
         page,
     }) => {
@@ -156,6 +184,7 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
                 '/inventory/requisitions',
                 '/inventory/purchase-orders',
                 '/notifications',
+                '/admin/users',
             ]) {
                 await page.goto(path);
                 await expect(page.locator('#main-content')).toBeVisible();
@@ -188,6 +217,28 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
         expect(box!.height).toBeGreaterThanOrEqual(44);
     });
 
+    test('users use readable record cards on phones and the full table on larger screens', async ({
+        page,
+    }) => {
+        await loginAs(page, 'admin@e2e.test');
+
+        await page.setViewportSize({ width: 320, height: 720 });
+        await page.goto('/admin/users');
+        await expect(page.getByTestId('users-mobile-list')).toBeVisible();
+        await expect(page.locator('table')).toBeHidden();
+
+        const mobileOverflow = await page.evaluate(
+            () =>
+                document.documentElement.scrollWidth -
+                document.documentElement.clientWidth,
+        );
+        expect(mobileOverflow).toBeLessThanOrEqual(1);
+
+        await page.setViewportSize({ width: 1024, height: 768 });
+        await expect(page.getByTestId('users-mobile-list')).toBeHidden();
+        await expect(page.locator('table')).toBeVisible();
+    });
+
     test('mobile navigation drawer has an explicit close control and closes after navigation', async ({
         page,
     }) => {
@@ -195,10 +246,41 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
         await loginAs(page, 'admin@e2e.test');
         await page.goto('/dashboard');
 
-        const trigger = page.getByRole('button', {
-            name: 'Toggle navigation menu',
-        });
+        const trigger = page.locator('[data-slot="sidebar-trigger"]');
+        await expect(trigger).toHaveAttribute('aria-expanded', 'false');
         await trigger.click();
+        await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+        const mobileDrawer = page.locator('[data-mobile="true"]');
+        await expect(mobileDrawer).toBeVisible();
+        await expect
+            .poll(() =>
+                page.evaluate(() => getComputedStyle(document.body).overflow),
+            )
+            .toBe('hidden');
+        await expect
+            .poll(() =>
+                page.evaluate(() => {
+                    const drawer = document.querySelector(
+                        '[data-mobile="true"]',
+                    );
+
+                    return drawer?.contains(document.activeElement) ?? false;
+                }),
+            )
+            .toBe(true);
+        await page.keyboard.press('Shift+Tab');
+        await expect
+            .poll(() =>
+                page.evaluate(() => {
+                    const drawer = document.querySelector(
+                        '[data-mobile="true"]',
+                    );
+
+                    return drawer?.contains(document.activeElement) ?? false;
+                }),
+            )
+            .toBe(true);
 
         const closeButton = page.getByRole('button', { name: 'Close' });
         await expect(closeButton).toBeVisible();
@@ -211,12 +293,75 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
         await expect(closeButton).toBeHidden();
 
         await trigger.click();
+        const overlay = page.locator('[data-slot="sheet-overlay"]');
+        const overlayBox = await overlay.boundingBox();
+        expect(overlayBox).not.toBeNull();
+        await page.mouse.click(
+            overlayBox!.x + overlayBox!.width - 4,
+            overlayBox!.y + overlayBox!.height / 2,
+        );
+        await expect(mobileDrawer).toBeHidden();
+        await expect(trigger).toBeFocused();
+
+        await trigger.click();
+        await page
+            .locator('[data-slot="sidebar-content"]')
+            .getByRole('link', { name: 'Dashboard' })
+            .click();
+        await expect(closeButton).toBeHidden();
+
+        await trigger.click();
         await page
             .locator('[data-slot="sidebar-content"]')
             .getByRole('link', { name: 'Products' })
             .click();
         await expect(page).toHaveURL(/\/inventory\/products$/);
         await expect(closeButton).toBeHidden();
+        await trigger.click();
+        await expect(
+            page
+                .locator('[data-slot="sidebar-content"]')
+                .getByRole('link', { name: 'Products' }),
+        ).toHaveAttribute('data-active', 'true');
+        await page.keyboard.press('Escape');
+    });
+
+    test('navigation toggle exposes state, restores focus, and collapses the desktop sidebar', async ({
+        page,
+    }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await loginAs(page, 'admin@e2e.test');
+        await page.goto('/dashboard');
+
+        const mobileTrigger = page.locator('[data-slot="sidebar-trigger"]');
+        await mobileTrigger.click();
+        await expect(mobileTrigger).toHaveAttribute('aria-expanded', 'true');
+        await expect(page.locator('[data-mobile="true"]')).toContainText(
+            'PUP PRISM',
+        );
+
+        await page.keyboard.press('Escape');
+        await expect(mobileTrigger).toHaveAttribute('aria-expanded', 'false');
+        await expect(mobileTrigger).toBeFocused();
+
+        await mobileTrigger.click();
+        await expect(mobileTrigger).toHaveAttribute('aria-expanded', 'true');
+        await page.setViewportSize({ width: 1024, height: 768 });
+        await expect(page.locator('[data-mobile="true"]')).toBeHidden();
+        await page.setViewportSize({ width: 390, height: 844 });
+        await expect(mobileTrigger).toHaveAttribute('aria-expanded', 'false');
+
+        await page.setViewportSize({ width: 1280, height: 800 });
+        const desktopSidebar = page.locator(
+            '[data-slot="sidebar"][data-state]',
+        );
+        const desktopTrigger = page.locator('[data-slot="sidebar-trigger"]');
+
+        await expect(desktopSidebar).toHaveAttribute('data-state', 'expanded');
+        await desktopTrigger.click();
+        await expect(desktopSidebar).toHaveAttribute('data-state', 'collapsed');
+        await desktopTrigger.click();
+        await expect(desktopSidebar).toHaveAttribute('data-state', 'expanded');
     });
 
     test('five master-data pages remain usable in both themes across phone, tablet, and desktop', async ({
@@ -288,6 +433,14 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
                 await expect(
                     page.getByRole('textbox', { name: 'Name', exact: true }),
                 ).toBeVisible();
+                await expect(
+                    page.getByRole('textbox', { name: 'Search locations' }),
+                ).toBeVisible();
+                await expect(
+                    page.getByRole('combobox', {
+                        name: 'Filter locations by status',
+                    }),
+                ).toBeVisible();
 
                 const locationsOverflow = await page.evaluate(
                     () =>
@@ -304,5 +457,26 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
                 });
             }
         }
+    });
+
+    test('suppliers page renders mobile record cards without horizontal overflow', async ({
+        page,
+    }) => {
+        await page.setViewportSize({ width: 360, height: 800 });
+        await loginAs(page, 'admin@e2e.test');
+        await page.goto('/inventory/suppliers');
+
+        await expect(page.getByTestId('suppliers-index-page')).toBeVisible();
+        await expect(
+            page.getByRole('textbox', { name: 'Search suppliers' }),
+        ).toBeVisible();
+        await expect(page.locator('table')).toBeHidden();
+
+        const overflow = await page.evaluate(
+            () =>
+                document.documentElement.scrollWidth -
+                document.documentElement.clientWidth,
+        );
+        expect(overflow).toBeLessThanOrEqual(1);
     });
 });

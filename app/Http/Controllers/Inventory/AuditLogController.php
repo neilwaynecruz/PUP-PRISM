@@ -88,12 +88,12 @@ class AuditLogController extends Controller
                 $search = $filters['search'];
 
                 $query->where(function (Builder $nested) use ($search): void {
-                    $nested->where('description', 'like', "%{$search}%")
-                        ->orWhere('action', 'like', "%{$search}%")
-                        ->orWhere('ip_address', 'like', "%{$search}%")
+                    $nested->whereLike('description', "%{$search}%")
+                        ->orWhereLike('action', "%{$search}%")
+                        ->orWhereLike('ip_address', "%{$search}%")
                         ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
-                            $userQuery->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
+                            $userQuery->whereLike('name', "%{$search}%")
+                                ->orWhereLike('email', "%{$search}%");
                         });
 
                     if (ctype_digit($search)) {

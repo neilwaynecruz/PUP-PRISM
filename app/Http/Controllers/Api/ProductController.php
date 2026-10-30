@@ -27,8 +27,8 @@ class ProductController extends Controller
             ->withCount('assets')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
-                    $query->where('sku', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%");
+                    $query->whereLike('sku', "%{$search}%")
+                        ->orWhereLike('name', "%{$search}%");
                 });
             })
             ->when($type !== '', function ($query) use ($type) {

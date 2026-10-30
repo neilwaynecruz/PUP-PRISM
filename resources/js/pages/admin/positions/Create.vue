@@ -37,7 +37,7 @@ const form = useForm({
             description="Create a position under an active department."
         />
         <form
-            class="grid max-w-xl gap-4"
+            class="grid max-w-xl gap-4 rounded-xl border border-border/70 bg-card p-5 shadow-xs"
             @submit.prevent="form.post(PositionController.store().url)"
         >
             <div class="grid gap-2">
@@ -45,7 +45,7 @@ const form = useForm({
                 <select
                     id="department_id"
                     v-model="form.department_id"
-                    class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                    class="min-h-11 rounded-lg border border-input bg-background px-3 text-sm sm:min-h-10"
                     required
                 >
                     <option value="">Select department</option>
@@ -60,28 +60,37 @@ const form = useForm({
             </div>
             <div class="grid gap-2">
                 <Label for="title">Title</Label
-                ><Input id="title" v-model="form.title" required /><InputError
-                    :message="form.errors.title"
-                />
+                ><Input
+                    id="title"
+                    v-model="form.title"
+                    required
+                    class="min-h-11 sm:min-h-9"
+                /><InputError :message="form.errors.title" />
             </div>
             <div class="grid gap-2">
                 <Label for="code">Code</Label
-                ><Input id="code" v-model="form.code" required /><InputError
-                    :message="form.errors.code"
-                />
+                ><Input
+                    id="code"
+                    v-model="form.code"
+                    required
+                    class="min-h-11 sm:min-h-9"
+                /><InputError :message="form.errors.code" />
             </div>
-            <label class="flex items-center gap-2 text-sm"
+            <label
+                class="flex min-h-11 items-center gap-2.5 rounded-lg border border-border/60 bg-muted/20 px-3 text-sm font-medium sm:min-h-9"
                 ><input
                     v-model="form.is_active"
                     type="checkbox"
-                    class="rounded border-input"
+                    class="size-4 rounded border-input accent-primary"
                 />
                 Active</label
             >
             <div class="flex justify-end gap-2">
-                <Button variant="ghost" as-child
+                <Button variant="ghost" class="min-h-11 sm:min-h-9" as-child
                     ><Link :href="index()">Cancel</Link></Button
-                ><Button :disabled="form.processing">Create</Button>
+                ><Button class="min-h-11 sm:min-h-9" :disabled="form.processing"
+                    >Create</Button
+                >
             </div>
         </form>
     </div>

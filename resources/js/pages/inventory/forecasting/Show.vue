@@ -149,7 +149,7 @@ function submitProfile(): void {
 
 function abcBadgeClass(classification: string | undefined): string {
     if (classification === 'A') {
-        return 'border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300';
+        return 'border-primary/30 bg-primary/10 text-primary';
     }
 
     if (classification === 'B') {
@@ -181,7 +181,7 @@ function abcBadgeClass(classification: string | undefined): string {
                     "
                     size="sm"
                     as-child
-                    class="h-9 rounded-xl bg-violet-600 px-3.5 text-xs font-semibold text-white shadow-xs hover:bg-violet-700"
+                    class="min-h-11 rounded-xl bg-primary px-3.5 text-xs font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 sm:min-h-9"
                 >
                     <Link
                         :href="
@@ -201,7 +201,7 @@ function abcBadgeClass(classification: string | undefined): string {
                     </Link>
                 </Button>
 
-                <Button variant="ghost" as-child>
+                <Button variant="ghost" as-child class="min-h-11 sm:min-h-9">
                     <Link :href="forecastingIndex()">Back to forecasting</Link>
                 </Button>
             </div>
@@ -219,7 +219,7 @@ function abcBadgeClass(classification: string | undefined): string {
             >
                 <div class="flex items-center gap-2.5">
                     <div
-                        class="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/15 text-purple-600 ring-1 ring-purple-500/20 dark:text-purple-300"
+                        class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary/15 text-primary ring-1 ring-primary/20"
                     >
                         <Calculator class="h-4 w-4" />
                     </div>

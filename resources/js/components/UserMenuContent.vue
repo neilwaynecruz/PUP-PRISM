@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { LogOut, Settings } from 'lucide-vue-next';
+import { Bell, LogOut, Palette, Settings } from 'lucide-vue-next';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -9,6 +9,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
 import { performLogout } from '@/lib/logout';
+import { edit as editAppearance } from '@/routes/appearance';
+import { index as notificationsIndex } from '@/routes/notifications';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
 
@@ -31,6 +33,26 @@ defineProps<Props>();
             <Link class="block w-full cursor-pointer" :href="edit()" prefetch>
                 <Settings class="mr-2 h-4 w-4" />
                 Settings
+            </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem :as-child="true">
+            <Link
+                class="block w-full cursor-pointer"
+                :href="editAppearance()"
+                prefetch
+            >
+                <Palette class="mr-2 h-4 w-4" />
+                Appearance
+            </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem :as-child="true">
+            <Link
+                class="block w-full cursor-pointer"
+                :href="notificationsIndex()"
+                prefetch
+            >
+                <Bell class="mr-2 h-4 w-4" />
+                Notifications
             </Link>
         </DropdownMenuItem>
     </DropdownMenuGroup>

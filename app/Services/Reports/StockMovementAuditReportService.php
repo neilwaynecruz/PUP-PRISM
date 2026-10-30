@@ -33,19 +33,19 @@ class StockMovementAuditReportService extends AbstractTableReportService
             ->when($search !== '', function ($builder) use ($search) {
                 $builder->where(function ($builder) use ($search) {
                     $builder->whereHas('product', function ($builder) use ($search) {
-                        $builder->where('sku', 'like', "%{$search}%")
-                            ->orWhere('name', 'like', "%{$search}%");
+                        $builder->whereLike('sku', "%{$search}%")
+                            ->orWhereLike('name', "%{$search}%");
                     })
                         ->orWhereHas('asset', function ($builder) use ($search) {
-                            $builder->where('tag_code', 'like', "%{$search}%");
+                            $builder->whereLike('tag_code', "%{$search}%");
                         })
                         ->orWhereHas('stockLot', function ($builder) use ($search) {
-                            $builder->where('reference_no', 'like', "%{$search}%");
+                            $builder->whereLike('reference_no', "%{$search}%");
                         })
                         ->orWhereHas('performedBy', function ($builder) use ($search) {
-                            $builder->where('name', 'like', "%{$search}%");
+                            $builder->whereLike('name', "%{$search}%");
                         })
-                        ->orWhere('notes', 'like', "%{$search}%");
+                        ->orWhereLike('notes', "%{$search}%");
                 });
             })
             ->orderByDesc('performed_at');

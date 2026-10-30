@@ -12,6 +12,7 @@ use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
+use Illuminate\Support\Facades\Cache;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
@@ -250,6 +251,50 @@ test('idempotency prevents duplicate stock increases on retried submissions', fu
     // Must remain 5, not double to 10
     expect($line->qty_received)->toBe(5)
         ->and($stock->on_hand_qty)->toBe(5);
+});
+
+test('identical receiving requests are serialized before the idempotency check', function () {
+    $user = receivingUser('Supply Head');
+    $supplier = Supplier::factory()->create();
+    $product = Product::factory()->consumable()->create(['supplier_id' => $supplier->id]);
+    $stock = ProductStock::factory()->create(['product_id' => $product->id, 'on_hand_qty' => 0]);
+    $purchaseOrder = PurchaseOrder::factory()->create([
+        'supplier_id' => $supplier->id,
+        'status' => PurchaseOrderStatus::Sent,
+    ]);
+    $line = PurchaseOrderLine::factory()->create([
+        'purchase_order_id' => $purchaseOrder->id,
+        'product_id' => $product->id,
+        'qty_ordered' => 10,
+        'qty_received' => 0,
+    ]);
+    $idempotencyKey = 'concurrent-idem-key';
+    $cacheKey = 'po_receive_idempotency:'.$purchaseOrder->id.':'.$idempotencyKey;
+    $requestLock = Cache::lock($cacheKey.':lock', 120);
+
+    expect($requestLock->get())->toBeTrue();
+
+    try {
+        expect(fn () => app(InventoryService::class)->receivePurchaseOrder(
+            $user,
+            $purchaseOrder,
+            [[
+                'purchase_order_line_id' => $line->id,
+                'qty_received' => 5,
+                'reference_no' => 'CONCURRENT-REF-1',
+            ]],
+            idempotencyKey: $idempotencyKey,
+        ))->toThrow(
+            RuntimeException::class,
+            'Another receipt for this purchase order is still being processed.',
+        );
+    } finally {
+        $requestLock->release();
+    }
+
+    expect($line->refresh()->qty_received)->toBe(0)
+        ->and($stock->refresh()->on_hand_qty)->toBe(0)
+        ->and(StockMovement::query()->where('reference_no', 'CONCURRENT-REF-1')->exists())->toBeFalse();
 });
 
 test('partial receiving across separate submissions transitions to received when complete', function () {

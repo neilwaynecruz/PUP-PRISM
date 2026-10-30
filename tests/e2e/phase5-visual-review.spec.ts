@@ -36,6 +36,7 @@ function monitorUnexpectedBrowserErrors(page: Page): string[] {
         const text = message.text();
         const isExpectedTestEnvironmentFailure =
             text.includes('net::ERR_NETWORK_ACCESS_DENIED') ||
+            text.includes('downloadable font: download failed') ||
             (text.includes('WebSocket connection to') &&
                 text.includes('localhost:8080'));
 

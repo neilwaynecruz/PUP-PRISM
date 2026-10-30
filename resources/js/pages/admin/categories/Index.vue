@@ -76,7 +76,7 @@ onBeforeUnmount(() => window.clearTimeout(timer));
                 v-if="can.create"
                 as-child
                 size="sm"
-                class="rounded-lg shadow-sm"
+                class="min-h-11 rounded-lg shadow-sm sm:min-h-8"
             >
                 <Link :href="create()">
                     <Plus class="mr-1.5 h-4 w-4" />New category
@@ -132,7 +132,7 @@ onBeforeUnmount(() => window.clearTimeout(timer));
                         <AdminCountBadge :value="row.products_count" />
                     </dd>
                 </dl>
-                <Button variant="outline" class="mt-4 w-full" as-child>
+                <Button variant="outline" class="mt-4 min-h-11 w-full" as-child>
                     <Link :href="edit(row.id)">Edit Category</Link>
                 </Button>
             </article>

@@ -66,11 +66,11 @@ class RequisitionController extends Controller
                     }
 
                     $query->orWhereHas('requester', function ($query) use ($search) {
-                        $query->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
+                        $query->whereLike('name', "%{$search}%")
+                            ->orWhereLike('email', "%{$search}%");
                     })->orWhereHas('lines.product', function ($query) use ($search) {
-                        $query->where('name', 'like', "%{$search}%")
-                            ->orWhere('sku', 'like', "%{$search}%");
+                        $query->whereLike('name', "%{$search}%")
+                            ->orWhereLike('sku', "%{$search}%");
                     });
                 });
             })
@@ -489,8 +489,8 @@ class RequisitionController extends Controller
             ])
             ->when($search !== '', function ($query) use ($search) {
                 $query->whereHas('requester', function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%");
-                })->orWhere('id', 'like', "%{$search}%");
+                    $q->whereLike('name', "%{$search}%");
+                })->orWhereLike('id', "%{$search}%");
             })
             ->when($dateFrom, fn ($q) => $q->whereDate('deleted_at', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('deleted_at', '<=', $dateTo))

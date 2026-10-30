@@ -3,6 +3,7 @@ defineOptions({ name: 'BookingTrashPage' });
 
 import { Head, Link, router } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
@@ -249,12 +250,17 @@ function confirmBulkForceDelete(): void {
                     </Select>
                 </div>
                 <div class="grid gap-2">
-                    <Label class="invisible">Actions</Label>
+                    <Label class="invisible hidden lg:block">Actions</Label>
                     <div class="flex gap-2">
-                        <Button @click="applyFilters">Filter</Button>
+                        <Button
+                            class="min-h-11 sm:min-h-9"
+                            @click="applyFilters"
+                            >Filter</Button
+                        >
                         <Button
                             v-if="hasActiveFilters"
                             variant="ghost"
+                            class="min-h-11 sm:min-h-9"
                             @click="resetFilters"
                             >Reset</Button
                         >
@@ -269,7 +275,12 @@ function confirmBulkForceDelete(): void {
                 title="Trash"
                 description="Deleted bookings can be restored here."
             />
-            <Button variant="ghost" size="sm" as-child class="rounded-lg">
+            <Button
+                variant="ghost"
+                size="sm"
+                as-child
+                class="min-h-11 rounded-lg sm:min-h-8"
+            >
                 <Link href="/inventory/bookings">Back to bookings</Link>
             </Button>
         </div>
@@ -286,12 +297,14 @@ function confirmBulkForceDelete(): void {
                 <Button
                     variant="outline"
                     size="sm"
+                    class="min-h-11 sm:min-h-8"
                     @click="openBulkRestoreDialog"
                     >Restore</Button
                 >
                 <Button
                     variant="destructive"
                     size="sm"
+                    class="min-h-11 sm:min-h-8"
                     @click="openBulkForceDeleteDialog"
                     >Delete forever</Button
                 >
@@ -310,7 +323,101 @@ function confirmBulkForceDelete(): void {
                     >{{ bookings.data.length }} total</span
                 >
             </div>
-            <div class="overflow-x-auto">
+
+            <!-- Mobile Record Cards -->
+            <div
+                v-if="bookings.data.length"
+                class="grid gap-3 p-4 md:hidden"
+                data-testid="bookings-trash-mobile-list"
+            >
+                <article
+                    v-for="b in bookings.data"
+                    :key="`mobile-${b.id}`"
+                    class="rounded-xl border border-border/60 bg-background/60 p-4"
+                    :class="{ 'bg-primary/5': selectedIds.has(b.id) }"
+                >
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex min-w-0 items-start gap-3">
+                            <Checkbox
+                                :model-value="selectedIds.has(b.id)"
+                                class="mt-0.5"
+                                aria-label="Select booking"
+                                @update:model-value="() => toggleSelect(b.id)"
+                            />
+                            <div class="min-w-0">
+                                <h2
+                                    class="font-semibold break-words text-foreground"
+                                >
+                                    {{ b.asset_label ?? '—' }}
+                                </h2>
+                                <p class="mt-0.5 text-xs text-muted-foreground">
+                                    {{ b.requester?.name ?? '—' }}
+                                </p>
+                            </div>
+                        </div>
+                        <span
+                            class="inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-[11px] font-medium tracking-wide uppercase"
+                            :class="
+                                b.status === 'approved'
+                                    ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                            "
+                        >
+                            {{ b.status }}
+                        </span>
+                    </div>
+                    <dl class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <dt class="text-muted-foreground">Schedule</dt>
+                            <dd class="mt-0.5 text-foreground">
+                                {{ formatDateTime(b.start) }} –
+                                {{ formatDateTime(b.end) }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-muted-foreground">Deleted at</dt>
+                            <dd class="mt-0.5 text-foreground">
+                                {{ formatDateTime(b.deleted_at) }}
+                            </dd>
+                        </div>
+                        <div class="col-span-2">
+                            <dt class="text-muted-foreground">Reason</dt>
+                            <dd class="mt-0.5 text-foreground">
+                                {{ b.deletion_reason ?? '—' }}
+                            </dd>
+                        </div>
+                    </dl>
+                    <div class="mt-3 grid grid-cols-2 gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="min-h-11"
+                            @click="openRestoreDialog(b)"
+                        >
+                            Restore
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="min-h-11 text-rose-600 hover:text-rose-700"
+                            @click="openForceDeleteDialog(b)"
+                        >
+                            Delete Forever
+                        </Button>
+                    </div>
+                </article>
+            </div>
+            <div v-else class="md:hidden">
+                <EmptyState
+                    icon="booking"
+                    title="Trash is empty"
+                    description="Deleted bookings will appear here. You have 30 days to restore them before they are permanently removed."
+                    action-label="Back to Bookings"
+                    action-href="/inventory/bookings"
+                />
+            </div>
+
+            <div class="hidden overflow-x-auto md:block">
                 <table class="min-w-full text-sm">
                     <thead class="bg-muted/40 text-left">
                         <tr
@@ -342,7 +449,7 @@ function confirmBulkForceDelete(): void {
                     </thead>
                     <tbody class="divide-y divide-border/60">
                         <tr v-if="bookings.data.length === 0">
-                            <td colspan="9" class="p-0">
+                            <td colspan="10" class="p-0">
                                 <EmptyState
                                     icon="booking"
                                     title="Trash is empty"
@@ -546,32 +653,9 @@ function confirmBulkForceDelete(): void {
             </DialogContent>
         </Dialog>
 
-        <div
-            v-if="bookings.links.length"
-            class="flex flex-wrap items-center justify-center gap-1"
-        >
-            <Button
-                v-for="(link, i) in bookings.links"
-                :key="i"
-                variant="ghost"
-                size="sm"
-                :disabled="!link.url"
-                as-child
-                class="h-8 rounded-lg text-xs"
-                :class="
-                    link.active ? 'bg-primary/10 font-medium text-primary' : ''
-                "
-            >
-                <Link
-                    v-if="link.url"
-                    :href="link.url"
-                    preserve-scroll
-                    preserve-state
-                >
-                    <span v-html="link.label" />
-                </Link>
-                <span v-else v-html="link.label" />
-            </Button>
-        </div>
+        <AdminPagination
+            :links="bookings.links"
+            label="Deleted booking pages"
+        />
     </div>
 </template>

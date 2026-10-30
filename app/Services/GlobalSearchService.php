@@ -61,8 +61,8 @@ class GlobalSearchService
     {
         return Product::query()
             ->where(function (Builder $query) use ($term) {
-                $query->where('sku', 'like', "%{$term}%")
-                    ->orWhere('name', 'like', "%{$term}%");
+                $query->whereLike('sku', "%{$term}%")
+                    ->orWhereLike('name', "%{$term}%");
             })
             ->orderBy('name')
             ->limit(self::LIMIT_PER_TYPE)
@@ -85,8 +85,8 @@ class GlobalSearchService
         return Asset::query()
             ->with('product:id,name')
             ->where(function (Builder $query) use ($term) {
-                $query->where('tag_code', 'like', "%{$term}%")
-                    ->orWhereHas('product', fn (Builder $query) => $query->where('name', 'like', "%{$term}%"));
+                $query->whereLike('tag_code', "%{$term}%")
+                    ->orWhereHas('product', fn (Builder $query) => $query->whereLike('name', "%{$term}%"));
             })
             ->orderBy('tag_code')
             ->limit(self::LIMIT_PER_TYPE)
@@ -96,7 +96,7 @@ class GlobalSearchService
                 'id' => $asset->id,
                 'title' => $asset->tag_code,
                 'subtitle' => trim(($asset->product?->name ?? 'Asset').' · '.$asset->status->value),
-                'url' => route('inventory.products.show', $asset->product_id, absolute: false),
+                'url' => route('inventory.assets.show', $asset, absolute: false),
             ])
             ->all();
     }
@@ -109,12 +109,12 @@ class GlobalSearchService
         return Requisition::query()
             ->with('requester:id,name,email')
             ->where(function (Builder $query) use ($term) {
-                if (ctype_digit($term)) {
-                    $query->whereKey((int) $term);
+                if ($this->recordNumber($term) !== null) {
+                    $query->whereKey($this->recordNumber($term));
                 } else {
                     $query->whereHas('requester', function (Builder $query) use ($term) {
-                        $query->where('name', 'like', "%{$term}%")
-                            ->orWhere('email', 'like', "%{$term}%");
+                        $query->whereLike('name', "%{$term}%")
+                            ->orWhereLike('email', "%{$term}%");
                     });
                 }
             })
@@ -139,13 +139,13 @@ class GlobalSearchService
         return Booking::query()
             ->with(['asset:id,tag_code,product_id', 'asset.product:id,name', 'requester:id,name,email'])
             ->where(function (Builder $query) use ($term) {
-                if (ctype_digit($term)) {
-                    $query->whereKey((int) $term);
+                if ($this->recordNumber($term) !== null) {
+                    $query->whereKey($this->recordNumber($term));
                 } else {
-                    $query->whereHas('asset', fn (Builder $query) => $query->where('tag_code', 'like', "%{$term}%"))
+                    $query->whereHas('asset', fn (Builder $query) => $query->whereLike('tag_code', "%{$term}%"))
                         ->orWhereHas('requester', function (Builder $query) use ($term) {
-                            $query->where('name', 'like', "%{$term}%")
-                                ->orWhere('email', 'like', "%{$term}%");
+                            $query->whereLike('name', "%{$term}%")
+                                ->orWhereLike('email', "%{$term}%");
                         });
                 }
             })
@@ -170,20 +170,20 @@ class GlobalSearchService
         return PurchaseOrder::query()
             ->with('supplier:id,name')
             ->where(function (Builder $query) use ($term) {
-                if (ctype_digit($term)) {
-                    $query->whereKey((int) $term);
-                } else {
-                    $query->where('reference_no', 'like', "%{$term}%")
-                        ->orWhereHas('supplier', fn (Builder $query) => $query->where('name', 'like', "%{$term}%"));
+                $query->whereLike('po_number', "%{$term}%")
+                    ->orWhereHas('supplier', fn (Builder $query) => $query->whereLike('name', "%{$term}%"));
+
+                if ($this->recordNumber($term) !== null) {
+                    $query->orWhere('id', $this->recordNumber($term));
                 }
             })
             ->orderByDesc('created_at')
             ->limit(self::LIMIT_PER_TYPE)
-            ->get(['id', 'reference_no', 'status', 'supplier_id'])
+            ->get(['id', 'po_number', 'status', 'supplier_id'])
             ->map(fn (PurchaseOrder $purchaseOrder) => [
                 'type' => 'purchase_order',
                 'id' => $purchaseOrder->id,
-                'title' => $purchaseOrder->reference_no ?? 'PO #'.$purchaseOrder->id,
+                'title' => $purchaseOrder->po_number ?? 'PO #'.$purchaseOrder->id,
                 'subtitle' => trim(($purchaseOrder->supplier?->name ?? 'Supplier').' · '.$purchaseOrder->status->value),
                 'url' => route('inventory.purchase-orders.show', $purchaseOrder, absolute: false),
             ])
@@ -197,8 +197,8 @@ class GlobalSearchService
     {
         return User::query()
             ->where(function (Builder $query) use ($term) {
-                $query->where('name', 'like', "%{$term}%")
-                    ->orWhere('email', 'like', "%{$term}%");
+                $query->whereLike('name', "%{$term}%")
+                    ->orWhereLike('email', "%{$term}%");
             })
             ->orderBy('name')
             ->limit(self::LIMIT_PER_TYPE)
@@ -211,5 +211,15 @@ class GlobalSearchService
                 'url' => route('admin.users.edit', $searchedUser, absolute: false),
             ])
             ->all();
+    }
+
+    /**
+     * The numeric record ID in a term such as "12" or "#12", or null for other terms.
+     */
+    private function recordNumber(string $term): ?int
+    {
+        $digits = ltrim($term, '#');
+
+        return $digits !== '' && ctype_digit($digits) ? (int) $digits : null;
     }
 }

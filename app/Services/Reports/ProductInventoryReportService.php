@@ -28,8 +28,8 @@ class ProductInventoryReportService extends AbstractTableReportService
             ->withCount('assets')
             ->when($search !== '', function ($builder) use ($search) {
                 $builder->where(function ($builder) use ($search) {
-                    $builder->where('sku', 'like', "%{$search}%")
-                        ->orWhere('name', 'like', "%{$search}%");
+                    $builder->whereLike('sku', "%{$search}%")
+                        ->orWhereLike('name', "%{$search}%");
                 });
             })
             ->when($type !== '', fn ($builder) => $builder->where('type', $type))

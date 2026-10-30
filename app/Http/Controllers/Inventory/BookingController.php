@@ -51,9 +51,9 @@ class BookingController extends Controller
             ->with(['product:id,name', 'position:id,department_id,title', 'position.department:id,name'])
             ->when($assetSearch !== '', function ($query) use ($assetSearch) {
                 $query->where(function ($query) use ($assetSearch) {
-                    $query->where('tag_code', 'like', "%{$assetSearch}%")
+                    $query->whereLike('tag_code', "%{$assetSearch}%")
                         ->orWhereHas('product', function ($query) use ($assetSearch) {
-                            $query->where('name', 'like', "%{$assetSearch}%");
+                            $query->whereLike('name', "%{$assetSearch}%");
                         });
                 });
             })
@@ -100,12 +100,12 @@ class BookingController extends Controller
                     }
 
                     $query->orWhereHas('asset', function ($query) use ($search) {
-                        $query->where('tag_code', 'like', "%{$search}%")
-                            ->orWhereHas('product', fn ($query) => $query->where('name', 'like', "%{$search}%"));
+                        $query->whereLike('tag_code', "%{$search}%")
+                            ->orWhereHas('product', fn ($query) => $query->whereLike('name', "%{$search}%"));
                     })
                         ->orWhereHas('requester', function ($query) use ($search) {
-                            $query->where('name', 'like', "%{$search}%")
-                                ->orWhere('email', 'like', "%{$search}%");
+                            $query->whereLike('name', "%{$search}%")
+                                ->orWhereLike('email', "%{$search}%");
                         });
                 });
             })
@@ -394,7 +394,7 @@ class BookingController extends Controller
             ])
             ->when($search !== '', function ($query) use ($search) {
                 $query->whereHas('asset', function ($q) use ($search) {
-                    $q->where('tag_code', 'like', "%{$search}%");
+                    $q->whereLike('tag_code', "%{$search}%");
                 });
             })
             ->when($dateFrom, fn ($q) => $q->whereDate('deleted_at', '>=', $dateFrom))

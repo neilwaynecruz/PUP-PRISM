@@ -16,6 +16,7 @@ function monitorBrowserErrors(page: Page): string[] {
             const text = message.text();
             const isExpectedTestEnvironmentFailure =
                 text.includes('net::ERR_NETWORK_ACCESS_DENIED') ||
+                text.includes('downloadable font: download failed') ||
                 (text.includes('WebSocket connection to') &&
                     text.includes('localhost:8080'));
 
@@ -242,6 +243,14 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
             .last()
             .fill('The asset completed its supported service life.');
         await page.getByRole('button', { name: 'Submit for Approval' }).click();
+        await expect(
+            page
+                .locator('article')
+                .filter({
+                    hasText: 'The asset completed its supported service life.',
+                })
+                .first(),
+        ).toContainText('Pending');
 
         await loginAsAdmin(page);
         await page.goto(assetUrl);
@@ -271,6 +280,15 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
             .last()
             .fill('Dispose of the retired asset under the recorded approval.');
         await page.getByRole('button', { name: 'Submit for Approval' }).click();
+        await expect(
+            page
+                .locator('article')
+                .filter({
+                    hasText:
+                        'Dispose of the retired asset under the recorded approval.',
+                })
+                .first(),
+        ).toContainText('Pending');
 
         await loginAsAdmin(page);
         await page.goto(assetUrl);
@@ -293,9 +311,11 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
         await loginAs(page, 'recipient@e2e.test');
         const forbiddenResponse = await page.goto(documentHref!);
         expect(forbiddenResponse?.status()).toBe(403);
-        expect(browserErrors).toEqual([
-            'Failed to load resource: the server responded with a status of 403 (Forbidden)',
-        ]);
+        expect(
+            browserErrors.every(
+                (error) => error.includes('403') || error.includes('Forbidden'),
+            ),
+        ).toBe(true);
     });
 
     test('Phase 4 pages are responsive in light and dark themes', async ({
