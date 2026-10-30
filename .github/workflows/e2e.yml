@@ -19,7 +19,9 @@ permissions:
 
 jobs:
   playwright:
-    runs-on: ubuntu-latest
+    # Playwright 1.60 supports Ubuntu 24.04, but not the Ubuntu 26.04
+    # image currently rolling out behind ubuntu-latest.
+    runs-on: ubuntu-24.04
     timeout-minutes: 30
 
     steps:
