@@ -91,6 +91,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::patch('users/{managedUser}/deactivate', [UserManagementController::class, 'deactivate'])
             ->name('users.deactivate');
 
+        Route::patch('users/{managedUser}/reactivate', [UserManagementController::class, 'reactivate'])
+            ->name('users.reactivate');
+
         Route::resource('departments', DepartmentController::class)->except(['show']);
         Route::patch('departments/{department}/deactivate', [DepartmentController::class, 'deactivate'])
             ->name('departments.deactivate');
@@ -197,6 +200,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
             Route::post('handover', [HandoverController::class, 'store'])
                 ->name('handover.store');
+
+            Route::post('handover/{handoverLog}/cancel', [HandoverController::class, 'cancel'])
+                ->whereNumber('handoverLog')
+                ->name('handover.cancel');
+
+            Route::post('handover/{handoverLog}/resend', [HandoverController::class, 'resend'])
+                ->whereNumber('handoverLog')
+                ->middleware('throttle:10,1')
+                ->name('handover.resend');
 
             Route::put('bookings/{booking}', [BookingController::class, 'update'])
                 ->whereNumber('booking')

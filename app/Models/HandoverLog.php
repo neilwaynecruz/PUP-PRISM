@@ -5,6 +5,7 @@ namespace App\Models;
 use Database\Factories\HandoverLogFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -19,6 +20,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'initiated_at',
     'verified_at',
     'verified_by',
+    'cancelled_at',
+    'cancelled_by',
+    'cancellation_reason',
+    'last_sent_at',
     'verification_token_hash',
     'ip_address',
     'verified_ip_address',
@@ -30,6 +35,37 @@ class HandoverLog extends Model
 {
     /** @use HasFactory<HandoverLogFactory> */
     use HasFactory;
+
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_VERIFIED = 'verified';
+
+    public const STATUS_CANCELLED = 'cancelled';
+
+    /**
+     * Handovers still waiting for the recipient to verify. Cancelled handovers no longer block the asset.
+     *
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
+    public function scopePending(Builder $query): Builder
+    {
+        return $query->whereNull('verified_at')->whereNull('cancelled_at');
+    }
+
+    public function isPending(): bool
+    {
+        return $this->verified_at === null && $this->cancelled_at === null;
+    }
+
+    public function status(): string
+    {
+        return match (true) {
+            $this->verified_at !== null => self::STATUS_VERIFIED,
+            $this->cancelled_at !== null => self::STATUS_CANCELLED,
+            default => self::STATUS_PENDING,
+        };
+    }
 
     /**
      * @return BelongsTo<Asset, $this>
@@ -88,6 +124,14 @@ class HandoverLog extends Model
     }
 
     /**
+     * @return BelongsTo<User, $this>
+     */
+    public function cancelledBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'cancelled_by');
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array
@@ -95,6 +139,8 @@ class HandoverLog extends Model
         return [
             'initiated_at' => 'datetime',
             'verified_at' => 'datetime',
+            'cancelled_at' => 'datetime',
+            'last_sent_at' => 'datetime',
         ];
     }
 }

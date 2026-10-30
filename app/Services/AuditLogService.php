@@ -87,9 +87,18 @@ class AuditLogService
         );
     }
 
-    public static function logCustom(string $action, string $description, ?Model $model = null): void
-    {
-        self::log($action, $description, $model);
+    /**
+     * @param  array<string, mixed>|null  $oldValues
+     * @param  array<string, mixed>|null  $newValues
+     */
+    public static function logCustom(
+        string $action,
+        string $description,
+        ?Model $model = null,
+        ?array $oldValues = null,
+        ?array $newValues = null,
+    ): void {
+        self::log($action, $description, $model, $oldValues, $newValues);
     }
 
     private static function defaultDescription(string $action, Model $model): string

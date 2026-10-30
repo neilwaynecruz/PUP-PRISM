@@ -28,7 +28,14 @@ class UpdateUserRequest extends FormRequest
         return [
             ...$this->profileRules($managedUser->id),
             'role' => ['required', 'string', Rule::in($this->availableRoles())],
-            'position_id' => ['nullable', 'integer', Rule::exists(Position::class, 'id')],
+            'position_id' => [
+                'nullable',
+                'integer',
+                Rule::exists(Position::class, 'id')->where(function ($query) use ($managedUser): void {
+                    $query->where('is_active', true)
+                        ->when($managedUser->position_id !== null, fn ($query) => $query->orWhere('id', $managedUser->position_id));
+                }),
+            ],
         ];
     }
 

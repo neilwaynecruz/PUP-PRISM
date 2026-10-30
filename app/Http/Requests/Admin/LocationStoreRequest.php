@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Location;
+use App\Rules\UniqueIgnoringCase;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -25,7 +26,7 @@ class LocationStoreRequest extends FormRequest
     {
         return [
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
-            'code' => ['required', 'string', 'max:50', 'unique:locations,code'],
+            'code' => ['required', 'string', 'max:50', new UniqueIgnoringCase('locations', 'code')],
             'name' => ['required', 'string', 'max:255'],
             'building' => ['nullable', 'string', 'max:255'],
             'room' => ['nullable', 'string', 'max:100'],

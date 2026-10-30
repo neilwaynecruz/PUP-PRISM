@@ -120,7 +120,7 @@ class AssetMaintenanceService
             throw new \RuntimeException('This asset has an approved booking. Resolve the booking before starting maintenance.');
         }
 
-        if (HandoverLog::query()->where('asset_id', $asset->id)->whereNull('verified_at')->lockForUpdate()->exists()) {
+        if (HandoverLog::query()->where('asset_id', $asset->id)->pending()->lockForUpdate()->exists()) {
             throw new \RuntimeException('This asset has a handover waiting for verification.');
         }
     }

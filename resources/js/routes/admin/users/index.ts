@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::index
- * @see app/Http/Controllers/Admin/UserManagementController.php:21
+ * @see app/Http/Controllers/Admin/UserManagementController.php:22
  * @route '/admin/users'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::index
- * @see app/Http/Controllers/Admin/UserManagementController.php:21
+ * @see app/Http/Controllers/Admin/UserManagementController.php:22
  * @route '/admin/users'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::index
- * @see app/Http/Controllers/Admin/UserManagementController.php:21
+ * @see app/Http/Controllers/Admin/UserManagementController.php:22
  * @route '/admin/users'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::index
- * @see app/Http/Controllers/Admin/UserManagementController.php:21
+ * @see app/Http/Controllers/Admin/UserManagementController.php:22
  * @route '/admin/users'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Admin\UserManagementController::index
- * @see app/Http/Controllers/Admin/UserManagementController.php:21
+ * @see app/Http/Controllers/Admin/UserManagementController.php:22
  * @route '/admin/users'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Admin\UserManagementController::index
- * @see app/Http/Controllers/Admin/UserManagementController.php:21
+ * @see app/Http/Controllers/Admin/UserManagementController.php:22
  * @route '/admin/users'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Admin\UserManagementController::index
- * @see app/Http/Controllers/Admin/UserManagementController.php:21
+ * @see app/Http/Controllers/Admin/UserManagementController.php:22
  * @route '/admin/users'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::create
- * @see app/Http/Controllers/Admin/UserManagementController.php:64
+ * @see app/Http/Controllers/Admin/UserManagementController.php:72
  * @route '/admin/users/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::create
- * @see app/Http/Controllers/Admin/UserManagementController.php:64
+ * @see app/Http/Controllers/Admin/UserManagementController.php:72
  * @route '/admin/users/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::create
- * @see app/Http/Controllers/Admin/UserManagementController.php:64
+ * @see app/Http/Controllers/Admin/UserManagementController.php:72
  * @route '/admin/users/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::create
- * @see app/Http/Controllers/Admin/UserManagementController.php:64
+ * @see app/Http/Controllers/Admin/UserManagementController.php:72
  * @route '/admin/users/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Admin\UserManagementController::create
- * @see app/Http/Controllers/Admin/UserManagementController.php:64
+ * @see app/Http/Controllers/Admin/UserManagementController.php:72
  * @route '/admin/users/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Admin\UserManagementController::create
- * @see app/Http/Controllers/Admin/UserManagementController.php:64
+ * @see app/Http/Controllers/Admin/UserManagementController.php:72
  * @route '/admin/users/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Admin\UserManagementController::create
- * @see app/Http/Controllers/Admin/UserManagementController.php:64
+ * @see app/Http/Controllers/Admin/UserManagementController.php:72
  * @route '/admin/users/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::store
- * @see app/Http/Controllers/Admin/UserManagementController.php:74
+ * @see app/Http/Controllers/Admin/UserManagementController.php:83
  * @route '/admin/users'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::store
- * @see app/Http/Controllers/Admin/UserManagementController.php:74
+ * @see app/Http/Controllers/Admin/UserManagementController.php:83
  * @route '/admin/users'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::store
- * @see app/Http/Controllers/Admin/UserManagementController.php:74
+ * @see app/Http/Controllers/Admin/UserManagementController.php:83
  * @route '/admin/users'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Admin\UserManagementController::store
- * @see app/Http/Controllers/Admin/UserManagementController.php:74
+ * @see app/Http/Controllers/Admin/UserManagementController.php:83
  * @route '/admin/users'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Admin\UserManagementController::store
- * @see app/Http/Controllers/Admin/UserManagementController.php:74
+ * @see app/Http/Controllers/Admin/UserManagementController.php:83
  * @route '/admin/users'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -212,7 +212,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::edit
- * @see app/Http/Controllers/Admin/UserManagementController.php:112
+ * @see app/Http/Controllers/Admin/UserManagementController.php:121
  * @route '/admin/users/{managedUser}/edit'
  */
 export const edit = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -227,7 +227,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::edit
- * @see app/Http/Controllers/Admin/UserManagementController.php:112
+ * @see app/Http/Controllers/Admin/UserManagementController.php:121
  * @route '/admin/users/{managedUser}/edit'
  */
 edit.url = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -260,7 +260,7 @@ edit.url = (args: { managedUser: number | { id: number } } | [managedUser: numbe
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::edit
- * @see app/Http/Controllers/Admin/UserManagementController.php:112
+ * @see app/Http/Controllers/Admin/UserManagementController.php:121
  * @route '/admin/users/{managedUser}/edit'
  */
 edit.get = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -269,7 +269,7 @@ edit.get = (args: { managedUser: number | { id: number } } | [managedUser: numbe
 })
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::edit
- * @see app/Http/Controllers/Admin/UserManagementController.php:112
+ * @see app/Http/Controllers/Admin/UserManagementController.php:121
  * @route '/admin/users/{managedUser}/edit'
  */
 edit.head = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -279,7 +279,7 @@ edit.head = (args: { managedUser: number | { id: number } } | [managedUser: numb
 
     /**
 * @see \App\Http\Controllers\Admin\UserManagementController::edit
- * @see app/Http/Controllers/Admin/UserManagementController.php:112
+ * @see app/Http/Controllers/Admin/UserManagementController.php:121
  * @route '/admin/users/{managedUser}/edit'
  */
     const editForm = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -289,7 +289,7 @@ edit.head = (args: { managedUser: number | { id: number } } | [managedUser: numb
 
             /**
 * @see \App\Http\Controllers\Admin\UserManagementController::edit
- * @see app/Http/Controllers/Admin/UserManagementController.php:112
+ * @see app/Http/Controllers/Admin/UserManagementController.php:121
  * @route '/admin/users/{managedUser}/edit'
  */
         editForm.get = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -298,7 +298,7 @@ edit.head = (args: { managedUser: number | { id: number } } | [managedUser: numb
         })
             /**
 * @see \App\Http\Controllers\Admin\UserManagementController::edit
- * @see app/Http/Controllers/Admin/UserManagementController.php:112
+ * @see app/Http/Controllers/Admin/UserManagementController.php:121
  * @route '/admin/users/{managedUser}/edit'
  */
         editForm.head = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -314,7 +314,7 @@ edit.head = (args: { managedUser: number | { id: number } } | [managedUser: numb
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::update
- * @see app/Http/Controllers/Admin/UserManagementController.php:128
+ * @see app/Http/Controllers/Admin/UserManagementController.php:140
  * @route '/admin/users/{managedUser}'
  */
 export const update = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -329,7 +329,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::update
- * @see app/Http/Controllers/Admin/UserManagementController.php:128
+ * @see app/Http/Controllers/Admin/UserManagementController.php:140
  * @route '/admin/users/{managedUser}'
  */
 update.url = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -362,7 +362,7 @@ update.url = (args: { managedUser: number | { id: number } } | [managedUser: num
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::update
- * @see app/Http/Controllers/Admin/UserManagementController.php:128
+ * @see app/Http/Controllers/Admin/UserManagementController.php:140
  * @route '/admin/users/{managedUser}'
  */
 update.put = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -372,7 +372,7 @@ update.put = (args: { managedUser: number | { id: number } } | [managedUser: num
 
     /**
 * @see \App\Http\Controllers\Admin\UserManagementController::update
- * @see app/Http/Controllers/Admin/UserManagementController.php:128
+ * @see app/Http/Controllers/Admin/UserManagementController.php:140
  * @route '/admin/users/{managedUser}'
  */
     const updateForm = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -387,7 +387,7 @@ update.put = (args: { managedUser: number | { id: number } } | [managedUser: num
 
             /**
 * @see \App\Http\Controllers\Admin\UserManagementController::update
- * @see app/Http/Controllers/Admin/UserManagementController.php:128
+ * @see app/Http/Controllers/Admin/UserManagementController.php:140
  * @route '/admin/users/{managedUser}'
  */
         updateForm.put = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -403,7 +403,7 @@ update.put = (args: { managedUser: number | { id: number } } | [managedUser: num
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::deactivate
- * @see app/Http/Controllers/Admin/UserManagementController.php:173
+ * @see app/Http/Controllers/Admin/UserManagementController.php:194
  * @route '/admin/users/{managedUser}/deactivate'
  */
 export const deactivate = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -418,7 +418,7 @@ deactivate.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::deactivate
- * @see app/Http/Controllers/Admin/UserManagementController.php:173
+ * @see app/Http/Controllers/Admin/UserManagementController.php:194
  * @route '/admin/users/{managedUser}/deactivate'
  */
 deactivate.url = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -451,7 +451,7 @@ deactivate.url = (args: { managedUser: number | { id: number } } | [managedUser:
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::deactivate
- * @see app/Http/Controllers/Admin/UserManagementController.php:173
+ * @see app/Http/Controllers/Admin/UserManagementController.php:194
  * @route '/admin/users/{managedUser}/deactivate'
  */
 deactivate.patch = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -461,7 +461,7 @@ deactivate.patch = (args: { managedUser: number | { id: number } } | [managedUse
 
     /**
 * @see \App\Http\Controllers\Admin\UserManagementController::deactivate
- * @see app/Http/Controllers/Admin/UserManagementController.php:173
+ * @see app/Http/Controllers/Admin/UserManagementController.php:194
  * @route '/admin/users/{managedUser}/deactivate'
  */
     const deactivateForm = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -476,7 +476,7 @@ deactivate.patch = (args: { managedUser: number | { id: number } } | [managedUse
 
             /**
 * @see \App\Http\Controllers\Admin\UserManagementController::deactivate
- * @see app/Http/Controllers/Admin/UserManagementController.php:173
+ * @see app/Http/Controllers/Admin/UserManagementController.php:194
  * @route '/admin/users/{managedUser}/deactivate'
  */
         deactivateForm.patch = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -490,6 +490,95 @@ deactivate.patch = (args: { managedUser: number | { id: number } } | [managedUse
         })
     
     deactivate.form = deactivateForm
+/**
+* @see \App\Http\Controllers\Admin\UserManagementController::reactivate
+ * @see app/Http/Controllers/Admin/UserManagementController.php:275
+ * @route '/admin/users/{managedUser}/reactivate'
+ */
+export const reactivate = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
+    url: reactivate.url(args, options),
+    method: 'patch',
+})
+
+reactivate.definition = {
+    methods: ["patch"],
+    url: '/admin/users/{managedUser}/reactivate',
+} satisfies RouteDefinition<["patch"]>
+
+/**
+* @see \App\Http\Controllers\Admin\UserManagementController::reactivate
+ * @see app/Http/Controllers/Admin/UserManagementController.php:275
+ * @route '/admin/users/{managedUser}/reactivate'
+ */
+reactivate.url = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
+    if (typeof args === 'string' || typeof args === 'number') {
+        args = { managedUser: args }
+    }
+
+            if (typeof args === 'object' && !Array.isArray(args) && 'id' in args) {
+            args = { managedUser: args.id }
+        }
+    
+    if (Array.isArray(args)) {
+        args = {
+                    managedUser: args[0],
+                }
+    }
+
+    args = applyUrlDefaults(args)
+
+    const parsedArgs = {
+                        managedUser: typeof args.managedUser === 'object'
+                ? args.managedUser.id
+                : args.managedUser,
+                }
+
+    return reactivate.definition.url
+            .replace('{managedUser}', parsedArgs.managedUser.toString())
+            .replace(/\/+$/, '') + queryParams(options)
+}
+
+/**
+* @see \App\Http\Controllers\Admin\UserManagementController::reactivate
+ * @see app/Http/Controllers/Admin/UserManagementController.php:275
+ * @route '/admin/users/{managedUser}/reactivate'
+ */
+reactivate.patch = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
+    url: reactivate.url(args, options),
+    method: 'patch',
+})
+
+    /**
+* @see \App\Http\Controllers\Admin\UserManagementController::reactivate
+ * @see app/Http/Controllers/Admin/UserManagementController.php:275
+ * @route '/admin/users/{managedUser}/reactivate'
+ */
+    const reactivateForm = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+        action: reactivate.url(args, {
+                    [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                        _method: 'PATCH',
+                        ...(options?.query ?? options?.mergeQuery ?? {}),
+                    }
+                }),
+        method: 'post',
+    })
+
+            /**
+* @see \App\Http\Controllers\Admin\UserManagementController::reactivate
+ * @see app/Http/Controllers/Admin/UserManagementController.php:275
+ * @route '/admin/users/{managedUser}/reactivate'
+ */
+        reactivateForm.patch = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: reactivate.url(args, {
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'PATCH',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
+        })
+    
+    reactivate.form = reactivateForm
 const users = {
     index: Object.assign(index, index),
 create: Object.assign(create, create),
@@ -497,6 +586,7 @@ store: Object.assign(store, store),
 edit: Object.assign(edit, edit),
 update: Object.assign(update, update),
 deactivate: Object.assign(deactivate, deactivate),
+reactivate: Object.assign(reactivate, reactivate),
 }
 
 export default users

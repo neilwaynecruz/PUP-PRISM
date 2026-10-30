@@ -20,8 +20,14 @@ import { edit as usersEdit, index as usersIndex } from '@/routes/admin/users';
 
 type PositionOption = {
     id: number;
+    title: string;
+    code: string;
+    department: string | null;
+    is_active: boolean;
     label: string;
 };
+
+type RoleDescription = { summary: string; abilities: string[] };
 
 type ManagedUser = {
     id: number;
@@ -39,9 +45,12 @@ type ManagedUser = {
 const props = defineProps<{
     user: ManagedUser;
     roles: string[];
+    roleDescriptions: Record<string, RoleDescription>;
     positions: PositionOption[];
     can: {
         deactivate: boolean;
+        reactivate: boolean;
+        changeRole: boolean;
     };
 }>();
 
@@ -66,18 +75,32 @@ const form = useForm({
 
 const deactivateDialogOpen = ref(false);
 const deactivating = ref(false);
+const reactivating = ref(false);
+
+const groupedPositions = computed(() => {
+    const groups = new Map<string, PositionOption[]>();
+
+    for (const position of props.positions) {
+        const department = position.department ?? 'No department';
+        groups.set(department, [...(groups.get(department) ?? []), position]);
+    }
+
+    return [...groups.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([department, positions]) => ({ department, positions }));
+});
 
 const deactivateHint = computed(() => {
+    if (!props.user.is_active) {
+        return 'This account is inactive. The person cannot sign in until it is reactivated.';
+    }
+
     if (props.user.is_self) {
-        return 'You cannot deactivate your own account.';
+        return 'This is your own account. You cannot deactivate it or change your role.';
     }
 
     if (props.user.is_last_active_admin) {
-        return 'This is the last active Admin account and must remain active.';
-    }
-
-    if (!props.user.is_active) {
-        return 'This account is already inactive.';
+        return 'This is the last active Admin account, so it must stay active and keep the Admin role.';
     }
 
     return null;
@@ -85,6 +108,17 @@ const deactivateHint = computed(() => {
 
 function submit(): void {
     form.put(UserManagementController.update(props.user.id).url);
+}
+
+function reactivateUser(): void {
+    router.patch(
+        UserManagementController.reactivate(props.user.id).url,
+        undefined,
+        {
+            onStart: () => (reactivating.value = true),
+            onFinish: () => (reactivating.value = false),
+        },
+    );
 }
 
 function deactivateUser(): void {
@@ -107,13 +141,41 @@ function deactivateUser(): void {
     <Head :title="`Edit ${user.name}`" />
 
     <div class="flex flex-col gap-6 p-4 sm:p-6">
-        <Heading variant="small" title="Edit user" :description="user.email" />
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        >
+            <Heading
+                variant="small"
+                title="Edit user"
+                :description="user.email"
+            />
+            <span
+                class="inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-semibold"
+                :class="
+                    user.is_active
+                        ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                        : 'border-border bg-muted text-muted-foreground'
+                "
+            >
+                {{ user.is_active ? 'Active account' : 'Inactive account' }}
+            </span>
+        </div>
 
         <div
             v-if="deactivateHint"
-            class="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200"
+            class="flex flex-col gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between dark:text-amber-200"
         >
-            {{ deactivateHint }}
+            <span>{{ deactivateHint }}</span>
+            <Button
+                v-if="can.reactivate"
+                type="button"
+                size="sm"
+                :disabled="reactivating"
+                data-testid="reactivate-user-button"
+                @click="reactivateUser"
+            >
+                {{ reactivating ? 'Reactivating…' : 'Reactivate account' }}
+            </Button>
         </div>
 
         <form class="grid gap-6" @submit.prevent="submit">
@@ -140,7 +202,8 @@ function deactivateUser(): void {
                     <select
                         id="role"
                         v-model="form.role"
-                        class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                        class="h-10 rounded-lg border border-input bg-background px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                        :disabled="!can.changeRole"
                         required
                     >
                         <option value="">Select role</option>
@@ -148,7 +211,33 @@ function deactivateUser(): void {
                             {{ role }}
                         </option>
                     </select>
+                    <p
+                        v-if="!can.changeRole"
+                        class="text-xs text-muted-foreground"
+                    >
+                        Another Admin must change your role.
+                    </p>
                     <InputError :message="form.errors.role" />
+                    <div
+                        v-if="form.role && roleDescriptions[form.role]"
+                        class="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs"
+                        data-testid="role-description"
+                    >
+                        <p class="font-medium text-foreground">
+                            {{ roleDescriptions[form.role].summary }}
+                        </p>
+                        <ul
+                            class="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground"
+                        >
+                            <li
+                                v-for="ability in roleDescriptions[form.role]
+                                    .abilities"
+                                :key="ability"
+                            >
+                                {{ ability }}
+                            </li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="grid gap-2">
@@ -159,14 +248,26 @@ function deactivateUser(): void {
                         class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
                     >
                         <option value="">No assigned position</option>
-                        <option
-                            v-for="position in positions"
-                            :key="position.id"
-                            :value="String(position.id)"
+                        <optgroup
+                            v-for="group in groupedPositions"
+                            :key="group.department"
+                            :label="group.department"
                         >
-                            {{ position.label }}
-                        </option>
+                            <option
+                                v-for="position in group.positions"
+                                :key="position.id"
+                                :value="String(position.id)"
+                            >
+                                {{ position.title }} ({{ position.code }}){{
+                                    position.is_active ? '' : ' — inactive'
+                                }}
+                            </option>
+                        </optgroup>
                     </select>
+                    <p class="text-xs text-muted-foreground">
+                        The position decides which assets this person is
+                        accountable for during handovers.
+                    </p>
                     <InputError :message="form.errors.position_id" />
                 </div>
             </div>
@@ -177,6 +278,7 @@ function deactivateUser(): void {
                 </Button>
 
                 <Button
+                    v-if="user.is_active"
                     type="button"
                     variant="destructive"
                     :disabled="!can.deactivate"
@@ -195,8 +297,9 @@ function deactivateUser(): void {
             <DialogHeader>
                 <DialogTitle>Deactivate user account?</DialogTitle>
                 <DialogDescription>
-                    This keeps the user record for audit history but blocks
-                    future logins.
+                    This keeps the user record for audit history, blocks future
+                    sign-ins, and signs them out of every device and API token.
+                    You can reactivate the account later.
                 </DialogDescription>
             </DialogHeader>
 

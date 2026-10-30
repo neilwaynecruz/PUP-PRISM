@@ -50,16 +50,27 @@ class RequisitionController extends Controller
         $status = $request->statusFilter();
 
         $requisitions = Requisition::query()
-            ->with(['requester:id,name,email', 'requesterPosition:id,department_id,title', 'requesterPosition.department:id,name'])
+            ->with([
+                'requester:id,name,email',
+                'requesterPosition:id,department_id,title',
+                'requesterPosition.department:id,name',
+                'lines:id,requisition_id,product_id,qty_requested,qty_issued',
+                'lines.product:id,sku,name,type',
+            ])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
-                    if (ctype_digit($search)) {
-                        $query->whereKey((int) $search);
+                    $searchId = ltrim($search, '#');
+
+                    if (ctype_digit($searchId)) {
+                        $query->whereKey((int) $searchId);
                     }
 
                     $query->orWhereHas('requester', function ($query) use ($search) {
                         $query->where('name', 'like', "%{$search}%")
                             ->orWhere('email', 'like', "%{$search}%");
+                    })->orWhereHas('lines.product', function ($query) use ($search) {
+                        $query->where('name', 'like', "%{$search}%")
+                            ->orWhere('sku', 'like', "%{$search}%");
                     });
                 });
             })
@@ -84,6 +95,12 @@ class RequisitionController extends Controller
                 'label' => $case->value,
             ])->values()->all(),
             'requisitions' => (new RequisitionCollection($requisitions))->toArray($request),
+            'statusCounts' => Requisition::query()
+                ->selectRaw('status, count(*) as aggregate')
+                ->groupBy('status')
+                ->pluck('aggregate', 'status')
+                ->map(fn ($count): int => (int) $count)
+                ->all(),
             'exportUrls' => [
                 'csv' => route('inventory.reports.requisitions', ['format' => 'csv'], absolute: false),
                 'pdf' => route('inventory.reports.requisitions', ['format' => 'pdf'], absolute: false),

@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Models\Department;
 use App\Models\Position;
+use App\Rules\UniqueIgnoringCase;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -25,9 +26,9 @@ class StorePositionRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('positions', 'title')->where(fn ($query) => $query->where('department_id', $this->integer('department_id'))),
+                (new UniqueIgnoringCase('positions', 'title'))->where('department_id', $this->integer('department_id')),
             ],
-            'code' => ['required', 'string', 'max:50', 'unique:positions,code'],
+            'code' => ['required', 'string', 'max:50', new UniqueIgnoringCase('positions', 'code')],
             'is_active' => ['required', 'boolean'],
         ];
     }

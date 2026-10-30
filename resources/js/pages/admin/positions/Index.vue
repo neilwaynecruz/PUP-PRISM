@@ -96,28 +96,103 @@ onBeforeUnmount(() => window.clearTimeout(timer));
         <div
             class="grid gap-3 rounded-xl border border-border/60 bg-card/70 p-3 shadow-xs sm:grid-cols-4 sm:p-4"
         >
-            <Input
-                v-model="search"
-                placeholder="Search title, code, department..."
-                class="h-10 rounded-lg shadow-xs sm:col-span-2"
-            />
-            <select v-model="departmentId" :class="selectClass">
-                <option value="">All departments</option>
-                <option
-                    v-for="dept in departments"
-                    :key="dept.id"
-                    :value="String(dept.id)"
+            <label
+                class="grid gap-1.5 text-xs font-medium text-muted-foreground sm:col-span-2"
+            >
+                Search positions
+                <Input
+                    v-model="search"
+                    name="position_search"
+                    autocomplete="off"
+                    placeholder="Title, code, or department…"
+                    class="min-h-11 rounded-lg shadow-xs sm:min-h-10"
+                />
+            </label>
+            <label
+                class="grid gap-1.5 text-xs font-medium text-muted-foreground"
+            >
+                Department
+                <select
+                    v-model="departmentId"
+                    name="position_department"
+                    autocomplete="off"
+                    :class="[selectClass, 'min-h-11 sm:min-h-10']"
                 >
-                    {{ dept.name }}
-                </option>
-            </select>
-            <select v-model="active" :class="selectClass">
-                <option value="">All statuses</option>
-                <option value="1">Active</option>
-                <option value="0">Inactive</option>
-            </select>
+                    <option value="">All departments</option>
+                    <option
+                        v-for="dept in departments"
+                        :key="dept.id"
+                        :value="String(dept.id)"
+                    >
+                        {{ dept.name }}
+                    </option>
+                </select>
+            </label>
+            <label
+                class="grid gap-1.5 text-xs font-medium text-muted-foreground"
+            >
+                Status
+                <select
+                    v-model="active"
+                    name="position_status"
+                    autocomplete="off"
+                    :class="[selectClass, 'min-h-11 sm:min-h-10']"
+                >
+                    <option value="">All statuses</option>
+                    <option value="1">Active</option>
+                    <option value="0">Inactive</option>
+                </select>
+            </label>
         </div>
-        <AdminTableShell min-width="1160px">
+        <div v-if="positions.data.length" class="grid gap-3 md:hidden">
+            <article
+                v-for="row in positions.data"
+                :key="`mobile-${row.id}`"
+                class="rounded-xl border border-border/70 bg-card p-4 shadow-xs"
+            >
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h2 class="font-semibold break-words">
+                            {{ row.title }}
+                        </h2>
+                        <p class="mt-1 text-sm text-muted-foreground">
+                            {{ row.department ?? 'No department assigned' }}
+                        </p>
+                    </div>
+                    <AdminStatusBadge :active="row.is_active" />
+                </div>
+                <dl class="mt-4 grid grid-cols-3 gap-3 text-sm">
+                    <div>
+                        <dt class="text-xs text-muted-foreground">Code</dt>
+                        <dd class="mt-1">
+                            <AdminCodeBadge :value="row.code" />
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">Users</dt>
+                        <dd class="mt-1">
+                            <AdminCountBadge :value="row.users_count" />
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs text-muted-foreground">Assets</dt>
+                        <dd class="mt-1">
+                            <AdminCountBadge :value="row.assets_count" />
+                        </dd>
+                    </div>
+                </dl>
+                <Button variant="outline" class="mt-4 w-full" as-child>
+                    <Link :href="edit(row.id)">Edit Position</Link>
+                </Button>
+            </article>
+        </div>
+        <div
+            v-else
+            class="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground md:hidden"
+        >
+            No positions found.
+        </div>
+        <AdminTableShell class="hidden md:block" min-width="1160px">
             <colgroup>
                 <col class="w-[26%]" />
                 <col class="w-[13%]" />

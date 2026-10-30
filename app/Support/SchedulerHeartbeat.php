@@ -30,6 +30,23 @@ class SchedulerHeartbeat
         ];
     }
 
+    /**
+     * How each tracked command is scheduled in routes/console.php, with the
+     * longest gap (in hours) allowed before its heartbeat is considered stale.
+     *
+     * @return array<string, array{label: string, schedule: string, max_gap_hours: int}>
+     */
+    public static function expectations(): array
+    {
+        return [
+            self::COMMAND_GENERATE_DEMAND_FORECASTS => ['label' => 'Demand forecasts', 'schedule' => 'Daily at 1:30 AM', 'max_gap_hours' => 26],
+            self::COMMAND_INVENTORY_GENERATE_ALERTS => ['label' => 'Inventory alerts', 'schedule' => 'Daily at 2:00 AM', 'max_gap_hours' => 26],
+            self::COMMAND_SEND_NOTIFICATION_DIGESTS => ['label' => 'Notification digests', 'schedule' => 'Daily at 8:00 AM', 'max_gap_hours' => 26],
+            self::COMMAND_TRASH_CLEANUP => ['label' => 'Trash cleanup', 'schedule' => 'Daily at midnight', 'max_gap_hours' => 26],
+            self::COMMAND_PRUNE_OPERATIONAL_DATA => ['label' => 'Operational data pruning', 'schedule' => 'Weekly, Sunday 3:30 AM', 'max_gap_hours' => 180],
+        ];
+    }
+
     public static function record(string $command): void
     {
         Cache::put(

@@ -25,6 +25,9 @@ test('admin health endpoint returns queue and scheduler metadata', function () {
         ->assertOk()
         ->assertJsonStructure([
             'status',
+            'summary',
+            'checked_at',
+            'checks' => ['application', 'database', 'cache', 'queue', 'scheduler', 'realtime', 'storage'],
             'failed_jobs_count',
             'queue_connection',
             'scheduler_last_runs' => [
@@ -46,7 +49,10 @@ test('admin health endpoint returns queue and scheduler metadata', function () {
                 'recommended_worker_command',
             ],
         ])
-        ->assertJsonPath('status', 'ok')
+        // The test environment uses the sync queue, which is reported as a warning rather than assumed healthy.
+        ->assertJsonPath('status', 'degraded')
+        ->assertJsonPath('checks.database', 'healthy')
+        ->assertJsonPath('checks.queue', 'warning')
         ->assertJsonPath('queue_connection', config('queue.default'))
         ->assertJsonPath(
             'scheduler_last_runs.'.SchedulerHeartbeat::COMMAND_TRASH_CLEANUP,

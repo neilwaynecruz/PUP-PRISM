@@ -1,7 +1,17 @@
 <script setup lang="ts">
 import { Head, Link, router, useForm } from '@inertiajs/vue3';
-import { AlertTriangle, Package } from 'lucide-vue-next';
+import {
+    AlertTriangle,
+    ClipboardList,
+    Minus,
+    MoreHorizontal,
+    Package,
+    Plus,
+    Search,
+    Trash2,
+} from 'lucide-vue-next';
 import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
@@ -19,6 +29,13 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -53,6 +70,18 @@ type ReqRow = {
     requester: { id: number; name: string | null; email: string | null };
     requester_position: { title: string; department: string | null } | null;
     can_delete: boolean;
+    lines: Array<{
+        id: number;
+        sku: string | null;
+        name: string | null;
+        qty_requested: number;
+        qty_issued: number;
+    }>;
+    totals: {
+        line_count: number;
+        qty_requested: number;
+        qty_issued: number;
+    } | null;
 };
 
 type TemplateLine = {
@@ -75,7 +104,13 @@ type TemplateSummary = {
 };
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
-type Paginated<T> = { data: T[]; links: PaginationLink[] };
+type Paginated<T> = {
+    data: T[];
+    links: PaginationLink[];
+    total: number;
+    from: number | null;
+    to: number | null;
+};
 
 type DraftLine = {
     key: string;
@@ -102,6 +137,7 @@ const props = defineProps<{
     };
     statusOptions: Array<{ value: string; label: string }>;
     requisitions: Paginated<ReqRow>;
+    statusCounts: Record<string, number>;
     templates: TemplateSummary[];
     exportUrls: { csv: string; pdf: string };
     can: { bulkApprove: boolean; bulkIssue: boolean; manageTemplates: boolean };
@@ -747,6 +783,138 @@ function confirmDelete(): void {
     });
 }
 
+// ── Composer conveniences ──
+const filledLines = computed(() =>
+    requisitionForm.lines.filter(
+        (line) => String(line.sku ?? '').trim() !== '',
+    ),
+);
+
+const composerTotals = computed(() => ({
+    items: filledLines.value.length,
+    units: filledLines.value.reduce(
+        (sum, line) => sum + (Number.parseInt(line.qty_requested, 10) || 0),
+        0,
+    ),
+    shortages: filledLines.value.filter(
+        (line) =>
+            line.on_hand_qty !== null &&
+            line.on_hand_qty !== undefined &&
+            (Number.parseInt(line.qty_requested, 10) || 0) > line.on_hand_qty,
+    ).length,
+}));
+
+function stepQuantity(line: DraftLine, delta: number): void {
+    const next = Math.max(
+        1,
+        Math.min(
+            1000000,
+            (Number.parseInt(line.qty_requested, 10) || 0) + delta,
+        ),
+    );
+    line.qty_requested = String(next);
+    updateLineAvailabilityWarning(line);
+}
+
+function targetLineForNewProduct(): number {
+    const emptyIndex = requisitionForm.lines.findIndex(
+        (line) => !String(line.sku ?? '').trim(),
+    );
+
+    if (emptyIndex !== -1) {
+        return emptyIndex;
+    }
+
+    requisitionForm.lines.push(makeDraftLine());
+
+    return requisitionForm.lines.length - 1;
+}
+
+function onToolbarScan(sku: string): void {
+    const index = targetLineForNewProduct();
+
+    void onSkuScanned(requisitionForm.lines[index], sku, index);
+}
+
+function openCatalog(): void {
+    targetLineIndex.value = null;
+    catalogDialogOpen.value = true;
+}
+
+function clearComposer(): void {
+    requisitionForm.lines = [makeDraftLine()];
+    requisitionForm.notes = '';
+    requisitionForm.clearErrors();
+}
+
+// ── List presentation ──
+const statusTabs = computed(() => {
+    const counts = props.statusCounts ?? {};
+    const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+
+    return [
+        { value: 'all', label: 'All', count: total },
+        ...props.statusOptions
+            .filter(
+                (option) =>
+                    option.value !== 'Draft' || (counts[option.value] ?? 0) > 0,
+            )
+            .map((option) => ({
+                value: option.value,
+                label: formatStatusLabel(option.label),
+                count: counts[option.value] ?? 0,
+            })),
+    ];
+});
+
+function statusBadgeClass(value: string): string {
+    switch (value) {
+        case 'Submitted':
+            return 'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300';
+        case 'Approved':
+            return 'border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-300';
+        case 'PartiallyIssued':
+        case 'Backordered':
+            return 'border-violet-500/25 bg-violet-500/10 text-violet-700 dark:text-violet-300';
+        case 'Issued':
+        case 'Closed':
+            return 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
+        case 'Rejected':
+            return 'border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-300';
+        default:
+            return 'border-border bg-muted/60 text-muted-foreground';
+    }
+}
+
+function itemsSummary(row: ReqRow): string {
+    if (!row.lines?.length) {
+        return 'No items';
+    }
+
+    const names = row.lines
+        .slice(0, 2)
+        .map(
+            (line) =>
+                `${line.name ?? line.sku ?? 'Item'} ×${line.qty_requested}`,
+        );
+    const remaining = row.lines.length - names.length;
+
+    return remaining > 0
+        ? `${names.join(', ')} +${remaining} more`
+        : names.join(', ');
+}
+
+function issuedPercent(row: ReqRow): number {
+    if (!row.totals || row.totals.qty_requested === 0) {
+        return 0;
+    }
+
+    return Math.min(
+        100,
+        Math.round((row.totals.qty_issued / row.totals.qty_requested) * 100),
+    );
+}
+
 const bulkActionDialogOpen = ref(false);
 const pendingBulkAction = ref<'approve' | 'issue' | null>(null);
 const bulkActionProcessing = ref(false);
@@ -831,790 +999,336 @@ function confirmBulkAction(): void {
             </div>
         </div>
 
-        <fieldset
-            class="grid gap-3 rounded-xl border border-border/60 bg-card p-4 shadow-sm md:grid-cols-2 lg:grid-cols-4"
-        >
-            <legend class="sr-only">Filter requisitions</legend>
-            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                Search
-                <Input
-                    v-model="search"
-                    name="requisition_search"
-                    autocomplete="off"
-                    placeholder="Requisition number or requester…"
-                />
-            </label>
-            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                Status
-                <Select v-model="status">
-                    <SelectTrigger aria-label="Requisition status">
-                        <SelectValue placeholder="All statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All statuses</SelectItem>
-                        <SelectItem
-                            v-for="option in statusOptions"
-                            :key="option.value"
-                            :value="option.value"
-                        >
-                            {{ formatStatusLabel(option.label) }}
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-            </label>
-            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                Submitted on or after
-                <Input
-                    v-model="dateFrom"
-                    name="requisition_date_from"
-                    type="date"
-                />
-            </label>
-            <label class="grid gap-1 text-xs font-medium text-muted-foreground">
-                Submitted on or before
-                <Input
-                    v-model="dateTo"
-                    name="requisition_date_to"
-                    type="date"
-                />
-            </label>
-        </fieldset>
-
         <div
-            v-if="
-                (props.can.bulkApprove || props.can.bulkIssue) && hasSelection
-            "
-            class="flex flex-wrap items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-sm"
+            class="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]"
         >
-            <span class="font-medium text-primary"
-                >{{ selectedIds.size }} selected</span
+            <section
+                class="rounded-xl border border-border/60 bg-card shadow-sm"
+                aria-labelledby="new-requisition-heading"
             >
-            <div class="ml-auto flex flex-wrap gap-2">
-                <Button
-                    v-if="props.can.bulkApprove"
-                    variant="outline"
-                    size="sm"
-                    class="h-7 rounded-lg text-xs"
-                    @click="runBulkApprove"
-                    >Approve</Button
+                <form
+                    class="grid gap-0"
+                    data-shortcut="new"
+                    @submit.prevent="submitRequisition"
                 >
-                <Button
-                    v-if="props.can.bulkIssue"
-                    variant="outline"
-                    size="sm"
-                    class="h-7 rounded-lg text-xs"
-                    @click="runBulkIssue"
-                    >Issue</Button
-                >
-            </div>
-        </div>
-
-        <div class="grid gap-6 lg:grid-cols-3">
-            <div
-                class="rounded-xl border border-border/60 bg-card p-5 shadow-sm lg:col-span-2"
-            >
-                <div
-                    v-if="requisitions.data.length === 0"
-                    class="rounded-xl border border-dashed border-border/60 px-4 py-10 text-center"
-                >
-                    <p class="text-sm font-medium">No requisitions found</p>
-                    <p class="mt-1 text-sm text-muted-foreground">
-                        No requisitions are available in this view. Try changing
-                        the search, status, or dates.
-                    </p>
-                </div>
-
-                <div
-                    v-if="requisitions.data.length"
-                    class="grid gap-3 md:hidden"
-                >
-                    <div
-                        v-for="r in requisitions.data"
-                        :key="r.id"
-                        class="rounded-xl border border-border/40 p-4 text-sm transition-colors"
-                        :class="{ 'bg-primary/5': selectedIds.has(r.id) }"
+                    <header
+                        class="flex flex-col gap-3 border-b border-border/50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
                     >
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-2">
-                                <Checkbox
-                                    v-if="
-                                        props.can.bulkApprove ||
-                                        props.can.bulkIssue
-                                    "
-                                    :model-value="selectedIds.has(r.id)"
-                                    @update:model-value="
-                                        () => toggleSelect(r.id)
-                                    "
-                                    aria-label="Select requisition"
-                                />
-                                <span class="font-medium">#{{ r.id }}</span>
-                            </div>
-                            <div class="text-muted-foreground">
-                                {{ formatStatusLabel(r.status) }}
-                            </div>
-                        </div>
-                        <div class="mt-2 space-y-1 text-muted-foreground">
-                            <div>
-                                {{
-                                    r.requester.name ?? r.requester.email ?? '—'
-                                }}
-                            </div>
-                            <div v-if="r.requester_position">
-                                {{ r.requester_position.title
-                                }}{{
-                                    r.requester_position.department
-                                        ? `, ${r.requester_position.department}`
-                                        : ''
-                                }}
-                            </div>
-                            <div>{{ formatDateTime(r.created_at) }}</div>
-                        </div>
-                        <div class="mt-3 flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                as-child
-                                data-testid="open-requisition-button"
-                            >
-                                <Link :href="requisitionsShow(r.id)"
-                                    >View Details</Link
-                                >
-                            </Button>
-                            <Button
-                                v-if="r.can_delete"
-                                variant="ghost"
-                                size="sm"
-                                class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
-                                @click="openDeleteDialog(r)"
-                            >
-                                Move to Trash
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                <div
-                    v-if="requisitions.data.length"
-                    class="hidden overflow-x-auto md:block"
-                >
-                    <table class="w-full text-sm">
-                        <caption class="sr-only">
-                            Requisitions with status, requester, submission
-                            date, and actions
-                        </caption>
-                        <thead
-                            class="text-left text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase"
-                        >
-                            <tr class="border-b border-border/60">
-                                <th
-                                    v-if="
-                                        props.can.bulkApprove ||
-                                        props.can.bulkIssue
-                                    "
-                                    class="w-8 py-2 pr-2"
-                                >
-                                    <Checkbox
-                                        :model-value="
-                                            allSelected
-                                                ? true
-                                                : someSelected
-                                                  ? 'indeterminate'
-                                                  : false
-                                        "
-                                        @update:model-value="toggleSelectAll"
-                                        aria-label="Select all requisitions"
-                                    />
-                                </th>
-                                <th scope="col" class="py-2 pr-3">ID</th>
-                                <th scope="col" class="py-2 pr-3">Status</th>
-                                <th scope="col" class="py-2 pr-3">Requester</th>
-                                <th scope="col" class="py-2 pr-3">Submitted</th>
-                                <th scope="col" class="py-2 pr-3 text-right">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr
-                                v-for="r in requisitions.data"
-                                :key="r.id"
-                                class="border-b border-border/40 transition-colors"
-                                :class="{
-                                    'bg-primary/5': selectedIds.has(r.id),
-                                }"
-                            >
-                                <td
-                                    v-if="
-                                        props.can.bulkApprove ||
-                                        props.can.bulkIssue
-                                    "
-                                    class="py-2 pr-2"
-                                >
-                                    <Checkbox
-                                        :model-value="selectedIds.has(r.id)"
-                                        @update:model-value="
-                                            () => toggleSelect(r.id)
-                                        "
-                                        aria-label="Select requisition"
-                                    />
-                                </td>
-                                <td class="py-2 pr-3 font-medium">
-                                    #{{ r.id }}
-                                </td>
-                                <td class="py-2 pr-3">
-                                    {{ formatStatusLabel(r.status) }}
-                                </td>
-                                <td class="py-2 pr-3">
-                                    <div>
-                                        {{
-                                            r.requester.name ??
-                                            r.requester.email ??
-                                            '—'
-                                        }}
-                                    </div>
-                                    <div
-                                        v-if="r.requester_position"
-                                        class="text-xs text-muted-foreground"
-                                    >
-                                        {{ r.requester_position.title
-                                        }}{{
-                                            r.requester_position.department
-                                                ? `, ${r.requester_position.department}`
-                                                : ''
-                                        }}
-                                    </div>
-                                </td>
-                                <td class="py-2 pr-3 text-muted-foreground">
-                                    {{ formatDateTime(r.created_at) }}
-                                </td>
-                                <td class="py-2 pr-3 text-right">
-                                    <div
-                                        class="flex items-center justify-end gap-1"
-                                    >
-                                        <Button
-                                            variant="ghost"
-                                            as-child
-                                            data-testid="open-requisition-button"
-                                        >
-                                            <Link :href="requisitionsShow(r.id)"
-                                                >View Details</Link
-                                            >
-                                        </Button>
-                                        <Button
-                                            v-if="r.can_delete"
-                                            variant="ghost"
-                                            size="sm"
-                                            class="h-8 rounded-lg text-xs text-rose-600 hover:text-rose-700"
-                                            @click="openDeleteDialog(r)"
-                                        >
-                                            Move to Trash
-                                        </Button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div class="grid gap-6">
-                <div
-                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-                >
-                    <div class="mb-4 flex items-start justify-between gap-3">
                         <div>
-                            <div class="text-sm font-semibold tracking-tight">
-                                Saved templates
-                            </div>
-                            <div class="text-xs text-muted-foreground">
-                                Reuse frequent requisitions without bypassing
-                                stock checks or approvals.
-                            </div>
+                            <h2
+                                id="new-requisition-heading"
+                                class="text-sm font-semibold"
+                            >
+                                New requisition
+                            </h2>
+                            <p class="text-xs text-muted-foreground">
+                                Add products by typing a name or SKU, scanning a
+                                label, or browsing the catalog. Stock is checked
+                                again when items are issued.
+                            </p>
                         </div>
-                        <span
-                            class="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
-                        >
-                            {{ templates.length }} saved
-                        </span>
-                    </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                class="h-8 gap-1.5 rounded-lg text-xs"
+                                @click="openCatalog"
+                            >
+                                <Package class="h-3.5 w-3.5" />
+                                <span>Browse Catalog</span>
+                            </Button>
+                            <QrScannerDialog
+                                button-label="Scan"
+                                button-size="sm"
+                                title="Scan product label"
+                                description="Scan a product QR label to add it to this requisition, or type the SKU in a line below."
+                                @scanned="onToolbarScan"
+                            />
+                        </div>
+                    </header>
 
-                    <div
-                        v-if="templates.length === 0"
-                        class="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground"
-                    >
-                        No requisition templates yet. Build a request below,
-                        then save it as a reusable template.
-                    </div>
-
-                    <div v-else class="grid gap-3">
+                    <div class="px-5 py-4">
                         <div
-                            v-for="template in templates"
-                            :key="template.id"
-                            class="rounded-xl border border-border/50 p-4"
+                            class="hidden grid-cols-[1.5rem_minmax(0,1fr)_9rem_2rem] gap-3 px-1 pb-2 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase md:grid"
+                            aria-hidden="true"
                         >
-                            <div class="flex items-start justify-between gap-3">
-                                <div>
-                                    <div class="font-medium">
-                                        {{ template.name }}
-                                    </div>
-                                    <div class="text-xs text-muted-foreground">
-                                        {{ template.line_count }} line<span
-                                            v-if="template.line_count !== 1"
-                                            >s</span
-                                        >
-                                        • Updated
-                                        {{
-                                            formatDateTime(template.updated_at)
-                                        }}
-                                    </div>
-                                </div>
-                                <span
-                                    class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium"
-                                    :class="
-                                        template.lines.some(
-                                            (line) =>
-                                                !line.availability.available,
-                                        )
-                                            ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
-                                            : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                                    "
-                                >
-                                    {{
-                                        template.lines.some(
-                                            (line) =>
-                                                !line.availability.available,
-                                        )
-                                            ? 'Needs review'
-                                            : 'Ready'
-                                    }}
-                                </span>
-                            </div>
-
-                            <div
-                                v-if="template.notes"
-                                class="mt-2 text-sm text-muted-foreground"
-                            >
-                                {{ template.notes }}
-                            </div>
-
-                            <div class="mt-3 grid gap-2 text-sm">
-                                <div
-                                    v-for="(
-                                        line, index
-                                    ) in template.lines.slice(0, 3)"
-                                    :key="`${template.id}-${line.sku}-${index}`"
-                                    class="rounded-lg bg-muted/40 px-3 py-2"
-                                >
-                                    <div
-                                        class="flex items-center justify-between gap-3"
-                                    >
-                                        <div>
-                                            <div class="font-medium">
-                                                {{ line.name ?? line.sku }}
-                                            </div>
-                                            <div
-                                                class="font-mono text-[11px] text-muted-foreground"
-                                            >
-                                                {{ line.sku }}
-                                            </div>
-                                        </div>
-                                        <div
-                                            class="text-xs font-medium text-muted-foreground"
-                                        >
-                                            Qty {{ line.qty_requested }}
-                                        </div>
-                                    </div>
-                                    <div
-                                        v-if="line.availability.message"
-                                        class="mt-1 text-xs text-amber-700 dark:text-amber-400"
-                                    >
-                                        {{ line.availability.message }}
-                                    </div>
-                                </div>
-                                <div
-                                    v-if="template.lines.length > 3"
-                                    class="text-xs text-muted-foreground"
-                                >
-                                    +{{ template.lines.length - 3 }} more
-                                    line<span
-                                        v-if="template.lines.length - 3 !== 1"
-                                        >s</span
-                                    >
-                                </div>
-                            </div>
-
-                            <div class="mt-4 flex flex-wrap gap-2">
-                                <Button
-                                    size="sm"
-                                    class="rounded-lg"
-                                    @click="applyTemplate(template)"
-                                    >Use template</Button
-                                >
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    class="rounded-lg"
-                                    @click="openTemplateEditor(template)"
-                                    >Edit</Button
-                                >
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    class="rounded-lg"
-                                    @click="duplicateTemplate(template)"
-                                    >Duplicate</Button
-                                >
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    class="rounded-lg text-rose-600 hover:text-rose-700"
-                                    @click="openTemplateDeleteDialog(template)"
-                                >
-                                    Delete
-                                </Button>
-                            </div>
+                            <span>#</span>
+                            <span>Product</span>
+                            <span>Quantity</span>
+                            <span />
                         </div>
-                    </div>
-                </div>
 
-                <div
-                    class="rounded-xl border border-border/60 bg-card p-5 shadow-sm"
-                >
-                    <form
-                        class="grid gap-4"
-                        data-shortcut="new"
-                        @submit.prevent="submitRequisition"
-                    >
-                        <Heading
-                            variant="small"
-                            :level="2"
-                            title="New requisition"
-                            description="Add each product and the quantity you need. After submission, the request must be approved before items can be issued."
-                        />
-
-                        <div class="grid gap-3">
-                            <div
-                                class="flex flex-wrap items-center justify-between gap-2"
-                            >
-                                <Label class="text-sm font-semibold"
-                                    >Line items</Label
-                                >
-                                <div class="flex items-center gap-2">
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        class="h-8 gap-1.5 rounded-lg text-xs text-primary hover:bg-primary/5"
-                                        @click="
-                                            targetLineIndex = null;
-                                            catalogDialogOpen = true;
-                                        "
-                                    >
-                                        <Package class="h-3.5 w-3.5" />
-                                        <span>Browse Catalog</span>
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        class="h-8 rounded-lg text-xs"
-                                        @click="addRequestLine"
-                                    >
-                                        Add line
-                                    </Button>
-                                </div>
-                            </div>
-
-                            <div
+                        <ol class="grid gap-2" aria-label="Requested items">
+                            <li
                                 v-for="(line, index) in requisitionForm.lines"
                                 :key="line.key"
-                                class="rounded-xl border border-border/50 p-4"
+                                class="grid gap-2 rounded-lg border border-border/50 p-3 md:grid-cols-[1.5rem_minmax(0,1fr)_9rem_2rem] md:items-start md:gap-3 md:border-0 md:border-b md:border-border/40 md:p-1 md:pb-3 md:last:border-b-0"
                             >
-                                <div class="grid gap-3">
-                                    <div
-                                        class="flex items-center justify-between gap-3"
+                                <span
+                                    class="hidden pt-2.5 text-xs font-semibold text-muted-foreground tabular-nums md:block"
+                                    >{{ index + 1 }}</span
+                                >
+
+                                <div class="relative grid min-w-0 gap-1.5">
+                                    <Label
+                                        :for="`line-sku-${line.key}`"
+                                        class="text-xs font-medium md:sr-only"
                                     >
-                                        <div
-                                            class="text-xs font-semibold tracking-wider text-muted-foreground/70 uppercase"
+                                        Item {{ index + 1 }}: product name or
+                                        SKU
+                                    </Label>
+                                    <div class="relative">
+                                        <Search
+                                            class="pointer-events-none absolute top-1/2 left-3 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+                                        />
+                                        <Input
+                                            :id="`line-sku-${line.key}`"
+                                            v-model="line.searchQuery"
+                                            :name="`lines[${index}][sku]`"
+                                            data-testid="requisition-sku-input"
+                                            autocomplete="off"
+                                            placeholder="Type a product name or SKU"
+                                            class="h-9 pl-8"
+                                            required
+                                            role="combobox"
+                                            :aria-expanded="
+                                                Boolean(
+                                                    line.showSuggestions &&
+                                                    line.suggestions?.length,
+                                                )
+                                            "
+                                            :aria-controls="`line-suggestions-${line.key}`"
+                                            @input="onLineSearchInput(line)"
+                                            @focus="
+                                                line.showSuggestions =
+                                                    (line.suggestions?.length ??
+                                                        0) > 0
+                                            "
+                                            @blur="
+                                                hideSuggestionsWithDelay(line)
+                                            "
+                                        />
+                                        <span
+                                            v-if="line.isSearching"
+                                            class="absolute top-1/2 right-3 -translate-y-1/2 text-[11px] text-muted-foreground"
+                                            >Searching…</span
                                         >
-                                            Item {{ index + 1 }}
-                                        </div>
-                                        <div class="flex items-center gap-1.5">
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                class="h-7 rounded-lg px-2 text-xs text-primary hover:bg-primary/5"
-                                                @click="
-                                                    targetLineIndex = index;
-                                                    catalogDialogOpen = true;
+
+                                        <ul
+                                            v-if="
+                                                line.showSuggestions &&
+                                                line.suggestions &&
+                                                line.suggestions.length > 0
+                                            "
+                                            :id="`line-suggestions-${line.key}`"
+                                            role="listbox"
+                                            class="absolute top-full right-0 left-0 z-50 mt-1 max-h-64 overflow-y-auto rounded-xl border border-border/80 bg-popover p-1.5 shadow-lg"
+                                        >
+                                            <li
+                                                v-for="suggestion in line.suggestions"
+                                                :key="suggestion.id"
+                                                role="option"
+                                                class="flex cursor-pointer items-center justify-between gap-2 rounded-lg p-2 text-xs transition hover:bg-accent"
+                                                @mousedown.prevent="
+                                                    selectSuggestion(
+                                                        line,
+                                                        suggestion,
+                                                        index,
+                                                    )
                                                 "
                                             >
-                                                <Package class="mr-1 h-3 w-3" />
-                                                Browse catalog
-                                            </Button>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="sm"
-                                                class="h-7 rounded-lg px-2 text-xs text-muted-foreground hover:text-destructive"
-                                                :disabled="
-                                                    requisitionForm.lines
-                                                        .length === 1
-                                                "
-                                                @click="
-                                                    removeRequestLine(index)
-                                                "
-                                            >
-                                                Remove
-                                            </Button>
-                                        </div>
-                                    </div>
-
-                                    <div
-                                        class="grid gap-3 sm:grid-cols-[1fr_120px]"
-                                    >
-                                        <div class="relative grid gap-2">
-                                            <div
-                                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-                                            >
-                                                <Label
-                                                    :for="`line-sku-${line.key}`"
-                                                    class="text-xs font-medium"
-                                                >
-                                                    Product (Search by name,
-                                                    SKU, or scan)
-                                                </Label>
-                                                <div
-                                                    class="flex items-center gap-2"
-                                                >
-                                                    <QrScannerDialog
-                                                        button-label="Scan QR"
-                                                        title="Scan requisition SKU"
-                                                        description="Use the camera to capture a labeled product QR code, or type the SKU manually."
-                                                        @scanned="
-                                                            onSkuScanned(
-                                                                line,
-                                                                $event,
-                                                                index,
-                                                            )
-                                                        "
-                                                    />
-                                                </div>
-                                            </div>
-
-                                            <div class="relative">
-                                                <Input
-                                                    :id="`line-sku-${line.key}`"
-                                                    v-model="line.searchQuery"
-                                                    :name="`lines[${index}][sku]`"
-                                                    data-testid="requisition-sku-input"
-                                                    autocomplete="off"
-                                                    placeholder="Type product name or enter SKU code..."
-                                                    required
-                                                    @input="
-                                                        onLineSearchInput(line)
-                                                    "
-                                                    @focus="
-                                                        line.showSuggestions =
-                                                            (line.suggestions
-                                                                ?.length ?? 0) >
-                                                            0
-                                                    "
-                                                    @blur="
-                                                        hideSuggestionsWithDelay(
-                                                            line,
-                                                        )
-                                                    "
-                                                />
-
-                                                <!-- Autocomplete suggestions dropdown -->
-                                                <div
-                                                    v-if="
-                                                        line.showSuggestions &&
-                                                        line.suggestions &&
-                                                        line.suggestions
-                                                            .length > 0
-                                                    "
-                                                    class="absolute top-full right-0 left-0 z-50 mt-1 max-h-56 overflow-y-auto rounded-xl border border-border/80 bg-popover p-1.5 shadow-lg backdrop-blur"
-                                                >
+                                                <div class="min-w-0 flex-1">
                                                     <div
-                                                        v-for="suggestion in line.suggestions"
-                                                        :key="suggestion.id"
-                                                        class="flex cursor-pointer items-center justify-between gap-2 rounded-lg p-2 text-xs transition hover:bg-accent"
-                                                        @mousedown.prevent="
-                                                            selectSuggestion(
-                                                                line,
-                                                                suggestion,
-                                                                index,
-                                                            )
-                                                        "
+                                                        class="truncate font-medium text-foreground"
                                                     >
-                                                        <div
-                                                            class="min-w-0 flex-1"
-                                                        >
-                                                            <div
-                                                                class="truncate font-medium text-foreground"
-                                                            >
-                                                                {{
-                                                                    suggestion.name
-                                                                }}
-                                                            </div>
-                                                            <div
-                                                                class="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground"
-                                                            >
-                                                                <span
-                                                                    class="font-mono"
-                                                                    >{{
-                                                                        suggestion.sku
-                                                                    }}</span
-                                                                >
-                                                                <span
-                                                                    v-if="
-                                                                        suggestion.category
-                                                                    "
-                                                                    >•
-                                                                    {{
-                                                                        suggestion.category
-                                                                    }}</span
-                                                                >
-                                                            </div>
-                                                        </div>
+                                                        {{ suggestion.name }}
+                                                    </div>
+                                                    <div
+                                                        class="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground"
+                                                    >
                                                         <span
-                                                            class="shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold"
-                                                            :class="
-                                                                suggestion.on_hand_qty >
-                                                                0
-                                                                    ? 'border-emerald-200 bg-emerald-500/10 text-emerald-700 dark:border-emerald-800 dark:text-emerald-400'
-                                                                    : 'border-rose-200 bg-rose-500/10 text-rose-700 dark:border-rose-800 dark:text-rose-400'
-                                                            "
+                                                            class="font-mono"
+                                                            >{{
+                                                                suggestion.sku
+                                                            }}</span
                                                         >
+                                                        <span
+                                                            v-if="
+                                                                suggestion.category
+                                                            "
+                                                            >·
                                                             {{
-                                                                suggestion.on_hand_qty
-                                                            }}
-                                                            in stock
-                                                        </span>
+                                                                suggestion.category
+                                                            }}</span
+                                                        >
                                                     </div>
                                                 </div>
-                                            </div>
-
-                                            <!-- Selected Product Summary Card -->
-                                            <div
-                                                v-if="line.name"
-                                                class="flex flex-wrap items-center gap-2 rounded-lg border border-border/40 bg-muted/20 px-2.5 py-1.5 text-xs"
-                                            >
                                                 <span
-                                                    class="font-semibold text-foreground"
-                                                    >{{ line.name }}</span
-                                                >
-                                                <Badge
-                                                    variant="outline"
-                                                    class="h-4 px-1 font-mono text-[9px]"
-                                                >
-                                                    {{ line.sku }}
-                                                </Badge>
-                                                <span
-                                                    v-if="line.category"
-                                                    class="text-[11px] text-muted-foreground"
-                                                >
-                                                    {{ line.category }}
-                                                </span>
-                                                <span
-                                                    v-if="
-                                                        line.on_hand_qty !==
-                                                            null &&
-                                                        line.on_hand_qty !==
-                                                            undefined
-                                                    "
-                                                    class="ml-auto text-[11px] font-medium"
+                                                    class="shrink-0 rounded-md border px-1.5 py-0.5 text-[10px] font-semibold"
                                                     :class="
-                                                        line.on_hand_qty > 0
-                                                            ? 'text-emerald-700 dark:text-emerald-400'
-                                                            : 'text-rose-600 dark:text-rose-400'
+                                                        suggestion.on_hand_qty >
+                                                        0
+                                                            ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
+                                                            : 'border-rose-500/25 bg-rose-500/10 text-rose-700 dark:text-rose-400'
                                                     "
                                                 >
-                                                    {{ line.on_hand_qty }}
-                                                    available
+                                                    {{ suggestion.on_hand_qty }}
+                                                    in stock
                                                 </span>
-                                            </div>
-
-                                            <div
-                                                v-if="line.availabilityMessage"
-                                                role="status"
-                                                aria-live="polite"
-                                                class="flex items-start gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400"
-                                            >
-                                                <AlertTriangle
-                                                    class="mt-0.5 h-3.5 w-3.5 shrink-0"
-                                                />
-                                                <span>{{
-                                                    line.availabilityMessage
-                                                }}</span>
-                                            </div>
-
-                                            <InputError
-                                                :message="
-                                                    currentLineError(
-                                                        index,
-                                                        'sku',
-                                                    )
-                                                "
-                                            />
-                                        </div>
-
-                                        <div class="grid gap-2">
-                                            <Label
-                                                :for="`line-qty-${line.key}`"
-                                                class="text-xs font-medium"
-                                                >Quantity</Label
-                                            >
-                                            <Input
-                                                :id="`line-qty-${line.key}`"
-                                                v-model="line.qty_requested"
-                                                :name="`lines[${index}][qty_requested]`"
-                                                data-testid="requisition-qty-input"
-                                                type="number"
-                                                min="1"
-                                                max="1000000"
-                                                inputmode="numeric"
-                                                required
-                                                @input="
-                                                    updateLineAvailabilityWarning(
-                                                        line,
-                                                    )
-                                                "
-                                            />
-                                            <InputError
-                                                :message="
-                                                    currentLineError(
-                                                        index,
-                                                        'qty_requested',
-                                                    )
-                                                "
-                                            />
-                                            <p
-                                                class="text-xs text-muted-foreground"
-                                            >
-                                                Enter the number of units
-                                                needed. Available stock is
-                                                checked again when items are
-                                                issued.
-                                            </p>
-                                        </div>
+                                            </li>
+                                        </ul>
                                     </div>
-                                </div>
-                            </div>
-                        </div>
 
-                        <div class="grid gap-2">
+                                    <div
+                                        v-if="line.name"
+                                        class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs"
+                                    >
+                                        <span
+                                            class="font-medium text-foreground"
+                                            >{{ line.name }}</span
+                                        >
+                                        <Badge
+                                            variant="outline"
+                                            class="h-4 px-1 font-mono text-[10px]"
+                                            >{{ line.sku }}</Badge
+                                        >
+                                        <span
+                                            v-if="line.category"
+                                            class="text-muted-foreground"
+                                            >{{ line.category }}</span
+                                        >
+                                        <span
+                                            v-if="
+                                                line.on_hand_qty !== null &&
+                                                line.on_hand_qty !== undefined
+                                            "
+                                            class="font-medium"
+                                            :class="
+                                                line.on_hand_qty > 0
+                                                    ? 'text-emerald-700 dark:text-emerald-400'
+                                                    : 'text-rose-600 dark:text-rose-400'
+                                            "
+                                        >
+                                            · {{ line.on_hand_qty }} available
+                                        </span>
+                                    </div>
+
+                                    <p
+                                        v-if="line.availabilityMessage"
+                                        role="status"
+                                        aria-live="polite"
+                                        class="flex items-start gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400"
+                                    >
+                                        <AlertTriangle
+                                            class="mt-0.5 h-3.5 w-3.5 shrink-0"
+                                        />
+                                        <span>{{
+                                            line.availabilityMessage
+                                        }}</span>
+                                    </p>
+                                    <InputError
+                                        :message="
+                                            currentLineError(index, 'sku')
+                                        "
+                                    />
+                                </div>
+
+                                <div class="grid gap-1">
+                                    <Label
+                                        :for="`line-qty-${line.key}`"
+                                        class="text-xs font-medium md:sr-only"
+                                        >Quantity</Label
+                                    >
+                                    <div
+                                        class="flex h-9 items-stretch overflow-hidden rounded-md border border-input shadow-xs focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20"
+                                    >
+                                        <button
+                                            type="button"
+                                            class="flex w-8 items-center justify-center text-muted-foreground hover:bg-muted disabled:opacity-40"
+                                            :aria-label="`Decrease quantity for item ${index + 1}`"
+                                            :disabled="
+                                                (Number.parseInt(
+                                                    line.qty_requested,
+                                                    10,
+                                                ) || 0) <= 1
+                                            "
+                                            @click="stepQuantity(line, -1)"
+                                        >
+                                            <Minus class="h-3.5 w-3.5" />
+                                        </button>
+                                        <input
+                                            :id="`line-qty-${line.key}`"
+                                            v-model="line.qty_requested"
+                                            :name="`lines[${index}][qty_requested]`"
+                                            data-testid="requisition-qty-input"
+                                            type="number"
+                                            min="1"
+                                            max="1000000"
+                                            inputmode="numeric"
+                                            required
+                                            class="w-full min-w-0 border-x border-input bg-transparent text-center text-sm tabular-nums focus:outline-none [&::-webkit-inner-spin-button]:appearance-none"
+                                            @input="
+                                                updateLineAvailabilityWarning(
+                                                    line,
+                                                )
+                                            "
+                                        />
+                                        <button
+                                            type="button"
+                                            class="flex w-8 items-center justify-center text-muted-foreground hover:bg-muted"
+                                            :aria-label="`Increase quantity for item ${index + 1}`"
+                                            @click="stepQuantity(line, 1)"
+                                        >
+                                            <Plus class="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+                                    <InputError
+                                        :message="
+                                            currentLineError(
+                                                index,
+                                                'qty_requested',
+                                            )
+                                        "
+                                    />
+                                </div>
+
+                                <div class="flex justify-end md:pt-0.5">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        class="h-8 w-8 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600"
+                                        :aria-label="`Remove item ${index + 1}`"
+                                        @click="removeRequestLine(index)"
+                                    >
+                                        <Trash2 class="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </li>
+                        </ol>
+
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            class="mt-2 h-8 rounded-lg text-xs text-primary hover:bg-primary/5"
+                            @click="addRequestLine"
+                        >
+                            <Plus class="mr-1 h-3.5 w-3.5" />
+                            Add another item
+                        </Button>
+
+                        <div class="mt-4 grid gap-1.5">
                             <Label for="requisition-notes"
-                                >Notes (optional)</Label
+                                >Purpose or notes (optional)</Label
                             >
                             <Input
                                 id="requisition-notes"
                                 v-model="requisitionForm.notes"
                                 name="notes"
                                 data-testid="requisition-notes-input"
-                                placeholder="Explain why or where the items are needed…"
+                                placeholder="e.g. Supplies for the Registrar's enrollment week"
                             />
                             <InputError
                                 :message="
@@ -1623,23 +1337,62 @@ function confirmBulkAction(): void {
                                 "
                             />
                         </div>
+                    </div>
 
+                    <footer
+                        class="sticky bottom-0 z-10 flex flex-col gap-3 rounded-b-xl border-t border-border/50 bg-card/95 px-5 py-3 backdrop-blur sm:flex-row sm:items-center sm:justify-between"
+                    >
                         <div
-                            v-if="hasIncompleteLines"
-                            class="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300"
+                            class="text-xs text-muted-foreground"
+                            aria-live="polite"
                         >
-                            Finish or remove incomplete lines before submitting
-                            or saving this request as a template.
+                            <span
+                                class="font-semibold text-foreground tabular-nums"
+                                >{{ composerTotals.items }}</span
+                            >
+                            {{ composerTotals.items === 1 ? 'item' : 'items' }}
+                            ·
+                            <span
+                                class="font-semibold text-foreground tabular-nums"
+                                >{{
+                                    composerTotals.units.toLocaleString()
+                                }}</span
+                            >
+                            units
+                            <span
+                                v-if="composerTotals.shortages > 0"
+                                class="ml-1 text-amber-700 dark:text-amber-400"
+                            >
+                                · {{ composerTotals.shortages }} above current
+                                stock (may be partly issued or backordered)
+                            </span>
+                            <span
+                                v-if="
+                                    hasIncompleteLines &&
+                                    composerTotals.items > 0
+                                "
+                                class="block text-amber-700 dark:text-amber-400"
+                            >
+                                Finish or remove empty lines before submitting.
+                            </span>
                         </div>
-
                         <div
-                            class="flex flex-wrap items-center justify-between gap-2"
+                            class="flex flex-wrap items-center justify-end gap-2"
                         >
+                            <Button
+                                v-if="composerTotals.items > 0"
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                @click="clearComposer"
+                            >
+                                Clear
+                            </Button>
                             <Button
                                 v-if="props.can.manageTemplates"
                                 type="button"
                                 variant="outline"
-                                class="rounded-lg border-dashed"
+                                size="sm"
                                 :disabled="
                                     !canSaveTemplate ||
                                     saveTemplateForm.processing
@@ -1648,29 +1401,515 @@ function confirmBulkAction(): void {
                             >
                                 Save as template
                             </Button>
+                            <Button
+                                type="submit"
+                                size="sm"
+                                :disabled="
+                                    requisitionForm.processing ||
+                                    !canSubmitRequisition
+                                "
+                                data-test="submit-requisition-button"
+                                data-testid="submit-requisition-button"
+                            >
+                                {{
+                                    requisitionForm.processing
+                                        ? 'Submitting…'
+                                        : 'Submit request'
+                                }}
+                            </Button>
+                        </div>
+                    </footer>
+                </form>
+            </section>
 
-                            <div class="ml-auto flex items-center gap-2">
-                                <Button
-                                    type="submit"
-                                    :disabled="
-                                        requisitionForm.processing ||
-                                        !canSubmitRequisition
-                                    "
-                                    data-test="submit-requisition-button"
-                                    data-testid="submit-requisition-button"
+            <aside
+                class="rounded-xl border border-border/60 bg-card shadow-sm"
+                aria-labelledby="templates-heading"
+            >
+                <header
+                    class="flex items-center justify-between gap-3 border-b border-border/50 px-4 py-3.5"
+                >
+                    <div>
+                        <h2
+                            id="templates-heading"
+                            class="text-sm font-semibold"
+                        >
+                            Saved templates
+                        </h2>
+                        <p class="text-xs text-muted-foreground">
+                            Load a frequent request in one click.
+                        </p>
+                    </div>
+                    <span
+                        class="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground tabular-nums"
+                        >{{ templates.length }}</span
+                    >
+                </header>
+
+                <p
+                    v-if="templates.length === 0"
+                    class="px-4 py-6 text-center text-sm text-muted-foreground"
+                >
+                    No templates yet. Build a request, then choose
+                    <span class="font-medium text-foreground"
+                        >Save as template</span
+                    >.
+                </p>
+
+                <ul
+                    v-else
+                    class="max-h-[32rem] divide-y divide-border/50 overflow-y-auto"
+                >
+                    <li
+                        v-for="template in templates"
+                        :key="template.id"
+                        class="px-4 py-3"
+                    >
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="truncate text-sm font-medium">
+                                    {{ template.name }}
+                                </div>
+                                <div class="text-xs text-muted-foreground">
+                                    {{ template.line_count }}
+                                    {{
+                                        template.line_count === 1
+                                            ? 'item'
+                                            : 'items'
+                                    }}
+                                    ·
+                                    <span
+                                        :class="
+                                            template.lines.some(
+                                                (line) =>
+                                                    !line.availability
+                                                        .available,
+                                            )
+                                                ? 'text-amber-700 dark:text-amber-400'
+                                                : 'text-emerald-700 dark:text-emerald-400'
+                                        "
+                                        >{{
+                                            template.lines.some(
+                                                (line) =>
+                                                    !line.availability
+                                                        .available,
+                                            )
+                                                ? 'Some items need review'
+                                                : 'All items available'
+                                        }}</span
+                                    >
+                                </div>
+                                <p
+                                    class="mt-1 line-clamp-2 text-xs text-muted-foreground/90"
                                 >
                                     {{
-                                        requisitionForm.processing
-                                            ? 'Submitting Request…'
-                                            : 'Submit Request'
+                                        template.lines
+                                            .map(
+                                                (line) =>
+                                                    `${line.name ?? line.sku} ×${line.qty_requested}`,
+                                            )
+                                            .join(', ')
                                     }}
-                                </Button>
+                                </p>
+                            </div>
+                            <div class="flex shrink-0 items-center gap-1">
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    class="h-7 rounded-lg px-2.5 text-xs"
+                                    @click="applyTemplate(template)"
+                                    >Use</Button
+                                >
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger as-child>
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            class="h-7 w-7 rounded-lg"
+                                            :aria-label="`More actions for ${template.name}`"
+                                        >
+                                            <MoreHorizontal class="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem
+                                            @select="
+                                                openTemplateEditor(template)
+                                            "
+                                            >Edit</DropdownMenuItem
+                                        >
+                                        <DropdownMenuItem
+                                            @select="
+                                                duplicateTemplate(template)
+                                            "
+                                            >Duplicate</DropdownMenuItem
+                                        >
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem
+                                            class="text-rose-600 focus:text-rose-700"
+                                            @select="
+                                                openTemplateDeleteDialog(
+                                                    template,
+                                                )
+                                            "
+                                            >Delete</DropdownMenuItem
+                                        >
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </div>
-                    </form>
+                    </li>
+                </ul>
+            </aside>
+        </div>
+
+        <section
+            class="rounded-xl border border-border/60 bg-card shadow-sm"
+            aria-labelledby="requisition-list-heading"
+        >
+            <header class="border-b border-border/50 px-5 pt-4">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2
+                        id="requisition-list-heading"
+                        class="flex items-center gap-2 text-sm font-semibold"
+                    >
+                        <ClipboardList class="h-4 w-4 text-primary" />
+                        Requisitions
+                    </h2>
+                    <span class="text-xs text-muted-foreground tabular-nums">
+                        <template v-if="requisitions.total">
+                            Showing {{ requisitions.from }}–{{
+                                requisitions.to
+                            }}
+                            of
+                            {{ requisitions.total }}
+                        </template>
+                    </span>
+                </div>
+                <div
+                    class="mt-3 flex gap-1 overflow-x-auto"
+                    role="tablist"
+                    aria-label="Filter by status"
+                >
+                    <button
+                        v-for="tab in statusTabs"
+                        :key="tab.value"
+                        type="button"
+                        role="tab"
+                        :aria-selected="status === tab.value"
+                        class="-mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium transition-colors"
+                        :class="
+                            status === tab.value
+                                ? 'border-primary text-primary'
+                                : 'border-transparent text-muted-foreground hover:text-foreground'
+                        "
+                        @click="status = tab.value"
+                    >
+                        {{ tab.label }}
+                        <span
+                            class="rounded-full bg-muted px-1.5 text-[10px] tabular-nums"
+                            >{{ tab.count }}</span
+                        >
+                    </button>
+                </div>
+            </header>
+
+            <fieldset
+                class="grid gap-3 border-b border-border/50 px-5 py-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr]"
+            >
+                <legend class="sr-only">Filter requisitions</legend>
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
+                >
+                    Search
+                    <Input
+                        v-model="search"
+                        type="search"
+                        name="requisition_search"
+                        autocomplete="off"
+                        placeholder="Number, requester, product, or SKU"
+                    />
+                </label>
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
+                >
+                    Submitted from
+                    <Input
+                        v-model="dateFrom"
+                        name="requisition_date_from"
+                        type="date"
+                    />
+                </label>
+                <label
+                    class="grid gap-1 text-xs font-medium text-muted-foreground"
+                >
+                    Submitted to
+                    <Input
+                        v-model="dateTo"
+                        name="requisition_date_to"
+                        type="date"
+                        :min="dateFrom || undefined"
+                    />
+                </label>
+            </fieldset>
+
+            <div
+                v-if="
+                    (props.can.bulkApprove || props.can.bulkIssue) &&
+                    hasSelection
+                "
+                class="flex flex-wrap items-center gap-2 border-b border-primary/20 bg-primary/5 px-5 py-2 text-sm"
+            >
+                <span class="font-medium text-primary"
+                    >{{ selectedIds.size }} selected</span
+                >
+                <div class="ml-auto flex flex-wrap gap-2">
+                    <Button
+                        v-if="props.can.bulkApprove"
+                        variant="outline"
+                        size="sm"
+                        class="h-7 rounded-lg text-xs"
+                        @click="runBulkApprove"
+                        >Approve</Button
+                    >
+                    <Button
+                        v-if="props.can.bulkIssue"
+                        variant="outline"
+                        size="sm"
+                        class="h-7 rounded-lg text-xs"
+                        @click="runBulkIssue"
+                        >Issue</Button
+                    >
                 </div>
             </div>
-        </div>
+
+            <div
+                v-if="requisitions.data.length === 0"
+                class="px-4 py-12 text-center"
+            >
+                <p class="text-sm font-medium">No requisitions found</p>
+                <p class="mt-1 text-sm text-muted-foreground">
+                    Try another status, search term, or date range.
+                </p>
+            </div>
+
+            <ul v-else class="divide-y divide-border/50 md:hidden">
+                <li
+                    v-for="r in requisitions.data"
+                    :key="r.id"
+                    class="px-4 py-3 text-sm"
+                    :class="{ 'bg-primary/5': selectedIds.has(r.id) }"
+                >
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <Checkbox
+                                v-if="
+                                    props.can.bulkApprove || props.can.bulkIssue
+                                "
+                                :model-value="selectedIds.has(r.id)"
+                                @update:model-value="() => toggleSelect(r.id)"
+                                :aria-label="`Select requisition ${r.id}`"
+                            />
+                            <span class="font-semibold">#{{ r.id }}</span>
+                        </div>
+                        <span
+                            class="rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                            :class="statusBadgeClass(r.status)"
+                            >{{ formatStatusLabel(r.status) }}</span
+                        >
+                    </div>
+                    <p class="mt-1 text-xs text-foreground/85">
+                        {{ itemsSummary(r) }}
+                    </p>
+                    <p class="mt-1 text-xs text-muted-foreground">
+                        {{ r.requester.name ?? r.requester.email ?? '—' }} ·
+                        {{ formatDateTime(r.created_at) }}
+                    </p>
+                    <div class="mt-2 flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="h-7 rounded-lg text-xs"
+                            as-child
+                            data-testid="open-requisition-button"
+                        >
+                            <Link :href="requisitionsShow(r.id)"
+                                >View details</Link
+                            >
+                        </Button>
+                        <Button
+                            v-if="r.can_delete"
+                            variant="ghost"
+                            size="sm"
+                            class="h-7 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                            @click="openDeleteDialog(r)"
+                        >
+                            Move to trash
+                        </Button>
+                    </div>
+                </li>
+            </ul>
+
+            <div
+                v-if="requisitions.data.length"
+                class="hidden overflow-x-auto md:block"
+            >
+                <table class="w-full text-sm">
+                    <caption class="sr-only">
+                        Requisitions with items, requester, submission date,
+                        status, issue progress, and actions
+                    </caption>
+                    <thead
+                        class="bg-muted/40 text-left text-[11px] font-semibold tracking-wider text-muted-foreground uppercase"
+                    >
+                        <tr class="[&>th]:px-4 [&>th]:py-2.5">
+                            <th
+                                v-if="
+                                    props.can.bulkApprove || props.can.bulkIssue
+                                "
+                                class="w-8"
+                            >
+                                <Checkbox
+                                    :model-value="
+                                        allSelected
+                                            ? true
+                                            : someSelected
+                                              ? 'indeterminate'
+                                              : false
+                                    "
+                                    @update:model-value="toggleSelectAll"
+                                    aria-label="Select all requisitions on this page"
+                                />
+                            </th>
+                            <th scope="col">Requisition</th>
+                            <th scope="col">Requester</th>
+                            <th scope="col">Submitted</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="w-36">Issued</th>
+                            <th scope="col" class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-border/50">
+                        <tr
+                            v-for="r in requisitions.data"
+                            :key="r.id"
+                            class="align-top transition-colors hover:bg-muted/30 [&>td]:px-4 [&>td]:py-3"
+                            :class="{ 'bg-primary/5': selectedIds.has(r.id) }"
+                        >
+                            <td
+                                v-if="
+                                    props.can.bulkApprove || props.can.bulkIssue
+                                "
+                            >
+                                <Checkbox
+                                    :model-value="selectedIds.has(r.id)"
+                                    @update:model-value="
+                                        () => toggleSelect(r.id)
+                                    "
+                                    :aria-label="`Select requisition ${r.id}`"
+                                />
+                            </td>
+                            <td class="max-w-xs">
+                                <div class="font-semibold">#{{ r.id }}</div>
+                                <div
+                                    class="truncate text-xs text-muted-foreground"
+                                    :title="itemsSummary(r)"
+                                >
+                                    {{ itemsSummary(r) }}
+                                </div>
+                            </td>
+                            <td>
+                                <div>
+                                    {{
+                                        r.requester.name ??
+                                        r.requester.email ??
+                                        '—'
+                                    }}
+                                </div>
+                                <div
+                                    v-if="r.requester_position"
+                                    class="text-xs text-muted-foreground"
+                                >
+                                    {{ r.requester_position.title
+                                    }}{{
+                                        r.requester_position.department
+                                            ? `, ${r.requester_position.department}`
+                                            : ''
+                                    }}
+                                </div>
+                            </td>
+                            <td
+                                class="text-xs whitespace-nowrap text-muted-foreground"
+                            >
+                                {{ formatDateTime(r.created_at) }}
+                            </td>
+                            <td>
+                                <span
+                                    class="inline-flex rounded-full border px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap"
+                                    :class="statusBadgeClass(r.status)"
+                                    >{{ formatStatusLabel(r.status) }}</span
+                                >
+                            </td>
+                            <td>
+                                <template v-if="r.totals">
+                                    <div
+                                        class="h-1.5 overflow-hidden rounded-full bg-muted"
+                                        role="progressbar"
+                                        :aria-valuenow="issuedPercent(r)"
+                                        aria-valuemin="0"
+                                        aria-valuemax="100"
+                                        :aria-label="`Requisition ${r.id} issued`"
+                                    >
+                                        <div
+                                            class="h-full rounded-full bg-primary transition-all"
+                                            :style="{
+                                                width: `${issuedPercent(r)}%`,
+                                            }"
+                                        />
+                                    </div>
+                                    <div
+                                        class="mt-1 text-[11px] text-muted-foreground tabular-nums"
+                                    >
+                                        {{ r.totals.qty_issued }} /
+                                        {{ r.totals.qty_requested }} units
+                                    </div>
+                                </template>
+                            </td>
+                            <td class="text-right">
+                                <div
+                                    class="flex items-center justify-end gap-1"
+                                >
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        class="h-7 rounded-lg text-xs"
+                                        as-child
+                                        data-testid="open-requisition-button"
+                                    >
+                                        <Link :href="requisitionsShow(r.id)"
+                                            >View details</Link
+                                        >
+                                    </Button>
+                                    <Button
+                                        v-if="r.can_delete"
+                                        variant="ghost"
+                                        size="sm"
+                                        class="h-7 rounded-lg text-xs text-rose-600 hover:text-rose-700"
+                                        @click="openDeleteDialog(r)"
+                                    >
+                                        Move to trash
+                                    </Button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div v-if="requisitions.links?.length" class="px-4 py-3">
+                <AdminPagination :links="requisitions.links" />
+            </div>
+        </section>
 
         <Dialog v-model:open="saveTemplateDialogOpen">
             <DialogContent>

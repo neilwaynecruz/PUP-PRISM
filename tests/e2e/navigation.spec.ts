@@ -21,7 +21,7 @@ const adminModules: ModuleLink[] = [
     { name: 'Receiving', href: '/inventory/receiving', region: 'main', url: /\/inventory\/receiving$/, testId: 'receiving-page' },
     { name: 'Stock Movements', href: '/inventory/movements', region: 'main', url: /\/inventory\/movements$/, testId: 'movements-index-page' },
     { name: 'Audit Logs', href: '/inventory/audit-logs', region: 'main', url: /\/inventory\/audit-logs$/, testId: 'audit-logs-page' },
-    { name: 'Settings', href: '/settings/profile', region: 'main', url: /\/settings\/profile$/, testId: 'profile-settings-page' },
+    { name: 'My settings', href: '/settings/profile', region: 'main', url: /\/settings\/profile$/, testId: 'profile-settings-page' },
 ];
 
 function moduleLink(page: Page, module: ModuleLink) {

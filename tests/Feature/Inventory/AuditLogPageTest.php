@@ -2,6 +2,7 @@
 
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Services\AuditLogService;
 use Inertia\Testing\AssertableInertia as Assert;
 use Spatie\Permission\Models\Role;
 
@@ -58,4 +59,95 @@ test('audit log index shows readable diffs without exposing raw value payloads',
             ->where('logs.data.0.changes.2.new_value', 'Yes')
             ->missing('logs.data.0.raw_old_values')
             ->missing('logs.data.0.raw_new_values'));
+});
+
+test('custom audit entries keep their before and after values', function () {
+    $user = User::factory()->withTwoFactor()->create();
+    $user->assignRole('Admin');
+    actingAs($user);
+
+    AuditLogService::logCustom(
+        'profile_email_change',
+        'Profile email changed.',
+        $user,
+        ['email' => 'old@example.test'],
+        ['email' => 'new@example.test'],
+    );
+
+    $log = AuditLog::query()->where('action', 'profile_email_change')->sole();
+
+    expect($log->old_values)->toBe(['email' => 'old@example.test'])
+        ->and($log->new_values)->toBe(['email' => 'new@example.test']);
+});
+
+test('audit log entries use readable action labels and can be filtered by actor', function () {
+    $admin = User::factory()->withTwoFactor()->create(['name' => 'Audit Admin']);
+    $admin->assignRole('Admin');
+    $other = User::factory()->create(['name' => 'Other Person']);
+
+    AuditLog::query()->create([
+        'user_id' => $admin->id,
+        'action' => 'handover_initiate',
+        'model_type' => 'HandoverLog',
+        'model_id' => 7,
+        'description' => 'Handover initiated.',
+    ]);
+    AuditLog::query()->create([
+        'user_id' => $other->id,
+        'action' => 'update',
+        'model_type' => 'Product',
+        'model_id' => 9,
+        'description' => 'Product updated.',
+    ]);
+
+    actingAs($admin)
+        ->get(route('inventory.audit-logs.index', ['user_id' => $admin->id], absolute: false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('logs.data', 1)
+            ->where('logs.data.0.action_label', 'Handover initiated')
+            ->where('logs.data.0.model_label', 'Handover')
+            ->where('filterOptions.actions', fn ($actions) => collect($actions)->contains(fn ($option) => $option['value'] === 'handover_initiate' && $option['label'] === 'Handover initiated'))
+            ->has('filterOptions.users', 2));
+});
+
+test('audit log rejects malformed date filters', function () {
+    $admin = User::factory()->withTwoFactor()->create();
+    $admin->assignRole('Admin');
+
+    actingAs($admin)
+        ->get(route('inventory.audit-logs.index', ['date_from' => "2026-01-01' OR 1=1"], absolute: false))
+        ->assertSessionHasErrors('date_from');
+});
+
+test('audit log export neutralises spreadsheet formulas and records the export', function () {
+    $admin = User::factory()->withTwoFactor()->create();
+    $admin->assignRole('Admin');
+
+    AuditLog::query()->create([
+        'user_id' => $admin->id,
+        'action' => 'update',
+        'model_type' => 'Product',
+        'model_id' => 1,
+        'description' => '=HYPERLINK("http://evil.test","click")',
+    ]);
+
+    $response = actingAs($admin)
+        ->get(route('inventory.audit-logs.export', absolute: false))
+        ->assertOk();
+
+    $csv = $response->streamedContent();
+
+    expect($csv)->toContain("'=HYPERLINK")
+        ->and(AuditLog::query()->where('action', 'audit_export')->where('user_id', $admin->id)->exists())->toBeTrue();
+});
+
+test('non-admins cannot export audit logs', function () {
+    Role::findOrCreate('Supply Head');
+    $user = User::factory()->withTwoFactor()->create();
+    $user->assignRole('Supply Head');
+
+    actingAs($user)
+        ->get(route('inventory.audit-logs.export', absolute: false))
+        ->assertForbidden();
 });

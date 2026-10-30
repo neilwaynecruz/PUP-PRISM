@@ -49,6 +49,12 @@ class PurchaseOrderResource extends InertiaJsonResource
                             'name' => $line->product->name,
                             'type' => $line->product->type?->value,
                             'supplier_id' => $line->product->supplier_id,
+                            'category' => $line->product->relationLoaded('category')
+                                ? $line->product->category?->name
+                                : null,
+                            'on_hand_qty' => $line->product->relationLoaded('stock')
+                                ? (int) ($line->product->stock?->on_hand_qty ?? 0)
+                                : null,
                         ]
                         : null,
                     'qty_ordered' => (int) $line->qty_ordered,

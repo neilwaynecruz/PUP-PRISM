@@ -99,7 +99,10 @@ class BookingController extends Controller
                         $query->whereKey((int) $search);
                     }
 
-                    $query->orWhereHas('asset', fn ($query) => $query->where('tag_code', 'like', "%{$search}%"))
+                    $query->orWhereHas('asset', function ($query) use ($search) {
+                        $query->where('tag_code', 'like', "%{$search}%")
+                            ->orWhereHas('product', fn ($query) => $query->where('name', 'like', "%{$search}%"));
+                    })
                         ->orWhereHas('requester', function ($query) use ($search) {
                             $query->where('name', 'like', "%{$search}%")
                                 ->orWhere('email', 'like', "%{$search}%");
@@ -140,6 +143,7 @@ class BookingController extends Controller
                     ? $currentUser->hasAnyRole(['Admin', 'Property Custodian'])
                     : false,
             ],
+            'timezone' => (string) config('app.timezone'),
         ]);
     }
 
@@ -218,7 +222,8 @@ class BookingController extends Controller
             } catch (ValidationException $exception) {
                 Inertia::flash('toast', [
                     'type' => 'error',
-                    'message' => $exception->errors()['start_at'][0] ?? __('This asset is already booked for part of the selected schedule. Choose different dates or select another asset.'),
+                    'message' => collect($exception->errors())->flatten()->first()
+                        ?? __('This asset is already booked for part of the selected schedule. Choose different dates or select another asset.'),
                 ]);
 
                 return back()->withErrors($exception->errors());
@@ -518,10 +523,10 @@ class BookingController extends Controller
     /**
      * @param  array{asset_id: int, start_at: string, end_at: string, purpose?: string|null}  $validated
      */
-    private function createBooking(Request $request, array $validated): Booking
+    private function createBooking(BookingStoreRequest $request, array $validated): Booking
     {
-        $startAt = CarbonImmutable::parse($validated['start_at']);
-        $endAt = CarbonImmutable::parse($validated['end_at']);
+        $startAt = $request->startAt();
+        $endAt = $request->endAt();
 
         return DB::transaction(function () use ($request, $validated, $startAt, $endAt): Booking {
             $asset = Asset::query()
@@ -563,6 +568,12 @@ class BookingController extends Controller
             if ($lockedBooking->status !== BookingStatus::Requested) {
                 throw ValidationException::withMessages([
                     'action' => __('Only pending booking requests can be approved.'),
+                ]);
+            }
+
+            if ($lockedBooking->end_at !== null && $lockedBooking->end_at->isPast()) {
+                throw ValidationException::withMessages([
+                    'start_at' => __('This request can no longer be approved because its schedule has already ended.'),
                 ]);
             }
 

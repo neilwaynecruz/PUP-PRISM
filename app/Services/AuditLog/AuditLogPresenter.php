@@ -22,7 +22,96 @@ class AuditLogPresenter
         'plain_text_token',
         'secret',
         'api_token',
+        'signature',
     ];
+
+    /**
+     * Readable labels for the action codes written by the application.
+     *
+     * @var array<string, string>
+     */
+    private const ACTION_LABELS = [
+        'create' => 'Created',
+        'update' => 'Updated',
+        'delete' => 'Moved to trash',
+        'restore' => 'Restored',
+        'force_delete' => 'Permanently deleted',
+        'approve' => 'Approved',
+        'reject' => 'Rejected',
+        'issue' => 'Issued',
+        'receive' => 'Stock received',
+        'receive_batch' => 'Batch stock received',
+        'transfer' => 'Transferred',
+        'cancel' => 'Cancelled',
+        'submit' => 'Submitted for review',
+        'review' => 'Reviewed',
+        'complete' => 'Completed',
+        'deactivate' => 'Deactivated',
+        'reactivate' => 'Reactivated',
+        'revoke_tokens' => 'API tokens revoked',
+        'revoke_sessions' => 'Sessions revoked',
+        'two_factor_enabled' => 'Two-factor authentication enabled',
+        'two_factor_disabled' => 'Two-factor authentication disabled',
+        'handover_initiate' => 'Handover initiated',
+        'handover_verify' => 'Handover verified',
+        'handover_cancel' => 'Handover cancelled',
+        'handover_resend' => 'Handover verification resent',
+        'alert_acknowledge' => 'Alert acknowledged',
+        'alert_assign' => 'Alert assigned',
+        'alert_resolve' => 'Alert resolved',
+        'api_token_create' => 'API token created',
+        'api_token_revoke' => 'API token revoked',
+        'notification_preferences_update' => 'Notification preferences updated',
+        'password_change' => 'Password changed',
+        'profile_update' => 'Profile updated',
+        'profile_email_change' => 'Profile email changed',
+        'profile_delete' => 'Account deleted',
+        'stock_adjustment' => 'Stock adjusted',
+        'cycle_count' => 'Cycle count recorded',
+        'audit_export' => 'Audit log exported',
+    ];
+
+    /**
+     * Readable labels for stored record types.
+     *
+     * @var array<string, string>
+     */
+    private const MODEL_LABELS = [
+        'HandoverLog' => 'Handover',
+        'InventoryAlert' => 'Inventory alert',
+        'InventoryCountSession' => 'Physical count',
+        'InventoryCountLine' => 'Physical count line',
+        'AssetLifecycleEvent' => 'Asset lifecycle change',
+        'AssetTransfer' => 'Asset transfer',
+        'AssetMaintenance' => 'Asset maintenance',
+        'PurchaseOrder' => 'Purchase order',
+        'RequisitionTemplate' => 'Requisition template',
+        'System' => 'System',
+    ];
+
+    public static function actionLabel(string $action): string
+    {
+        return self::ACTION_LABELS[$action] ?? Str::ucfirst(Str::lower(Str::headline($action)));
+    }
+
+    public static function modelLabel(string $modelType): string
+    {
+        return self::MODEL_LABELS[$modelType] ?? Str::headline($modelType);
+    }
+
+    /**
+     * Outcome category used to colour-code an action consistently.
+     */
+    public static function actionTone(string $action): string
+    {
+        return match (true) {
+            in_array($action, ['delete', 'force_delete', 'reject', 'deactivate', 'revoke_tokens', 'revoke_sessions', 'handover_cancel', 'profile_delete', 'two_factor_disabled'], true) => 'danger',
+            in_array($action, ['create', 'approve', 'complete', 'handover_verify', 'alert_resolve', 'reactivate', 'restore', 'two_factor_enabled'], true) => 'success',
+            in_array($action, ['update', 'review', 'submit', 'alert_acknowledge', 'alert_assign', 'handover_resend', 'profile_update', 'profile_email_change', 'notification_preferences_update'], true) => 'info',
+            in_array($action, ['issue', 'receive', 'receive_batch', 'transfer', 'stock_adjustment', 'cycle_count', 'handover_initiate'], true) => 'movement',
+            default => 'neutral',
+        };
+    }
 
     /**
      * @var array<int, string>
@@ -42,8 +131,10 @@ class AuditLogPresenter
         return [
             'id' => (int) $log->id,
             'action' => $log->action,
+            'action_label' => self::actionLabel($log->action),
+            'action_tone' => self::actionTone($log->action),
             'model_type' => $log->model_type,
-            'model_label' => Str::headline($log->model_type),
+            'model_label' => self::modelLabel($log->model_type),
             'model_id' => $log->model_id,
             'description' => $log->description,
             'user' => $log->relationLoaded('user') && $log->user
@@ -57,6 +148,21 @@ class AuditLogPresenter
             'ip_address' => $log->ip_address,
             'changes' => $this->buildChanges($oldValues, $newValues),
         ];
+    }
+
+    /**
+     * Plain-text change summary for exports, using the same redaction rules as the page.
+     */
+    public function changeSummary(AuditLog $log): string
+    {
+        $changes = $this->buildChanges(
+            $this->sanitizeValues($log->old_values),
+            $this->sanitizeValues($log->new_values),
+        );
+
+        return collect($changes)
+            ->map(fn (array $change): string => "{$change['label']}: {$change['old_value']} -> {$change['new_value']}")
+            ->implode('; ');
     }
 
     /**

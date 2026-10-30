@@ -567,12 +567,12 @@ const filteredExpiringLots = computed(() => {
                                     v-model="search"
                                     placeholder="Search SKU or product name"
                                     aria-label="Search forecasts"
-                                    class="h-11 rounded-xl border-border/70 bg-background/80 pl-9 shadow-inner shadow-black/5 focus-visible:ring-blue-500/30"
+                                    class="h-11 rounded-xl border-border/70 bg-background/80 pl-9 shadow-inner shadow-black/5 focus-visible:ring-ring/40"
                                 />
                             </div>
                             <select
                                 v-model="urgency"
-                                class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-blue-400/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none"
+                                class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-ring/30 focus:outline-none"
                                 aria-label="Urgency filter"
                             >
                                 <option value="">All urgency levels</option>

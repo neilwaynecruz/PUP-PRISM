@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Department;
+use App\Rules\UniqueIgnoringCase;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreDepartmentRequest extends FormRequest
@@ -18,8 +19,8 @@ class StoreDepartmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', 'unique:departments,name'],
-            'code' => ['nullable', 'string', 'max:50', 'unique:departments,code'],
+            'name' => ['required', 'string', 'max:255', new UniqueIgnoringCase('departments', 'name')],
+            'code' => ['nullable', 'string', 'max:50', new UniqueIgnoringCase('departments', 'code')],
             'is_active' => ['required', 'boolean'],
         ];
     }

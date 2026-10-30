@@ -1,10 +1,23 @@
 <script setup lang="ts">
-import type { CalendarOptions } from '@fullcalendar/core';
+import type {
+    CalendarOptions,
+    DateSelectArg,
+    EventClickArg,
+} from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import type { DateClickArg } from '@fullcalendar/interaction';
+import timeGridPlugin from '@fullcalendar/timegrid';
 import FullCalendar from '@fullcalendar/vue3';
 import { Form, Head, Link, router } from '@inertiajs/vue3';
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import {
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+} from 'vue';
 import BookingController from '@/actions/App/Http/Controllers/Inventory/BookingController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -107,6 +120,7 @@ const props = defineProps<{
     bookings: Paginated<BookingEvent>;
     exportUrls: { csv: string; pdf: string };
     can: { approve: boolean };
+    timezone: string;
 }>();
 
 defineOptions({
@@ -135,6 +149,7 @@ const deleteDialogOpen = ref(false);
 const deleteReason = ref('');
 const deleteReasonCustom = ref('');
 const isCompactCalendar = ref(false);
+const calendarComponent = ref<InstanceType<typeof FullCalendar> | null>(null);
 
 const deletionReasons = [
     { value: 'No longer needed', label: 'No longer needed' },
@@ -289,8 +304,183 @@ const statusColor = (status: BookingEvent['status']) => {
     }
 };
 
+// ── Calendar filters and availability ──
+type CalendarStatus = BookingEvent['status'];
+
+const visibleStatuses = ref<Set<CalendarStatus>>(
+    new Set<CalendarStatus>(['Approved', 'Requested']),
+);
+const focusSelectedAsset = ref(true);
+
+function toggleStatus(status: CalendarStatus): void {
+    const next = new Set(visibleStatuses.value);
+
+    if (next.has(status)) {
+        next.delete(status);
+    } else {
+        next.add(status);
+    }
+
+    visibleStatuses.value = next;
+}
+
+const selectedAsset = computed(
+    () =>
+        props.assets.find(
+            (asset) => String(asset.id) === selectedAssetId.value,
+        ) ?? null,
+);
+
+const filteredCalendarEvents = computed(() =>
+    props.calendar_events.filter(
+        (event) =>
+            visibleStatuses.value.has(event.status) &&
+            (!focusSelectedAsset.value ||
+                !selectedAsset.value ||
+                event.asset_id === selectedAsset.value.id),
+    ),
+);
+
+const selectedAssetSchedule = computed(() => {
+    if (!selectedAsset.value) {
+        return [];
+    }
+
+    const now = Date.now();
+
+    return props.calendar_events
+        .filter(
+            (event) =>
+                event.asset_id === selectedAsset.value?.id &&
+                (event.status === 'Approved' || event.status === 'Requested') &&
+                new Date(event.end).getTime() > now,
+        )
+        .sort((a, b) => a.start.localeCompare(b.start))
+        .slice(0, 5);
+});
+
+const scheduleConflicts = computed(() => {
+    const empty = { approved: [], requested: [] } as {
+        approved: typeof props.calendar_events;
+        requested: typeof props.calendar_events;
+    };
+
+    if (!selectedAsset.value || !startAt.value || !endAt.value) {
+        return empty;
+    }
+
+    const start = new Date(startAt.value).getTime();
+    const end = new Date(endAt.value).getTime();
+
+    if (Number.isNaN(start) || Number.isNaN(end) || end <= start) {
+        return empty;
+    }
+
+    const overlapping = props.calendar_events.filter(
+        (event) =>
+            event.asset_id === selectedAsset.value?.id &&
+            new Date(event.start).getTime() < end &&
+            new Date(event.end).getTime() > start,
+    );
+
+    return {
+        approved: overlapping.filter((event) => event.status === 'Approved'),
+        requested: overlapping.filter((event) => event.status === 'Requested'),
+    };
+});
+
+const scheduleError = computed(() => {
+    if (!startAt.value || !endAt.value) {
+        return '';
+    }
+
+    if (new Date(endAt.value).getTime() <= new Date(startAt.value).getTime()) {
+        return 'The end time must be later than the start time.';
+    }
+
+    return '';
+});
+
+const durationLabel = computed(() => {
+    if (!startAt.value || !endAt.value || scheduleError.value) {
+        return '';
+    }
+
+    const minutes = Math.round(
+        (new Date(endAt.value).getTime() - new Date(startAt.value).getTime()) /
+            60000,
+    );
+    const days = Math.floor(minutes / 1440);
+    const hours = Math.floor((minutes % 1440) / 60);
+    const mins = minutes % 60;
+
+    return [
+        days ? `${days} day${days === 1 ? '' : 's'}` : '',
+        hours ? `${hours} hr` : '',
+        mins ? `${mins} min` : '',
+    ]
+        .filter(Boolean)
+        .join(' ');
+});
+
+const browserTimezone =
+    typeof Intl !== 'undefined'
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone
+        : props.timezone;
+const timezoneMismatch = computed(
+    () => Boolean(props.timezone) && browserTimezone !== props.timezone,
+);
+
+function toLocalInput(date: Date): string {
+    const pad = (value: number) => String(value).padStart(2, '0');
+
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+const minStartInput = ref(toLocalInput(new Date()));
+
+function prefillSchedule(start: Date, end: Date): void {
+    if (end.getTime() <= Date.now()) {
+        return;
+    }
+
+    startAt.value = toLocalInput(start);
+    endAt.value = toLocalInput(end);
+    document
+        .getElementById('start_at')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function onCalendarSelect(selection: DateSelectArg): void {
+    if (selection.allDay) {
+        const start = new Date(selection.start);
+        start.setHours(8, 0, 0, 0);
+        const end = new Date(selection.end);
+        end.setDate(end.getDate() - 1);
+        end.setHours(17, 0, 0, 0);
+        prefillSchedule(start, end);
+
+        return;
+    }
+
+    prefillSchedule(selection.start, selection.end);
+}
+
+function onCalendarDateClick(click: DateClickArg): void {
+    if (!click.allDay) {
+        const end = new Date(click.date);
+        end.setHours(end.getHours() + 1);
+        prefillSchedule(click.date, end);
+    }
+}
+
+function onCalendarEventClick(click: EventClickArg): void {
+    click.jsEvent.preventDefault();
+    router.visit(`/inventory/bookings/${click.event.id}`);
+}
+
 const events = computed(() =>
-    props.calendar_events.map((b) => ({
+    filteredCalendarEvents.value.map((b) => ({
         id: String(b.id),
         title: b.title,
         start: b.start,
@@ -308,19 +498,32 @@ const events = computed(() =>
 );
 
 const calendarOptions = computed<CalendarOptions>(() => ({
-    plugins: [dayGridPlugin, interactionPlugin],
-    initialView: isCompactCalendar.value ? 'dayGridWeek' : 'dayGridMonth',
+    plugins: [dayGridPlugin, timeGridPlugin, interactionPlugin],
+    initialView: isCompactCalendar.value ? 'timeGridDay' : 'dayGridMonth',
     headerToolbar: {
-        left: isCompactCalendar.value ? 'prev,next' : 'prev,next today',
+        left: 'prev,next today',
         center: 'title',
         right: isCompactCalendar.value
-            ? ''
-            : 'dayGridMonth,dayGridWeek,dayGridDay',
+            ? 'timeGridDay,dayGridMonth'
+            : 'dayGridMonth,timeGridWeek,timeGridDay',
     },
+    buttonText: { today: 'Today', month: 'Month', week: 'Week', day: 'Day' },
     events: events.value,
-    height: isCompactCalendar.value ? 420 : 520,
-    dayMaxEventRows: isCompactCalendar.value ? 2 : 4,
+    height: isCompactCalendar.value ? 520 : 620,
+    dayMaxEventRows: isCompactCalendar.value ? 2 : 3,
     eventDisplay: 'block',
+    nowIndicator: true,
+    slotMinTime: '06:00:00',
+    slotMaxTime: '22:00:00',
+    scrollTime: '08:00:00',
+    allDaySlot: false,
+    selectable: true,
+    selectMirror: true,
+    selectAllow: (span) => span.end.getTime() > Date.now(),
+    select: onCalendarSelect,
+    dateClick: onCalendarDateClick,
+    eventClick: onCalendarEventClick,
+    eventTimeFormat: { hour: 'numeric', minute: '2-digit', meridiem: 'short' },
 }));
 
 const listQuery = computed(() => ({
@@ -365,6 +568,14 @@ onBeforeUnmount(() => {
 
 function syncCompactCalendarMode(): void {
     isCompactCalendar.value = compactCalendarMediaQuery?.matches ?? false;
+
+    void nextTick(() => {
+        calendarComponent.value
+            ?.getApi()
+            .changeView(
+                isCompactCalendar.value ? 'timeGridDay' : 'dayGridMonth',
+            );
+    });
 }
 
 onMounted(() => {
@@ -463,39 +674,79 @@ function selectedBookingRequestLabel(): string {
                             Calendar overview
                         </div>
                         <div class="text-xs text-muted-foreground/80">
-                            Approved, requested, and rejected schedules are
-                            shown below.
+                            Click a date or drag across times to fill in the
+                            booking form. Click a booking to see its details.
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2">
-                        <span
-                            class="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-semibold tracking-wider text-emerald-600 uppercase dark:text-emerald-400"
+                    <div
+                        class="flex flex-wrap items-center gap-1.5"
+                        role="group"
+                        aria-label="Show bookings by status"
+                    >
+                        <button
+                            v-for="status in [
+                                'Approved',
+                                'Requested',
+                                'Rejected',
+                                'Cancelled',
+                            ] as CalendarStatus[]"
+                            :key="status"
+                            type="button"
+                            :aria-pressed="visibleStatuses.has(status)"
+                            class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition"
+                            :class="
+                                visibleStatuses.has(status)
+                                    ? statusColor(status).pill
+                                    : 'border-dashed border-border text-muted-foreground/70 hover:text-foreground'
+                            "
+                            @click="toggleStatus(status)"
                         >
                             <span
-                                class="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                                class="h-1.5 w-1.5 rounded-full"
+                                :class="
+                                    visibleStatuses.has(status)
+                                        ? statusColor(status).bg
+                                        : 'bg-muted-foreground/40'
+                                "
                             />
-                            Approved
-                        </span>
-                        <span
-                            class="inline-flex items-center gap-1.5 rounded-full border border-amber-500/20 bg-amber-500/10 px-2.5 py-1 text-[11px] font-semibold tracking-wider text-amber-600 uppercase dark:text-amber-400"
-                        >
-                            <span
-                                class="h-1.5 w-1.5 rounded-full bg-amber-500"
-                            />
-                            Requested
-                        </span>
-                        <span
-                            class="inline-flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-[11px] font-semibold tracking-wider text-rose-600 uppercase dark:text-rose-400"
-                        >
-                            <span
-                                class="h-1.5 w-1.5 rounded-full bg-rose-500"
-                            />
-                            Rejected
-                        </span>
+                            {{ status }}
+                        </button>
                     </div>
                 </div>
+                <div
+                    v-if="selectedAsset"
+                    class="flex flex-wrap items-center justify-between gap-2 border-b border-border/40 bg-primary/3 px-5 py-2.5 text-xs"
+                >
+                    <span class="text-muted-foreground">
+                        <template v-if="focusSelectedAsset">
+                            Showing only
+                            <span class="font-semibold text-foreground">{{
+                                selectedAsset.tag_code
+                            }}</span>
+                            — {{ selectedAsset.name ?? 'Asset' }}
+                        </template>
+                        <template v-else>Showing all assets</template>
+                    </span>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        class="h-7 rounded-lg text-xs"
+                        data-testid="booking-calendar-focus-toggle"
+                        @click="focusSelectedAsset = !focusSelectedAsset"
+                    >
+                        {{
+                            focusSelectedAsset
+                                ? 'Show all assets'
+                                : `Show only ${selectedAsset.tag_code}`
+                        }}
+                    </Button>
+                </div>
                 <div data-testid="booking-calendar" class="p-3">
-                    <FullCalendar :options="calendarOptions">
+                    <FullCalendar
+                        ref="calendarComponent"
+                        :options="calendarOptions"
+                    >
                         <template #eventContent="{ event }">
                             <div
                                 data-testid="booking-calendar-event"
@@ -511,11 +762,11 @@ function selectedBookingRequestLabel(): string {
                         v-if="isCompactCalendar"
                         class="mt-3 rounded-lg border border-border/60 bg-muted/20 px-3 py-2 text-xs text-muted-foreground"
                     >
-                        On mobile, use the weekly view to review one week at a
-                        time.
+                        On mobile, the calendar shows one day at a time. Use the
+                        arrows to move between days, or switch to Month.
                     </div>
                     <div
-                        v-if="props.calendar_events.length === 0"
+                        v-if="filteredCalendarEvents.length === 0"
                         class="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/50 py-12 text-center"
                     >
                         <div
@@ -547,11 +798,18 @@ function selectedBookingRequestLabel(): string {
                             </svg>
                         </div>
                         <div class="text-sm font-medium text-muted-foreground">
-                            No bookings for this period
+                            {{
+                                selectedAsset && focusSelectedAsset
+                                    ? `${selectedAsset.tag_code} has no bookings in this period`
+                                    : 'No bookings match the selected statuses'
+                            }}
                         </div>
                         <div class="max-w-xs text-xs text-muted-foreground/70">
-                            Use the form on the right to submit a new booking
-                            request. Approved bookings will appear here.
+                            {{
+                                selectedAsset && focusSelectedAsset
+                                    ? 'The asset looks free. Pick a date on the calendar to start your request.'
+                                    : 'Turn on more statuses above, or submit a new request with the form.'
+                            }}
                         </div>
                     </div>
                 </div>
@@ -643,7 +901,65 @@ function selectedBookingRequestLabel(): string {
                         >
                             {{ assetScanFeedback }}
                         </div>
+                        <p
+                            v-if="assets.length === 0"
+                            class="text-xs text-muted-foreground"
+                        >
+                            No available assets match this search. Only assets
+                            with an Available status can be booked.
+                        </p>
                         <InputError :message="errors.asset_id" />
+
+                        <div
+                            v-if="selectedAsset"
+                            class="rounded-lg border border-border/60 bg-muted/25 px-3 py-2.5 text-xs"
+                            data-testid="booking-selected-asset"
+                        >
+                            <div class="font-medium text-foreground">
+                                {{ selectedAsset.name ?? 'Asset' }}
+                                <span class="font-mono text-muted-foreground">{{
+                                    selectedAsset.tag_code
+                                }}</span>
+                            </div>
+                            <div
+                                v-if="selectedAsset.position"
+                                class="text-muted-foreground"
+                            >
+                                Accountable:
+                                {{ selectedAsset.position.title
+                                }}{{
+                                    selectedAsset.position.department
+                                        ? `, ${selectedAsset.position.department}`
+                                        : ''
+                                }}
+                            </div>
+                            <div class="mt-2 font-medium text-foreground/85">
+                                Upcoming schedule
+                            </div>
+                            <ul
+                                v-if="selectedAssetSchedule.length"
+                                class="mt-1 space-y-1"
+                            >
+                                <li
+                                    v-for="event in selectedAssetSchedule"
+                                    :key="event.id"
+                                    class="flex items-center justify-between gap-2"
+                                >
+                                    <span class="tabular-nums">
+                                        {{ formatDateTime(event.start) }} –
+                                        {{ formatDateTime(event.end) }}
+                                    </span>
+                                    <span
+                                        class="shrink-0 rounded-full border px-1.5 py-0.5 text-[10px] font-semibold"
+                                        :class="statusColor(event.status).pill"
+                                        >{{ event.status }}</span
+                                    >
+                                </li>
+                            </ul>
+                            <p v-else class="mt-1 text-muted-foreground">
+                                No upcoming bookings. The asset is free for now.
+                            </p>
+                        </div>
                     </div>
 
                     <div class="grid gap-3 sm:grid-cols-2">
@@ -660,6 +976,7 @@ function selectedBookingRequestLabel(): string {
                                 v-model="startAt"
                                 data-testid="booking-start-input"
                                 type="datetime-local"
+                                :min="minStartInput"
                                 aria-describedby="booking-start-error"
                                 required
                                 class="h-9 rounded-lg text-sm"
@@ -681,6 +998,7 @@ function selectedBookingRequestLabel(): string {
                                 v-model="endAt"
                                 data-testid="booking-end-input"
                                 type="datetime-local"
+                                :min="startAt || minStartInput"
                                 aria-describedby="booking-end-error"
                                 required
                                 class="h-9 rounded-lg text-sm"
@@ -690,6 +1008,67 @@ function selectedBookingRequestLabel(): string {
                                 :message="errors.end_at"
                             />
                         </div>
+                    </div>
+
+                    <div
+                        v-if="
+                            scheduleError || durationLabel || timezoneMismatch
+                        "
+                        class="-mt-2 space-y-1 text-xs"
+                        aria-live="polite"
+                    >
+                        <p
+                            v-if="scheduleError"
+                            class="font-medium text-rose-600 dark:text-rose-400"
+                        >
+                            {{ scheduleError }}
+                        </p>
+                        <p
+                            v-else-if="durationLabel"
+                            class="text-muted-foreground"
+                        >
+                            Duration: {{ durationLabel }}
+                        </p>
+                        <p
+                            v-if="timezoneMismatch"
+                            class="text-muted-foreground"
+                        >
+                            Times are entered in your device's time zone ({{
+                                browserTimezone
+                            }}) and stored in PRISM's time zone ({{
+                                timezone
+                            }}).
+                        </p>
+                    </div>
+
+                    <div
+                        v-if="scheduleConflicts.approved.length"
+                        class="rounded-lg border border-rose-500/30 bg-rose-500/5 px-3 py-2 text-xs text-rose-700 dark:text-rose-300"
+                        role="alert"
+                        data-testid="booking-conflict-warning"
+                    >
+                        <span class="font-semibold">Not available:</span>
+                        this asset already has an approved booking from
+                        {{
+                            formatDateTime(scheduleConflicts.approved[0].start)
+                        }}
+                        to
+                        {{ formatDateTime(scheduleConflicts.approved[0].end) }}.
+                        Choose another time or asset.
+                    </div>
+                    <div
+                        v-else-if="scheduleConflicts.requested.length"
+                        class="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs text-amber-800 dark:text-amber-300"
+                        role="status"
+                    >
+                        {{ scheduleConflicts.requested.length }} other
+                        {{
+                            scheduleConflicts.requested.length === 1
+                                ? 'request overlaps'
+                                : 'requests overlap'
+                        }}
+                        this time. You can still submit; whichever is approved
+                        first reserves the asset.
                     </div>
 
                     <div class="grid gap-1.5">
@@ -714,7 +1093,11 @@ function selectedBookingRequestLabel(): string {
                     >
                         <Button
                             type="submit"
-                            :disabled="processing"
+                            :disabled="
+                                processing ||
+                                Boolean(scheduleError) ||
+                                scheduleConflicts.approved.length > 0
+                            "
                             data-test="request-booking-button"
                             data-testid="request-booking-button"
                             class="w-full rounded-lg font-semibold shadow-sm"

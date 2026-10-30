@@ -124,7 +124,7 @@ class AssetTransferService
         )->lockForUpdate()->exists()) {
             throw new \RuntimeException('This asset already has a pending location transfer.');
         }
-        if (HandoverLog::query()->where('asset_id', $asset->id)->whereNull('verified_at')->lockForUpdate()->exists()) {
+        if (HandoverLog::query()->where('asset_id', $asset->id)->pending()->lockForUpdate()->exists()) {
             throw new \RuntimeException('This asset has a handover waiting for verification.');
         }
         if (Booking::query()->blocking()->where('asset_id', $asset->id)->where('end_at', '>', now())->lockForUpdate()->exists()) {

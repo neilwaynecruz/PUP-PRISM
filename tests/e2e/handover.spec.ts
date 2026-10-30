@@ -20,10 +20,12 @@ test.describe('Asset Handover Flow', () => {
 
         // Fill in the handover form
         await page.getByTestId('handover-asset-tag-input').fill('AST-E2E-0001');
+        await page.getByTestId('handover-asset-tag-input').press('Enter');
+        await expect(page.getByTestId('handover-selected-asset')).toContainText('AST-E2E-0001');
         await page.getByTestId('handover-recipient-search-input').fill('recipient@e2e.test');
-        await expect(page).toHaveURL(/recipient_search=recipient%40e2e\.test$/);
-        await page.getByTestId('handover-recipient-select').selectOption(String(recipientUserId));
-        await expect(page.getByTestId('handover-recipient-select')).toHaveValue(String(recipientUserId));
+        await expect(page).toHaveURL(/recipient_search=recipient%40e2e\.test/);
+        await page.getByTestId('handover-recipient-options').locator(`[data-user-id="${recipientUserId}"]`).click();
+        await expect(page.getByTestId('handover-selected-recipient')).toContainText('recipient@e2e.test');
 
         // Submit the handover form
         await Promise.all([

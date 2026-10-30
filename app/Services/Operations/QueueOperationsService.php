@@ -115,16 +115,43 @@ class QueueOperationsService
         return DB::table('failed_jobs')
             ->orderByDesc('failed_at')
             ->limit($limit)
-            ->get(['uuid', 'connection', 'queue', 'failed_at'])
+            ->get(['uuid', 'connection', 'queue', 'payload', 'exception', 'failed_at'])
             ->map(function (object $job): array {
                 return [
                     'uuid' => (string) $job->uuid,
                     'connection' => (string) $job->connection,
                     'queue' => (string) $job->queue,
+                    'job_name' => $this->jobDisplayName((string) $job->payload),
+                    'exception_class' => $this->exceptionClass((string) $job->exception),
                     'failed_at' => (string) $job->failed_at,
                 ];
             })
             ->all();
+    }
+
+    private function jobDisplayName(string $payload): ?string
+    {
+        $decoded = json_decode($payload, true);
+
+        if (! is_array($decoded) || ! is_string($decoded['displayName'] ?? null)) {
+            return null;
+        }
+
+        return class_basename($decoded['displayName']);
+    }
+
+    /**
+     * Only the exception class is exposed; messages can contain record data or connection details.
+     */
+    private function exceptionClass(string $exception): ?string
+    {
+        $firstLine = trim(strtok($exception, "\n") ?: '');
+
+        if ($firstLine === '' || preg_match('/^([A-Za-z_\\\\][A-Za-z0-9_\\\\]*)(?::|\s|$)/', $firstLine, $matches) !== 1) {
+            return null;
+        }
+
+        return class_basename($matches[1]);
     }
 
     private function hasJobsTable(): bool

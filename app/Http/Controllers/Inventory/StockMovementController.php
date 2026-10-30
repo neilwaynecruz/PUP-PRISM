@@ -71,10 +71,21 @@ class StockMovementController extends Controller
             ->get();
 
         $products = Product::query()
+            ->with(['stock:id,product_id,on_hand_qty', 'category:id,name'])
             ->where('type', ProductType::Consumable)
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'sku', 'name']);
+            ->get(['id', 'sku', 'name', 'category_id', 'reorder_threshold'])
+            ->map(fn (Product $product): array => [
+                'id' => (int) $product->id,
+                'sku' => $product->sku,
+                'name' => $product->name,
+                'category' => $product->category?->name,
+                'on_hand_qty' => (int) ($product->stock?->on_hand_qty ?? 0),
+                'reorder_threshold' => (int) ($product->reorder_threshold ?? 0),
+            ])
+            ->values()
+            ->all();
 
         $exportParams = array_filter([
             'type' => $type ?: null,

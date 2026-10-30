@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -40,6 +41,30 @@ class InventoryAlert extends Model
     public function isActive(): bool
     {
         return $this->resolved_at === null;
+    }
+
+    /**
+     * Urgency derived from the alert's current stock facts (critical, high, or medium).
+     *
+     * Uses eager-loaded product stock and lot data when available and falls back to "medium".
+     */
+    public function severity(): string
+    {
+        if ($this->type === 'expiring' && $this->relationLoaded('stockLot') && $this->stockLot?->expires_at !== null) {
+            $daysLeft = (int) CarbonImmutable::today()->diffInDays($this->stockLot->expires_at, false);
+
+            return match (true) {
+                $daysLeft < 0 => 'critical',
+                $daysLeft <= 3 => 'high',
+                default => 'medium',
+            };
+        }
+
+        if ($this->type === 'low_stock' && $this->relationLoaded('product') && $this->product?->relationLoaded('stock')) {
+            return ((int) ($this->product->stock?->on_hand_qty ?? 0)) <= 0 ? 'critical' : 'high';
+        }
+
+        return 'medium';
     }
 
     /**

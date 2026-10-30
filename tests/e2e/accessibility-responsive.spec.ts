@@ -11,10 +11,33 @@ const representativePages = [
     { path: '/notifications', heading: 'Notification history' },
     {
         path: '/settings/profile',
-        heading: 'Settings',
+        heading: 'My settings',
         sectionHeading: 'Profile information',
     },
 ];
+
+const masterDataPages = [
+    {
+        path: '/admin/departments',
+        heading: 'Departments',
+        searchLabel: 'Search departments',
+    },
+    {
+        path: '/admin/positions',
+        heading: 'Positions',
+        searchLabel: 'Search positions',
+    },
+    {
+        path: '/admin/categories',
+        heading: 'Categories',
+        searchLabel: 'Search categories',
+    },
+    {
+        path: '/admin/origins',
+        heading: 'Origins',
+        searchLabel: 'Search origins',
+    },
+] as const;
 
 test.describe('Phase 3 accessibility and responsive layout', () => {
     test('major workflows expose one descriptive page heading', async ({
@@ -108,9 +131,17 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
     });
 
     for (const viewport of [
-        { name: 'phone', width: 390, height: 844 },
-        { name: 'tablet', width: 768, height: 1024 },
-        { name: 'desktop', width: 1280, height: 900 },
+        { name: 'phone-320', width: 320, height: 720 },
+        { name: 'phone-360', width: 360, height: 800 },
+        { name: 'phone-375', width: 375, height: 812 },
+        { name: 'phone-390', width: 390, height: 844 },
+        { name: 'phone-430', width: 430, height: 932 },
+        { name: 'phone-landscape', width: 844, height: 390 },
+        { name: 'tablet-768', width: 768, height: 1024 },
+        { name: 'tablet-834', width: 834, height: 1112 },
+        { name: 'tablet-landscape', width: 1024, height: 768 },
+        { name: 'laptop-1280', width: 1280, height: 800 },
+        { name: 'desktop-1440', width: 1440, height: 900 },
     ]) {
         test(`core list pages avoid horizontal overflow on ${viewport.name}`, async ({
             page,
@@ -155,5 +186,123 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
 
         expect(box).not.toBeNull();
         expect(box!.height).toBeGreaterThanOrEqual(44);
+    });
+
+    test('mobile navigation drawer has an explicit close control and closes after navigation', async ({
+        page,
+    }) => {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await loginAs(page, 'admin@e2e.test');
+        await page.goto('/dashboard');
+
+        const trigger = page.getByRole('button', {
+            name: 'Toggle navigation menu',
+        });
+        await trigger.click();
+
+        const closeButton = page.getByRole('button', { name: 'Close' });
+        await expect(closeButton).toBeVisible();
+        const closeButtonBox = await closeButton.boundingBox();
+        expect(closeButtonBox).not.toBeNull();
+        expect(closeButtonBox!.width).toBeGreaterThanOrEqual(44);
+        expect(closeButtonBox!.height).toBeGreaterThanOrEqual(44);
+
+        await closeButton.click();
+        await expect(closeButton).toBeHidden();
+
+        await trigger.click();
+        await page
+            .locator('[data-slot="sidebar-content"]')
+            .getByRole('link', { name: 'Products' })
+            .click();
+        await expect(page).toHaveURL(/\/inventory\/products$/);
+        await expect(closeButton).toBeHidden();
+    });
+
+    test('five master-data pages remain usable in both themes across phone, tablet, and desktop', async ({
+        page,
+    }, testInfo) => {
+        test.setTimeout(240_000);
+        await loginAs(page, 'admin@e2e.test');
+
+        for (const appearance of ['light', 'dark'] as const) {
+            await page.evaluate((value) => {
+                localStorage.setItem('appearance', value);
+            }, appearance);
+
+            for (const viewport of [
+                { name: 'phone-320', width: 320, height: 720 },
+                { name: 'tablet-768', width: 768, height: 1024 },
+                { name: 'desktop-1440', width: 1440, height: 900 },
+            ]) {
+                await page.setViewportSize(viewport);
+
+                for (const target of masterDataPages) {
+                    await page.goto(target.path);
+                    await expect(
+                        page.getByRole('heading', {
+                            level: 1,
+                            name: target.heading,
+                        }),
+                    ).toBeVisible();
+                    await expect(
+                        page.getByRole('textbox', {
+                            name: target.searchLabel,
+                        }),
+                    ).toBeVisible();
+                    await expect(
+                        page.getByRole('combobox', { name: 'Status' }),
+                    ).toBeVisible();
+
+                    if (viewport.width < 768) {
+                        await expect(page.locator('table')).toBeHidden();
+                    } else {
+                        await expect(page.locator('table')).toBeVisible();
+                    }
+
+                    const overflow = await page.evaluate(
+                        () =>
+                            document.documentElement.scrollWidth -
+                            document.documentElement.clientWidth,
+                    );
+                    expect(overflow).toBeLessThanOrEqual(1);
+
+                    await page.screenshot({
+                        path: testInfo.outputPath(
+                            `master-${target.heading.toLowerCase()}-${viewport.name}-${appearance}.png`,
+                        ),
+                        fullPage: true,
+                    });
+                }
+
+                await page.goto('/admin/locations');
+                await expect(
+                    page.getByRole('heading', {
+                        level: 1,
+                        name: 'Physical locations',
+                    }),
+                ).toBeVisible();
+                await expect(
+                    page.getByRole('textbox', { name: 'Location code' }),
+                ).toBeVisible();
+                await expect(
+                    page.getByRole('textbox', { name: 'Name', exact: true }),
+                ).toBeVisible();
+
+                const locationsOverflow = await page.evaluate(
+                    () =>
+                        document.documentElement.scrollWidth -
+                        document.documentElement.clientWidth,
+                );
+                expect(locationsOverflow).toBeLessThanOrEqual(1);
+
+                await page.screenshot({
+                    path: testInfo.outputPath(
+                        `master-locations-${viewport.name}-${appearance}.png`,
+                    ),
+                    fullPage: true,
+                });
+            }
+        }
     });
 });

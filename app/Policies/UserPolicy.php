@@ -30,4 +30,9 @@ class UserPolicy
     {
         return $user->hasRole('Admin');
     }
+
+    public function reactivate(User $user, User $managedUser): bool
+    {
+        return $user->hasRole('Admin') && ! $user->is($managedUser);
+    }
 }

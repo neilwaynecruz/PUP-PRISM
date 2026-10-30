@@ -32,11 +32,48 @@ const pages: Array<{
         path: '/notifications',
         name: 'notifications',
     },
+    { path: '/inventory/assets', name: 'assets' },
+    { path: '/inventory/suppliers', name: 'suppliers' },
+    {
+        path: '/inventory/movements',
+        name: 'stock-movements',
+        testId: 'movements-index-page',
+    },
+    { path: '/inventory/counts', name: 'physical-counts' },
+    { path: '/inventory/forecasting', name: 'forecasting' },
+    {
+        path: '/inventory/handover',
+        name: 'handover',
+        testId: 'handover-initiate-page',
+    },
+    {
+        path: '/inventory/audit-logs',
+        name: 'audit-logs',
+        testId: 'audit-logs-page',
+    },
+    { path: '/inventory/trash', name: 'inventory-trash' },
+    { path: '/admin/alerts', name: 'alerts' },
+    { path: '/admin/operations/health', name: 'operations-health' },
+    { path: '/admin/users', name: 'users' },
+    { path: '/admin/departments', name: 'departments' },
+    { path: '/admin/positions', name: 'positions' },
+    { path: '/admin/categories', name: 'categories' },
+    { path: '/admin/origins', name: 'origins' },
+    { path: '/admin/locations', name: 'locations' },
+    {
+        path: '/settings/profile',
+        name: 'settings-profile',
+        testId: 'profile-settings-page',
+    },
+    { path: '/settings/security', name: 'settings-security' },
+    { path: '/settings/appearance', name: 'settings-appearance' },
+    { path: '/settings/notifications', name: 'settings-notifications' },
+    { path: '/settings/api-tokens', name: 'settings-api-tokens' },
 ];
 
 const viewports = [
-    { name: 'phone-375', width: 375, height: 812 },
-    { name: 'tablet-768', width: 768, height: 1024 },
+    { name: 'phone-390', width: 390, height: 844 },
+    { name: 'tablet-834', width: 834, height: 1112 },
     { name: 'desktop-1440', width: 1440, height: 900 },
 ] as const;
 
@@ -44,7 +81,25 @@ test.describe('Phase 3 visual review', () => {
     test('login and key pages remain balanced across viewports', async ({
         page,
     }, testInfo) => {
-        test.setTimeout(180000);
+        test.setTimeout(900_000);
+
+        const browserErrors: string[] = [];
+        page.on('pageerror', (error) => browserErrors.push(error.message));
+        page.on('console', (message) => {
+            const text = message.text();
+
+            if (
+                message.type() === 'error' &&
+                !text.includes('fonts.googleapis.com') &&
+                !text.includes('ERR_NETWORK_ACCESS_DENIED') &&
+                !(
+                    text.includes('WebSocket connection to') &&
+                    text.includes('localhost:8080')
+                )
+            ) {
+                browserErrors.push(text);
+            }
+        });
 
         await page.setViewportSize({ width: 1280, height: 900 });
         await page.goto('/login');
@@ -56,41 +111,73 @@ test.describe('Phase 3 visual review', () => {
 
         await loginAs(page, 'admin@e2e.test');
 
-        for (const viewport of viewports) {
-            await page.setViewportSize({
-                width: viewport.width,
-                height: viewport.height,
-            });
+        for (const appearance of ['light', 'dark'] as const) {
+            await page.evaluate((value) => {
+                localStorage.setItem('appearance', value);
+            }, appearance);
 
-            for (const target of pages) {
-                await page.goto(target.path);
+            for (const viewport of viewports) {
+                await page.setViewportSize({
+                    width: viewport.width,
+                    height: viewport.height,
+                });
 
-                if (target.testId) {
-                    await expect(page.getByTestId(target.testId)).toBeVisible();
-                } else {
-                    await expect(
-                        page.getByRole('heading', { level: 1 }),
-                    ).toBeVisible();
+                for (const target of pages) {
+                    await page.goto(target.path);
+
+                    if (page.url().includes('/user/confirm-password')) {
+                        await page
+                            .locator('input[name="password"]')
+                            .fill('password');
+                        await Promise.all([
+                            page.waitForURL(new RegExp(`${target.path}$`)),
+                            page
+                                .getByRole('button', {
+                                    name: 'Confirm password',
+                                })
+                                .click(),
+                        ]);
+                    }
+
+                    if (target.testId) {
+                        await expect(
+                            page.getByTestId(target.testId),
+                        ).toBeVisible();
+                    } else {
+                        await expect(
+                            page.getByRole('heading', { level: 1 }),
+                        ).toBeVisible();
+                    }
+
+                    if (appearance === 'dark') {
+                        await expect(page.locator('html')).toHaveClass(/dark/);
+                    } else {
+                        await expect(page.locator('html')).not.toHaveClass(
+                            /dark/,
+                        );
+                    }
+
+                    const overflow = await page.evaluate(() => {
+                        const root = document.documentElement;
+
+                        return root.scrollWidth - root.clientWidth;
+                    });
+
+                    expect(
+                        overflow,
+                        `${target.name} overflow at ${viewport.name} in ${appearance} mode`,
+                    ).toBeLessThanOrEqual(1);
+
+                    await page.screenshot({
+                        path: testInfo.outputPath(
+                            `${target.name}-${viewport.name}-${appearance}.png`,
+                        ),
+                        fullPage: true,
+                    });
                 }
-
-                const overflow = await page.evaluate(() => {
-                    const root = document.documentElement;
-
-                    return root.scrollWidth - root.clientWidth;
-                });
-
-                expect(
-                    overflow,
-                    `${target.name} overflow at ${viewport.name}`,
-                ).toBeLessThanOrEqual(1);
-
-                await page.screenshot({
-                    path: testInfo.outputPath(
-                        `${target.name}-${viewport.name}.png`,
-                    ),
-                    fullPage: true,
-                });
             }
         }
+
+        expect(browserErrors).toEqual([]);
     });
 });

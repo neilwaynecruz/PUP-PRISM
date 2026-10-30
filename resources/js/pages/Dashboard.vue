@@ -634,8 +634,8 @@ function isPresetActive(preset: 'today' | 'week' | 'month'): boolean {
 
 function presetButtonClass(preset: 'today' | 'week' | 'month'): string {
     return isPresetActive(preset)
-        ? 'border-blue-400/50 bg-blue-500/15 text-blue-700 shadow-sm shadow-blue-500/10 dark:text-blue-200'
-        : 'border-border/70 bg-background/70 text-muted-foreground hover:border-blue-400/40 hover:bg-blue-500/10 hover:text-foreground';
+        ? 'border-primary/50 bg-primary/15 text-primary shadow-sm shadow-primary/10'
+        : 'border-border/70 bg-background/70 text-muted-foreground hover:border-primary/40 hover:bg-primary/10 hover:text-foreground';
 }
 
 function kpiCardClass(
@@ -752,7 +752,7 @@ function restoreItem(url: string): void {
 
     <div
         data-testid="dashboard-page"
-        class="flex h-full flex-1 flex-col gap-6 overflow-x-hidden bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.10),transparent_34%),radial-gradient(circle_at_18%_0%,rgba(20,184,166,0.08),transparent_28%)] p-4 sm:p-6"
+        class="flex h-full flex-1 flex-col gap-6 overflow-x-hidden bg-[radial-gradient(circle_at_top_right,rgba(122,21,56,0.10),transparent_34%),radial-gradient(circle_at_18%_0%,rgba(154,107,0,0.07),transparent_28%)] p-4 sm:p-6"
     >
         <div
             class="flex flex-col gap-4 rounded-3xl border border-border/60 bg-card/80 p-5 shadow-sm backdrop-blur sm:flex-row sm:items-start sm:justify-between"
@@ -775,7 +775,7 @@ function restoreItem(url: string): void {
                     variant="outline"
                     size="sm"
                     as-child
-                    class="rounded-xl border-blue-500/25 bg-blue-500/10 text-blue-700 shadow-sm transition-all hover:border-blue-400/50 hover:bg-blue-500/15 dark:text-blue-300"
+                    class="rounded-xl border-primary/25 bg-primary/10 text-primary shadow-sm transition-all hover:border-primary/50 hover:bg-primary/15"
                 >
                     <a
                         :href="props.exportUrls.assetConditionsCsv"
@@ -789,7 +789,7 @@ function restoreItem(url: string): void {
                     variant="outline"
                     size="sm"
                     as-child
-                    class="rounded-xl border-rose-500/25 bg-rose-500/10 text-rose-700 shadow-sm transition-all hover:border-rose-400/50 hover:bg-rose-500/15 dark:text-rose-300"
+                    class="rounded-xl border-brand-gold/30 bg-brand-gold/10 text-brand-gold shadow-sm transition-all hover:border-brand-gold/50 hover:bg-brand-gold/15"
                 >
                     <a
                         :href="props.exportUrls.assetConditionsPdf"
@@ -849,7 +849,7 @@ function restoreItem(url: string): void {
                         v-model="fromDate"
                         name="dashboard_from"
                         type="date"
-                        class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm text-foreground shadow-inner shadow-black/5 transition-colors hover:border-blue-400/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none sm:h-10 sm:text-xs"
+                        class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm text-foreground shadow-inner shadow-black/5 transition-colors hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-ring/30 focus:outline-none sm:h-10 sm:text-xs"
                     />
                 </label>
                 <label
@@ -860,14 +860,14 @@ function restoreItem(url: string): void {
                         v-model="toDate"
                         name="dashboard_to"
                         type="date"
-                        class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm text-foreground shadow-inner shadow-black/5 transition-colors hover:border-blue-400/40 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/20 focus:outline-none sm:h-10 sm:text-xs"
+                        class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm text-foreground shadow-inner shadow-black/5 transition-colors hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-ring/30 focus:outline-none sm:h-10 sm:text-xs"
                     />
                 </label>
                 <Button
                     type="button"
                     variant="default"
                     size="sm"
-                    class="h-10 rounded-xl bg-blue-600 px-5 text-xs font-semibold shadow-lg shadow-blue-950/20 transition-colors hover:bg-blue-500"
+                    class="h-10 rounded-xl px-5 text-xs font-semibold shadow-lg shadow-primary/20"
                     @click="applyDateRange"
                     >Apply Date Range</Button
                 >

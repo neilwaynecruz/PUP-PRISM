@@ -4,8 +4,8 @@
     "description": "Property, resource, and inventory operations system for receiving, issuance, bookings, and handovers.",
     "start_url": "/dashboard",
     "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#ffffff",
+    "background_color": "#fbf8f7",
+    "theme_color": "#7a1538",
     "icons": [
         {
             "src": "/android-icon-36x36.png",

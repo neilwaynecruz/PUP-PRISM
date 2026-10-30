@@ -19,6 +19,8 @@ import type { NavItem } from '@/types';
 
 const page = usePage();
 
+const isAdmin = computed(() => page.props.auth.roles.includes('Admin'));
+
 const canManageApiTokens = computed(() =>
     page.props.auth.roles.some((role) =>
         ['Admin', 'Supply Head'].includes(role),
@@ -66,9 +68,19 @@ function isPendingItem(item: NavItem): boolean {
 <template>
     <div class="px-4 py-6" data-testid="settings-layout-page">
         <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
+            title="My settings"
+            description="These settings apply only to your own account. They do not change anything for other users."
         />
+
+        <p
+            v-if="isAdmin"
+            class="-mt-4 mb-6 max-w-2xl rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground"
+        >
+            Looking for system-wide administration? Users, departments,
+            positions, categories, origins, and locations are under
+            <span class="font-medium text-foreground">System</span> in the
+            sidebar.
+        </p>
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
             <aside class="w-full max-w-xl lg:w-48">

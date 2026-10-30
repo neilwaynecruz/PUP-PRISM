@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Origin;
+use App\Rules\UniqueIgnoringCase;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateOriginRequest extends FormRequest
 {
@@ -25,7 +25,7 @@ class UpdateOriginRequest extends FormRequest
         $origin = $this->route('origin');
 
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('origins', 'name')->ignore($origin->id)],
+            'name' => ['required', 'string', 'max:255', (new UniqueIgnoringCase('origins', 'name'))->ignore($origin->id)],
             'is_active' => ['required', 'boolean'],
         ];
     }

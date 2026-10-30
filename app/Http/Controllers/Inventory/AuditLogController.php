@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inventory\AuditLogIndexRequest;
 use App\Models\AuditLog;
+use App\Models\User;
 use App\Services\AuditLog\AuditLogPresenter;
+use App\Services\AuditLogService;
 use Carbon\Carbon;
-use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Builder;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -19,72 +22,46 @@ class AuditLogController extends Controller
         private readonly AuditLogPresenter $presenter,
     ) {}
 
-    public function index(Request $request): Response
+    public function index(AuditLogIndexRequest $request): Response
     {
-        $this->authorize('viewAny', AuditLog::class);
+        $filters = $request->filters();
 
-        $filters = [
-            'search' => $request->string('search')->trim()->toString(),
-            'action' => $request->string('action')->trim()->toString(),
-            'model_type' => $request->string('model_type')->trim()->toString(),
-            'user_id' => $request->integer('user_id'),
-            'date_from' => $request->string('date_from')->trim()->toString(),
-            'date_to' => $request->string('date_to')->trim()->toString(),
-        ];
-
-        $query = AuditLog::query()
+        $logs = $this->filteredQuery($filters)
             ->with('user:id,name,email')
-            ->orderByDesc('created_at');
-
-        // Apply filters
-        if ($filters['search']) {
-            $query->where(function ($q) use ($filters) {
-                $q->where('description', 'like', "%{$filters['search']}%")
-                    ->orWhereHas('user', function ($uq) use ($filters) {
-                        $uq->where('name', 'like', "%{$filters['search']}%");
-                    });
-            });
-        }
-
-        if ($filters['action']) {
-            $query->where('action', $filters['action']);
-        }
-
-        if ($filters['model_type']) {
-            $query->where('model_type', $filters['model_type']);
-        }
-
-        if ($filters['user_id']) {
-            $query->where('user_id', $filters['user_id']);
-        }
-
-        if ($filters['date_from']) {
-            $query->whereDate('created_at', '>=', $filters['date_from']);
-        }
-
-        if ($filters['date_to']) {
-            $query->whereDate('created_at', '<=', $filters['date_to']);
-        }
-
-        $logs = $query
             ->paginate(50)
             ->withQueryString()
             ->through(fn (AuditLog $log) => $this->presenter->present($log));
 
-        // Get filter options
         $actions = AuditLog::query()
             ->distinct()
             ->pluck('action')
-            ->sort()
+            ->map(fn (string $action): array => [
+                'value' => $action,
+                'label' => AuditLogPresenter::actionLabel($action),
+            ])
+            ->sortBy('label')
             ->values();
 
         $modelTypes = AuditLog::query()
             ->distinct()
             ->pluck('model_type')
-            ->sort()
+            ->map(fn (string $modelType): array => [
+                'value' => $modelType,
+                'label' => AuditLogPresenter::modelLabel($modelType),
+            ])
+            ->sortBy('label')
             ->values();
 
-        $alerts = $this->detectRiskAlerts();
+        $actors = User::query()
+            ->whereIn('id', AuditLog::query()->whereNotNull('user_id')->select('user_id'))
+            ->orderBy('name')
+            ->get(['id', 'name', 'email'])
+            ->map(fn (User $user): array => [
+                'id' => (int) $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+            ])
+            ->values();
 
         return Inertia::render('inventory/AuditLog', [
             'logs' => $logs,
@@ -92,9 +69,45 @@ class AuditLogController extends Controller
             'filterOptions' => [
                 'actions' => $actions,
                 'modelTypes' => $modelTypes,
+                'users' => $actors,
             ],
-            'alerts' => $alerts,
+            'alerts' => $this->detectRiskAlerts(),
         ]);
+    }
+
+    /**
+     * @param  array{search: string, action: string, model_type: string, user_id: int, date_from: string, date_to: string, sort: string}  $filters
+     * @return Builder<AuditLog>
+     */
+    private function filteredQuery(array $filters): Builder
+    {
+        $direction = $filters['sort'] === 'oldest' ? 'asc' : 'desc';
+
+        return AuditLog::query()
+            ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
+                $search = $filters['search'];
+
+                $query->where(function (Builder $nested) use ($search): void {
+                    $nested->where('description', 'like', "%{$search}%")
+                        ->orWhere('action', 'like', "%{$search}%")
+                        ->orWhere('ip_address', 'like', "%{$search}%")
+                        ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
+                            $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                        });
+
+                    if (ctype_digit($search)) {
+                        $nested->orWhere('model_id', (int) $search);
+                    }
+                });
+            })
+            ->when($filters['action'] !== '', fn (Builder $query) => $query->where('action', $filters['action']))
+            ->when($filters['model_type'] !== '', fn (Builder $query) => $query->where('model_type', $filters['model_type']))
+            ->when($filters['user_id'] > 0, fn (Builder $query) => $query->where('user_id', $filters['user_id']))
+            ->when($filters['date_from'] !== '', fn (Builder $query) => $query->whereDate('created_at', '>=', $filters['date_from']))
+            ->when($filters['date_to'] !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $filters['date_to']))
+            ->orderBy('created_at', $direction)
+            ->orderBy('id', $direction);
     }
 
     /**
@@ -182,77 +195,62 @@ class AuditLogController extends Controller
         return $alerts;
     }
 
-    public function export(Request $request): StreamedResponse
+    public function export(AuditLogIndexRequest $request): StreamedResponse
     {
-        $this->authorize('viewAny', AuditLog::class);
+        $filters = $request->filters();
+        $query = $this->filteredQuery($filters)->with('user:id,name,email');
 
-        $format = $request->string('format')->trim()->toString();
-
-        $query = AuditLog::query()
-            ->with('user:id,name,email')
-            ->orderByDesc('created_at');
-
-        // Apply same filters as index
-        if ($request->string('search')->trim()->toString()) {
-            $search = $request->string('search')->trim()->toString();
-            $query->where(function ($q) use ($search) {
-                $q->where('description', 'like', "%{$search}%")
-                    ->orWhereHas('user', function ($uq) use ($search) {
-                        $uq->where('name', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        if ($request->string('action')->trim()->toString()) {
-            $query->where('action', $request->string('action')->trim()->toString());
-        }
-
-        if ($request->string('model_type')->trim()->toString()) {
-            $query->where('model_type', $request->string('model_type')->trim()->toString());
-        }
-
-        if ($request->integer('user_id')) {
-            $query->where('user_id', $request->integer('user_id'));
-        }
-
-        if ($request->string('date_from')->trim()->toString()) {
-            $query->whereDate('created_at', '>=', $request->string('date_from')->trim()->toString());
-        }
-
-        if ($request->string('date_to')->trim()->toString()) {
-            $query->whereDate('created_at', '<=', $request->string('date_to')->trim()->toString());
-        }
-
-        $logs = $query->get();
+        AuditLogService::logCustom(
+            'audit_export',
+            __('Audit log exported to CSV.'),
+            null,
+            null,
+            ['filters' => array_filter($filters, fn (mixed $value): bool => $value !== '' && $value !== 0)],
+        );
 
         $filename = 'audit-logs-'.now()->format('Y-m-d-His').'.csv';
 
-        return response()->streamDownload(function () use ($logs) {
+        return response()->streamDownload(function () use ($query): void {
             $output = fopen('php://output', 'w');
 
-            // Header
             fputcsv($output, [
-                'Date', 'User', 'Email', 'Action', 'Model Type', 'Model ID',
-                'Description', 'IP Address', 'User Agent',
+                'Date', 'User', 'Email', 'Action', 'Action Code', 'Record Type', 'Record ID',
+                'Description', 'Changes', 'IP Address',
             ]);
 
-            foreach ($logs as $log) {
-                fputcsv($output, [
-                    $log->created_at->format('Y-m-d H:i:s'),
+            foreach ($query->lazy(500) as $log) {
+                fputcsv($output, array_map($this->csvSafe(...), [
+                    $log->created_at?->format('Y-m-d H:i:s') ?? '',
                     $log->user?->name ?? 'System',
-                    $log->user?->email ?? '—',
+                    $log->user?->email ?? '',
+                    AuditLogPresenter::actionLabel($log->action),
                     $log->action,
-                    $log->model_type,
-                    $log->model_id ?? '—',
+                    AuditLogPresenter::modelLabel($log->model_type),
+                    $log->model_id ?? '',
                     $log->description,
-                    $log->ip_address ?? '—',
-                    $log->user_agent ?? '—',
-                ]);
+                    $this->presenter->changeSummary($log),
+                    $log->ip_address ?? '',
+                ]));
             }
 
             fclose($output);
         }, $filename, [
-            'Content-Type' => 'text/csv',
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, private',
         ]);
+    }
+
+    /**
+     * Neutralise spreadsheet formulas so exported audit text cannot execute when opened.
+     */
+    private function csvSafe(mixed $value): string
+    {
+        $value = (string) $value;
+
+        if ($value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+            return "'".$value;
+        }
+
+        return $value;
     }
 }

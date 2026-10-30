@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreUserRequest;
 use App\Http\Requests\Admin\UpdateUserRequest;
+use App\Models\Department;
 use App\Models\Position;
 use App\Models\User;
 use App\Services\AuditLogService;
@@ -26,6 +27,7 @@ class UserManagementController extends Controller
             'search' => $request->string('search')->trim()->toString(),
             'role' => $request->string('role')->trim()->toString(),
             'active' => $request->has('active') ? $request->boolean('active') : null,
+            'department_id' => $request->integer('department_id'),
         ];
 
         $users = User::query()
@@ -46,6 +48,10 @@ class UserManagementController extends Controller
                 });
             })
             ->when($filters['active'] !== null, fn ($query) => $query->where('is_active', $filters['active']))
+            ->when($filters['department_id'] > 0, fn ($query) => $query->whereHas(
+                'position',
+                fn ($positionQuery) => $positionQuery->where('department_id', $filters['department_id']),
+            ))
             ->orderBy('name')
             ->paginate(12)
             ->withQueryString()
@@ -55,6 +61,8 @@ class UserManagementController extends Controller
             'filters' => $filters,
             'users' => $users,
             'roles' => $this->availableRoles(),
+            'roleDescriptions' => $this->roleDescriptions(),
+            'departments' => Department::query()->orderBy('name')->get(['id', 'name']),
             'can' => [
                 'create' => $request->user()?->can('create', User::class) ?? false,
             ],
@@ -67,6 +75,7 @@ class UserManagementController extends Controller
 
         return Inertia::render('admin/users/Create', [
             'roles' => $this->availableRoles(),
+            'roleDescriptions' => $this->roleDescriptions(),
             'positions' => $this->positionOptions(),
         ]);
     }
@@ -118,9 +127,12 @@ class UserManagementController extends Controller
         return Inertia::render('admin/users/Edit', [
             'user' => $this->userDetail($managedUser),
             'roles' => $this->availableRoles(),
-            'positions' => $this->positionOptions(),
+            'roleDescriptions' => $this->roleDescriptions(),
+            'positions' => $this->positionOptions($managedUser->position_id),
             'can' => [
                 'deactivate' => $this->canDeactivate($request->user(), $managedUser),
+                'reactivate' => ! $managedUser->is_active && ($request->user()?->can('reactivate', $managedUser) ?? false),
+                'changeRole' => ! ($request->user()?->is($managedUser) ?? false),
             ],
         ]);
     }
@@ -130,6 +142,15 @@ class UserManagementController extends Controller
         $this->authorize('update', $managedUser);
 
         $validated = $request->validated();
+
+        if ($request->user()?->is($managedUser) && $validated['role'] !== $this->primaryRole($managedUser)) {
+            Inertia::flash('toast', [
+                'type' => 'error',
+                'message' => __('You cannot change your own role. Ask another Admin to do it.'),
+            ]);
+
+            return back();
+        }
 
         if ($this->wouldRemoveLastActiveAdmin($managedUser, $validated['role'])) {
             Inertia::flash('toast', [
@@ -251,6 +272,71 @@ class UserManagementController extends Controller
         return to_route('admin.users.index');
     }
 
+    public function reactivate(Request $request, User $managedUser): RedirectResponse
+    {
+        $this->authorize('reactivate', $managedUser);
+
+        if ($managedUser->is_active) {
+            Inertia::flash('toast', ['type' => 'info', 'message' => __('This user account is already active.')]);
+
+            return back();
+        }
+
+        DB::transaction(function () use ($managedUser): void {
+            $managedUser->load(['roles:id,name', 'position.department:id,name']);
+            $oldValues = $this->auditPayload($managedUser);
+
+            $managedUser->forceFill(['is_active' => true])->save();
+
+            AuditLogService::log(
+                'reactivate',
+                "User {$managedUser->name} reactivated.",
+                $managedUser,
+                $oldValues,
+                $this->auditPayload($managedUser),
+            );
+        });
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('User account reactivated. They can sign in again with their existing password.')]);
+
+        return to_route('admin.users.edit', ['managedUser' => $managedUser]);
+    }
+
+    /**
+     * Plain-language summary of what each role can do, mirroring the route and policy rules.
+     *
+     * @return array<string, array{summary: string, abilities: list<string>}>
+     */
+    private function roleDescriptions(): array
+    {
+        return [
+            'Admin' => [
+                'summary' => __('Full system access, including user accounts and system settings.'),
+                'abilities' => [
+                    __('Manage users, departments, positions, categories, origins, and locations'),
+                    __('View audit logs, operations health, stock movements, and trash'),
+                    __('Everything a Supply Head and Property Custodian can do'),
+                ],
+            ],
+            'Supply Head' => [
+                'summary' => __('Runs supplies: approves requests, buys, and receives stock.'),
+                'abilities' => [
+                    __('Approve, reject, and issue requisitions'),
+                    __('Manage products, suppliers, purchase orders, receiving, and forecasts'),
+                    __('Triage inventory alerts'),
+                ],
+            ],
+            'Property Custodian' => [
+                'summary' => __('Looks after assets and their accountability.'),
+                'abilities' => [
+                    __('Hand over assets and approve asset bookings'),
+                    __('Record maintenance, transfers, lifecycle changes, and physical counts'),
+                    __('Submit requisitions and booking requests'),
+                ],
+            ],
+        ];
+    }
+
     /**
      * @return array<int, string>
      */
@@ -291,10 +377,14 @@ class UserManagementController extends Controller
     /**
      * @return array<int, array{id: int, title: string, code: string, department: string|null, is_active: bool, label: string}>
      */
-    private function positionOptions(): array
+    private function positionOptions(?int $currentPositionId = null): array
     {
         return Position::query()
             ->with('department:id,name')
+            ->where(function ($query) use ($currentPositionId): void {
+                $query->where('is_active', true)
+                    ->when($currentPositionId !== null, fn ($query) => $query->orWhere('id', $currentPositionId));
+            })
             ->orderBy('title')
             ->get()
             ->map(function (Position $position): array {

@@ -69,7 +69,7 @@ defineProps<{
                     autocomplete="email"
                     inputmode="email"
                     placeholder="Enter your email address"
-                    class="h-12 rounded-lg border-slate-300 bg-white px-3.5 text-base text-slate-950 caret-blue-600 shadow-none transition-[border-color,box-shadow,background-color] placeholder:text-slate-500 focus-visible:border-blue-500 focus-visible:ring-blue-500/25 sm:text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50 dark:caret-blue-400 dark:placeholder:text-slate-400"
+                    class="h-12 rounded-lg border-slate-300 bg-white px-3.5 text-base text-slate-950 caret-primary shadow-none transition-[border-color,box-shadow,background-color] placeholder:text-slate-500 focus-visible:border-primary focus-visible:ring-primary/25 sm:text-sm dark:border-input dark:bg-card dark:text-slate-50 dark:placeholder:text-slate-400"
                     :aria-invalid="Boolean(errors.email)"
                     :aria-describedby="errors.email ? 'email-error' : undefined"
                 />
@@ -89,7 +89,7 @@ defineProps<{
                     <TextLink
                         v-if="canResetPassword"
                         :href="request()"
-                        class="rounded-sm text-sm font-semibold text-blue-700 underline-offset-4 hover:text-blue-800 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:outline-none dark:text-blue-400 dark:hover:text-blue-300"
+                        class="rounded-sm text-sm font-semibold text-primary underline-offset-4 hover:text-primary/80 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none"
                         :tabindex="5"
                     >
                         Forgot password?
@@ -103,7 +103,7 @@ defineProps<{
                     :tabindex="2"
                     autocomplete="current-password"
                     placeholder="Enter your password"
-                    class="h-12 rounded-lg border-slate-300 bg-white px-3.5 text-base text-slate-950 caret-blue-600 shadow-none transition-[border-color,box-shadow,background-color] placeholder:text-slate-500 focus-visible:border-blue-500 focus-visible:ring-blue-500/25 sm:text-sm dark:border-slate-600 dark:bg-slate-800 dark:text-slate-50 dark:caret-blue-400 dark:placeholder:text-slate-400"
+                    class="h-12 rounded-lg border-slate-300 bg-white px-3.5 text-base text-slate-950 caret-primary shadow-none transition-[border-color,box-shadow,background-color] placeholder:text-slate-500 focus-visible:border-primary focus-visible:ring-primary/25 sm:text-sm dark:border-input dark:bg-card dark:text-slate-50 dark:placeholder:text-slate-400"
                     :aria-invalid="Boolean(errors.password)"
                     :aria-describedby="
                         errors.password ? 'password-error' : undefined
@@ -116,20 +116,20 @@ defineProps<{
 
             <Label
                 for="remember"
-                class="flex w-fit cursor-pointer items-center gap-3 rounded-md text-sm font-medium text-slate-700 focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2 dark:text-slate-300"
+                class="flex w-fit cursor-pointer items-center gap-3 rounded-md text-sm font-medium text-slate-700 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 dark:text-slate-300"
             >
                 <Checkbox
                     id="remember"
                     name="remember"
                     :tabindex="3"
-                    class="size-4.5 rounded-[0.3rem] border-slate-400 data-[state=checked]:border-blue-600 data-[state=checked]:bg-blue-600"
+                    class="size-4.5 rounded-[0.3rem] border-slate-400 data-[state=checked]:border-primary data-[state=checked]:bg-primary"
                 />
                 <span>Remember me on this device</span>
             </Label>
 
             <Button
                 type="submit"
-                class="mt-1 h-12 w-full cursor-pointer rounded-lg bg-blue-600 text-sm font-semibold text-white shadow-none transition-colors hover:bg-blue-700 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed"
+                class="mt-1 h-12 w-full cursor-pointer rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-none transition-colors hover:bg-primary/90 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed"
                 :tabindex="4"
                 :disabled="processing"
                 data-test="login-button"
@@ -147,7 +147,7 @@ defineProps<{
             Do not have an account?
             <TextLink
                 href="/register"
-                class="font-semibold text-blue-700 underline-offset-4 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                class="font-semibold text-primary underline-offset-4 hover:text-primary/80"
                 :tabindex="6"
             >
                 Create an account

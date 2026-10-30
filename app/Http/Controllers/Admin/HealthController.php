@@ -3,22 +3,27 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Services\Operations\QueueOperationsService;
+use App\Services\Operations\SystemHealthService;
 use App\Support\SchedulerHeartbeat;
 use Illuminate\Http\JsonResponse;
 
 class HealthController extends Controller
 {
-    public function __invoke(QueueOperationsService $queueOperations): JsonResponse
+    public function __invoke(SystemHealthService $systemHealth): JsonResponse
     {
-        $queueSnapshot = $queueOperations->snapshot();
+        $report = $systemHealth->report();
 
         return response()->json([
-            'status' => 'ok',
-            'failed_jobs_count' => $queueSnapshot['failed_jobs_count'],
-            'queue_connection' => $queueSnapshot['connection'],
+            'status' => $report['status'],
+            'summary' => $report['summary'],
+            'checked_at' => $report['checked_at'],
+            'checks' => collect($report['checks'])
+                ->mapWithKeys(fn (array $check): array => [$check['key'] => $check['status']])
+                ->all(),
+            'failed_jobs_count' => $report['queue_operations']['failed_jobs_count'],
+            'queue_connection' => $report['queue_operations']['connection'],
             'scheduler_last_runs' => SchedulerHeartbeat::lastRuns(),
-            'queue_operations' => $queueSnapshot,
-        ]);
+            'queue_operations' => $report['queue_operations'],
+        ], headers: ['Cache-Control' => 'no-store, private']);
     }
 }

@@ -22,7 +22,7 @@ defineProps<{
             size="sm"
             as-child
             :disabled="!link.url"
-            class="h-8 min-w-8 rounded-lg px-3 text-xs transition-colors"
+            class="min-h-11 min-w-11 rounded-lg px-3 text-xs transition-colors sm:min-h-8 sm:min-w-8"
             :class="
                 link.active
                     ? 'bg-primary/12 text-primary shadow-xs hover:bg-primary/15'

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { computed } from 'vue';
 import UserManagementController from '@/actions/App/Http/Controllers/Admin/UserManagementController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -14,11 +15,18 @@ import {
 
 type PositionOption = {
     id: number;
+    title: string;
+    code: string;
+    department: string | null;
+    is_active: boolean;
     label: string;
 };
 
-defineProps<{
+type RoleDescription = { summary: string; abilities: string[] };
+
+const props = defineProps<{
     roles: string[];
+    roleDescriptions: Record<string, RoleDescription>;
     positions: PositionOption[];
 }>();
 
@@ -42,6 +50,19 @@ const form = useForm({
     position_id: '',
 });
 
+const groupedPositions = computed(() => {
+    const groups = new Map<string, PositionOption[]>();
+
+    for (const position of props.positions) {
+        const department = position.department ?? 'No department';
+        groups.set(department, [...(groups.get(department) ?? []), position]);
+    }
+
+    return [...groups.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([department, positions]) => ({ department, positions }));
+});
+
 function submit(): void {
     form.post(UserManagementController.store().url);
 }
@@ -54,7 +75,7 @@ function submit(): void {
         <Heading
             variant="small"
             title="New user"
-            description="Create an internal account and assign its access role."
+            description="Create an account for university personnel. The role controls what they can do; the position links them to asset accountability."
         />
 
         <form class="grid gap-6" @submit.prevent="submit">
@@ -90,6 +111,26 @@ function submit(): void {
                         </option>
                     </select>
                     <InputError :message="form.errors.role" />
+                    <div
+                        v-if="form.role && roleDescriptions[form.role]"
+                        class="rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-xs"
+                        data-testid="role-description"
+                    >
+                        <p class="font-medium text-foreground">
+                            {{ roleDescriptions[form.role].summary }}
+                        </p>
+                        <ul
+                            class="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground"
+                        >
+                            <li
+                                v-for="ability in roleDescriptions[form.role]
+                                    .abilities"
+                                :key="ability"
+                            >
+                                {{ ability }}
+                            </li>
+                        </ul>
+                    </div>
                 </div>
 
                 <div class="grid gap-2">
@@ -100,14 +141,25 @@ function submit(): void {
                         class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
                     >
                         <option value="">No assigned position</option>
-                        <option
-                            v-for="position in positions"
-                            :key="position.id"
-                            :value="String(position.id)"
+                        <optgroup
+                            v-for="group in groupedPositions"
+                            :key="group.department"
+                            :label="group.department"
                         >
-                            {{ position.label }}
-                        </option>
+                            <option
+                                v-for="position in group.positions"
+                                :key="position.id"
+                                :value="String(position.id)"
+                            >
+                                {{ position.title }} ({{ position.code }}){{
+                                    position.is_active ? '' : ' — inactive'
+                                }}
+                            </option>
+                        </optgroup>
                     </select>
+                    <p class="text-xs text-muted-foreground">
+                        Required before this person can receive asset handovers.
+                    </p>
                     <InputError :message="form.errors.position_id" />
                 </div>
 

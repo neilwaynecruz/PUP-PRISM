@@ -25,6 +25,14 @@ class HandoverVerificationController extends Controller
         }
 
         $sessionKey = $this->sessionKey($handoverLog->id);
+
+        if ($handoverLog->cancelled_at !== null) {
+            $request->session()->forget($sessionKey);
+            Inertia::flash('toast', ['type' => 'error', 'message' => __('This handover was cancelled by the property office and no longer needs your verification.')]);
+
+            return redirect()->route('dashboard');
+        }
+
         $queryToken = $request->string('token')->trim()->toString();
 
         if ($queryToken !== '') {

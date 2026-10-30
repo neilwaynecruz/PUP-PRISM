@@ -1,27 +1,93 @@
 <script setup lang="ts">
-import { Head, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm } from '@inertiajs/vue3';
 import {
-    Boxes,
-    Calendar,
-    Check,
-    Clock,
-    FileText,
-    Hash,
+    AlertCircle,
+    BookOpen,
+    CheckCheck,
+    CheckCircle2,
+    ExternalLink,
+    FileSpreadsheet,
     Layers,
+    Minus,
     Package,
+    PackageCheck,
     Plus,
-    ScanLine,
-    Tag,
+    RotateCcw,
+    Search,
     Trash2,
+    Truck,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
+import PurchaseOrderController from '@/actions/App/Http/Controllers/Inventory/PurchaseOrderController';
 import ReceivingController from '@/actions/App/Http/Controllers/Inventory/ReceivingController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
+import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
 import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+
+type CatalogProductOption = {
+    id: number;
+    sku: string;
+    name: string;
+    type?: 'consumable' | 'asset' | string | null;
+    category?: string | null;
+    supplier?: string | null;
+    on_hand_qty?: number;
+    reorder_threshold?: number;
+    unit_price?: number | null;
+};
+
+type PurchaseOrderLineOption = {
+    id: number;
+    product_id: number;
+    product?: {
+        id: number;
+        sku: string;
+        name: string;
+        type?: string | null;
+        category?: string | null;
+        on_hand_qty?: number | null;
+    } | null;
+    qty_ordered: number;
+    qty_received: number;
+    qty_remaining: number;
+    unit_price: number;
+    subtotal: number;
+    progress_pct: number;
+};
+
+type ReceivablePurchaseOrder = {
+    id: number;
+    po_number: string;
+    status: string;
+    status_label?: string;
+    progress_pct: number;
+    expected_delivery_at?: string | null;
+    supplier?: {
+        id: number;
+        name: string;
+        contact_person?: string | null;
+    } | null;
+    lines: PurchaseOrderLineOption[];
+};
+
+const props = withDefaults(
+    defineProps<{
+        products?: CatalogProductOption[];
+        purchaseOrders?: ReceivablePurchaseOrder[];
+        initialPurchaseOrderId?: number | null;
+    }>(),
+    {
+        products: () => [],
+        purchaseOrders: () => [],
+        initialPurchaseOrderId: null,
+    },
+);
 
 defineOptions({
     name: 'ReceivingIndexPage',
@@ -32,25 +98,490 @@ defineOptions({
     },
 });
 
-const mode = ref<'single' | 'batch'>('single');
-const tagScanFeedback = ref('');
-const batchTagFeedback = ref<Record<number, string>>({});
-const isSubmittingBatch = ref(false);
+type ReceivingMode = 'single' | 'batch' | 'po';
 
-const form = useForm({
+const mode = ref<ReceivingMode>(
+    props.initialPurchaseOrderId &&
+        props.purchaseOrders.some(
+            (po) => po.id === props.initialPurchaseOrderId,
+        )
+        ? 'po'
+        : 'single',
+);
+
+const isCatalogOpen = ref(false);
+const catalogTarget = ref<'single' | 'batch'>('single');
+const feedbackBanner = ref<{
+    type: 'info' | 'warning' | 'success';
+    text: string;
+} | null>(null);
+
+function showFeedback(
+    text: string,
+    type: 'info' | 'warning' | 'success' = 'info',
+): void {
+    feedbackBanner.value = { type, text };
+    setTimeout(() => {
+        if (feedbackBanner.value?.text === text) {
+            feedbackBanner.value = null;
+        }
+    }, 4500);
+}
+
+// ============================================================================
+// Product Lookup Helpers
+// ============================================================================
+function findCatalogProductBySku(rawSku: string): CatalogProductOption | null {
+    const cleaned = rawSku.trim().toLowerCase();
+
+    if (!cleaned) {
+        return null;
+    }
+
+    return (
+        props.products.find((item) => item.sku.toLowerCase() === cleaned) ??
+        null
+    );
+}
+
+function parseTagCodes(value: string): string[] {
+    return value
+        .split(/\r?\n|,/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+}
+
+// ============================================================================
+// Mode 1: Single Item Receiving
+// ============================================================================
+type SingleReceivingForm = {
+    sku: string;
+    reference_no: string;
+    received_at: string;
+    expires_at: string;
+    qty: string;
+    tag_codes_text: string;
+    tag_codes: string[] | null;
+    notes: string;
+};
+
+const form = useForm<SingleReceivingForm>({
     sku: '',
-    qty: '' as string | number,
     reference_no: '',
     received_at: '',
     expires_at: '',
-    tag_codes: [] as string[],
+    qty: '',
     tag_codes_text: '',
+    tag_codes: null,
     notes: '',
 });
 
-type BatchLine = {
+const singleSearchQuery = ref('');
+const showSingleSuggestions = ref(false);
+
+const singleSuggestions = computed(() => {
+    const q = singleSearchQuery.value.trim().toLowerCase();
+
+    if (!q) {
+        return props.products.slice(0, 6);
+    }
+
+    return props.products
+        .filter(
+            (item) =>
+                item.sku.toLowerCase().includes(q) ||
+                item.name.toLowerCase().includes(q) ||
+                (item.category ?? '').toLowerCase().includes(q),
+        )
+        .slice(0, 8);
+});
+
+const matchedSingleProduct = computed(() => findCatalogProductBySku(form.sku));
+
+const singleTagList = computed(() => parseTagCodes(form.tag_codes_text));
+
+function selectSingleProduct(
+    product: CatalogProductOption,
+    defaultQty?: number,
+): void {
+    form.sku = product.sku;
+    singleSearchQuery.value = '';
+    showSingleSuggestions.value = false;
+
+    if (product.type !== 'asset') {
+        if (defaultQty && defaultQty > 0) {
+            form.qty = String(defaultQty);
+        } else if (!form.qty) {
+            form.qty = '1';
+        }
+    }
+
+    showFeedback(
+        `Selected ${product.sku} — ${product.name} (${product.type === 'asset' ? 'Serialized Asset' : 'Consumable'}).`,
+        'success',
+    );
+}
+
+function handleSingleSearchEnter(): void {
+    const q = singleSearchQuery.value.trim();
+
+    if (!q) {
+        return;
+    }
+
+    const exact =
+        findCatalogProductBySku(q) ?? singleSuggestions.value[0] ?? null;
+
+    if (exact) {
+        selectSingleProduct(exact);
+    } else {
+        form.sku = q;
+        singleSearchQuery.value = '';
+        showSingleSuggestions.value = false;
+    }
+}
+
+function hideSingleSuggestionsDelayed(): void {
+    setTimeout(() => {
+        showSingleSuggestions.value = false;
+    }, 180);
+}
+
+function adjustSingleQty(delta: number): void {
+    const current = Math.max(0, Number(form.qty) || 0);
+    const next = Math.max(1, current + delta);
+    form.qty = String(next);
+}
+
+function appendTagCode(value: string): void {
+    const cleaned = value.trim();
+
+    if (!cleaned) {
+        return;
+    }
+
+    const current = parseTagCodes(form.tag_codes_text);
+
+    if (current.includes(cleaned)) {
+        return;
+    }
+
+    form.tag_codes_text = [...current, cleaned].join('\n');
+}
+
+function submitSingle(): void {
+    const tagCodes = parseTagCodes(form.tag_codes_text);
+
+    form.tag_codes = tagCodes.length ? tagCodes : null;
+
+    form.transform((data) => ({
+        sku: data.sku.trim(),
+        reference_no: data.reference_no.trim() || null,
+        received_at: data.received_at || null,
+        expires_at: data.expires_at || null,
+        qty: data.qty ? Number(data.qty) : null,
+        tag_codes: data.tag_codes,
+        notes: data.notes.trim() || null,
+    })).post(ReceivingController.store().url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            form.reset('qty', 'tag_codes_text', 'tag_codes', 'notes');
+        },
+    });
+}
+
+// ============================================================================
+// Mode 2: Batch Delivery Receiving
+// ============================================================================
+type BatchLineForm = {
     sku: string;
-    qty: string | number;
+    reference_no: string;
+    received_at: string;
+    expires_at: string;
+    qty: string;
+    tag_codes_text: string;
+    notes: string;
+};
+
+function createEmptyBatchLine(
+    defaultRef = '',
+    defaultDate = '',
+): BatchLineForm {
+    return {
+        sku: '',
+        reference_no: defaultRef,
+        received_at: defaultDate,
+        expires_at: '',
+        qty: '',
+        tag_codes_text: '',
+        notes: '',
+    };
+}
+
+const batchForm = useForm<{
+    lines: BatchLineForm[];
+}>({
+    lines: [createEmptyBatchLine()],
+});
+
+const batchQuickQuery = ref('');
+const batchQuickQty = ref(1);
+const showBatchSuggestions = ref(false);
+const batchSharedRef = ref('');
+const batchSharedDate = ref('');
+
+const batchSuggestions = computed(() => {
+    const q = batchQuickQuery.value.trim().toLowerCase();
+
+    if (!q) {
+        return props.products.slice(0, 6);
+    }
+
+    return props.products
+        .filter(
+            (item) =>
+                item.sku.toLowerCase().includes(q) ||
+                item.name.toLowerCase().includes(q) ||
+                (item.category ?? '').toLowerCase().includes(q),
+        )
+        .slice(0, 8);
+});
+
+const batchSelectedSkus = computed(() =>
+    batchForm.lines.map((l) => l.sku.trim()).filter(Boolean),
+);
+
+const batchSummary = computed(() => {
+    let populatedLines = 0;
+    let totalConsumableQty = 0;
+    let totalAssetTags = 0;
+
+    batchForm.lines.forEach((line) => {
+        if (line.sku.trim()) {
+            populatedLines += 1;
+        }
+
+        totalConsumableQty += Math.max(0, Number(line.qty) || 0);
+        totalAssetTags += parseTagCodes(line.tag_codes_text).length;
+    });
+
+    return { populatedLines, totalConsumableQty, totalAssetTags };
+});
+
+function addBatchLine(): void {
+    if (batchForm.lines.length >= 50) {
+        return;
+    }
+
+    batchForm.lines.push(
+        createEmptyBatchLine(batchSharedRef.value, batchSharedDate.value),
+    );
+}
+
+function removeBatchLine(index: number): void {
+    if (batchForm.lines.length <= 1) {
+        batchForm.lines[0] = createEmptyBatchLine(
+            batchSharedRef.value,
+            batchSharedDate.value,
+        );
+
+        return;
+    }
+
+    batchForm.lines.splice(index, 1);
+}
+
+function addOrMergeProductIntoBatch(
+    product: CatalogProductOption,
+    qtyToAdd = 1,
+): void {
+    const qty = Math.max(1, Math.trunc(Number(qtyToAdd) || 1));
+    const existingIndex = batchForm.lines.findIndex(
+        (line) => line.sku.trim().toLowerCase() === product.sku.toLowerCase(),
+    );
+
+    if (existingIndex !== -1 && product.type !== 'asset') {
+        const existingLine = batchForm.lines[existingIndex];
+        const nextQty = (Number(existingLine.qty) || 0) + qty;
+        existingLine.qty = String(nextQty);
+        showFeedback(
+            `Updated batch line #${existingIndex + 1} (${product.sku}) — quantity increased to ${nextQty}.`,
+            'success',
+        );
+
+        return;
+    }
+
+    const emptyIndex = batchForm.lines.findIndex((line) => !line.sku.trim());
+    const targetLine: BatchLineForm = {
+        sku: product.sku,
+        reference_no: batchSharedRef.value,
+        received_at: batchSharedDate.value,
+        expires_at: '',
+        qty: product.type === 'asset' ? '' : String(qty),
+        tag_codes_text: '',
+        notes: '',
+    };
+
+    if (emptyIndex !== -1) {
+        batchForm.lines[emptyIndex] = targetLine;
+    } else if (batchForm.lines.length < 50) {
+        batchForm.lines.push(targetLine);
+    }
+
+    showFeedback(
+        `Added ${product.sku} (${product.name}) to batch delivery.`,
+        'success',
+    );
+}
+
+function handleBatchQuickAdd(selectedItem?: CatalogProductOption): void {
+    const item =
+        selectedItem ??
+        findCatalogProductBySku(batchQuickQuery.value) ??
+        batchSuggestions.value[0] ??
+        null;
+
+    if (!item) {
+        showFeedback(
+            `No product matched "${batchQuickQuery.value.trim()}".`,
+            'warning',
+        );
+
+        return;
+    }
+
+    addOrMergeProductIntoBatch(item, batchQuickQty.value);
+    batchQuickQuery.value = '';
+    batchQuickQty.value = 1;
+    showBatchSuggestions.value = false;
+}
+
+function hideBatchSuggestionsDelayed(): void {
+    setTimeout(() => {
+        showBatchSuggestions.value = false;
+    }, 180);
+}
+
+function applyBatchSharedMetadata(): void {
+    batchForm.lines.forEach((line) => {
+        if (batchSharedRef.value.trim() !== '') {
+            line.reference_no = batchSharedRef.value.trim();
+        }
+
+        if (batchSharedDate.value !== '') {
+            line.received_at = batchSharedDate.value;
+        }
+    });
+    showFeedback(
+        'Applied shared delivery reference and date to all batch lines.',
+        'success',
+    );
+}
+
+function appendBatchTagCode(index: number, value: string): void {
+    const line = batchForm.lines[index];
+    const cleaned = value.trim();
+
+    if (!line || !cleaned) {
+        return;
+    }
+
+    const current = parseTagCodes(line.tag_codes_text);
+
+    if (current.includes(cleaned)) {
+        return;
+    }
+
+    line.tag_codes_text = [...current, cleaned].join('\n');
+}
+
+function submitBatch(): void {
+    batchForm
+        .transform((data) => ({
+            lines: data.lines.map((line) => {
+                const tagCodes = parseTagCodes(line.tag_codes_text);
+
+                return {
+                    sku: line.sku.trim(),
+                    reference_no: line.reference_no.trim() || null,
+                    received_at: line.received_at || null,
+                    expires_at: line.expires_at || null,
+                    qty: line.qty ? Number(line.qty) : null,
+                    tag_codes: tagCodes.length ? tagCodes : null,
+                    notes: line.notes.trim() || null,
+                };
+            }),
+        }))
+        .post(ReceivingController.storeBatch().url, {
+            preserveScroll: true,
+        });
+}
+
+function batchLineError(index: number, field: string): string | undefined {
+    const errors = batchForm.errors as Record<string, string | undefined>;
+
+    return errors[`lines.${index}.${field}`];
+}
+
+// ============================================================================
+// Catalog Modal Handler (Shared by Single & Batch)
+// ============================================================================
+function openCatalog(target: 'single' | 'batch'): void {
+    catalogTarget.value = target;
+    isCatalogOpen.value = true;
+}
+
+function handleCatalogSelection(
+    lookupItem: ProductLookupItem,
+    quantity: number,
+): void {
+    const catalogProduct: CatalogProductOption = findCatalogProductBySku(
+        lookupItem.sku,
+    ) ?? {
+        id: lookupItem.id,
+        sku: lookupItem.sku,
+        name: lookupItem.name,
+        type: lookupItem.type,
+        category: lookupItem.category,
+        on_hand_qty: lookupItem.on_hand_qty,
+        reorder_threshold: lookupItem.reorder_threshold,
+        unit_price: lookupItem.unit_price,
+    };
+
+    if (catalogTarget.value === 'single') {
+        selectSingleProduct(catalogProduct, quantity);
+    } else {
+        addOrMergeProductIntoBatch(catalogProduct, quantity);
+    }
+}
+
+// ============================================================================
+// Mode 3: Purchase Order Receiving
+// ============================================================================
+const selectedPoId = ref<string>(
+    props.initialPurchaseOrderId
+        ? String(props.initialPurchaseOrderId)
+        : props.purchaseOrders[0]
+          ? String(props.purchaseOrders[0].id)
+          : '',
+);
+
+const selectedPo = computed<ReceivablePurchaseOrder | null>(() => {
+    const id = Number(selectedPoId.value || 0);
+
+    if (!id) {
+        return null;
+    }
+
+    return props.purchaseOrders.find((po) => po.id === id) ?? null;
+});
+
+type PoReceiveLineState = {
+    purchase_order_line_id: number;
+    product_type: string;
+    qty_remaining: number;
+    qty_received: string;
     reference_no: string;
     received_at: string;
     expires_at: string;
@@ -58,778 +589,2104 @@ type BatchLine = {
     notes: string;
 };
 
-const batchForm = useForm({
-    lines: [
-        {
-            sku: '',
-            qty: '',
-            reference_no: '',
-            received_at: '',
-            expires_at: '',
-            tag_codes_text: '',
-            notes: '',
-        },
-    ] as BatchLine[],
+const poReceiveForm = useForm<{
+    lines: PoReceiveLineState[];
+    idempotency_key: string;
+}>({
+    lines: [],
+    idempotency_key: '',
 });
 
-const tagCodes = computed(() =>
-    form.tag_codes_text
-        .split(/\r?\n/)
-        .map((s) => s.trim())
-        .filter(Boolean),
-);
+const poLineSearchQuery = ref('');
+const poSharedRef = ref('');
+const poSharedDate = ref(new Date().toISOString().slice(0, 10));
 
-function submitSingle() {
-    router.post(
-        ReceivingController.store().url,
-        {
-            sku: form.sku,
-            qty: form.qty === '' ? null : Number(form.qty),
-            reference_no: form.reference_no || null,
-            received_at: form.received_at || null,
-            expires_at: form.expires_at || null,
-            tag_codes: tagCodes.value.length ? tagCodes.value : null,
-            notes: form.notes || null,
-        },
-        {
-            onStart: () => form.clearErrors(),
-            onError: (errors) => form.setError(errors),
-            preserveScroll: true,
-        },
-    );
-}
+function syncPoReceiveLines(po: ReceivablePurchaseOrder | null): void {
+    if (!po) {
+        poReceiveForm.lines = [];
 
-function addBatchLine() {
-    batchForm.lines.push({
-        sku: '',
-        qty: '',
+        return;
+    }
+
+    poReceiveForm.clearErrors();
+    poReceiveForm.lines = po.lines.map((line) => ({
+        purchase_order_line_id: line.id,
+        product_type: line.product?.type ?? 'consumable',
+        qty_remaining: line.qty_remaining,
+        qty_received: '',
         reference_no: '',
         received_at: '',
         expires_at: '',
         tag_codes_text: '',
         notes: '',
+    }));
+}
+
+watch(
+    selectedPo,
+    (nextPo) => {
+        syncPoReceiveLines(nextPo);
+    },
+    { immediate: true },
+);
+
+const filteredPoLineIndices = computed<number[]>(() => {
+    if (!selectedPo.value) {
+        return [];
+    }
+
+    const q = poLineSearchQuery.value.trim().toLowerCase();
+
+    return selectedPo.value.lines
+        .map((line, index) => ({ line, index }))
+        .filter(({ line }) => {
+            if (!q) {
+                return true;
+            }
+
+            const sku = line.product?.sku?.toLowerCase() ?? '';
+            const name = line.product?.name?.toLowerCase() ?? '';
+
+            return sku.includes(q) || name.includes(q);
+        })
+        .map(({ index }) => index);
+});
+
+const poReceiptStats = computed(() => {
+    let activeLines = 0;
+    let totalUnitsNow = 0;
+
+    poReceiveForm.lines.forEach((line) => {
+        if (line.product_type === 'asset') {
+            const tags = parseTagCodes(line.tag_codes_text);
+
+            if (tags.length > 0) {
+                activeLines += 1;
+                totalUnitsNow += tags.length;
+            }
+        } else {
+            const qty = Number(line.qty_received || 0);
+
+            if (qty > 0) {
+                activeLines += 1;
+                totalUnitsNow += qty;
+            }
+        }
+    });
+
+    return { activeLines, totalUnitsNow };
+});
+
+const poReceiveErrors = computed(
+    () => poReceiveForm.errors as Record<string, string | undefined>,
+);
+
+function adjustPoLineQty(index: number, delta: number): void {
+    const lineState = poReceiveForm.lines[index];
+
+    if (
+        !lineState ||
+        lineState.product_type === 'asset' ||
+        lineState.qty_remaining < 1
+    ) {
+        return;
+    }
+
+    const current = Math.max(0, Number(lineState.qty_received) || 0);
+    const next = Math.min(
+        lineState.qty_remaining,
+        Math.max(0, current + delta),
+    );
+    lineState.qty_received = next > 0 ? String(next) : '';
+}
+
+function fillPoLineRemaining(index: number): void {
+    const lineState = poReceiveForm.lines[index];
+
+    if (
+        !lineState ||
+        lineState.product_type === 'asset' ||
+        lineState.qty_remaining < 1
+    ) {
+        return;
+    }
+
+    lineState.qty_received = String(lineState.qty_remaining);
+}
+
+function fillAllPoRemaining(): void {
+    let count = 0;
+    poReceiveForm.lines.forEach((line) => {
+        if (line.product_type !== 'asset' && line.qty_remaining > 0) {
+            line.qty_received = String(line.qty_remaining);
+            count += 1;
+        }
+    });
+
+    if (count > 0) {
+        showFeedback(
+            `Filled remaining quantities for ${count} consumable PO line(s).`,
+            'success',
+        );
+    }
+}
+
+function clearAllPoQuantities(): void {
+    poReceiveForm.lines.forEach((line) => {
+        line.qty_received = '';
+        line.tag_codes_text = '';
     });
 }
 
-function removeBatchLine(index: number) {
-    if (batchForm.lines.length <= 1) {
+function appendPoAssetTag(index: number, rawCode: string): void {
+    const lineState = poReceiveForm.lines[index];
+    const cleaned = rawCode.trim();
+
+    if (!lineState || !cleaned) {
         return;
     }
 
-    batchForm.lines.splice(index, 1);
-}
+    const current = parseTagCodes(lineState.tag_codes_text);
 
-function lineTagCodes(text: string): string[] {
-    return text
-        .split(/\r?\n/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-}
-
-function mergeTagCodeText(
-    currentValue: string,
-    nextValue: string,
-): { value: string; added: boolean; count: number } {
-    const normalized = nextValue.trim();
-
-    if (!normalized) {
-        return {
-            value: currentValue,
-            added: false,
-            count: lineTagCodes(currentValue).length,
-        };
-    }
-
-    const nextLines = lineTagCodes(currentValue);
-    const existing = new Set(nextLines);
-    const added = !existing.has(normalized);
-
-    if (added) {
-        existing.add(normalized);
-    }
-
-    return {
-        value: Array.from(existing).join('\n'),
-        added,
-        count: existing.size,
-    };
-}
-
-function submitBatch() {
-    if (isSubmittingBatch.value) {
+    if (current.includes(cleaned)) {
         return;
     }
 
-    const lines = batchForm.lines.map((line) => ({
-        sku: line.sku,
-        qty: line.qty === '' ? null : Number(line.qty),
-        reference_no: line.reference_no || null,
-        received_at: line.received_at || null,
-        expires_at: line.expires_at || null,
-        tag_codes: lineTagCodes(line.tag_codes_text).length
-            ? lineTagCodes(line.tag_codes_text)
-            : null,
-        notes: line.notes || null,
-    }));
+    if (current.length >= lineState.qty_remaining) {
+        showFeedback(
+            `All ${lineState.qty_remaining} remaining asset tag(s) for this PO line are already entered.`,
+            'warning',
+        );
 
-    router.post(
-        ReceivingController.storeBatch().url,
-        { lines },
-        {
-            onStart: () => {
-                isSubmittingBatch.value = true;
-                batchForm.clearErrors();
-            },
-            onError: (errors) => batchForm.setError(errors),
-            onFinish: () => {
-                isSubmittingBatch.value = false;
-            },
-            preserveScroll: true,
-        },
+        return;
+    }
+
+    lineState.tag_codes_text = [...current, cleaned].join('\n');
+}
+
+function handlePoProductMatch(rawQuery: string): void {
+    if (!selectedPo.value) {
+        return;
+    }
+
+    const cleaned = rawQuery.trim();
+
+    if (!cleaned) {
+        return;
+    }
+
+    const idx = selectedPo.value.lines.findIndex(
+        (line) =>
+            line.product?.sku?.toLowerCase() === cleaned.toLowerCase() ||
+            line.product?.name?.toLowerCase() === cleaned.toLowerCase(),
+    );
+
+    if (idx === -1) {
+        showFeedback(
+            `"${cleaned}" does not match any item on ${selectedPo.value.po_number}.`,
+            'warning',
+        );
+
+        return;
+    }
+
+    const poLine = selectedPo.value.lines[idx];
+    const state = poReceiveForm.lines[idx];
+
+    if (poLine.qty_remaining <= 0) {
+        showFeedback(
+            `${poLine.product?.sku} is already fully received on this PO.`,
+            'warning',
+        );
+
+        return;
+    }
+
+    if (state.product_type === 'asset') {
+        poLineSearchQuery.value = poLine.product?.sku ?? '';
+        showFeedback(
+            `Matched asset ${poLine.product?.sku}. Scan or enter its asset tags below.`,
+            'info',
+        );
+
+        return;
+    }
+
+    const current = Math.max(0, Number(state.qty_received) || 0);
+
+    if (current >= poLine.qty_remaining) {
+        showFeedback(
+            `${poLine.product?.sku} is already at maximum remaining quantity (${poLine.qty_remaining}).`,
+            'warning',
+        );
+
+        return;
+    }
+
+    state.qty_received = String(current + 1);
+    showFeedback(
+        `Matched ${poLine.product?.sku} — receiving quantity now ${current + 1} of ${poLine.qty_remaining}.`,
+        'success',
     );
 }
 
-function appendTagCode(value: string): void {
-    const merged = mergeTagCodeText(form.tag_codes_text, value);
-
-    form.tag_codes_text = merged.value;
-    tagScanFeedback.value = merged.added
-        ? `Captured ${value.trim()}. ${merged.count} ${merged.count === 1 ? 'tag code is' : 'tag codes are'} ready for receiving.`
-        : `${value.trim()} is already in the list.`;
-}
-
-function appendBatchLineTagCode(index: number, value: string): void {
-    const line = batchForm.lines[index];
-
-    if (!line) {
+function submitPoReceipt(): void {
+    if (!selectedPo.value) {
         return;
     }
 
-    const merged = mergeTagCodeText(line.tag_codes_text, value);
+    poReceiveForm.clearErrors();
 
-    line.tag_codes_text = merged.value;
-    batchTagFeedback.value[index] = merged.added
-        ? `Captured ${value.trim()}. ${merged.count} ${merged.count === 1 ? 'tag code' : 'tag codes'} on this line.`
-        : `${value.trim()} is already on this line.`;
+    const lines = poReceiveForm.lines
+        .map((line) => {
+            const tags = parseTagCodes(line.tag_codes_text);
+            const qtyReceived =
+                line.product_type === 'asset'
+                    ? tags.length
+                    : Number(line.qty_received || 0);
+
+            if (line.qty_remaining <= 0) {
+                return null;
+            }
+
+            if (line.product_type === 'asset' && tags.length === 0) {
+                return null;
+            }
+
+            if (line.product_type !== 'asset' && qtyReceived <= 0) {
+                return null;
+            }
+
+            return {
+                purchase_order_line_id: line.purchase_order_line_id,
+                qty_received: qtyReceived > 0 ? qtyReceived : null,
+                reference_no:
+                    line.reference_no.trim() ||
+                    poSharedRef.value.trim() ||
+                    null,
+                received_at: line.received_at || poSharedDate.value || null,
+                expires_at:
+                    line.product_type === 'consumable'
+                        ? line.expires_at || null
+                        : null,
+                tag_codes: line.product_type === 'asset' ? tags : null,
+                notes: line.notes.trim() || null,
+            };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+
+    if (lines.length === 0) {
+        poReceiveForm.setError(
+            'lines',
+            'Enter at least one received quantity or asset tag before recording the PO receipt.',
+        );
+
+        return;
+    }
+
+    const idempotencyKey =
+        typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? crypto.randomUUID()
+            : `po-rcv-${selectedPo.value.id}-${Date.now()}`;
+
+    poReceiveForm.idempotency_key = idempotencyKey;
+
+    poReceiveForm
+        .transform(() => ({
+            lines,
+            idempotency_key: idempotencyKey,
+        }))
+        .post(PurchaseOrderController.receive(selectedPo.value.id).url, {
+            preserveScroll: true,
+        });
 }
 </script>
 
 <template>
-    <Head title="Receiving" />
-
     <div
-        class="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8"
         data-testid="receiving-page"
+        class="mx-auto flex w-full max-w-7xl flex-col gap-6 p-4 md:p-6"
     >
-        <!-- Header & Mode Switcher -->
+        <Head title="Receiving" />
+
+        <!-- Top Header & Mode Switcher -->
         <div
-            class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"
+            class="relative overflow-hidden rounded-2xl border border-border/70 bg-card p-5 shadow-xs sm:p-6"
         >
-            <div class="space-y-1">
-                <Heading
-                    variant="small"
-                    title="Receiving"
-                    description="Record delivered consumables or register individual tagged assets into warehouse stock."
-                />
+            <div
+                class="pointer-events-none absolute -top-16 -right-16 size-52 rounded-full bg-primary/5 blur-2xl"
+            />
+            <div
+                class="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
+            >
+                <div class="flex items-start gap-3.5">
+                    <div
+                        class="flex size-11 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10 text-primary shadow-2xs"
+                    >
+                        <Truck class="size-5" />
+                    </div>
+                    <Heading
+                        title="Receiving"
+                        description="Record incoming consumable stock lots, serialized assets, or purchase order deliveries via scan, SKU, name search, or catalog browser."
+                    />
+                </div>
+
+                <!-- 3-Way Workflow Mode Switcher -->
+                <div
+                    class="inline-flex flex-wrap items-center gap-1.5 rounded-xl border border-border/70 bg-muted/40 p-1.5"
+                >
+                    <Button
+                        type="button"
+                        size="sm"
+                        :variant="mode === 'single' ? 'default' : 'ghost'"
+                        class="rounded-lg"
+                        @click="mode = 'single'"
+                    >
+                        Single item
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        :variant="mode === 'batch' ? 'default' : 'ghost'"
+                        class="rounded-lg"
+                        @click="mode = 'batch'"
+                    >
+                        Batch delivery
+                    </Button>
+                    <Button
+                        type="button"
+                        size="sm"
+                        :variant="mode === 'po' ? 'default' : 'ghost'"
+                        class="gap-1.5 rounded-lg"
+                        @click="mode = 'po'"
+                    >
+                        <FileSpreadsheet class="size-3.5" />
+                        <span>Purchase order</span>
+                        <Badge
+                            v-if="purchaseOrders.length > 0"
+                            variant="secondary"
+                            class="ml-0.5 h-4 px-1.5 text-[10px]"
+                        >
+                            {{ purchaseOrders.length }}
+                        </Badge>
+                    </Button>
+                </div>
             </div>
 
+            <!-- Feedback Toast Banner -->
             <div
-                role="group"
-                aria-label="Receiving mode"
-                class="flex items-center gap-1 rounded-xl border border-border/70 bg-muted/40 p-1"
+                v-if="feedbackBanner"
+                role="status"
+                aria-live="polite"
+                class="mt-4 flex items-center gap-2 rounded-xl border px-3.5 py-2.5 text-xs font-medium"
+                :class="{
+                    'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300':
+                        feedbackBanner.type === 'success',
+                    'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300':
+                        feedbackBanner.type === 'warning',
+                    'border-primary/30 bg-primary/10 text-primary':
+                        feedbackBanner.type === 'info',
+                }"
             >
-                <button
-                    type="button"
-                    class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition"
-                    :aria-pressed="mode === 'single'"
-                    :class="
-                        mode === 'single'
-                            ? 'bg-card text-foreground shadow-xs'
-                            : 'text-muted-foreground hover:text-foreground'
-                    "
-                    @click="mode = 'single'"
-                >
-                    <Package
-                        class="h-3.5 w-3.5"
-                        :class="mode === 'single' ? 'text-primary' : ''"
-                    />
-                    <span>Single item</span>
-                </button>
-                <button
-                    type="button"
-                    class="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition"
-                    :aria-pressed="mode === 'batch'"
-                    :class="
-                        mode === 'batch'
-                            ? 'bg-card text-foreground shadow-xs'
-                            : 'text-muted-foreground hover:text-foreground'
-                    "
-                    @click="mode = 'batch'"
-                >
-                    <Boxes
-                        class="h-3.5 w-3.5"
-                        :class="mode === 'batch' ? 'text-primary' : ''"
-                    />
-                    <span>Batch delivery</span>
-                </button>
+                <AlertCircle
+                    v-if="feedbackBanner.type === 'warning'"
+                    class="size-4 shrink-0"
+                />
+                <CheckCircle2 v-else class="size-4 shrink-0" />
+                <span>{{ feedbackBanner.text }}</span>
             </div>
         </div>
 
+        <!-- ========================================================== -->
+        <!-- MODE 1: SINGLE ITEM RECEIVING                              -->
+        <!-- ========================================================== -->
         <form
             v-if="mode === 'single'"
-            class="grid gap-6 lg:grid-cols-12 lg:items-start"
+            class="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]"
             @submit.prevent="submitSingle"
         >
-            <!-- Left Column: Details -->
-            <div class="grid gap-6 lg:col-span-7 xl:col-span-8">
-                <!-- Product identification -->
-                <div
-                    class="rounded-xl border border-border/70 bg-card p-5 shadow-xs"
+            <div class="flex flex-col gap-6">
+                <!-- Step 1: 4-Way Product Identification Card -->
+                <section
+                    class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs sm:p-6"
                 >
                     <div
-                        class="mb-4 flex items-center gap-2 text-xs font-bold tracking-tight text-foreground uppercase"
+                        class="flex flex-col gap-3 border-b border-border/60 pb-4 sm:flex-row sm:items-center sm:justify-between"
                     >
-                        <Package class="h-4 w-4 text-primary" />
-                        Product identification
-                    </div>
-                    <div class="grid gap-4">
-                        <div class="grid gap-2">
+                        <div class="flex items-center gap-2.5">
                             <div
-                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                                class="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary"
                             >
-                                <Label
-                                    for="sku"
-                                    class="text-xs font-medium text-muted-foreground"
-                                    >Product SKU or Barcode</Label
+                                <Package class="size-4" />
+                            </div>
+                            <div>
+                                <h2 class="text-base font-semibold">
+                                    1. Identify product &amp; delivery reference
+                                </h2>
+                                <p class="text-xs text-muted-foreground">
+                                    Scan QR/barcode, enter SKU manually, search
+                                    by product name, or browse the catalog.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="flex shrink-0 flex-wrap items-center gap-2">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                class="gap-1.5"
+                                @click="openCatalog('single')"
+                            >
+                                <BookOpen class="size-4" />
+                                Browse Catalog
+                            </Button>
+                            <QrScannerDialog
+                                button-label="Scan SKU"
+                                button-size="sm"
+                                title="Scan product SKU"
+                                description="Scan the product label QR code to populate the SKU field."
+                                @scanned="form.sku = $event"
+                            />
+                        </div>
+                    </div>
+
+                    <!-- Quick Name / SKU Search Autocomplete -->
+                    <div
+                        class="mt-4 rounded-xl border border-primary/20 bg-primary/[0.03] p-3.5"
+                    >
+                        <Label
+                            for="single-product-search"
+                            class="text-xs font-semibold text-foreground"
+                        >
+                            Search product by name or category
+                        </Label>
+                        <div class="relative mt-1.5">
+                            <Search
+                                class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                            />
+                            <Input
+                                id="single-product-search"
+                                v-model="singleSearchQuery"
+                                type="search"
+                                placeholder="Type product name (e.g. Copy Paper, Laptop, Stapler) to find and select its SKU…"
+                                class="bg-background pl-9"
+                                autocomplete="off"
+                                @focus="showSingleSuggestions = true"
+                                @input="showSingleSuggestions = true"
+                                @blur="hideSingleSuggestionsDelayed"
+                                @keydown.enter.prevent="handleSingleSearchEnter"
+                            />
+
+                            <div
+                                v-if="
+                                    showSingleSuggestions &&
+                                    singleSuggestions.length > 0
+                                "
+                                class="absolute z-30 mt-1 max-h-64 w-full overflow-y-auto rounded-xl border border-border bg-popover p-1.5 shadow-lg"
+                            >
+                                <div
+                                    class="px-2 py-1 text-[10px] font-semibold tracking-wider text-muted-foreground uppercase"
                                 >
-                                <QrScannerDialog
-                                    button-label="Scan SKU"
-                                    title="Scan product QR"
-                                    description="Point the camera at a product label QR code to fill the SKU field."
-                                    @scanned="form.sku = $event"
-                                />
+                                    Click a product to populate SKU
+                                </div>
+                                <button
+                                    v-for="item in singleSuggestions"
+                                    :key="item.id"
+                                    type="button"
+                                    class="flex w-full items-center justify-between gap-3 rounded-lg px-2.5 py-2 text-left text-xs transition hover:bg-muted"
+                                    @mousedown.prevent="
+                                        selectSingleProduct(item)
+                                    "
+                                >
+                                    <div class="min-w-0 flex-1">
+                                        <div
+                                            class="flex flex-wrap items-center gap-1.5"
+                                        >
+                                            <span
+                                                class="truncate font-semibold text-foreground"
+                                                >{{ item.name }}</span
+                                            >
+                                            <Badge
+                                                variant="outline"
+                                                class="h-4 px-1.5 font-mono text-[10px]"
+                                            >
+                                                {{ item.sku }}
+                                            </Badge>
+                                            <Badge
+                                                :variant="
+                                                    item.type === 'asset'
+                                                        ? 'secondary'
+                                                        : 'outline'
+                                                "
+                                                class="h-4 px-1.5 text-[10px] capitalize"
+                                            >
+                                                {{ item.type }}
+                                            </Badge>
+                                        </div>
+                                        <div
+                                            class="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground"
+                                        >
+                                            <span v-if="item.category">{{
+                                                item.category
+                                            }}</span>
+                                            <span>
+                                                On hand:
+                                                <strong
+                                                    class="text-foreground"
+                                                    >{{
+                                                        item.on_hand_qty ?? 0
+                                                    }}</strong
+                                                >
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <span
+                                        class="shrink-0 rounded-md bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary"
+                                    >
+                                        Select
+                                    </span>
+                                </button>
                             </div>
-                            <div class="relative">
-                                <ScanLine
-                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
-                                />
-                                <Input
-                                    id="sku"
-                                    v-model="form.sku"
-                                    data-testid="receiving-sku-input"
-                                    required
-                                    placeholder="Scan or enter SKU (e.g., CON-HSOAP-500)"
-                                    class="h-10 rounded-lg pl-9 font-mono text-sm"
-                                />
-                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Core SKU, Reference, and Dates Grid -->
+                    <div class="mt-4 grid gap-4 md:grid-cols-2">
+                        <div class="grid content-start gap-2">
+                            <Label for="sku" class="font-medium">
+                                Product SKU
+                                <span class="text-destructive">*</span>
+                            </Label>
+                            <Input
+                                id="sku"
+                                v-model="form.sku"
+                                required
+                                placeholder="e.g. CON-001 or AST-001"
+                                data-testid="receiving-sku-input"
+                                class="font-mono"
+                            />
                             <InputError :message="form.errors.sku" />
                         </div>
-                    </div>
-                </div>
 
-                <!-- Quantity & reference -->
-                <div
-                    class="rounded-xl border border-border/70 bg-card p-5 shadow-xs"
-                >
-                    <div
-                        class="mb-4 flex items-center gap-2 text-xs font-bold tracking-tight text-foreground uppercase"
-                    >
-                        <Layers class="h-4 w-4 text-primary" />
-                        Quantity & Delivery Reference
-                    </div>
-                    <div class="grid gap-4 sm:grid-cols-2">
-                        <div class="grid gap-2">
-                            <Label
-                                for="qty"
-                                class="text-xs font-medium text-muted-foreground"
-                                >Quantity received (consumables)</Label
-                            >
-                            <div class="relative">
-                                <Hash
-                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
-                                />
-                                <Input
-                                    id="qty"
-                                    v-model="form.qty"
-                                    data-testid="receiving-qty-input"
-                                    type="number"
-                                    min="1"
-                                    inputmode="numeric"
-                                    placeholder="Example: 12"
-                                    class="h-10 rounded-lg pl-9 text-sm"
-                                />
-                            </div>
-                            <InputError :message="form.errors.qty" />
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label
-                                for="reference_no"
-                                class="text-xs font-medium text-muted-foreground"
-                                >Delivery reference / DR No.</Label
-                            >
-                            <div class="relative">
-                                <FileText
-                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
-                                />
-                                <Input
-                                    id="reference_no"
-                                    v-model="form.reference_no"
-                                    data-testid="receiving-reference-input"
-                                    placeholder="Example: DR-202610-001"
-                                    class="h-10 rounded-lg pl-9 text-sm"
-                                />
-                            </div>
+                        <div class="grid content-start gap-2">
+                            <Label for="reference_no" class="font-medium">
+                                Reference no. (DR / PO / Invoice)
+                            </Label>
+                            <Input
+                                id="reference_no"
+                                v-model="form.reference_no"
+                                placeholder="e.g. DR-2026-0001"
+                                data-testid="receiving-reference-input"
+                            />
                             <InputError :message="form.errors.reference_no" />
                         </div>
 
-                        <div class="grid gap-2">
-                            <Label
-                                for="received_at"
-                                class="text-xs font-medium text-muted-foreground"
-                                >Date & time received</Label
-                            >
-                            <div class="relative">
-                                <Calendar
-                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
-                                />
-                                <Input
-                                    id="received_at"
-                                    v-model="form.received_at"
-                                    type="datetime-local"
-                                    class="h-10 rounded-lg pl-9 text-sm"
-                                />
-                            </div>
+                        <div class="grid content-start gap-2">
+                            <Label for="received_at" class="font-medium">
+                                Date received
+                            </Label>
+                            <Input
+                                id="received_at"
+                                v-model="form.received_at"
+                                type="date"
+                            />
                             <InputError :message="form.errors.received_at" />
                         </div>
 
-                        <div class="grid gap-2">
-                            <Label
-                                for="expires_at"
-                                class="text-xs font-medium text-muted-foreground"
-                                >Lot expiration date (optional)</Label
-                            >
-                            <div class="relative">
-                                <Clock
-                                    class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground/60"
-                                />
-                                <Input
-                                    id="expires_at"
-                                    v-model="form.expires_at"
-                                    type="date"
-                                    class="h-10 rounded-lg pl-9 text-sm"
-                                />
-                            </div>
+                        <div class="grid content-start gap-2">
+                            <Label for="expires_at" class="font-medium">
+                                Expiry date (consumables only)
+                            </Label>
+                            <Input
+                                id="expires_at"
+                                v-model="form.expires_at"
+                                type="date"
+                            />
                             <InputError :message="form.errors.expires_at" />
                         </div>
                     </div>
-                </div>
 
-                <!-- Notes -->
-                <div
-                    class="rounded-xl border border-border/70 bg-card p-5 shadow-xs"
-                >
+                    <!-- Live Matched Product Preview Card -->
                     <div
-                        class="mb-3 flex items-center gap-2 text-xs font-bold tracking-tight text-foreground uppercase"
+                        v-if="matchedSingleProduct"
+                        class="mt-4 flex flex-col justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.04] p-3.5 sm:flex-row sm:items-center"
                     >
-                        <FileText class="h-4 w-4 text-primary" />
-                        Additional notes / remarks
-                    </div>
-                    <div class="grid gap-2">
-                        <textarea
-                            id="notes"
-                            v-model="form.notes"
-                            class="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
-                            placeholder="Optional notes or supplier delivery remarks…"
-                        />
-                        <InputError :message="form.errors.notes" />
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Tags & Confirmation -->
-            <div class="grid gap-6 lg:col-span-5 xl:col-span-4">
-                <!-- Asset tags -->
-                <div
-                    class="rounded-xl border border-border/70 bg-card p-5 shadow-xs"
-                >
-                    <div class="mb-3 flex items-center justify-between">
-                        <div
-                            class="flex items-center gap-2 text-xs font-bold tracking-tight text-foreground uppercase"
-                        >
-                            <Tag class="h-4 w-4 text-primary" />
-                            Asset tags
-                        </div>
-                        <span
-                            v-if="tagCodes.length > 0"
-                            class="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary"
-                        >
-                            {{ tagCodes.length }}
-                            {{ tagCodes.length === 1 ? 'tag' : 'tags' }}
-                        </span>
-                    </div>
-                    <div class="grid gap-3">
-                        <div
-                            class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                            <Label
-                                for="tag_codes_text"
-                                class="text-xs text-muted-foreground"
-                                >One tag code per line</Label
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <Badge
+                                    variant="default"
+                                    class="bg-emerald-600 text-[10px] text-white"
+                                >
+                                    Matched Product
+                                </Badge>
+                                <span
+                                    class="text-sm font-semibold text-foreground"
+                                >
+                                    {{ matchedSingleProduct.name }}
+                                </span>
+                                <Badge
+                                    variant="outline"
+                                    class="font-mono text-xs"
+                                >
+                                    {{ matchedSingleProduct.sku }}
+                                </Badge>
+                            </div>
+                            <div
+                                class="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground"
                             >
+                                <span>
+                                    Classification:
+                                    <strong
+                                        class="text-foreground capitalize"
+                                        >{{ matchedSingleProduct.type }}</strong
+                                    >
+                                </span>
+                                <span v-if="matchedSingleProduct.category">
+                                    • Category:
+                                    <strong class="text-foreground">{{
+                                        matchedSingleProduct.category
+                                    }}</strong>
+                                </span>
+                                <span>
+                                    • Current stock:
+                                    <strong class="text-foreground">{{
+                                        matchedSingleProduct.on_hand_qty ?? 0
+                                    }}</strong>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="shrink-0 text-xs font-medium">
+                            <span
+                                v-if="matchedSingleProduct.type === 'asset'"
+                                class="inline-flex items-center gap-1 rounded-lg border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-sky-700 dark:text-sky-300"
+                            >
+                                Enter / scan asset tags below
+                            </span>
+                            <span
+                                v-else
+                                class="inline-flex items-center gap-1 rounded-lg border border-primary/30 bg-primary/10 px-2.5 py-1 text-primary"
+                            >
+                                Enter consumable quantity below
+                            </span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Step 2: Quantity (Consumables) & Tag Codes (Assets) -->
+                <div class="grid gap-6 md:grid-cols-2">
+                    <!-- Consumable Quantity Card -->
+                    <section
+                        class="rounded-2xl border p-5 shadow-xs transition"
+                        :class="
+                            matchedSingleProduct?.type === 'consumable'
+                                ? 'border-primary/40 bg-card ring-1 ring-primary/15'
+                                : matchedSingleProduct?.type === 'asset'
+                                  ? 'border-border/50 bg-card/60 opacity-75'
+                                  : 'border-border/70 bg-card'
+                        "
+                    >
+                        <div class="flex items-center justify-between gap-2">
+                            <h3 class="text-sm font-semibold">Consumables</h3>
+                            <Badge variant="outline" class="text-[10px]">
+                                Stock lot quantity
+                            </Badge>
+                        </div>
+                        <p class="mt-1 text-xs text-muted-foreground">
+                            Enter quantity received to create a new stock lot
+                            and increment on-hand inventory.
+                        </p>
+
+                        <div class="mt-4 grid gap-2">
+                            <Label for="qty" class="font-medium"
+                                >Quantity</Label
+                            >
+                            <div class="flex items-center gap-1.5">
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    class="size-9 shrink-0"
+                                    aria-label="Decrease quantity"
+                                    @click="adjustSingleQty(-1)"
+                                >
+                                    <Minus class="size-3.5" />
+                                </Button>
+                                <Input
+                                    id="qty"
+                                    v-model="form.qty"
+                                    type="number"
+                                    min="1"
+                                    placeholder="e.g. 25"
+                                    data-testid="receiving-qty-input"
+                                    class="text-center font-semibold"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    class="size-9 shrink-0"
+                                    aria-label="Increase quantity"
+                                    @click="adjustSingleQty(1)"
+                                >
+                                    <Plus class="size-3.5" />
+                                </Button>
+                            </div>
+
+                            <!-- Quick Quantity Presets -->
+                            <div class="flex flex-wrap gap-1.5 pt-1">
+                                <button
+                                    v-for="preset in [1, 5, 10, 25, 50, 100]"
+                                    :key="preset"
+                                    type="button"
+                                    class="rounded-md border border-border/70 bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                                    @click="form.qty = String(preset)"
+                                >
+                                    Set {{ preset }}
+                                </button>
+                            </div>
+                            <InputError :message="form.errors.qty" />
+                        </div>
+                    </section>
+
+                    <!-- Serialized Asset Tag Codes Card -->
+                    <section
+                        class="rounded-2xl border p-5 shadow-xs transition"
+                        :class="
+                            matchedSingleProduct?.type === 'asset'
+                                ? 'border-primary/40 bg-card ring-1 ring-primary/15'
+                                : matchedSingleProduct?.type === 'consumable'
+                                  ? 'border-border/50 bg-card/60 opacity-75'
+                                  : 'border-border/70 bg-card'
+                        "
+                    >
+                        <div
+                            class="flex flex-wrap items-center justify-between gap-2"
+                        >
+                            <div>
+                                <h3 class="text-sm font-semibold">
+                                    Serialized assets
+                                </h3>
+                                <p class="mt-0.5 text-xs text-muted-foreground">
+                                    Provide one tag code per line (or comma
+                                    separated).
+                                </p>
+                            </div>
                             <QrScannerDialog
-                                button-label="Batch scan tags"
-                                title="Scan asset tag QR"
-                                description="Keep the camera open to capture multiple asset tags in one receiving session."
+                                button-label="Batch Scan Tags"
+                                button-size="sm"
+                                title="Batch scan asset tag codes"
+                                description="Keep the scanner open and scan each asset tag to append it to the receipt list."
                                 :continuous="true"
+                                :close-on-scan="false"
                                 trigger-test-id="receiving-tag-scanner-button"
                                 @scanned="appendTagCode"
                             />
                         </div>
-                        <textarea
-                            id="tag_codes_text"
-                            v-model="form.tag_codes_text"
-                            data-testid="receiving-tag-codes-input"
-                            class="min-h-[160px] rounded-lg border border-input bg-background px-3 py-2 font-mono text-xs transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:outline-none"
-                            placeholder="AST-00000001&#10;AST-00000002"
-                        />
-                        <div class="text-[0.7rem] text-muted-foreground">
-                            Scanned barcodes/QRs are appended automatically. You
-                            can also paste or manually type codes.
+
+                        <div class="mt-3 grid gap-2">
+                            <div
+                                class="flex items-center justify-between gap-2"
+                            >
+                                <Label for="tag_codes_text" class="font-medium">
+                                    Asset tag codes
+                                </Label>
+                                <Badge
+                                    v-if="singleTagList.length > 0"
+                                    variant="secondary"
+                                    class="text-[10px]"
+                                >
+                                    {{ singleTagList.length }} tag(s) ready
+                                </Badge>
+                            </div>
+                            <textarea
+                                id="tag_codes_text"
+                                v-model="form.tag_codes_text"
+                                rows="4"
+                                placeholder="TAG-0001&#10;TAG-0002"
+                                data-testid="receiving-tag-codes-input"
+                                class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
+                            />
+                            <InputError :message="form.errors.tag_codes" />
                         </div>
-                        <div
-                            v-if="tagScanFeedback"
-                            class="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 text-xs text-foreground"
-                        >
-                            {{ tagScanFeedback }}
-                        </div>
-                        <InputError :message="form.errors.tag_codes" />
-                    </div>
+                    </section>
                 </div>
 
-                <!-- Confirm Transaction Card -->
-                <div
-                    class="space-y-4 rounded-xl border border-border/70 bg-card p-5 shadow-xs"
+                <!-- Step 3: Notes -->
+                <section
+                    class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
                 >
-                    <div>
-                        <h4
-                            class="text-sm font-bold tracking-tight text-foreground uppercase"
-                        >
-                            Confirm receipt
-                        </h4>
-                        <p class="mt-1 text-xs text-muted-foreground">
-                            Verify the quantity, delivery reference, and asset
-                            tag codes before recording into system stock.
-                        </p>
+                    <div class="grid gap-2">
+                        <Label for="notes" class="font-medium">
+                            Receiving notes (optional)
+                        </Label>
+                        <textarea
+                            id="notes"
+                            v-model="form.notes"
+                            rows="2"
+                            placeholder="Carrier name, box count, condition inspection notes…"
+                            class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        />
+                        <InputError :message="form.errors.notes" />
                     </div>
+                </section>
+            </div>
+
+            <!-- Right Sidebar: Receipt Verification Summary -->
+            <aside class="flex flex-col gap-4 xl:sticky xl:top-6 xl:self-start">
+                <div
+                    class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
+                >
+                    <div class="flex items-center justify-between gap-2">
+                        <span
+                            class="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
+                        >
+                            Receipt summary
+                        </span>
+                        <Badge variant="outline">Single Item</Badge>
+                    </div>
+
+                    <dl
+                        class="mt-4 space-y-2.5 border-b border-border/60 pb-4 text-xs"
+                    >
+                        <div class="flex items-center justify-between gap-2">
+                            <dt class="text-muted-foreground">SKU</dt>
+                            <dd class="font-mono font-semibold">
+                                {{ form.sku.trim() || '—' }}
+                            </dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <dt class="text-muted-foreground">Product</dt>
+                            <dd class="truncate font-medium text-foreground">
+                                {{
+                                    matchedSingleProduct?.name ||
+                                    (form.sku.trim()
+                                        ? 'Custom / Unmatched SKU'
+                                        : 'Not selected')
+                                }}
+                            </dd>
+                        </div>
+                        <div class="flex items-center justify-between gap-2">
+                            <dt class="text-muted-foreground">Reference no.</dt>
+                            <dd class="font-medium text-foreground">
+                                {{ form.reference_no.trim() || '—' }}
+                            </dd>
+                        </div>
+                        <div
+                            v-if="matchedSingleProduct"
+                            class="flex items-center justify-between gap-2"
+                        >
+                            <dt class="text-muted-foreground">Current stock</dt>
+                            <dd class="font-mono font-semibold">
+                                {{ matchedSingleProduct.on_hand_qty ?? 0 }}
+                            </dd>
+                        </div>
+                        <div
+                            v-if="
+                                matchedSingleProduct &&
+                                matchedSingleProduct.type === 'consumable' &&
+                                Number(form.qty || 0) > 0
+                            "
+                            class="flex items-center justify-between gap-2"
+                        >
+                            <dt class="text-muted-foreground">
+                                Stock after receipt
+                            </dt>
+                            <dd
+                                class="font-mono font-bold text-emerald-600 dark:text-emerald-400"
+                            >
+                                {{
+                                    (matchedSingleProduct.on_hand_qty ?? 0) +
+                                    Number(form.qty || 0)
+                                }}
+                                (+{{ Number(form.qty || 0) }})
+                            </dd>
+                        </div>
+                    </dl>
+
                     <Button
                         type="submit"
                         :disabled="form.processing"
-                        data-test="receive-stock-button"
                         data-testid="receive-stock-button"
-                        class="w-full rounded-lg shadow-sm"
+                        class="mt-4 w-full"
                     >
-                        <Check aria-hidden="true" class="mr-1.5 h-4 w-4" />{{
+                        <PackageCheck class="mr-1.5 size-4" />
+                        {{
                             form.processing
-                                ? 'Receiving Items…'
-                                : 'Receive Items'
+                                ? 'Recording receipt…'
+                                : 'Receive Stock'
+                        }}
+                    </Button>
+                </div>
+            </aside>
+        </form>
+
+        <!-- ========================================================== -->
+        <!-- MODE 2: BATCH DELIVERY RECEIVING                           -->
+        <!-- ========================================================== -->
+        <form
+            v-else-if="mode === 'batch'"
+            class="grid gap-6"
+            @submit.prevent="submitBatch"
+        >
+            <!-- Batch Toolbar & Shared Metadata Card -->
+            <div
+                class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs sm:p-6"
+            >
+                <div
+                    class="flex flex-col gap-3 border-b border-border/60 pb-4 lg:flex-row lg:items-center lg:justify-between"
+                >
+                    <div class="flex items-center gap-2.5">
+                        <div
+                            class="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                        >
+                            <Layers class="size-4" />
+                        </div>
+                        <div>
+                            <h2 class="text-base font-semibold">
+                                Batch delivery lines
+                            </h2>
+                            <p class="text-xs text-muted-foreground">
+                                Receive multiple products in a single atomic
+                                transaction using search, catalog browse, or QR
+                                scanning.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap items-center gap-2">
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            class="gap-1.5"
+                            @click="openCatalog('batch')"
+                        >
+                            <BookOpen class="size-4" />
+                            Browse Catalog
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            :disabled="batchForm.lines.length >= 50"
+                            @click="addBatchLine"
+                        >
+                            <Plus class="mr-1 size-4" />
+                            Add Delivery Line
+                        </Button>
+                    </div>
+                </div>
+
+                <!-- Quick Add by Name/SKU + Shared Delivery Reference -->
+                <div
+                    class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]"
+                >
+                    <div
+                        class="rounded-xl border border-primary/20 bg-primary/[0.03] p-3.5"
+                    >
+                        <Label
+                            for="batch-quick-search"
+                            class="text-xs font-semibold"
+                        >
+                            Quick add product by name or SKU
+                        </Label>
+                        <div
+                            class="mt-1.5 flex flex-col gap-2 sm:flex-row sm:items-center"
+                        >
+                            <div class="relative flex-1">
+                                <Search
+                                    class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                                />
+                                <Input
+                                    id="batch-quick-search"
+                                    v-model="batchQuickQuery"
+                                    type="search"
+                                    placeholder="Search product name or SKU and press Enter…"
+                                    class="bg-background pl-9"
+                                    autocomplete="off"
+                                    @focus="showBatchSuggestions = true"
+                                    @input="showBatchSuggestions = true"
+                                    @blur="hideBatchSuggestionsDelayed"
+                                    @keydown.enter.prevent="
+                                        handleBatchQuickAdd()
+                                    "
+                                />
+
+                                <div
+                                    v-if="
+                                        showBatchSuggestions &&
+                                        batchSuggestions.length > 0
+                                    "
+                                    class="absolute z-30 mt-1 max-h-60 w-full overflow-y-auto rounded-xl border border-border bg-popover p-1.5 shadow-lg"
+                                >
+                                    <button
+                                        v-for="item in batchSuggestions"
+                                        :key="item.id"
+                                        type="button"
+                                        class="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-xs hover:bg-muted"
+                                        @mousedown.prevent="
+                                            handleBatchQuickAdd(item)
+                                        "
+                                    >
+                                        <div class="min-w-0 flex-1">
+                                            <div
+                                                class="flex items-center gap-1.5"
+                                            >
+                                                <span
+                                                    class="truncate font-semibold"
+                                                    >{{ item.name }}</span
+                                                >
+                                                <Badge
+                                                    variant="outline"
+                                                    class="h-4 px-1.5 font-mono text-[10px]"
+                                                >
+                                                    {{ item.sku }}
+                                                </Badge>
+                                            </div>
+                                        </div>
+                                        <span
+                                            class="text-[11px] font-semibold text-primary"
+                                            >+ Add line</span
+                                        >
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <Input
+                                    v-model.number="batchQuickQty"
+                                    type="number"
+                                    min="1"
+                                    aria-label="Quick add quantity"
+                                    class="w-20 bg-background text-center"
+                                />
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    @click="handleBatchQuickAdd()"
+                                >
+                                    Add
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="rounded-xl border border-border/60 bg-muted/20 p-3.5"
+                    >
+                        <Label
+                            for="batch-shared-ref"
+                            class="text-xs font-semibold"
+                        >
+                            Shared delivery reference &amp; date
+                        </Label>
+                        <div
+                            class="mt-1.5 grid gap-2 sm:grid-cols-[minmax(0,1fr)_140px_auto]"
+                        >
+                            <Input
+                                id="batch-shared-ref"
+                                v-model="batchSharedRef"
+                                placeholder="DR / Invoice no."
+                                class="bg-background"
+                            />
+                            <Input
+                                id="batch-shared-date"
+                                v-model="batchSharedDate"
+                                type="date"
+                                aria-label="Shared received date"
+                                class="bg-background"
+                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                class="h-9"
+                                @click="applyBatchSharedMetadata"
+                            >
+                                Apply all
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                <InputError :message="batchForm.errors.lines" class="mt-2" />
+
+                <!-- Mobile Batch Lines (Preserves data-testid="receiving-batch-mobile-lines" & "Batch line X") -->
+                <div
+                    data-testid="receiving-batch-mobile-lines"
+                    class="mt-4 space-y-4 md:hidden"
+                >
+                    <div
+                        v-for="(line, index) in batchForm.lines"
+                        :key="`mobile-${index}`"
+                        class="rounded-xl border border-border/70 bg-background p-4 shadow-2xs"
+                    >
+                        <div class="flex items-center justify-between gap-2">
+                            <div>
+                                <div class="text-sm font-semibold">
+                                    Batch line {{ index + 1 }}
+                                </div>
+                                <div
+                                    v-if="findCatalogProductBySku(line.sku)"
+                                    class="text-xs font-medium text-primary"
+                                >
+                                    {{
+                                        findCatalogProductBySku(line.sku)?.name
+                                    }}
+                                </div>
+                            </div>
+                            <Button
+                                v-if="batchForm.lines.length > 1"
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                class="text-destructive"
+                                @click="removeBatchLine(index)"
+                            >
+                                Remove
+                            </Button>
+                        </div>
+
+                        <div class="mt-4 grid gap-4">
+                            <div class="grid gap-2">
+                                <div
+                                    class="flex flex-wrap items-center justify-between gap-2"
+                                >
+                                    <Label :for="`batch-mobile-sku-${index}`"
+                                        >SKU</Label
+                                    >
+                                    <QrScannerDialog
+                                        button-label="Scan SKU"
+                                        title="Scan batch line SKU"
+                                        description="Scan a product QR code to fill this batch line SKU."
+                                        @scanned="line.sku = $event"
+                                    />
+                                </div>
+                                <Input
+                                    :id="`batch-mobile-sku-${index}`"
+                                    v-model="line.sku"
+                                    required
+                                    placeholder="CON-001"
+                                />
+                                <InputError
+                                    :message="batchLineError(index, 'sku')"
+                                />
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label :for="`batch-mobile-qty-${index}`">
+                                    Quantity (consumables)
+                                </Label>
+                                <Input
+                                    :id="`batch-mobile-qty-${index}`"
+                                    v-model="line.qty"
+                                    type="number"
+                                    min="1"
+                                    placeholder="10"
+                                />
+                                <InputError
+                                    :message="batchLineError(index, 'qty')"
+                                />
+                            </div>
+
+                            <div class="grid gap-2">
+                                <div
+                                    class="flex flex-wrap items-center justify-between gap-2"
+                                >
+                                    <Label :for="`batch-mobile-tags-${index}`">
+                                        Asset tag codes
+                                    </Label>
+                                    <QrScannerDialog
+                                        button-label="Batch scan tags"
+                                        title="Batch scan line asset tags"
+                                        description="Scan one or more asset tags to append them to this delivery line."
+                                        :continuous="true"
+                                        :close-on-scan="false"
+                                        @scanned="
+                                            appendBatchTagCode(index, $event)
+                                        "
+                                    />
+                                </div>
+                                <textarea
+                                    :id="`batch-mobile-tags-${index}`"
+                                    v-model="line.tag_codes_text"
+                                    rows="3"
+                                    placeholder="TAG-0001&#10;TAG-0002"
+                                    class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
+                                />
+                                <InputError
+                                    :message="
+                                        batchLineError(index, 'tag_codes')
+                                    "
+                                />
+                            </div>
+
+                            <div class="grid gap-2">
+                                <Label :for="`batch-mobile-reference-${index}`">
+                                    Reference no.
+                                </Label>
+                                <Input
+                                    :id="`batch-mobile-reference-${index}`"
+                                    v-model="line.reference_no"
+                                    placeholder="DR / PO / Invoice"
+                                />
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="grid gap-2">
+                                    <Label
+                                        :for="`batch-mobile-received-${index}`"
+                                    >
+                                        Date received
+                                    </Label>
+                                    <Input
+                                        :id="`batch-mobile-received-${index}`"
+                                        v-model="line.received_at"
+                                        type="date"
+                                    />
+                                </div>
+                                <div class="grid gap-2">
+                                    <Label
+                                        :for="`batch-mobile-expires-${index}`"
+                                    >
+                                        Expiry date
+                                    </Label>
+                                    <Input
+                                        :id="`batch-mobile-expires-${index}`"
+                                        v-model="line.expires_at"
+                                        type="date"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Batch Lines -->
+                <div class="mt-4 hidden space-y-3 md:block">
+                    <div
+                        v-for="(line, index) in batchForm.lines"
+                        :key="index"
+                        class="rounded-xl border border-border/70 bg-background p-4 shadow-2xs"
+                    >
+                        <div
+                            class="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-border/50 pb-2.5"
+                        >
+                            <div class="flex flex-wrap items-center gap-2">
+                                <Badge variant="outline" class="font-mono">
+                                    Line #{{ index + 1 }}
+                                </Badge>
+                                <template
+                                    v-if="findCatalogProductBySku(line.sku)"
+                                >
+                                    <span
+                                        class="text-sm font-semibold text-foreground"
+                                    >
+                                        {{
+                                            findCatalogProductBySku(line.sku)
+                                                ?.name
+                                        }}
+                                    </span>
+                                    <Badge
+                                        variant="secondary"
+                                        class="text-[10px] capitalize"
+                                    >
+                                        {{
+                                            findCatalogProductBySku(line.sku)
+                                                ?.type
+                                        }}
+                                    </Badge>
+                                    <span class="text-xs text-muted-foreground">
+                                        (On hand:
+                                        {{
+                                            findCatalogProductBySku(line.sku)
+                                                ?.on_hand_qty ?? 0
+                                        }})
+                                    </span>
+                                </template>
+                            </div>
+
+                            <Button
+                                v-if="batchForm.lines.length > 1"
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                class="h-7 text-xs text-destructive hover:bg-destructive/10"
+                                @click="removeBatchLine(index)"
+                            >
+                                <Trash2 class="mr-1 size-3.5" />
+                                Remove line
+                            </Button>
+                        </div>
+
+                        <div class="grid gap-3 md:grid-cols-5">
+                            <div class="grid content-start gap-1.5">
+                                <div
+                                    class="flex items-center justify-between gap-1"
+                                >
+                                    <Label
+                                        :for="`batch-sku-${index}`"
+                                        class="text-xs font-medium"
+                                        >SKU</Label
+                                    >
+                                    <QrScannerDialog
+                                        button-label="Scan SKU"
+                                        title="Scan batch line SKU"
+                                        description="Scan a product QR code to fill this batch line SKU."
+                                        @scanned="line.sku = $event"
+                                    />
+                                </div>
+                                <Input
+                                    :id="`batch-sku-${index}`"
+                                    v-model="line.sku"
+                                    required
+                                    placeholder="CON-001"
+                                    class="font-mono"
+                                />
+                                <InputError
+                                    :message="batchLineError(index, 'sku')"
+                                />
+                            </div>
+
+                            <div class="grid content-start gap-1.5">
+                                <Label
+                                    :for="`batch-qty-${index}`"
+                                    class="text-xs font-medium"
+                                >
+                                    Quantity (consumables)
+                                </Label>
+                                <Input
+                                    :id="`batch-qty-${index}`"
+                                    v-model="line.qty"
+                                    type="number"
+                                    min="1"
+                                    placeholder="10"
+                                />
+                                <InputError
+                                    :message="batchLineError(index, 'qty')"
+                                />
+                            </div>
+
+                            <div class="grid content-start gap-1.5">
+                                <Label
+                                    :for="`batch-reference-${index}`"
+                                    class="text-xs font-medium"
+                                >
+                                    Reference no.
+                                </Label>
+                                <Input
+                                    :id="`batch-reference-${index}`"
+                                    v-model="line.reference_no"
+                                    placeholder="DR / PO / Invoice"
+                                />
+                                <InputError
+                                    :message="
+                                        batchLineError(index, 'reference_no')
+                                    "
+                                />
+                            </div>
+
+                            <div class="grid content-start gap-1.5">
+                                <Label
+                                    :for="`batch-received-${index}`"
+                                    class="text-xs font-medium"
+                                >
+                                    Date received
+                                </Label>
+                                <Input
+                                    :id="`batch-received-${index}`"
+                                    v-model="line.received_at"
+                                    type="date"
+                                />
+                                <InputError
+                                    :message="
+                                        batchLineError(index, 'received_at')
+                                    "
+                                />
+                            </div>
+
+                            <div class="grid content-start gap-1.5">
+                                <Label
+                                    :for="`batch-expires-${index}`"
+                                    class="text-xs font-medium"
+                                >
+                                    Expiry date
+                                </Label>
+                                <Input
+                                    :id="`batch-expires-${index}`"
+                                    v-model="line.expires_at"
+                                    type="date"
+                                />
+                                <InputError
+                                    :message="
+                                        batchLineError(index, 'expires_at')
+                                    "
+                                />
+                            </div>
+                        </div>
+
+                        <div class="mt-3 grid gap-3 md:grid-cols-2">
+                            <div class="grid gap-1.5">
+                                <div
+                                    class="flex flex-wrap items-center justify-between gap-2"
+                                >
+                                    <Label
+                                        :for="`batch-tags-${index}`"
+                                        class="text-xs font-medium"
+                                    >
+                                        Asset tag codes (for asset SKUs)
+                                    </Label>
+                                    <QrScannerDialog
+                                        button-label="Batch scan tags"
+                                        title="Batch scan line asset tags"
+                                        description="Scan one or more asset tags to append them to this delivery line."
+                                        :continuous="true"
+                                        :close-on-scan="false"
+                                        @scanned="
+                                            appendBatchTagCode(index, $event)
+                                        "
+                                    />
+                                </div>
+                                <textarea
+                                    :id="`batch-tags-${index}`"
+                                    v-model="line.tag_codes_text"
+                                    rows="2"
+                                    placeholder="TAG-0001&#10;TAG-0002"
+                                    class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
+                                />
+                                <InputError
+                                    :message="
+                                        batchLineError(index, 'tag_codes')
+                                    "
+                                />
+                            </div>
+
+                            <div class="grid gap-1.5">
+                                <Label
+                                    :for="`batch-notes-${index}`"
+                                    class="text-xs font-medium"
+                                    >Notes</Label
+                                >
+                                <textarea
+                                    :id="`batch-notes-${index}`"
+                                    v-model="line.notes"
+                                    rows="2"
+                                    class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                />
+                                <InputError
+                                    :message="batchLineError(index, 'notes')"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Batch Submission Footer -->
+                <div
+                    class="mt-5 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                    <div
+                        class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground"
+                    >
+                        <span>
+                            Active lines:
+                            <strong class="text-foreground">{{
+                                batchSummary.populatedLines
+                            }}</strong>
+                        </span>
+                        <span>•</span>
+                        <span>
+                            Consumable units:
+                            <strong class="text-foreground">{{
+                                batchSummary.totalConsumableQty
+                            }}</strong>
+                        </span>
+                        <span>•</span>
+                        <span>
+                            Serialized asset tags:
+                            <strong class="text-foreground">{{
+                                batchSummary.totalAssetTags
+                            }}</strong>
+                        </span>
+                    </div>
+
+                    <Button
+                        type="submit"
+                        :disabled="batchForm.processing"
+                        class="w-full sm:w-auto"
+                    >
+                        <PackageCheck class="mr-1.5 size-4" />
+                        {{
+                            batchForm.processing
+                                ? 'Processing batch…'
+                                : 'Receive Batch'
                         }}
                     </Button>
                 </div>
             </div>
         </form>
 
-        <form v-else class="flex flex-col gap-5" @submit.prevent="submitBatch">
+        <!-- ========================================================== -->
+        <!-- MODE 3: PURCHASE ORDER RECEIVING WORKFLOW                  -->
+        <!-- ========================================================== -->
+        <div v-else-if="mode === 'po'" class="grid gap-6">
             <div
-                class="grid gap-4 lg:hidden"
-                data-testid="receiving-batch-mobile-lines"
+                v-if="purchaseOrders.length === 0"
+                class="rounded-2xl border border-border/70 bg-card p-8 text-center shadow-xs"
             >
                 <div
-                    v-for="(line, i) in batchForm.lines"
-                    :key="`mobile-${i}`"
-                    class="rounded-xl border border-border/60 bg-card p-4 shadow-sm"
+                    class="mx-auto flex size-12 items-center justify-center rounded-2xl bg-muted text-muted-foreground"
                 >
-                    <div class="mb-4 flex items-center justify-between gap-3">
-                        <div>
-                            <div class="text-sm font-semibold">
-                                Batch line {{ i + 1 }}
-                            </div>
-                            <div class="text-xs text-muted-foreground">
-                                Capture item details and asset tags for this
-                                entry.
-                            </div>
-                        </div>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            class="h-8 rounded-lg text-xs text-muted-foreground hover:text-rose-600"
-                            @click="removeBatchLine(i)"
-                        >
-                            Remove
-                        </Button>
-                    </div>
-
-                    <div class="grid gap-4">
-                        <div class="grid gap-2">
-                            <Label
-                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >
-                                SKU
-                            </Label>
-                            <Input
-                                v-model="line.sku"
-                                placeholder="SKU"
-                                class="rounded-lg"
-                            />
-                        </div>
-
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div class="grid gap-2">
-                                <Label
-                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >
-                                    Quantity received
-                                </Label>
-                                <Input
-                                    v-model="line.qty"
-                                    type="number"
-                                    min="1"
-                                    inputmode="numeric"
-                                    placeholder="Quantity"
-                                    class="rounded-lg"
-                                />
-                            </div>
-                            <div class="grid gap-2">
-                                <Label
-                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >
-                                    Delivery reference
-                                </Label>
-                                <Input
-                                    v-model="line.reference_no"
-                                    placeholder="Ref"
-                                    class="rounded-lg"
-                                />
-                            </div>
-                            <div class="grid gap-2">
-                                <Label
-                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >
-                                    Date received
-                                </Label>
-                                <Input
-                                    v-model="line.received_at"
-                                    type="datetime-local"
-                                    class="rounded-lg"
-                                />
-                            </div>
-                            <div class="grid gap-2">
-                                <Label
-                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >
-                                    Expiration date
-                                </Label>
-                                <Input
-                                    v-model="line.expires_at"
-                                    type="date"
-                                    class="rounded-lg"
-                                />
-                            </div>
-                        </div>
-
-                        <div class="grid gap-2">
-                            <div
-                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
-                            >
-                                <Label
-                                    class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                                >
-                                    Asset tags
-                                </Label>
-                                <QrScannerDialog
-                                    button-label="Batch scan tags"
-                                    title="Scan batch line asset tags"
-                                    description="Keep scanning to append multiple asset tags to this batch line."
-                                    :continuous="true"
-                                    @scanned="appendBatchLineTagCode(i, $event)"
-                                />
-                            </div>
-                            <textarea
-                                v-model="line.tag_codes_text"
-                                class="min-h-24 rounded-lg border border-input bg-background px-3 py-2 text-sm transition-colors focus:border-ring focus:outline-none"
-                                placeholder="One tag code per line"
-                            />
-                            <div
-                                v-if="batchTagFeedback[i]"
-                                class="rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 text-xs text-muted-foreground"
-                            >
-                                {{ batchTagFeedback[i] }}
-                            </div>
-                        </div>
-
-                        <div class="grid gap-2">
-                            <Label
-                                class="text-xs font-medium tracking-wider text-muted-foreground/70 uppercase"
-                            >
-                                Notes
-                            </Label>
-                            <Input
-                                v-model="line.notes"
-                                placeholder="Notes"
-                                class="rounded-lg"
-                            />
-                        </div>
-                    </div>
+                    <FileSpreadsheet class="size-6" />
+                </div>
+                <h2 class="mt-3 text-base font-semibold">
+                    No open purchase orders awaiting delivery
+                </h2>
+                <p class="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
+                    Only purchase orders with status
+                    <strong>Sent</strong> or
+                    <strong>Partially Received</strong> can accept goods. You
+                    can still receive stock directly using Single Item or Batch
+                    Delivery modes.
+                </p>
+                <div class="mt-4 flex justify-center gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        @click="mode = 'single'"
+                    >
+                        Switch to Single Item
+                    </Button>
                 </div>
             </div>
 
-            <div
-                class="hidden overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm lg:block"
-            >
-                <table class="w-full min-w-[1250px] table-fixed text-sm">
-                    <colgroup>
-                        <col class="w-[14%]" />
-                        <col class="w-[7%]" />
-                        <col class="w-[11%]" />
-                        <col class="w-[18%]" />
-                        <col class="w-[14%]" />
-                        <col class="w-[20%]" />
-                        <col class="w-[12%]" />
-                        <col class="w-[4%]" />
-                    </colgroup>
-                    <thead
-                        class="border-b border-border/60 bg-muted/50 text-left"
+            <form v-else class="grid gap-6" @submit.prevent="submitPoReceipt">
+                <!-- PO Selection & Progress Header Card -->
+                <section
+                    class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs sm:p-6"
+                >
+                    <!-- Card Header & Action Toolbar -->
+                    <div
+                        class="flex flex-col gap-3 border-b border-border/60 pb-4 xl:flex-row xl:items-center xl:justify-between"
                     >
-                        <tr
-                            class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3.5"
-                        >
-                            <th>SKU</th>
-                            <th>Quantity</th>
-                            <th>Delivery reference</th>
-                            <th>Date received</th>
-                            <th>Expiration date</th>
-                            <th>Tags</th>
-                            <th>Notes</th>
-                            <th />
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-border/60">
-                        <tr
-                            v-for="(line, i) in batchForm.lines"
-                            :key="`desktop-${i}`"
-                            class="[&>td]:px-4 [&>td]:py-3.5"
-                        >
-                            <td>
-                                <Input
-                                    v-model="line.sku"
-                                    placeholder="SKU"
-                                    class="h-8 rounded-lg text-xs"
-                                />
-                            </td>
-                            <td>
-                                <Input
-                                    v-model="line.qty"
-                                    type="number"
-                                    min="1"
-                                    placeholder="Qty"
-                                    class="h-8 rounded-lg text-xs"
-                                />
-                            </td>
-                            <td>
-                                <Input
-                                    v-model="line.reference_no"
-                                    placeholder="Ref"
-                                    class="h-8 rounded-lg text-xs"
-                                />
-                            </td>
-                            <td>
-                                <Input
-                                    v-model="line.received_at"
-                                    type="datetime-local"
-                                    class="h-8 rounded-lg text-xs"
-                                />
-                            </td>
-                            <td>
-                                <Input
-                                    v-model="line.expires_at"
-                                    type="date"
-                                    class="h-8 rounded-lg text-xs"
-                                />
-                            </td>
-                            <td class="space-y-2">
-                                <textarea
-                                    v-model="line.tag_codes_text"
-                                    class="min-h-12 w-full rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs transition-colors focus:border-ring focus:outline-none"
-                                    placeholder="One per line"
-                                />
-                                <QrScannerDialog
-                                    button-label="Scan tags"
-                                    title="Scan batch line asset tags"
-                                    description="Keep scanning to append multiple asset tags to this batch line."
-                                    :continuous="true"
-                                    @scanned="appendBatchLineTagCode(i, $event)"
-                                />
-                                <div
-                                    v-if="batchTagFeedback[i]"
-                                    class="max-w-full text-[11px] leading-normal text-muted-foreground"
+                        <div class="flex items-center gap-2.5">
+                            <div
+                                class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
+                            >
+                                <FileSpreadsheet class="size-4" />
+                            </div>
+                            <div>
+                                <h2
+                                    class="text-base font-semibold tracking-tight text-foreground"
                                 >
-                                    {{ batchTagFeedback[i] }}
+                                    Purchase order receiving
+                                </h2>
+                                <p class="text-xs text-muted-foreground">
+                                    Select an open purchase order and record
+                                    delivered quantities or scan incoming items.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div
+                            v-if="selectedPo"
+                            class="flex shrink-0 flex-wrap items-center gap-2"
+                        >
+                            <Button as-child variant="outline" size="sm">
+                                <Link
+                                    :href="
+                                        PurchaseOrderController.show(
+                                            selectedPo.id,
+                                        )
+                                    "
+                                >
+                                    <span>View full PO</span>
+                                    <ExternalLink class="ml-1.5 size-3.5" />
+                                </Link>
+                            </Button>
+                            <QrScannerDialog
+                                button-label="Scan Product QR / SKU"
+                                button-size="sm"
+                                title="Scan delivered PO product"
+                                description="Scan a product barcode or QR code to match it against this purchase order and increment its received quantity."
+                                :continuous="true"
+                                :close-on-scan="false"
+                                @scanned="handlePoProductMatch"
+                            />
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                @click="fillAllPoRemaining"
+                            >
+                                <CheckCheck class="mr-1.5 size-4" />
+                                Receive All Remaining
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                @click="clearAllPoQuantities"
+                            >
+                                <RotateCcw class="mr-1.5 size-4" />
+                                Clear
+                            </Button>
+                        </div>
+                    </div>
+
+                    <!-- Purchase Order Selector + Selected PO Progress Summary -->
+                    <div class="mt-4 grid gap-4 lg:grid-cols-12 lg:items-end">
+                        <div class="grid min-w-0 gap-2 lg:col-span-7">
+                            <Label
+                                for="receiving-po-select"
+                                class="font-semibold"
+                            >
+                                Select open purchase order to receive against
+                            </Label>
+                            <select
+                                id="receiving-po-select"
+                                v-model="selectedPoId"
+                                class="h-10 w-full max-w-full min-w-0 truncate rounded-md border border-input bg-background px-3 text-sm font-medium"
+                            >
+                                <option
+                                    v-for="po in purchaseOrders"
+                                    :key="po.id"
+                                    :value="String(po.id)"
+                                >
+                                    {{ po.po_number }} —
+                                    {{
+                                        po.supplier?.name ?? 'Unknown Supplier'
+                                    }}
+                                    ({{ po.progress_pct }}% received)
+                                </option>
+                            </select>
+                        </div>
+
+                        <div
+                            v-if="selectedPo"
+                            class="flex min-w-0 flex-col justify-between gap-2 rounded-xl border border-border/60 bg-muted/25 px-4 py-2.5 text-xs lg:col-span-5"
+                        >
+                            <div
+                                class="flex flex-wrap items-center justify-between gap-2"
+                            >
+                                <div class="min-w-0 truncate">
+                                    <span class="text-muted-foreground"
+                                        >Supplier:</span
+                                    >
+                                    <strong class="ml-1 text-foreground">
+                                        {{
+                                            selectedPo.supplier?.name ??
+                                            'Unknown Supplier'
+                                        }}
+                                    </strong>
                                 </div>
-                            </td>
-                            <td>
-                                <Input
-                                    v-model="line.notes"
-                                    placeholder="Notes"
-                                    class="h-8 rounded-lg text-xs"
+                                <Badge
+                                    variant="outline"
+                                    class="shrink-0 font-mono text-[11px]"
+                                >
+                                    {{ selectedPo.progress_pct }}% received
+                                </Badge>
+                            </div>
+                            <div
+                                class="h-1.5 w-full overflow-hidden rounded-full bg-muted"
+                            >
+                                <div
+                                    class="h-full rounded-full bg-primary transition-all"
+                                    :style="{
+                                        width: `${Math.min(100, Math.max(0, selectedPo.progress_pct ?? 0))}%`,
+                                    }"
                                 />
-                            </td>
-                            <td class="text-center">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Selected PO Summary & Search Bar -->
+                    <div
+                        v-if="selectedPo"
+                        class="mt-4 grid gap-4 rounded-xl border border-border/60 bg-muted/20 p-4 lg:grid-cols-2"
+                    >
+                        <div class="grid gap-1.5">
+                            <Label
+                                for="po-mode-search"
+                                class="text-xs font-semibold"
+                            >
+                                Search PO items by name or enter SKU + Enter to
+                                match
+                            </Label>
+                            <div class="flex gap-2">
+                                <div class="relative flex-1">
+                                    <Search
+                                        class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+                                    />
+                                    <Input
+                                        id="po-mode-search"
+                                        v-model="poLineSearchQuery"
+                                        type="search"
+                                        placeholder="Filter PO items by product name or SKU…"
+                                        class="bg-background pl-9"
+                                        @keydown.enter.prevent="
+                                            handlePoProductMatch(
+                                                poLineSearchQuery,
+                                            )
+                                        "
+                                    />
+                                </div>
                                 <Button
                                     type="button"
-                                    variant="ghost"
-                                    size="icon"
-                                    class="h-8 w-8 rounded-lg text-muted-foreground hover:bg-rose-500/10 hover:text-rose-600"
-                                    title="Remove line"
-                                    @click="removeBatchLine(i)"
+                                    variant="outline"
+                                    @click="
+                                        handlePoProductMatch(poLineSearchQuery)
+                                    "
                                 >
-                                    <Trash2 class="h-4 w-4" />
+                                    Match +1
                                 </Button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+                            </div>
+                        </div>
 
-            <div
-                class="sticky bottom-4 z-10 flex flex-col gap-2 rounded-xl border border-border/60 bg-background/95 p-3 shadow-lg backdrop-blur supports-backdrop-filter:bg-background/80 sm:flex-row sm:items-center md:static md:border-0 md:bg-transparent md:p-0 md:shadow-none"
-            >
-                <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    class="rounded-lg"
-                    @click="addBatchLine"
-                >
-                    <Plus aria-hidden="true" class="mr-1.5 h-4 w-4" />Add
-                    Delivery Line
-                </Button>
-                <Button
-                    type="submit"
-                    :disabled="isSubmittingBatch"
-                    class="rounded-lg shadow-sm"
-                >
-                    <Check aria-hidden="true" class="mr-1.5 h-4 w-4" />{{
-                        isSubmittingBatch
-                            ? 'Receiving Delivery…'
-                            : 'Receive Batch Delivery'
-                    }}
-                </Button>
-            </div>
+                        <div class="grid gap-1.5">
+                            <Label
+                                for="po-mode-shared-ref"
+                                class="text-xs font-semibold"
+                            >
+                                Delivery receipt reference &amp; date
+                            </Label>
+                            <div class="grid gap-2 sm:grid-cols-2">
+                                <Input
+                                    id="po-mode-shared-ref"
+                                    v-model="poSharedRef"
+                                    placeholder="DR / Invoice no."
+                                    class="bg-background"
+                                />
+                                <Input
+                                    id="po-mode-shared-date"
+                                    v-model="poSharedDate"
+                                    type="date"
+                                    aria-label="Received date"
+                                    class="bg-background"
+                                />
+                            </div>
+                        </div>
+                    </div>
 
-            <div v-if="batchForm.errors.lines" class="text-sm text-destructive">
-                <InputError :message="batchForm.errors.lines" />
-            </div>
-        </form>
+                    <InputError :message="poReceiveErrors.lines" class="mt-3" />
+
+                    <!-- PO Lines List -->
+                    <div v-if="selectedPo" class="mt-4 space-y-3">
+                        <div
+                            v-for="index in filteredPoLineIndices"
+                            :key="selectedPo.lines[index].id"
+                            class="rounded-xl border p-4 transition"
+                            :class="
+                                selectedPo.lines[index].qty_remaining === 0
+                                    ? 'border-border/50 bg-muted/20 opacity-65'
+                                    : 'border-border/70 bg-background'
+                            "
+                        >
+                            <div
+                                class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"
+                            >
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <span class="font-semibold">{{
+                                        selectedPo.lines[index].product?.name
+                                    }}</span>
+                                    <Badge
+                                        variant="outline"
+                                        class="font-mono text-xs"
+                                    >
+                                        {{
+                                            selectedPo.lines[index].product?.sku
+                                        }}
+                                    </Badge>
+                                    <Badge
+                                        variant="secondary"
+                                        class="text-[11px] capitalize"
+                                    >
+                                        {{
+                                            poReceiveForm.lines[index]
+                                                ?.product_type
+                                        }}
+                                    </Badge>
+                                </div>
+
+                                <div
+                                    class="flex flex-wrap items-center gap-2 text-xs"
+                                >
+                                    <span>
+                                        Ordered:
+                                        <strong>{{
+                                            selectedPo.lines[index].qty_ordered
+                                        }}</strong>
+                                    </span>
+                                    <span>•</span>
+                                    <span>
+                                        Received:
+                                        <strong
+                                            class="text-emerald-600 dark:text-emerald-400"
+                                            >{{
+                                                selectedPo.lines[index]
+                                                    .qty_received
+                                            }}</strong
+                                        >
+                                    </span>
+                                    <span>•</span>
+                                    <Badge variant="outline">
+                                        Remaining:
+                                        {{
+                                            selectedPo.lines[index]
+                                                .qty_remaining
+                                        }}
+                                    </Badge>
+                                </div>
+                            </div>
+
+                            <div
+                                v-if="
+                                    selectedPo.lines[index].qty_remaining > 0 &&
+                                    poReceiveForm.lines[index]
+                                "
+                                class="mt-3 grid gap-3 md:grid-cols-4"
+                            >
+                                <div
+                                    v-if="
+                                        poReceiveForm.lines[index]
+                                            .product_type !== 'asset'
+                                    "
+                                    class="grid gap-1.5"
+                                >
+                                    <div
+                                        class="flex items-center justify-between"
+                                    >
+                                        <Label
+                                            :for="`po-mode-qty-${index}`"
+                                            class="text-xs font-medium"
+                                        >
+                                            Receiving now
+                                        </Label>
+                                        <button
+                                            type="button"
+                                            class="text-[11px] font-semibold text-primary hover:underline"
+                                            @click="fillPoLineRemaining(index)"
+                                        >
+                                            Max ({{
+                                                selectedPo.lines[index]
+                                                    .qty_remaining
+                                            }})
+                                        </button>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            class="size-9 shrink-0"
+                                            @click="adjustPoLineQty(index, -1)"
+                                        >
+                                            <Minus class="size-3.5" />
+                                        </Button>
+                                        <Input
+                                            :id="`po-mode-qty-${index}`"
+                                            v-model="
+                                                poReceiveForm.lines[index]
+                                                    .qty_received
+                                            "
+                                            type="number"
+                                            min="0"
+                                            :max="
+                                                selectedPo.lines[index]
+                                                    .qty_remaining
+                                            "
+                                            placeholder="0"
+                                            class="text-center font-semibold"
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            class="size-9 shrink-0"
+                                            @click="adjustPoLineQty(index, 1)"
+                                        >
+                                            <Plus class="size-3.5" />
+                                        </Button>
+                                    </div>
+                                    <InputError
+                                        :message="
+                                            poReceiveErrors[
+                                                `lines.${index}.qty_received`
+                                            ]
+                                        "
+                                    />
+                                </div>
+
+                                <div class="grid gap-1.5">
+                                    <Label
+                                        :for="`po-mode-ref-${index}`"
+                                        class="text-xs font-medium"
+                                    >
+                                        Reference no.
+                                    </Label>
+                                    <Input
+                                        :id="`po-mode-ref-${index}`"
+                                        v-model="
+                                            poReceiveForm.lines[index]
+                                                .reference_no
+                                        "
+                                        :placeholder="
+                                            poSharedRef || 'DR / Invoice'
+                                        "
+                                    />
+                                </div>
+
+                                <div
+                                    v-if="
+                                        poReceiveForm.lines[index]
+                                            .product_type === 'consumable'
+                                    "
+                                    class="grid gap-1.5"
+                                >
+                                    <Label
+                                        :for="`po-mode-exp-${index}`"
+                                        class="text-xs font-medium"
+                                    >
+                                        Expiry date
+                                    </Label>
+                                    <Input
+                                        :id="`po-mode-exp-${index}`"
+                                        v-model="
+                                            poReceiveForm.lines[index]
+                                                .expires_at
+                                        "
+                                        type="date"
+                                    />
+                                </div>
+
+                                <div class="grid gap-1.5">
+                                    <Label
+                                        :for="`po-mode-notes-${index}`"
+                                        class="text-xs font-medium"
+                                    >
+                                        Notes
+                                    </Label>
+                                    <Input
+                                        :id="`po-mode-notes-${index}`"
+                                        v-model="
+                                            poReceiveForm.lines[index].notes
+                                        "
+                                        placeholder="Condition / lot remarks"
+                                    />
+                                </div>
+                            </div>
+
+                            <!-- Asset Tags for Asset PO Lines -->
+                            <div
+                                v-if="
+                                    selectedPo.lines[index].qty_remaining > 0 &&
+                                    poReceiveForm.lines[index]?.product_type ===
+                                        'asset'
+                                "
+                                class="mt-3 grid gap-2 rounded-lg border border-border/60 bg-muted/20 p-3"
+                            >
+                                <div
+                                    class="flex flex-wrap items-center justify-between gap-2"
+                                >
+                                    <Label
+                                        :for="`po-mode-tags-${index}`"
+                                        class="text-xs font-semibold"
+                                    >
+                                        Asset tag codes ({{
+                                            parseTagCodes(
+                                                poReceiveForm.lines[index]
+                                                    .tag_codes_text,
+                                            ).length
+                                        }}
+                                        /
+                                        {{
+                                            selectedPo.lines[index]
+                                                .qty_remaining
+                                        }}
+                                        remaining)
+                                    </Label>
+                                    <QrScannerDialog
+                                        button-label="Scan Asset Tags"
+                                        title="Scan PO asset tags"
+                                        description="Scan serialized asset tags for this purchase order line."
+                                        :continuous="true"
+                                        :close-on-scan="false"
+                                        @scanned="
+                                            appendPoAssetTag(index, $event)
+                                        "
+                                    />
+                                </div>
+                                <textarea
+                                    :id="`po-mode-tags-${index}`"
+                                    v-model="
+                                        poReceiveForm.lines[index]
+                                            .tag_codes_text
+                                    "
+                                    rows="2"
+                                    placeholder="AST-0001&#10;AST-0002"
+                                    class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
+                                />
+                                <InputError
+                                    :message="
+                                        poReceiveErrors[
+                                            `lines.${index}.tag_codes`
+                                        ]
+                                    "
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PO Receipt Submit Bar -->
+                    <div
+                        class="mt-5 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between"
+                    >
+                        <div class="text-xs text-muted-foreground">
+                            Ready to receive on
+                            <strong>{{ selectedPo?.po_number }}</strong
+                            >:
+                            <strong class="text-foreground"
+                                >{{
+                                    poReceiptStats.activeLines
+                                }}
+                                line(s)</strong
+                            >
+                            ({{ poReceiptStats.totalUnitsNow }} unit(s))
+                        </div>
+
+                        <Button
+                            type="submit"
+                            :disabled="poReceiveForm.processing"
+                            class="w-full sm:w-auto"
+                        >
+                            <PackageCheck class="mr-1.5 size-4" />
+                            {{
+                                poReceiveForm.processing
+                                    ? 'Recording PO receipt…'
+                                    : 'Record Purchase Order Receipt'
+                            }}
+                        </Button>
+                    </div>
+                </section>
+            </form>
+        </div>
+
+        <!-- Catalog Browser Modal -->
+        <ProductSelectDialog
+            v-model:open="isCatalogOpen"
+            :title="
+                catalogTarget === 'single'
+                    ? 'Select product to receive'
+                    : 'Browse products for batch receiving'
+            "
+            description="Search by product name or SKU, filter by category or type, and select items to receive."
+            type-filter="all"
+            :only-in-stock-default="false"
+            :close-on-select="catalogTarget === 'single'"
+            :exclude-skus="catalogTarget === 'batch' ? batchSelectedSkus : []"
+            @select="handleCatalogSelection"
+        />
     </div>
 </template>

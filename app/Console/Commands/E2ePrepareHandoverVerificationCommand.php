@@ -27,7 +27,7 @@ class E2ePrepareHandoverVerificationCommand extends Command
 
         do {
             $handover = HandoverLog::query()
-                ->whereNull('verified_at')
+                ->pending()
                 ->whereHas('asset', fn ($query) => $query->where('tag_code', $assetTagCode))
                 ->whereHas('toUser', fn ($query) => $query->where('email', $recipientEmail))
                 ->latest('id')

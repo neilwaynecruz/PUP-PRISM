@@ -2,24 +2,66 @@
 
 namespace App\Http\Controllers\Inventory;
 
+use App\Enums\PurchaseOrderStatus;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\BatchReceiveStockRequest;
 use App\Http\Requests\Inventory\ReceiveStockRequest;
+use App\Http\Resources\PurchaseOrderResource;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
 use App\Services\AuditLogService;
 use App\Services\Inventory\InventoryService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use RuntimeException;
 
 class ReceivingController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        return Inertia::render('inventory/receiving/Index');
+        $products = Product::query()
+            ->with(['category:id,name', 'supplier:id,name', 'stock:id,product_id,on_hand_qty'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'sku', 'name', 'type', 'category_id', 'supplier_id', 'reorder_threshold', 'unit_price'])
+            ->map(fn (Product $product): array => [
+                'id' => (int) $product->id,
+                'sku' => $product->sku,
+                'name' => $product->name,
+                'type' => $product->type?->value,
+                'category' => $product->category?->name,
+                'supplier' => $product->supplier?->name,
+                'on_hand_qty' => (int) ($product->stock?->on_hand_qty ?? 0),
+                'reorder_threshold' => (int) ($product->reorder_threshold ?? 0),
+                'unit_price' => $product->unit_price !== null ? round((float) $product->unit_price, 2) : null,
+            ])
+            ->values()
+            ->all();
+
+        $purchaseOrders = PurchaseOrder::query()
+            ->with([
+                'supplier:id,name,contact_person,email,phone',
+                'lines.product:id,sku,name,type,supplier_id,category_id',
+                'lines.product.category:id,name',
+                'lines.product.stock:id,product_id,on_hand_qty',
+            ])
+            ->whereIn('status', [PurchaseOrderStatus::Sent, PurchaseOrderStatus::Partial])
+            ->orderByDesc('created_at')
+            ->limit(50)
+            ->get()
+            ->map(fn (PurchaseOrder $po): array => (new PurchaseOrderResource($po))->resolve($request))
+            ->values()
+            ->all();
+
+        return Inertia::render('inventory/receiving/Index', [
+            'products' => $products,
+            'purchaseOrders' => $purchaseOrders,
+            'initialPurchaseOrderId' => $request->integer('purchase_order_id') ?: null,
+        ]);
     }
 
     public function store(ReceiveStockRequest $request, InventoryService $inventory): RedirectResponse

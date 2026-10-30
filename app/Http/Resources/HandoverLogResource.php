@@ -15,6 +15,7 @@ class HandoverLogResource extends InertiaJsonResource
     {
         return [
             'id' => (int) $this->id,
+            'status' => $this->resource->status(),
             'tag_code' => $this->relationLoaded('asset') ? $this->asset?->tag_code : null,
             'asset_name' => $this->assetName(),
             'to' => $this->relationLoaded('toUser') && $this->toUser
@@ -26,10 +27,16 @@ class HandoverLogResource extends InertiaJsonResource
             'to_user' => $this->relationLoaded('toUser') && $this->toUser
                 ? (new UserResource($this->toUser))->resolve($request)
                 : null,
+            'initiated_by' => $this->relationLoaded('initiatedBy') ? $this->initiatedBy?->name : null,
             'from_position' => $this->positionSummary('fromPosition'),
             'to_position' => $this->positionSummary('toPosition'),
             'initiated_at' => $this->initiated_at?->toIso8601String(),
+            'last_sent_at' => $this->last_sent_at?->toIso8601String(),
             'verified_at' => $this->verified_at?->toIso8601String(),
+            'cancelled_at' => $this->cancelled_at?->toIso8601String(),
+            'cancelled_by' => $this->relationLoaded('cancelledBy') ? $this->cancelledBy?->name : null,
+            'cancellation_reason' => $this->cancellation_reason,
+            'notes' => $this->notes,
         ];
     }
 

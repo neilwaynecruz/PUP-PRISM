@@ -5,6 +5,8 @@ import {
     Bell,
     BookOpen,
     Boxes,
+    Briefcase,
+    Building2,
     ClipboardCheck,
     FileText,
     History,
@@ -13,9 +15,13 @@ import {
     Package,
     Radar,
     ReceiptText,
+    PackageOpen,
     Settings,
     ShieldCheck,
+    Tags,
     Truck,
+    UserCog,
+    Users,
 } from 'lucide-vue-next';
 import { computed } from 'vue';
 import { dashboard } from '@/routes';
@@ -164,7 +170,7 @@ const mainNavigationItems: InventoryNavItem[] = [
     {
         title: 'Users',
         href: adminUsersIndex(),
-        icon: ShieldCheck,
+        icon: Users,
         permission: 'viewUsers',
     },
     {
@@ -182,25 +188,25 @@ const mainNavigationItems: InventoryNavItem[] = [
     {
         title: 'Departments',
         href: departmentsIndex(),
-        icon: ShieldCheck,
+        icon: Building2,
         permission: 'viewMasterData',
     },
     {
         title: 'Positions',
         href: positionsIndex(),
-        icon: ShieldCheck,
+        icon: Briefcase,
         permission: 'viewMasterData',
     },
     {
         title: 'Categories',
         href: categoriesIndex(),
-        icon: Package,
+        icon: Tags,
         permission: 'viewMasterData',
     },
     {
         title: 'Origins',
         href: originsIndex(),
-        icon: Package,
+        icon: PackageOpen,
         permission: 'viewMasterData',
     },
 ];
@@ -362,16 +368,17 @@ const searchNavigationItems: InventorySearchItem[] = [
         keywords: ['notifications', 'history', 'alerts', 'inbox'],
     },
     {
-        title: 'Settings',
+        title: 'My settings',
         href: '/settings/profile',
-        icon: Settings,
-        description: 'Profile, appearance, and account settings',
+        icon: UserCog,
+        description:
+            'Your own profile, password, appearance, and notifications',
         keywords: ['settings', 'profile', 'security', 'appearance'],
     },
     {
         title: 'Users',
         href: adminUsersIndex(),
-        icon: ShieldCheck,
+        icon: Users,
         description: 'Provision and manage internal user accounts',
         keywords: ['users', 'accounts', 'admin', 'roles'],
         permission: 'viewUsers',
@@ -542,31 +549,31 @@ export function useInventoryNavigation() {
                         {
                             title: 'Users',
                             href: adminUsersIndex(),
-                            icon: ShieldCheck,
+                            icon: Users,
                             permission: 'viewUsers',
                         },
                         {
                             title: 'Departments',
                             href: departmentsIndex(),
-                            icon: ShieldCheck,
+                            icon: Building2,
                             permission: 'viewMasterData',
                         },
                         {
                             title: 'Positions',
                             href: positionsIndex(),
-                            icon: ShieldCheck,
+                            icon: Briefcase,
                             permission: 'viewMasterData',
                         },
                         {
                             title: 'Categories',
                             href: categoriesIndex(),
-                            icon: Package,
+                            icon: Tags,
                             permission: 'viewMasterData',
                         },
                         {
                             title: 'Origins',
                             href: originsIndex(),
-                            icon: Package,
+                            icon: PackageOpen,
                             permission: 'viewMasterData',
                         },
                         {
@@ -575,14 +582,19 @@ export function useInventoryNavigation() {
                             icon: MapPin,
                             permission: 'viewLocations',
                         },
-                        {
-                            title: 'Settings',
-                            href: '/settings/profile',
-                            icon: Settings,
-                        },
                     ],
                     perms,
                 ),
+            },
+            {
+                group: 'My account',
+                items: [
+                    {
+                        title: 'My settings',
+                        href: '/settings/profile',
+                        icon: UserCog,
+                    },
+                ],
             },
         ].filter((g) => g.items.length > 0);
     });

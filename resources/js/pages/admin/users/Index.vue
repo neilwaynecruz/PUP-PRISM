@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { ChevronDown, Plus, ShieldCheck } from 'lucide-vue-next';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
+import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
+import AdminTableShell from '@/components/admin/AdminTableShell.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,16 +29,22 @@ type PaginationLink = { url: string | null; label: string; active: boolean };
 type Paginated<T> = {
     data: T[];
     links: PaginationLink[];
+    total: number;
 };
+
+type RoleDescription = { summary: string; abilities: string[] };
 
 const props = defineProps<{
     filters: {
         search: string;
         role: string;
         active: boolean | null;
+        department_id: number;
     };
     users: Paginated<UserRow>;
     roles: string[];
+    roleDescriptions: Record<string, RoleDescription>;
+    departments: { id: number; name: string }[];
     can: {
         create: boolean;
     };
@@ -55,10 +65,21 @@ const role = ref(props.filters.role ?? '');
 const active = ref(
     props.filters.active === null ? '' : props.filters.active ? '1' : '0',
 );
+const departmentId = ref(
+    props.filters.department_id > 0 ? String(props.filters.department_id) : '',
+);
+const showRoleGuide = ref(false);
+
+const selectClass =
+    'h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground shadow-xs transition-colors focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/20';
+
+const hasFilters = computed(() =>
+    Boolean(search.value || role.value || active.value || departmentId.value),
+);
 
 let refreshTimer: number | undefined;
 
-watch([search, role, active], () => {
+watch([search, role, active, departmentId], () => {
     window.clearTimeout(refreshTimer);
     refreshTimer = window.setTimeout(() => {
         router.get(
@@ -67,6 +88,7 @@ watch([search, role, active], () => {
                 search: search.value || undefined,
                 role: role.value || undefined,
                 active: active.value === '' ? undefined : active.value === '1',
+                department_id: departmentId.value || undefined,
             },
             {
                 preserveScroll: true,
@@ -81,44 +103,115 @@ onBeforeUnmount(() => {
     window.clearTimeout(refreshTimer);
 });
 
+function clearFilters(): void {
+    search.value = '';
+    role.value = '';
+    active.value = '';
+    departmentId.value = '';
+}
+
 function formatProvisionedAt(value: string | null): string {
     if (!value) {
         return '—';
     }
 
-    return new Date(value).toLocaleDateString();
+    return new Date(value).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+    });
 }
+
+const roleBadgeClass: Record<string, string> = {
+    Admin: 'border-primary/25 bg-primary/10 text-primary',
+    'Supply Head':
+        'border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-300',
+    'Property Custodian':
+        'border-sky-500/25 bg-sky-500/10 text-sky-700 dark:text-sky-300',
+};
 </script>
 
 <template>
     <Head title="Users" />
 
-    <div class="flex flex-col gap-6 p-4 sm:p-6">
+    <div class="mx-auto flex w-full max-w-400 flex-col gap-5 p-4 sm:p-6 lg:p-8">
         <div
             class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
         >
             <Heading
                 variant="small"
                 title="Users"
-                description="Provision and manage internal user accounts."
+                description="Create accounts, assign roles and positions, and control who can sign in."
             />
 
-            <Button v-if="can.create" as-child size="sm" class="rounded-lg">
-                <Link :href="usersCreate()">New user</Link>
-            </Button>
+            <div class="flex flex-wrap items-center gap-2">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="rounded-lg"
+                    :aria-expanded="showRoleGuide"
+                    aria-controls="role-guide"
+                    @click="showRoleGuide = !showRoleGuide"
+                >
+                    <ShieldCheck class="mr-1.5 h-4 w-4" />
+                    What can each role do?
+                    <ChevronDown
+                        class="ml-1 h-3.5 w-3.5 transition-transform"
+                        :class="{ 'rotate-180': showRoleGuide }"
+                    />
+                </Button>
+                <Button
+                    v-if="can.create"
+                    as-child
+                    size="sm"
+                    class="rounded-lg shadow-sm"
+                >
+                    <Link :href="usersCreate()">
+                        <Plus class="mr-1.5 h-4 w-4" />New user
+                    </Link>
+                </Button>
+            </div>
         </div>
 
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+            v-if="showRoleGuide"
+            id="role-guide"
+            class="grid gap-3 md:grid-cols-3"
+        >
+            <div
+                v-for="(description, roleName) in roleDescriptions"
+                :key="roleName"
+                class="rounded-xl border border-border/60 bg-card p-4 shadow-xs"
+            >
+                <span
+                    class="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold"
+                    :class="roleBadgeClass[roleName] ?? ''"
+                    >{{ roleName }}</span
+                >
+                <p class="mt-2 text-sm font-medium">
+                    {{ description.summary }}
+                </p>
+                <ul
+                    class="mt-1.5 list-disc space-y-0.5 pl-4 text-xs text-muted-foreground"
+                >
+                    <li v-for="ability in description.abilities" :key="ability">
+                        {{ ability }}
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div
+            class="grid gap-3 rounded-xl border border-border/60 bg-card/70 p-3 shadow-xs sm:grid-cols-2 sm:p-4 lg:grid-cols-[2fr_1fr_1fr_1fr_auto]"
+        >
             <Input
                 v-model="search"
-                placeholder="Search name, email, or role..."
-                class="h-10 rounded-lg lg:col-span-2"
+                type="search"
+                aria-label="Search users"
+                placeholder="Search name, email, or role"
+                class="h-10 rounded-lg shadow-xs sm:col-span-2 lg:col-span-1"
             />
-
-            <select
-                v-model="role"
-                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
-            >
+            <select v-model="role" aria-label="Role" :class="selectClass">
                 <option value="">All roles</option>
                 <option
                     v-for="roleOption in roles"
@@ -128,107 +221,123 @@ function formatProvisionedAt(value: string | null): string {
                     {{ roleOption }}
                 </option>
             </select>
-
             <select
-                v-model="active"
-                class="h-10 rounded-lg border border-input bg-background px-3 text-sm"
+                v-model="departmentId"
+                aria-label="Department"
+                :class="selectClass"
             >
+                <option value="">All departments</option>
+                <option
+                    v-for="department in departments"
+                    :key="department.id"
+                    :value="String(department.id)"
+                >
+                    {{ department.name }}
+                </option>
+            </select>
+            <select v-model="active" aria-label="Status" :class="selectClass">
                 <option value="">All statuses</option>
                 <option value="1">Active</option>
                 <option value="0">Inactive</option>
             </select>
-        </div>
-
-        <div
-            class="overflow-x-auto rounded-xl border border-border/60 bg-card shadow-sm"
-        >
-            <table class="min-w-full text-sm">
-                <thead class="bg-muted/40 text-left">
-                    <tr
-                        class="text-xs font-semibold tracking-wider text-muted-foreground/80 uppercase [&>th]:px-4 [&>th]:py-3"
-                    >
-                        <th>User</th>
-                        <th>Role</th>
-                        <th>Position</th>
-                        <th>Provisioned</th>
-                        <th class="text-right">Status</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-border/60">
-                    <tr v-if="users.data.length === 0">
-                        <td
-                            colspan="6"
-                            class="px-4 py-8 text-center text-sm text-muted-foreground"
-                        >
-                            No users found.
-                        </td>
-                    </tr>
-
-                    <tr
-                        v-for="user in users.data"
-                        :key="user.id"
-                        class="transition-colors hover:bg-muted/30 [&>td]:px-4 [&>td]:py-3"
-                    >
-                        <td>
-                            <div class="font-medium">{{ user.name }}</div>
-                            <div class="text-xs text-muted-foreground">
-                                {{ user.email }}
-                            </div>
-                        </td>
-                        <td>{{ user.role ?? '—' }}</td>
-                        <td class="text-muted-foreground">
-                            {{ user.position ?? 'No assigned position' }}
-                        </td>
-                        <td class="text-muted-foreground">
-                            {{ formatProvisionedAt(user.invited_at) }}
-                        </td>
-                        <td class="text-right">
-                            <span
-                                class="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium"
-                                :class="
-                                    user.is_active
-                                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                                        : 'bg-muted text-muted-foreground'
-                                "
-                            >
-                                {{ user.is_active ? 'Active' : 'Inactive' }}
-                            </span>
-                        </td>
-                        <td class="text-right">
-                            <Button variant="ghost" size="sm" as-child>
-                                <Link :href="usersEdit(user.id)">Edit</Link>
-                            </Button>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div
-            v-if="users.links.length"
-            class="flex flex-wrap items-center justify-center gap-1"
-        >
             <Button
-                v-for="(link, index) in users.links"
-                :key="index"
+                v-if="hasFilters"
                 variant="ghost"
-                size="sm"
-                :disabled="!link.url"
-                as-child
-                class="h-8 rounded-lg text-xs"
-                :class="link.active ? 'bg-primary/10 text-primary' : ''"
+                class="h-10"
+                @click="clearFilters"
             >
-                <Link
-                    v-if="link.url"
-                    :href="link.url"
-                    preserve-scroll
-                    preserve-state
-                >
-                    <span v-html="link.label" />
-                </Link>
-                <span v-else v-html="link.label" />
+                Clear
             </Button>
         </div>
+
+        <AdminTableShell min-width="860px">
+            <colgroup>
+                <col class="w-[30%]" />
+                <col class="w-[16%]" />
+                <col class="w-[28%]" />
+                <col class="w-[11%]" />
+                <col class="w-[9%]" />
+                <col class="w-[6%]" />
+            </colgroup>
+            <thead
+                class="border-b border-border/80 bg-muted/55 text-left text-xs tracking-wider text-muted-foreground uppercase"
+            >
+                <tr class="[&>th]:px-5 [&>th]:py-3.5 [&>th]:font-bold">
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Position</th>
+                    <th>Created</th>
+                    <th>Status</th>
+                    <th class="text-right">
+                        <span class="sr-only">Actions</span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-border/60">
+                <tr v-if="users.data.length === 0">
+                    <td
+                        colspan="6"
+                        class="px-5 py-10 text-center text-sm text-muted-foreground"
+                    >
+                        {{
+                            hasFilters
+                                ? 'No users match these filters.'
+                                : 'No users yet.'
+                        }}
+                    </td>
+                </tr>
+
+                <tr
+                    v-for="user in users.data"
+                    :key="user.id"
+                    class="transition-colors hover:bg-primary/[0.035] dark:hover:bg-primary/6 [&>td]:px-5 [&>td]:py-3.5 [&>td]:align-middle"
+                    :class="{ 'opacity-75': !user.is_active }"
+                >
+                    <td>
+                        <div class="truncate font-medium">{{ user.name }}</div>
+                        <div class="truncate text-xs text-muted-foreground">
+                            {{ user.email }}
+                        </div>
+                    </td>
+                    <td>
+                        <span
+                            v-if="user.role"
+                            class="inline-flex rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap"
+                            :class="roleBadgeClass[user.role] ?? ''"
+                            >{{ user.role }}</span
+                        >
+                        <span v-else class="text-muted-foreground">—</span>
+                    </td>
+                    <td
+                        class="truncate text-muted-foreground"
+                        :title="user.position ?? undefined"
+                    >
+                        {{ user.position ?? 'No assigned position' }}
+                    </td>
+                    <td class="text-xs text-muted-foreground">
+                        {{ formatProvisionedAt(user.invited_at) }}
+                    </td>
+                    <td>
+                        <AdminStatusBadge :active="user.is_active" />
+                    </td>
+                    <td class="text-right">
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            class="h-8 rounded-lg px-3 text-xs font-semibold text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                            as-child
+                        >
+                            <Link
+                                :href="usersEdit(user.id)"
+                                :aria-label="`Edit ${user.name}`"
+                                >Edit</Link
+                            >
+                        </Button>
+                    </td>
+                </tr>
+            </tbody>
+        </AdminTableShell>
+
+        <AdminPagination :links="users.links" />
     </div>
 </template>

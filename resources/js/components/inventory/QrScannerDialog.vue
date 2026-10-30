@@ -21,6 +21,7 @@ const props = withDefaults(
         continuous?: boolean;
         closeOnScan?: boolean;
         triggerTestId?: string;
+        buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
     }>(),
     {
         buttonLabel: 'Scan QR Code',
@@ -30,6 +31,7 @@ const props = withDefaults(
         continuous: false,
         closeOnScan: undefined,
         triggerTestId: undefined,
+        buttonSize: 'default',
     },
 );
 
@@ -83,6 +85,7 @@ watch(isOpen, async (open) => {
     <Button
         type="button"
         variant="outline"
+        :size="props.buttonSize"
         class="w-full sm:w-auto"
         :data-testid="triggerTestId"
         @click="isOpen = true"

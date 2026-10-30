@@ -86,12 +86,14 @@ function deactivate(location: Location): void {
             description="Manage buildings, rooms, offices, and storage areas without changing department or accountability records."
         />
         <form
-            class="grid gap-3 rounded-xl border border-border/70 bg-card p-4 md:grid-cols-3 xl:grid-cols-6 xl:items-end"
+            class="grid gap-3 rounded-xl border border-border/70 bg-card p-4 md:grid-cols-3 xl:grid-cols-7 xl:items-end"
             @submit.prevent="submit"
         >
             <label class="grid gap-1 text-sm font-medium"
                 >Location code<input
                     v-model="form.code"
+                    name="location_code"
+                    autocomplete="off"
                     required
                     placeholder="Example: MAIN-STOCK"
                     class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
@@ -100,6 +102,8 @@ function deactivate(location: Location): void {
             <label class="grid gap-1 text-sm font-medium"
                 >Name<input
                     v-model="form.name"
+                    name="location_name"
+                    autocomplete="off"
                     required
                     placeholder="Main Supply Room"
                     class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
@@ -108,18 +112,26 @@ function deactivate(location: Location): void {
             <label class="grid gap-1 text-sm font-medium"
                 >Building<input
                     v-model="form.building"
+                    name="location_building"
+                    autocomplete="off"
                     placeholder="Building name"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
+                    :message="form.errors.building"
             /></label>
             <label class="grid gap-1 text-sm font-medium"
                 >Room<input
                     v-model="form.room"
+                    name="location_room"
+                    autocomplete="off"
                     placeholder="Room or area"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
+                    :message="form.errors.room"
             /></label>
-            <label class="grid gap-1 text-sm font-medium"
+            <label class="grid gap-1 text-sm font-medium xl:col-span-2"
                 >Department<select
                     v-model="form.department_id"
+                    name="location_department"
+                    autocomplete="off"
                     class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
                 >
                     <option value="">Shared or not assigned</option>
@@ -129,9 +141,9 @@ function deactivate(location: Location): void {
                         :value="String(department.id)"
                     >
                         {{ department.name }}
-                    </option>
-                </select></label
-            >
+                    </option></select
+                ><InputError :message="form.errors.department_id"
+            /></label>
             <Button type="submit" :disabled="form.processing">{{
                 form.processing ? 'Creating…' : 'Create Location'
             }}</Button>

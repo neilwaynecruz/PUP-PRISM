@@ -64,7 +64,7 @@ function goToFirstMatch(): void {
         class="border-r border-sidebar-border/50"
     >
         <SidebarHeader
-            class="border-b border-sidebar-border/40 px-3 py-3 group-data-[collapsible=icon]:p-2"
+            class="border-b border-sidebar-border/40 px-3 py-3 pr-14 group-data-[collapsible=icon]:p-2 md:pr-3"
         >
             <SidebarMenu>
                 <SidebarMenuItem>

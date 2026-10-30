@@ -172,7 +172,9 @@ class PurchaseOrderController extends Controller
             'supplier',
             'requester:id,name,email',
             'approver:id,name,email',
-            'lines.product:id,sku,name,type,supplier_id',
+            'lines.product:id,sku,name,type,supplier_id,category_id',
+            'lines.product.category:id,name',
+            'lines.product.stock:id,product_id,on_hand_qty',
         ]);
 
         return Inertia::render('inventory/purchase-orders/Show', [
@@ -362,17 +364,22 @@ class PurchaseOrderController extends Controller
     }
 
     /**
-     * @return array<int, array{id: int, name: string}>
+     * @return array<int, array<string, mixed>>
      */
     private function supplierOptions(bool $onlyActive = false): array
     {
         return Supplier::query()
             ->when($onlyActive, fn ($query) => $query->where('is_active', true))
             ->orderBy('name')
-            ->get(['id', 'name'])
+            ->get(['id', 'name', 'contact_person', 'email', 'phone', 'payment_terms', 'lead_time_days'])
             ->map(fn (Supplier $supplier) => [
                 'id' => (int) $supplier->id,
                 'name' => $supplier->name,
+                'contact_person' => $supplier->contact_person,
+                'email' => $supplier->email,
+                'phone' => $supplier->phone,
+                'payment_terms' => $supplier->payment_terms,
+                'lead_time_days' => $supplier->lead_time_days,
             ])
             ->all();
     }
@@ -383,18 +390,21 @@ class PurchaseOrderController extends Controller
     private function productOptions(): array
     {
         return Product::query()
-            ->with(['supplier:id,name'])
+            ->with(['supplier:id,name', 'category:id,name', 'stock:id,product_id,on_hand_qty'])
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'sku', 'name', 'type', 'supplier_id', 'unit_price'])
+            ->get(['id', 'sku', 'name', 'type', 'category_id', 'supplier_id', 'unit_price', 'reorder_threshold'])
             ->map(fn (Product $product) => [
                 'id' => (int) $product->id,
                 'sku' => $product->sku,
                 'name' => $product->name,
                 'type' => $product->type?->value,
+                'category' => $product->category?->name,
                 'supplier_id' => $product->supplier_id,
                 'supplier' => $product->supplier?->name,
                 'unit_price' => $product->unit_price,
+                'on_hand_qty' => (int) ($product->stock?->on_hand_qty ?? 0),
+                'reorder_threshold' => (int) ($product->reorder_threshold ?? 0),
             ])
             ->all();
     }

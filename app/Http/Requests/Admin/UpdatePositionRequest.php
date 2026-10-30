@@ -4,6 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use App\Models\Department;
 use App\Models\Position;
+use App\Rules\UniqueIgnoringCase;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -31,11 +32,11 @@ class UpdatePositionRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('positions', 'title')
-                    ->where(fn ($query) => $query->where('department_id', $this->integer('department_id')))
+                (new UniqueIgnoringCase('positions', 'title'))
+                    ->where('department_id', $this->integer('department_id'))
                     ->ignore($position->id),
             ],
-            'code' => ['required', 'string', 'max:50', Rule::unique('positions', 'code')->ignore($position->id)],
+            'code' => ['required', 'string', 'max:50', (new UniqueIgnoringCase('positions', 'code'))->ignore($position->id)],
             'is_active' => ['required', 'boolean'],
         ];
     }

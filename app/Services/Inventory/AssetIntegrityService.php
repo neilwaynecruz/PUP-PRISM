@@ -28,7 +28,7 @@ class AssetIntegrityService
 
         $pendingHandoverExists = HandoverLog::query()
             ->where('asset_id', $asset->id)
-            ->whereNull('verified_at')
+            ->pending()
             ->lockForUpdate()
             ->exists();
 
@@ -84,27 +84,65 @@ class AssetIntegrityService
         ?int $ignoreHandoverLogId = null,
         ?CarbonImmutable $effectiveAt = null,
     ): void {
+        $blockers = $this->collectHandoverBlockers($asset, $ignoreHandoverLogId, $effectiveAt, lock: true, stopAtFirst: true);
+
+        if ($blockers !== []) {
+            throw ValidationException::withMessages([
+                $errorKey => $blockers[0],
+            ]);
+        }
+    }
+
+    /**
+     * Read-only preview of every reason an asset cannot be handed over right now.
+     *
+     * Used to explain eligibility before submission; ensureHandOverable() re-checks
+     * the same rules under row locks when the handover is actually created or verified.
+     *
+     * @return list<string>
+     */
+    public function handoverBlockers(Asset $asset): array
+    {
+        return $this->collectHandoverBlockers($asset, null, null, lock: false, stopAtFirst: false);
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function collectHandoverBlockers(
+        Asset $asset,
+        ?int $ignoreHandoverLogId,
+        ?CarbonImmutable $effectiveAt,
+        bool $lock,
+        bool $stopAtFirst,
+    ): array {
+        $blockers = [];
+
         if ($asset->lifecycle_status !== AssetLifecycleStatus::Active
             || in_array($asset->status, [AssetStatus::Condemned, AssetStatus::Unserviceable], true)) {
-            throw ValidationException::withMessages([
-                $errorKey => __('Only active assets can be handed over.'),
-            ]);
+            $blockers[] = __('Only active assets can be handed over.');
+
+            if ($stopAtFirst) {
+                return $blockers;
+            }
         }
 
         $pendingHandoverExists = HandoverLog::query()
             ->where('asset_id', $asset->id)
-            ->whereNull('verified_at')
+            ->pending()
             ->when(
                 $ignoreHandoverLogId !== null,
                 fn ($query) => $query->whereKeyNot($ignoreHandoverLogId),
             )
-            ->lockForUpdate()
+            ->when($lock, fn ($query) => $query->lockForUpdate())
             ->exists();
 
         if ($pendingHandoverExists) {
-            throw ValidationException::withMessages([
-                $errorKey => __('This asset already has a handover pending verification.'),
-            ]);
+            $blockers[] = __('This asset already has a handover pending verification.');
+
+            if ($stopAtFirst) {
+                return $blockers;
+            }
         }
 
         $maintenanceConflict = AssetMaintenance::query()
@@ -114,13 +152,15 @@ class AssetIntegrityService
                 MaintenanceStatus::Scheduled->value,
                 MaintenanceStatus::InProgress->value,
             ])
-            ->lockForUpdate()
+            ->when($lock, fn ($query) => $query->lockForUpdate())
             ->exists();
 
         if ($maintenanceConflict) {
-            throw ValidationException::withMessages([
-                $errorKey => __('This asset has scheduled or active maintenance and cannot be handed over.'),
-            ]);
+            $blockers[] = __('This asset has scheduled or active maintenance and cannot be handed over.');
+
+            if ($stopAtFirst) {
+                return $blockers;
+            }
         }
 
         $effectiveAt ??= CarbonImmutable::now();
@@ -129,13 +169,13 @@ class AssetIntegrityService
             ->blocking()
             ->where('asset_id', $asset->id)
             ->where('end_at', '>', $effectiveAt)
-            ->lockForUpdate()
+            ->when($lock, fn ($query) => $query->lockForUpdate())
             ->exists();
 
         if ($futureBookingExists) {
-            throw ValidationException::withMessages([
-                $errorKey => __('This asset is already committed to an approved booking and cannot be handed over right now.'),
-            ]);
+            $blockers[] = __('This asset is already committed to an approved booking and cannot be handed over right now.');
         }
+
+        return $blockers;
     }
 }

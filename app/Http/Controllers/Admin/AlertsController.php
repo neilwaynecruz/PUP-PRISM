@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\AssignInventoryAlertRequest;
 use App\Http\Requests\Admin\ResolveInventoryAlertRequest;
 use App\Models\InventoryAlert;
 use App\Models\User;
+use App\Services\AuditLogService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,14 +23,15 @@ class AlertsController extends Controller
         $filters = [
             'search' => $request->string('search')->trim()->toString(),
             'type' => $request->string('type')->trim()->toString(),
-            'status' => $request->string('status')->trim()->toString(),
+            'status' => $request->string('status')->trim()->toString() ?: 'active',
             'assigned_to' => $request->integer('assigned_to'),
         ];
 
         $query = InventoryAlert::query()
             ->with([
-                'product:id,sku,name',
-                'stockLot:id,product_id,expires_at',
+                'product:id,sku,name,reorder_threshold',
+                'product.stock:id,product_id,on_hand_qty',
+                'stockLot:id,product_id,reference_no,expires_at,qty_remaining',
                 'acknowledgedBy:id,name,email',
                 'assignedTo:id,name,email',
                 'resolvedBy:id,name,email',
@@ -63,6 +65,8 @@ class AlertsController extends Controller
 
         if ($filters['assigned_to'] > 0) {
             $query->where('assigned_to', $filters['assigned_to']);
+        } elseif ($filters['assigned_to'] === -1) {
+            $query->whereNull('assigned_to');
         }
 
         $alerts = $query
@@ -98,11 +102,24 @@ class AlertsController extends Controller
             'summary' => [
                 'active' => InventoryAlert::query()->active()->count(),
                 'unacknowledged' => InventoryAlert::query()->active()->whereNull('acknowledged_at')->count(),
+                'acknowledged' => InventoryAlert::query()->active()->whereNotNull('acknowledged_at')->count(),
                 'assigned_to_me' => InventoryAlert::query()
                     ->active()
                     ->where('assigned_to', $request->user()?->id)
                     ->count(),
+                'resolved_this_week' => InventoryAlert::query()
+                    ->resolved()
+                    ->where('resolved_at', '>=', CarbonImmutable::now()->subDays(7))
+                    ->count(),
+                'active_by_type' => InventoryAlert::query()
+                    ->active()
+                    ->selectRaw('type, count(*) as aggregate')
+                    ->groupBy('type')
+                    ->pluck('aggregate', 'type')
+                    ->map(fn ($count): int => (int) $count)
+                    ->all(),
             ],
+            'currentUserId' => $request->user()?->id,
         ]);
     }
 
@@ -110,13 +127,27 @@ class AlertsController extends Controller
     {
         $this->authorize('acknowledge', $alert);
 
-        if ($alert->acknowledged_at === null) {
-            $alert->update([
-                'acknowledged_at' => CarbonImmutable::now(),
-                'acknowledged_by' => $request->user()->id,
-                'assigned_to' => $alert->assigned_to ?? $request->user()->id,
-            ]);
+        if ($alert->acknowledged_at !== null) {
+            Inertia::flash('toast', ['type' => 'info', 'message' => __('This alert was already acknowledged.')]);
+
+            return back();
         }
+
+        $before = $this->auditState($alert);
+
+        $alert->update([
+            'acknowledged_at' => CarbonImmutable::now(),
+            'acknowledged_by' => $request->user()->id,
+            'assigned_to' => $alert->assigned_to ?? $request->user()->id,
+        ]);
+
+        AuditLogService::logCustom(
+            'alert_acknowledge',
+            __('Alert #:id acknowledged.', ['id' => $alert->id]),
+            $alert,
+            $before,
+            $this->auditState($alert->fresh(['assignedTo:id,name']) ?? $alert),
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Alert acknowledged.')]);
 
@@ -129,7 +160,13 @@ class AlertsController extends Controller
 
         $assignee = $request->assignee();
 
-        abort_unless($assignee->hasAnyRole(['Admin', 'Supply Head']), 422);
+        if ($alert->assigned_to === $assignee->id) {
+            Inertia::flash('toast', ['type' => 'info', 'message' => __('This alert is already assigned to :name.', ['name' => $assignee->name])]);
+
+            return back();
+        }
+
+        $before = $this->auditState($alert);
 
         $alert->update([
             'assigned_to' => $assignee->id,
@@ -137,7 +174,15 @@ class AlertsController extends Controller
             'acknowledged_by' => $alert->acknowledged_by ?? $request->user()->id,
         ]);
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Alert assigned.')]);
+        AuditLogService::logCustom(
+            'alert_assign',
+            __('Alert #:id assigned to :name.', ['id' => $alert->id, 'name' => $assignee->name]),
+            $alert,
+            $before,
+            $this->auditState($alert->fresh(['assignedTo:id,name']) ?? $alert),
+        );
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Alert assigned to :name.', ['name' => $assignee->name])]);
 
         return back();
     }
@@ -146,11 +191,21 @@ class AlertsController extends Controller
     {
         $this->authorize('resolve', $alert);
 
+        $before = $this->auditState($alert);
+
         $alert->update([
             'resolved_at' => CarbonImmutable::now(),
             'resolved_by' => $request->user()->id,
             'resolution_notes' => $request->validated('resolution_notes'),
         ]);
+
+        AuditLogService::logCustom(
+            'alert_resolve',
+            __('Alert #:id resolved.', ['id' => $alert->id]),
+            $alert,
+            $before,
+            $this->auditState($alert),
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Alert resolved.')]);
 
@@ -171,14 +226,19 @@ class AlertsController extends Controller
             'resolved_at' => $alert->resolved_at?->toIso8601String(),
             'resolution_notes' => $alert->resolution_notes,
             'is_active' => $alert->isActive(),
+            'severity' => $alert->severity(),
             'product' => $alert->product ? [
                 'id' => $alert->product->id,
                 'sku' => $alert->product->sku,
                 'name' => $alert->product->name,
+                'on_hand_qty' => $alert->product->stock?->on_hand_qty !== null ? (int) $alert->product->stock->on_hand_qty : null,
+                'reorder_threshold' => $alert->product->reorder_threshold,
             ] : null,
             'stock_lot' => $alert->stockLot ? [
                 'id' => $alert->stockLot->id,
-                'expires_at' => $alert->stockLot->expires_at,
+                'reference_no' => $alert->stockLot->reference_no,
+                'expires_at' => $alert->stockLot->expires_at?->toDateString(),
+                'qty_remaining' => (int) $alert->stockLot->qty_remaining,
             ] : null,
             'acknowledged_by' => $alert->acknowledgedBy ? [
                 'id' => $alert->acknowledgedBy->id,
@@ -192,6 +252,21 @@ class AlertsController extends Controller
                 'id' => $alert->resolvedBy->id,
                 'name' => $alert->resolvedBy->name,
             ] : null,
+        ];
+    }
+
+    /**
+     * @return array{acknowledged_at: string|null, assigned_to: string|null, resolved_at: string|null, resolution_notes: string|null}
+     */
+    private function auditState(InventoryAlert $alert): array
+    {
+        return [
+            'acknowledged_at' => $alert->acknowledged_at?->toIso8601String(),
+            'assigned_to' => $alert->assigned_to !== null
+                ? ($alert->relationLoaded('assignedTo') ? $alert->assignedTo?->name : User::query()->whereKey($alert->assigned_to)->value('name'))
+                : null,
+            'resolved_at' => $alert->resolved_at?->toIso8601String(),
+            'resolution_notes' => $alert->resolution_notes,
         ];
     }
 }

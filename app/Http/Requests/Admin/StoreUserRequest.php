@@ -24,7 +24,7 @@ class StoreUserRequest extends FormRequest
             ...$this->profileRules(),
             'password' => $this->passwordRules(),
             'role' => ['required', 'string', Rule::in($this->availableRoles())],
-            'position_id' => ['nullable', 'integer', Rule::exists(Position::class, 'id')],
+            'position_id' => ['nullable', 'integer', Rule::exists(Position::class, 'id')->where('is_active', true)],
         ];
     }
 

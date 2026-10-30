@@ -37,12 +37,29 @@ class RequisitionResource extends InertiaJsonResource
                 : null,
             'issued_position' => $this->positionSummary('issuedPosition'),
             'lines' => $this->lineItems(),
+            'totals' => $this->lineTotals(),
             'deleted_at' => $this->deleted_at?->toIso8601String(),
             'deleted_by' => $this->relationLoaded('deletedBy') && $this->deletedBy
                 ? (new UserResource($this->deletedBy))->resolve($request)
                 : null,
             'deletion_reason' => $this->deletion_reason,
             'can_delete' => $request->user()?->can('delete', $this->resource) ?? false,
+        ];
+    }
+
+    /**
+     * @return array{line_count: int, qty_requested: int, qty_issued: int}|null
+     */
+    private function lineTotals(): ?array
+    {
+        if (! $this->relationLoaded('lines')) {
+            return null;
+        }
+
+        return [
+            'line_count' => $this->lines->count(),
+            'qty_requested' => (int) $this->lines->sum('qty_requested'),
+            'qty_issued' => (int) $this->lines->sum('qty_issued'),
         ];
     }
 

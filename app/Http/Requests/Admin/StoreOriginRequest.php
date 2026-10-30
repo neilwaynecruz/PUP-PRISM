@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Origin;
+use App\Rules\UniqueIgnoringCase;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreOriginRequest extends FormRequest
@@ -18,7 +19,7 @@ class StoreOriginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', 'unique:origins,name'],
+            'name' => ['required', 'string', 'max:255', new UniqueIgnoringCase('origins', 'name')],
             'is_active' => ['required', 'boolean'],
         ];
     }

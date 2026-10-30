@@ -3,7 +3,6 @@ import { expect, test } from './fixtures/test';
 
 test.use({
     viewport: { width: 390, height: 844 },
-    isMobile: true,
     hasTouch: true,
 });
 
@@ -42,8 +41,13 @@ test.describe('Mobile Field Operations', () => {
         ).toBeVisible();
         await expect(page.getByTestId('booking-scan-button')).toBeVisible();
         await expect(
+            page
+                .getByTestId('booking-calendar')
+                .locator('.fc-timeGridDay-view'),
+        ).toBeVisible();
+        await expect(
             page.getByText(
-                'On mobile, use the weekly view to review one week at a time.',
+                'On mobile, the calendar shows one day at a time. Use the arrows to move between days, or switch to Month.',
             ),
         ).toBeVisible();
     });

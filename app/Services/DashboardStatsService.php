@@ -528,7 +528,7 @@ class DashboardStatsService
 
         $pendingHandovers = HandoverLog::query()
             ->where('to_user_id', $user->id)
-            ->whereNull('verified_at')
+            ->pending()
             ->count();
 
         return [

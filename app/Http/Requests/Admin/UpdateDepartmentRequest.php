@@ -3,8 +3,8 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Department;
+use App\Rules\UniqueIgnoringCase;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class UpdateDepartmentRequest extends FormRequest
 {
@@ -25,8 +25,8 @@ class UpdateDepartmentRequest extends FormRequest
         $department = $this->route('department');
 
         return [
-            'name' => ['required', 'string', 'max:255', Rule::unique('departments', 'name')->ignore($department->id)],
-            'code' => ['nullable', 'string', 'max:50', Rule::unique('departments', 'code')->ignore($department->id)],
+            'name' => ['required', 'string', 'max:255', (new UniqueIgnoringCase('departments', 'name'))->ignore($department->id)],
+            'code' => ['nullable', 'string', 'max:50', (new UniqueIgnoringCase('departments', 'code'))->ignore($department->id)],
             'is_active' => ['required', 'boolean'],
         ];
     }

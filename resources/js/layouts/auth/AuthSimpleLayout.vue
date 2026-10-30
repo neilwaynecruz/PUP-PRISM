@@ -15,7 +15,7 @@ const isLoginPage = computed(() => page.component === 'auth/Login');
 
 <template>
     <main
-        class="min-h-svh bg-[#0a1730] text-slate-950 selection:bg-blue-200 selection:text-blue-950"
+        class="min-h-svh bg-[#2a0d18] text-slate-950 selection:bg-[#e4b94f] selection:text-[#211600]"
     >
         <div
             class="mx-auto grid min-h-svh max-w-[1600px] lg:grid-cols-[42%_58%]"
@@ -25,7 +25,7 @@ const isLoginPage = computed(() => page.component === 'auth/Login');
             >
                 <Link
                     :href="home()"
-                    class="flex w-fit items-center gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-4 focus-visible:ring-offset-[#0a1730] focus-visible:outline-none"
+                    class="flex w-fit items-center gap-3 rounded-lg focus-visible:ring-2 focus-visible:ring-[#e4b94f] focus-visible:ring-offset-4 focus-visible:ring-offset-[#2a0d18] focus-visible:outline-none"
                     aria-label="PRISM home"
                 >
                     <AppLogoIcon class="size-12 shrink-0" />
@@ -36,7 +36,7 @@ const isLoginPage = computed(() => page.component === 'auth/Login');
                             PUP PRISM
                         </span>
                         <span
-                            class="mt-1 text-[0.65rem] leading-none font-medium tracking-[0.18em] text-blue-200/80 uppercase"
+                            class="mt-1 text-[0.65rem] leading-none font-medium tracking-[0.18em] text-[#f3cf76] uppercase"
                         >
                             Inventory Operations
                         </span>
@@ -45,7 +45,7 @@ const isLoginPage = computed(() => page.component === 'auth/Login');
 
                 <div class="max-w-md">
                     <p
-                        class="mb-4 text-xs font-semibold tracking-[0.18em] text-blue-300 uppercase"
+                        class="mb-4 text-xs font-semibold tracking-[0.18em] text-[#f3cf76] uppercase"
                     >
                         PUP Inventory System
                     </p>
@@ -75,12 +75,12 @@ const isLoginPage = computed(() => page.component === 'auth/Login');
             </section>
 
             <section
-                class="flex min-h-svh items-center justify-center bg-[#f8fafc] px-5 py-8 text-slate-950 sm:px-10 lg:px-14 dark:bg-[#0d1729] dark:text-slate-100"
+                class="flex min-h-svh items-center justify-center bg-[#fbf8f7] px-5 py-8 text-slate-950 sm:px-10 lg:px-14 dark:bg-[#140f11] dark:text-slate-100"
             >
                 <div class="w-full max-w-[25rem]">
                     <Link
                         :href="home()"
-                        class="mb-10 flex w-fit items-center gap-3 rounded-lg text-slate-950 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-4 focus-visible:outline-none lg:hidden dark:text-white"
+                        class="mb-10 flex w-fit items-center gap-3 rounded-lg text-slate-950 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4 focus-visible:outline-none lg:hidden dark:text-white"
                         aria-label="PRISM home"
                     >
                         <AppLogoIcon class="size-12 shrink-0" />

@@ -45,6 +45,7 @@ const props = withDefaults(
         typeFilter?: 'consumable' | 'asset' | 'all';
         onlyInStockDefault?: boolean;
         excludeSkus?: string[];
+        closeOnSelect?: boolean;
     }>(),
     {
         title: 'Select product from catalog',
@@ -53,6 +54,7 @@ const props = withDefaults(
         typeFilter: 'all',
         onlyInStockDefault: false,
         excludeSkus: () => [],
+        closeOnSelect: false,
     },
 );
 
@@ -187,6 +189,12 @@ function handleSelect(product: ProductLookupItem): void {
         : 1;
     itemQuantities.value[product.id] = qty;
     emit('select', product, qty);
+
+    if (props.closeOnSelect) {
+        emit('update:open', false);
+
+        return;
+    }
 
     // Provide instant visual confirmation checkmark
     addedFeedback.value[product.id] = true;

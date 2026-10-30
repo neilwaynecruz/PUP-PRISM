@@ -3,9 +3,9 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Location;
+use App\Rules\UniqueIgnoringCase;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
 class LocationUpdateRequest extends FormRequest
 {
@@ -28,7 +28,7 @@ class LocationUpdateRequest extends FormRequest
     {
         return [
             'department_id' => ['nullable', 'integer', 'exists:departments,id'],
-            'code' => ['required', 'string', 'max:50', Rule::unique('locations', 'code')->ignore($this->route('location'))],
+            'code' => ['required', 'string', 'max:50', (new UniqueIgnoringCase('locations', 'code'))->ignore($this->route('location'))],
             'name' => ['required', 'string', 'max:255'],
             'building' => ['nullable', 'string', 'max:255'],
             'room' => ['nullable', 'string', 'max:100'],
