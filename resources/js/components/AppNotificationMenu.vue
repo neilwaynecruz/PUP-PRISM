@@ -143,10 +143,7 @@ function formatTimestamp(timestamp: string | null): string {
 
             <DropdownMenuSeparator />
 
-            <div
-                v-if="hasNotifications"
-                class="max-h-104 overflow-y-auto p-2"
-            >
+            <div v-if="hasNotifications" class="max-h-104 overflow-y-auto p-2">
                 <button
                     v-for="notification in notifications"
                     :key="notification.id"
