@@ -90,7 +90,7 @@ function goToFirstMatch(): void {
                     <SidebarMenuButton
                         size="lg"
                         as-child
-                        class="transition-colors duration-200 group-data-[collapsible=icon]:!size-9 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:!p-0 hover:bg-sidebar-accent/60"
+                        class="transition-colors duration-200 group-data-[collapsible=icon]:size-9! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0! hover:bg-sidebar-accent/60"
                     >
                         <Link
                             :href="dashboard()"
@@ -109,7 +109,7 @@ function goToFirstMatch(): void {
                                     PUP PRISM
                                 </span>
                                 <span
-                                    class="mt-1 truncate text-[0.62rem] leading-none font-medium tracking-[0.10em] text-sidebar-foreground/60 uppercase"
+                                    class="mt-1 truncate text-[0.62rem] leading-none font-medium tracking-widest text-sidebar-foreground/60 uppercase"
                                 >
                                     Inventory Operations
                                 </span>

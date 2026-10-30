@@ -145,7 +145,7 @@ function formatTimestamp(timestamp: string | null): string {
 
             <div
                 v-if="hasNotifications"
-                class="max-h-[26rem] overflow-y-auto p-2"
+                class="max-h-104 overflow-y-auto p-2"
             >
                 <button
                     v-for="notification in notifications"

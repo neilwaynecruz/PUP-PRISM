@@ -59,7 +59,7 @@ jobs:
           php artisan e2e:setup --fresh
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps
 
       - name: Run Playwright tests
         run: npx playwright test
