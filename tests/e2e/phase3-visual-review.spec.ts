@@ -93,8 +93,11 @@ test.describe('Phase 3 visual review', () => {
                 !text.includes('fonts.googleapis.com') &&
                 !text.includes('ERR_NETWORK_ACCESS_DENIED') &&
                 !(
-                    text.includes('WebSocket connection to') &&
-                    text.includes('localhost:8080')
+                    text.includes('localhost:8080') &&
+                    (text.includes('WebSocket connection to') ||
+                        text.includes(
+                            'establish a connection to the server at ws',
+                        ))
                 )
             ) {
                 browserErrors.push(text);
@@ -157,8 +160,11 @@ test.describe('Phase 3 visual review', () => {
                 !text.includes('fonts.googleapis.com') &&
                 !text.includes('ERR_NETWORK_ACCESS_DENIED') &&
                 !(
-                    text.includes('WebSocket connection to') &&
-                    text.includes('localhost:8080')
+                    text.includes('localhost:8080') &&
+                    (text.includes('WebSocket connection to') ||
+                        text.includes(
+                            'establish a connection to the server at ws',
+                        ))
                 )
             ) {
                 browserErrors.push(text);

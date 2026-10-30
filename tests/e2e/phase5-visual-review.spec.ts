@@ -37,8 +37,11 @@ function monitorUnexpectedBrowserErrors(page: Page): string[] {
         const isExpectedTestEnvironmentFailure =
             text.includes('net::ERR_NETWORK_ACCESS_DENIED') ||
             text.includes('downloadable font: download failed') ||
-            (text.includes('WebSocket connection to') &&
-                text.includes('localhost:8080'));
+            (text.includes('localhost:8080') &&
+                (text.includes('WebSocket connection to') ||
+                    text.includes(
+                        'establish a connection to the server at ws',
+                    )));
 
         const isHydrationWarning =
             message.type() === 'warning' &&

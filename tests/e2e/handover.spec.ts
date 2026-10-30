@@ -1,6 +1,9 @@
 import { loginAs } from './fixtures/auth';
 import { expect, test } from './fixtures/test';
-import { getUserIdByEmail, preparePendingHandoverVerification } from './helpers/db';
+import {
+    getUserIdByEmail,
+    preparePendingHandoverVerification,
+} from './helpers/db';
 
 test.describe('Asset Handover Flow', () => {
     const handoverToken = 'e2e-handover-test-token-2026';
@@ -21,20 +24,29 @@ test.describe('Asset Handover Flow', () => {
         // Fill in the handover form
         await page.getByTestId('handover-asset-tag-input').fill('AST-E2E-0001');
         await page.getByTestId('handover-asset-tag-input').press('Enter');
-        await expect(page.getByTestId('handover-selected-asset')).toContainText('AST-E2E-0001');
-        await page.getByTestId('handover-recipient-search-input').fill('recipient@e2e.test');
+        await expect(page.getByTestId('handover-selected-asset')).toContainText(
+            'AST-E2E-0001',
+        );
+        await page
+            .getByTestId('handover-recipient-search-input')
+            .fill('recipient@e2e.test');
         await expect(page).toHaveURL(/recipient_search=recipient%40e2e\.test/);
-        await page.getByTestId('handover-recipient-options').locator(`[data-user-id="${recipientUserId}"]`).click();
-        await expect(page.getByTestId('handover-selected-recipient')).toContainText('recipient@e2e.test');
+        await page
+            .getByTestId('handover-recipient-options')
+            .locator(`[data-user-id="${recipientUserId}"]`)
+            .click();
+        await expect(
+            page.getByTestId('handover-selected-recipient'),
+        ).toContainText('recipient@e2e.test');
 
         // Submit the handover form
         await Promise.all([
             page.waitForResponse(
                 (response) =>
-                    response.url().endsWith('/inventory/handover')
-                    && response.request().method() === 'POST'
-                    && response.status() >= 300
-                    && response.status() < 400,
+                    response.url().endsWith('/inventory/handover') &&
+                    response.request().method() === 'POST' &&
+                    response.status() >= 300 &&
+                    response.status() < 400,
             ),
             page.getByTestId('send-verification-button').click(),
         ]);
@@ -60,11 +72,15 @@ test.describe('Asset Handover Flow', () => {
             console.log('Page error:', error.message);
         });
 
-        await page.goto(`/inventory/handover/verify/${handoverId}?token=${handoverToken}`);
+        await page.goto(
+            `/inventory/handover/verify/${handoverId}?token=${handoverToken}`,
+        );
         await expect(page.getByTestId('handover-verify-page')).toBeVisible();
 
         // Draw a signature on the signature pad
-        const signatureCanvas = page.getByTestId('handover-signature-pad').locator('canvas');
+        const signatureCanvas = page
+            .getByTestId('handover-signature-pad')
+            .locator('canvas');
         await expect(signatureCanvas).toBeVisible();
 
         const box = await signatureCanvas.boundingBox();
@@ -85,23 +101,37 @@ test.describe('Asset Handover Flow', () => {
             }
 
             await page.mouse.up();
-            await page.waitForTimeout(500);
         }
 
-        // Submit the verification
-        await page.getByTestId('verify-handover-button').click();
-        await page.waitForLoadState('networkidle');
+        await expect(
+            page.locator('input[name="signature_png"]'),
+        ).not.toHaveValue('');
 
-        // Now test the receipt download - navigate to verify page WITH the token
-        await page.goto(`/inventory/handover/verify/${handoverId}?token=${handoverToken}`);
-        await page.waitForLoadState('networkidle');
-        await expect(page.getByTestId('download-receipt-button')).toBeVisible({ timeout: 10000 });
+        // Submit the verification
+        const [verificationResponse] = await Promise.all([
+            page.waitForResponse(
+                (response) =>
+                    new URL(response.url()).pathname ===
+                        `/inventory/handover/verify/${handoverId}` &&
+                    response.request().method() === 'POST',
+            ),
+            page.getByTestId('verify-handover-button').click(),
+        ]);
+        expect(verificationResponse.status()).toBeLessThan(400);
+
+        // Confirm that the verified state remains after a fresh server render.
+        await page.goto(
+            `/inventory/handover/verify/${handoverId}?token=${handoverToken}`,
+        );
+        await expect(page.getByTestId('download-receipt-button')).toBeVisible();
 
         // Download receipt
         const receiptResponse = page.waitForResponse(
             (response) =>
-                response.url().includes(`/inventory/handover/receipt/${handoverId}`)
-                && response.status() === 200,
+                response
+                    .url()
+                    .includes(`/inventory/handover/receipt/${handoverId}`) &&
+                response.status() === 200,
         );
 
         await page.getByTestId('download-receipt-button').click();

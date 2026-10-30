@@ -4,6 +4,7 @@ import { getLatestRequisitionId, getProductOnHandQtyBySku } from './helpers/db';
 
 test.describe('Requisition Lifecycle', () => {
     test('Submit -> Approve -> Issue -> Verify stock decrement', async ({
+        browserName,
         page,
     }) => {
         const pageErrors: string[] = [];
@@ -17,8 +18,14 @@ test.describe('Requisition Lifecycle', () => {
             const text = message.text();
             const isExpectedTestEnvironmentFailure =
                 text.includes('ERR_NETWORK_ACCESS_DENIED') ||
-                (text.includes('WebSocket connection to') &&
-                    text.includes('localhost:8080'));
+                (text.includes('localhost:8080') &&
+                    (text.includes('WebSocket connection to') ||
+                        text.includes(
+                            'establish a connection to the server at ws',
+                        ))) ||
+                (browserName === 'firefox' &&
+                    text.includes('downloadable font: download failed') &&
+                    text.includes('https://fonts.gstatic.com/'));
 
             if (
                 message.type() === 'error' &&
@@ -37,11 +44,39 @@ test.describe('Requisition Lifecycle', () => {
         expect(pageErrors).toEqual([]);
         expect(consoleErrors).toEqual([]);
 
-        await page.getByTestId('requisition-sku-input').fill('CON-E2E-001');
-        await page.getByTestId('requisition-qty-input').fill('10');
+        await page
+            .getByRole('button', { name: 'Browse Catalog', exact: true })
+            .click();
+        const productDialog = page.getByRole('dialog', {
+            name: 'Browse products for requisition',
+        });
+        await productDialog
+            .getByRole('searchbox', { name: 'Search the product catalog' })
+            .fill('CON-E2E-001');
+        await expect(
+            productDialog.getByText('Multipurpose Copy Paper, A4, 80 gsm'),
+        ).toBeVisible();
+        await expect(productDialog.getByLabel('Quantity')).toHaveCount(1);
+        await productDialog.getByLabel('Quantity').fill('10');
+        await productDialog.getByRole('button', { name: 'Add' }).click();
+        await productDialog.getByRole('button', { name: 'Done' }).click();
+        await expect(page.getByTestId('requisition-sku-input')).toHaveValue(
+            'CON-E2E-001',
+        );
+        await expect(
+            page.getByTestId('submit-requisition-button'),
+        ).toBeEnabled();
 
-        await page.getByTestId('submit-requisition-button').click();
-        await page.waitForLoadState('networkidle');
+        const [submissionResponse] = await Promise.all([
+            page.waitForResponse(
+                (response) =>
+                    new URL(response.url()).pathname ===
+                        '/inventory/requisitions' &&
+                    response.request().method() === 'POST',
+            ),
+            page.getByTestId('submit-requisition-button').click(),
+        ]);
+        expect(submissionResponse.status()).toBeLessThan(400);
 
         const requisitionId = getLatestRequisitionId('requester@e2e.test');
         expect(requisitionId).toBeGreaterThan(0);

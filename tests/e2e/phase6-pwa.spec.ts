@@ -75,6 +75,7 @@ test.describe('Phase 6 PWA safety', () => {
     });
 
     test('shows a clear offline warning and never caches authenticated pages', async ({
+        browserName,
         context,
         page,
     }) => {
@@ -116,28 +117,51 @@ test.describe('Phase 6 PWA safety', () => {
                 );
             }),
         ).toBeFalsy();
+        expect(
+            cachedUrls.some((url) => new URL(url).pathname === '/offline.html'),
+        ).toBeTruthy();
 
         await context.setOffline(true);
-        await page.evaluate(() => window.dispatchEvent(new Event('offline')));
 
-        await expect(page.getByText('You are offline')).toBeVisible();
-        await expect(
-            page.getByText(
-                'Reconnect before submitting changes. PRISM does not save new inventory work while offline.',
-            ),
-        ).toBeVisible();
+        try {
+            await page.evaluate(() =>
+                window.dispatchEvent(new Event('offline')),
+            );
 
-        await page.reload({ waitUntil: 'domcontentloaded' });
-        await expect(
-            page.getByRole('heading', { name: 'You are offline' }),
-        ).toBeVisible();
-        await expect(
-            page.getByText(
-                'No new inventory changes have been saved or submitted while this page is offline.',
-            ),
-        ).toBeVisible();
+            await expect(page.getByText('You are offline')).toBeVisible();
+            await expect(
+                page.getByText(
+                    'Reconnect before submitting changes. PRISM does not save new inventory work while offline.',
+                ),
+            ).toBeVisible();
 
-        await context.setOffline(false);
+            if (browserName === 'chromium') {
+                await page.reload({ waitUntil: 'domcontentloaded' });
+                await expect(
+                    page.getByRole('heading', { name: 'You are offline' }),
+                ).toBeVisible();
+                await expect(
+                    page.getByText(
+                        'No new inventory changes have been saved or submitted while this page is offline.',
+                    ),
+                ).toBeVisible();
+            } else {
+                // Playwright exposes service-worker automation only in Chromium.
+                // In other engines, verify the same offline document in Cache API.
+                const cachedOfflineDocument = await page.evaluate(async () => {
+                    const response = await caches.match('/offline.html');
+
+                    return response ? response.text() : '';
+                });
+
+                expect(cachedOfflineDocument).toContain('You are offline');
+                expect(cachedOfflineDocument).toContain(
+                    'No new inventory changes have been saved or submitted',
+                );
+            }
+        } finally {
+            await context.setOffline(false);
+        }
     });
 
     test('offers installation only after the browser emits an install prompt', async ({
@@ -169,6 +193,7 @@ test.describe('Phase 6 PWA safety', () => {
     });
 
     test("does not retain one user's protected data after another user signs in", async ({
+        browserName,
         context,
         page,
     }) => {
@@ -232,14 +257,36 @@ test.describe('Phase 6 PWA safety', () => {
         ).toBeFalsy();
 
         await context.setOffline(true);
-        await page.reload({ waitUntil: 'domcontentloaded' });
-        await expect(
-            page.getByRole('heading', { name: 'You are offline' }),
-        ).toBeVisible();
-        await expect(
-            page.getByText('Adrian Mercado', { exact: true }),
-        ).toHaveCount(0);
-        await context.setOffline(false);
+
+        try {
+            await page.evaluate(() =>
+                window.dispatchEvent(new Event('offline')),
+            );
+            await expect(page.getByText('You are offline')).toBeVisible();
+            await expect(
+                page.getByText('Adrian Mercado', { exact: true }),
+            ).toHaveCount(0);
+
+            if (browserName === 'chromium') {
+                await page.reload({ waitUntil: 'domcontentloaded' });
+                await expect(
+                    page.getByRole('heading', { name: 'You are offline' }),
+                ).toBeVisible();
+                await expect(
+                    page.getByText('Adrian Mercado', { exact: true }),
+                ).toHaveCount(0);
+            } else {
+                const cachedOfflineDocument = await page.evaluate(async () => {
+                    const response = await caches.match('/offline.html');
+
+                    return response ? response.text() : '';
+                });
+
+                expect(cachedOfflineDocument).not.toContain('Adrian Mercado');
+            }
+        } finally {
+            await context.setOffline(false);
+        }
     });
 
     test('dashboard and forecasting pages do not emit framework or chart warnings', async ({
