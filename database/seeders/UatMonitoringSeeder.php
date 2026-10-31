@@ -263,6 +263,75 @@ class UatMonitoringSeeder extends Seeder
             $now->subHours(4),
         );
 
+        // Institutional Admin Notifications
+        $this->seedNotification(
+            'operations-admin-low-stock-soap',
+            $users['admin@local.test'],
+            new LowStockAlertNotification($products['CON-HSOAP-500'], 0),
+            $now->subHours(3),
+        );
+
+        $this->seedNotification(
+            'operations-admin-requisition-submitted',
+            $users['admin@local.test'],
+            new RequisitionSubmittedNotification($requisitions['Submitted director office sanitation request']),
+            $now->subHours(2),
+        );
+
+        $this->seedNotification(
+            'operations-admin-booking-submitted',
+            $users['admin@local.test'],
+            new BookingSubmittedNotification($bookings['Library digital orientation']),
+            $now->subHours(3),
+            $now->subHour(),
+        );
+
+        $this->seedNotification(
+            'operations-admin-procurement-recommendation',
+            $users['admin@local.test'],
+            new ProcurementRecommendationNotification($products['CON-PAPER-A4'], 9, 120),
+            $now->subHours(5),
+            $now->subHours(4),
+        );
+
+        // Chief Property Custodian Notifications
+        $this->seedNotification(
+            'operations-custodian-booking-submitted',
+            $users['custodian@local.test'],
+            new BookingSubmittedNotification($bookings['Library digital orientation']),
+            $now->subHours(3),
+        );
+
+        $this->seedNotification(
+            'operations-custodian-requisition-submitted',
+            $users['custodian@local.test'],
+            new RequisitionSubmittedNotification($requisitions['Submitted director office sanitation request']),
+            $now->subHours(2),
+        );
+
+        $this->seedNotification(
+            'operations-custodian-handover-verification',
+            $users['custodian@local.test'],
+            new HandoverVerificationNotification($pendingHandover->id, 'pending-director-office-projector-handover-token'),
+            $now->subMinutes(20),
+        );
+
+        $this->seedNotification(
+            'operations-custodian-booking-approved',
+            $users['custodian@local.test'],
+            new BookingStatusChangedNotification($bookings['Director briefing and equipment walkthrough'], 'approved'),
+            $now->subHours(5),
+            $now->subHours(4),
+        );
+
+        // IT Expert Notifications
+        $this->seedNotification(
+            'operations-it-low-stock-disinfectant',
+            $users['it.expert@local.test'],
+            new LowStockAlertNotification($products['CON-DISINF-01'], 8),
+            $now->subHours(1),
+        );
+
         $this->seedAuditLog(
             userId: $users['admin@local.test']->id,
             action: 'seed',

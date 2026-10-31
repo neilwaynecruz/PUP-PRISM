@@ -55,7 +55,8 @@ class RequisitionController extends Controller
                 'requesterPosition:id,department_id,title',
                 'requesterPosition.department:id,name',
                 'lines:id,requisition_id,product_id,qty_requested,qty_issued',
-                'lines.product:id,sku,name,type',
+                'lines.product:id,sku,name,type,variant,unit_of_measurement_id',
+                'lines.product.unitOfMeasurement:id,name,abbreviation',
             ])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
@@ -131,7 +132,8 @@ class RequisitionController extends Controller
                 'issuer:id,name,email',
                 'issuedPosition:id,department_id,title,code',
                 'issuedPosition.department:id,name',
-                'lines.product:id,sku,name,type',
+                'lines.product:id,sku,name,type,variant,unit_of_measurement_id',
+                'lines.product.unitOfMeasurement:id,name,abbreviation',
                 'deletedBy:id,name,email',
             ])
             ->find($requisition);
@@ -247,7 +249,26 @@ class RequisitionController extends Controller
 
     public function approve(RequisitionApproveRequest $request, Requisition $requisition): RedirectResponse
     {
-        $this->authorize('approve', $requisition);
+        abort_unless(
+            $request->user()?->hasAnyRole(['Admin', 'Supply Head']),
+            403,
+            __('You are not authorized to approve requisitions.'),
+        );
+
+        if ($request->user()->id === $requisition->requester_id) {
+            abort(403, __('You cannot approve your own requisition.'));
+        }
+
+        if ($requisition->status !== RequisitionStatus::Submitted) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('This requisition cannot be approved because it is in :status status.', [
+                    'status' => $requisition->status->value,
+                ]),
+            ]);
+
+            return back();
+        }
 
         $requisition->update([
             'status' => RequisitionStatus::Approved,
@@ -269,7 +290,26 @@ class RequisitionController extends Controller
 
     public function reject(RequisitionRejectRequest $request, Requisition $requisition): RedirectResponse
     {
-        $this->authorize('reject', $requisition);
+        abort_unless(
+            $request->user()?->hasAnyRole(['Admin', 'Supply Head']),
+            403,
+            __('You are not authorized to reject requisitions.'),
+        );
+
+        if ($request->user()->id === $requisition->requester_id) {
+            abort(403, __('You cannot reject your own requisition.'));
+        }
+
+        if ($requisition->status !== RequisitionStatus::Submitted) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('This requisition cannot be rejected because it is in :status status.', [
+                    'status' => $requisition->status->value,
+                ]),
+            ]);
+
+            return back();
+        }
 
         $reason = trim($request->validated()['notes']);
         $existingNotes = trim((string) $requisition->notes);
@@ -295,7 +335,22 @@ class RequisitionController extends Controller
         Requisition $requisition,
         InventoryService $inventory,
     ): RedirectResponse {
-        $this->authorize('issue', $requisition);
+        abort_unless(
+            $request->user()?->hasAnyRole(['Admin', 'Supply Head']),
+            403,
+            __('You are not authorized to issue requisitions.'),
+        );
+
+        if (! in_array($requisition->status, [RequisitionStatus::Approved, RequisitionStatus::PartiallyIssued, RequisitionStatus::Backordered], true)) {
+            Inertia::flash('toast', [
+                'type' => 'warning',
+                'message' => __('This requisition cannot be issued because it is in :status status.', [
+                    'status' => $requisition->status->value,
+                ]),
+            ]);
+
+            return back();
+        }
 
         try {
             $inventory->issueRequisition(
@@ -339,6 +394,12 @@ class RequisitionController extends Controller
 
     public function bulkApprove(Request $request): RedirectResponse
     {
+        abort_unless(
+            $request->user()?->hasAnyRole(['Admin', 'Supply Head']),
+            403,
+            __('You are not authorized to approve requisitions.'),
+        );
+
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
             'ids.*' => ['integer', 'distinct'],
@@ -353,22 +414,22 @@ class RequisitionController extends Controller
         $skipped = 0;
 
         foreach ($requisitions as $requisition) {
-            $this->authorize('approve', $requisition);
-
-            if ($requisition->status === RequisitionStatus::Submitted) {
-                $requisition->update([
-                    'status' => RequisitionStatus::Approved,
-                    'approver_id' => $request->user()->id,
-                    'approver_position_id' => $request->user()->position_id,
-                    'approved_ip_address' => $request->ip(),
-                    'approved_at' => CarbonImmutable::now(),
-                ]);
-                AuditLogService::logCustom('approve', "Requisition #{$requisition->id} approved.", $requisition);
-                $this->notifications->requisitionStatusChanged($requisition, 'approved');
-                $updated++;
-            } else {
+            if (! $request->user()->can('approve', $requisition)) {
                 $skipped++;
+
+                continue;
             }
+
+            $requisition->update([
+                'status' => RequisitionStatus::Approved,
+                'approver_id' => $request->user()->id,
+                'approver_position_id' => $request->user()->position_id,
+                'approved_ip_address' => $request->ip(),
+                'approved_at' => CarbonImmutable::now(),
+            ]);
+            AuditLogService::logCustom('approve', "Requisition #{$requisition->id} approved.", $requisition);
+            $this->notifications->requisitionStatusChanged($requisition, 'approved');
+            $updated++;
         }
 
         $message = trans_choice(
@@ -378,11 +439,11 @@ class RequisitionController extends Controller
         );
 
         if ($skipped > 0) {
-            $message .= " {$skipped} skipped because they were no longer submitted.";
+            $message .= " {$skipped} skipped because they were already processed or ineligible for approval.";
         }
 
         Inertia::flash('toast', [
-            'type' => $skipped > 0 ? 'warning' : 'success',
+            'type' => $skipped > 0 && $updated === 0 ? 'warning' : 'success',
             'message' => __($message),
         ]);
 
@@ -393,6 +454,12 @@ class RequisitionController extends Controller
         Request $request,
         InventoryService $inventory,
     ): RedirectResponse {
+        abort_unless(
+            $request->user()?->hasAnyRole(['Admin', 'Supply Head']),
+            403,
+            __('You are not authorized to issue requisitions.'),
+        );
+
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
             'ids.*' => ['integer', 'distinct'],
@@ -408,27 +475,27 @@ class RequisitionController extends Controller
         $failed = 0;
 
         foreach ($requisitions as $requisition) {
-            $this->authorize('issue', $requisition);
-
-            if ($requisition->status === RequisitionStatus::Approved) {
-                try {
-                    $inventory->issueRequisition(
-                        user: $request->user(),
-                        requisition: $requisition,
-                        linePayloads: null,
-                        markAsBackordered: false,
-                        notes: null,
-                        ipAddress: $request->ip(),
-                    );
-                    AuditLogService::logCustom('issue', "Requisition #{$requisition->id} issued.", $requisition->fresh());
-                    $this->notifications->requisitionStatusChanged($requisition, 'issued');
-                    $updated++;
-                } catch (\RuntimeException $exception) {
-                    report($exception);
-                    $failed++;
-                }
-            } else {
+            if (! $request->user()->can('issue', $requisition)) {
                 $skipped++;
+
+                continue;
+            }
+
+            try {
+                $inventory->issueRequisition(
+                    user: $request->user(),
+                    requisition: $requisition,
+                    linePayloads: null,
+                    markAsBackordered: false,
+                    notes: null,
+                    ipAddress: $request->ip(),
+                );
+                AuditLogService::logCustom('issue', "Requisition #{$requisition->id} issued.", $requisition->fresh());
+                $this->notifications->requisitionStatusChanged($requisition, 'issued');
+                $updated++;
+            } catch (\RuntimeException $exception) {
+                report($exception);
+                $failed++;
             }
         }
 
@@ -443,11 +510,11 @@ class RequisitionController extends Controller
         }
 
         if ($skipped > 0) {
-            $message .= " {$skipped} skipped because they were no longer approved.";
+            $message .= " {$skipped} skipped because they were not in an approved or issuable status.";
         }
 
         Inertia::flash('toast', [
-            'type' => $failed > 0 || $skipped > 0 ? 'warning' : 'success',
+            'type' => ($failed > 0 || ($skipped > 0 && $updated === 0)) ? 'warning' : 'success',
             'message' => __($message),
         ]);
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm } from '@inertiajs/vue3';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
 import {
     AlertTriangle,
     ClipboardList,
@@ -118,6 +118,8 @@ type DraftLine = {
     qty_requested: string;
     name: string | null;
     category?: string | null;
+    variant?: string | null;
+    unit?: string | null;
     type?: string | null;
     on_hand_qty?: number | null;
     availabilityMessage: string | null;
@@ -256,6 +258,8 @@ function applyProductToLine(
         existing.qty_requested = String(currentQty + addQty);
         existing.name = product.name;
         existing.category = product.category;
+        existing.variant = product.variant;
+        existing.unit = product.unit;
         existing.on_hand_qty = product.on_hand_qty;
         updateLineAvailabilityWarning(existing);
 
@@ -276,6 +280,8 @@ function applyProductToLine(
     line.sku = product.sku;
     line.name = product.name;
     line.category = product.category;
+    line.variant = product.variant;
+    line.unit = product.unit;
     line.type = product.type;
     line.on_hand_qty = product.on_hand_qty;
     line.searchQuery = product.sku;
@@ -319,6 +325,8 @@ function onProductSelectedFromCatalog(
         existing.qty_requested = String(currentQty + qty);
         existing.name = product.name;
         existing.category = product.category;
+        existing.variant = product.variant;
+        existing.unit = product.unit;
         existing.on_hand_qty = product.on_hand_qty;
         updateLineAvailabilityWarning(existing);
 
@@ -489,12 +497,6 @@ function formatStatusLabel(statusValue: string): string {
         .replace(/_/g, ' ')
         .replace(/([a-z])([A-Z])/g, '$1 $2')
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function selectedRequisitionLabel(): string {
-    const count = selectedIds.value.size;
-
-    return `${count} selected ${count === 1 ? 'requisition' : 'requisitions'}`;
 }
 
 function firstTemplateNameSuggestion(): string {
@@ -915,6 +917,100 @@ function issuedPercent(row: ReqRow): number {
     );
 }
 
+const page = usePage();
+const currentUserId = computed<number | null>(() => {
+    const auth = page.props.auth as { user?: { id: number } } | undefined;
+
+    return auth?.user?.id ?? null;
+});
+
+function canApproveRow(r: ReqRow): boolean {
+    if (!props.can.bulkApprove) {
+        return false;
+    }
+
+    if (r.status !== 'Submitted') {
+        return false;
+    }
+
+    if (
+        currentUserId.value !== null &&
+        r.requester.id === currentUserId.value
+    ) {
+        return false;
+    }
+
+    return true;
+}
+
+function canIssueRow(r: ReqRow): boolean {
+    if (!props.can.bulkIssue) {
+        return false;
+    }
+
+    return ['Approved', 'PartiallyIssued', 'Backordered'].includes(r.status);
+}
+
+function isRowActionable(r: ReqRow): boolean {
+    return canApproveRow(r) || canIssueRow(r);
+}
+
+function getRowDisabledReason(r: ReqRow): string | null {
+    if (r.status === 'Issued') {
+        return 'Requisition has already been fully issued and completed.';
+    }
+
+    if (r.status === 'Closed') {
+        return 'Requisition is closed and cannot be modified.';
+    }
+
+    if (r.status === 'Rejected') {
+        return 'Requisition was rejected.';
+    }
+
+    if (r.status === 'Draft') {
+        return 'Draft requisitions must be submitted before they can be approved.';
+    }
+
+    if (r.status === 'Submitted') {
+        if (!props.can.bulkApprove) {
+            return 'You do not have permission to approve requisitions.';
+        }
+
+        if (
+            currentUserId.value !== null &&
+            r.requester.id === currentUserId.value
+        ) {
+            return 'You cannot approve your own submitted requisition.';
+        }
+    }
+
+    if (
+        ['Approved', 'PartiallyIssued', 'Backordered'].includes(r.status) &&
+        !props.can.bulkIssue
+    ) {
+        return 'You do not have permission to issue inventory.';
+    }
+
+    return null;
+}
+
+const actionableRequisitions = computed(() =>
+    props.requisitions.data.filter((r) => isRowActionable(r)),
+);
+
+const selectedApprovableRows = computed(() =>
+    props.requisitions.data.filter(
+        (r) => selectedIds.value.has(r.id) && canApproveRow(r),
+    ),
+);
+
+const selectedIssuableRows = computed(() =>
+    props.requisitions.data.filter(
+        (r) => selectedIds.value.has(r.id) && canIssueRow(r),
+    ),
+);
+
 const bulkActionDialogOpen = ref(false);
 const pendingBulkAction = ref<'approve' | 'issue' | null>(null);
 const bulkActionProcessing = ref(false);
@@ -927,20 +1023,47 @@ const {
     toggleSelectAll,
     toggleSelect,
     clearSelection,
-} = useBulkSelection(() => props.requisitions.data);
+} = useBulkSelection(() => actionableRequisitions.value);
+
+watch(
+    () => props.requisitions.data,
+    () => {
+        clearSelection();
+    },
+);
 
 function runBulkApprove(): void {
+    if (selectedApprovableRows.value.length === 0) {
+        return;
+    }
+
     pendingBulkAction.value = 'approve';
     bulkActionDialogOpen.value = true;
 }
 
 function runBulkIssue(): void {
+    if (selectedIssuableRows.value.length === 0) {
+        return;
+    }
+
     pendingBulkAction.value = 'issue';
     bulkActionDialogOpen.value = true;
 }
 
 function confirmBulkAction(): void {
     if (!pendingBulkAction.value || bulkActionProcessing.value) {
+        return;
+    }
+
+    const targetIds =
+        pendingBulkAction.value === 'approve'
+            ? selectedApprovableRows.value.map((r) => r.id)
+            : selectedIssuableRows.value.map((r) => r.id);
+
+    if (targetIds.length === 0) {
+        bulkActionDialogOpen.value = false;
+        pendingBulkAction.value = null;
+
         return;
     }
 
@@ -954,7 +1077,7 @@ function confirmBulkAction(): void {
     router.post(
         endpoint,
         {
-            ids: Array.from(selectedIds.value),
+            ids: targetIds,
         },
         {
             onSuccess: () => {
@@ -1155,6 +1278,15 @@ function confirmBulkAction(): void {
                                                         >
                                                         <span
                                                             v-if="
+                                                                suggestion.variant
+                                                            "
+                                                            >·
+                                                            {{
+                                                                suggestion.variant
+                                                            }}</span
+                                                        >
+                                                        <span
+                                                            v-if="
                                                                 suggestion.category
                                                             "
                                                             >·
@@ -1174,6 +1306,7 @@ function confirmBulkAction(): void {
                                                     "
                                                 >
                                                     {{ suggestion.on_hand_qty }}
+                                                    {{ suggestion.unit ?? '' }}
                                                     in stock
                                                 </span>
                                             </li>
@@ -1194,6 +1327,11 @@ function confirmBulkAction(): void {
                                             >{{ line.sku }}</Badge
                                         >
                                         <span
+                                            v-if="line.variant"
+                                            class="text-muted-foreground"
+                                            >{{ line.variant }}</span
+                                        >
+                                        <span
                                             v-if="line.category"
                                             class="text-muted-foreground"
                                             >{{ line.category }}</span
@@ -1210,7 +1348,8 @@ function confirmBulkAction(): void {
                                                     : 'text-rose-600 dark:text-rose-400'
                                             "
                                         >
-                                            · {{ line.on_hand_qty }} available
+                                            · {{ line.on_hand_qty }}
+                                            {{ line.unit ?? '' }} available
                                         </span>
                                     </div>
 
@@ -1238,7 +1377,9 @@ function confirmBulkAction(): void {
                                     <Label
                                         :for="`line-qty-${line.key}`"
                                         class="text-xs font-medium md:sr-only"
-                                        >Quantity</Label
+                                        >Quantity{{
+                                            line.unit ? ` (${line.unit})` : ''
+                                        }}</Label
                                     >
                                     <div
                                         class="flex h-9 items-stretch overflow-hidden rounded-md border border-input shadow-xs focus-within:border-ring focus-within:ring-2 focus-within:ring-ring/20"
@@ -1660,26 +1801,58 @@ function confirmBulkAction(): void {
                 "
                 class="flex flex-wrap items-center gap-2 border-b border-primary/20 bg-primary/5 px-5 py-2 text-sm"
             >
-                <span class="font-medium text-primary"
-                    >{{ selectedIds.size }} selected</span
-                >
+                <span class="font-medium text-primary">
+                    {{ selectedIds.size }} selected
+                    <span
+                        v-if="
+                            selectedApprovableRows.length > 0 &&
+                            selectedIssuableRows.length > 0
+                        "
+                        class="text-xs font-normal text-muted-foreground"
+                    >
+                        ({{ selectedApprovableRows.length }} submitted,
+                        {{ selectedIssuableRows.length }} to issue)
+                    </span>
+                </span>
                 <div class="ml-auto flex flex-wrap gap-2">
                     <Button
                         v-if="props.can.bulkApprove"
                         variant="outline"
                         size="sm"
                         class="h-7 rounded-lg text-xs"
+                        :disabled="selectedApprovableRows.length === 0"
+                        :title="
+                            selectedApprovableRows.length === 0
+                                ? 'None of the selected requisitions are eligible for approval (must be in Submitted status)'
+                                : undefined
+                        "
                         @click="runBulkApprove"
-                        >Approve</Button
                     >
+                        Approve{{
+                            selectedApprovableRows.length > 0
+                                ? ` (${selectedApprovableRows.length})`
+                                : ''
+                        }}
+                    </Button>
                     <Button
                         v-if="props.can.bulkIssue"
                         variant="outline"
                         size="sm"
                         class="h-7 rounded-lg text-xs"
+                        :disabled="selectedIssuableRows.length === 0"
+                        :title="
+                            selectedIssuableRows.length === 0
+                                ? 'None of the selected requisitions are eligible for issuing (must be Approved, Partially Issued, or Backordered)'
+                                : undefined
+                        "
                         @click="runBulkIssue"
-                        >Issue</Button
                     >
+                        Issue{{
+                            selectedIssuableRows.length > 0
+                                ? ` (${selectedIssuableRows.length})`
+                                : ''
+                        }}
+                    </Button>
                 </div>
             </div>
 
@@ -1707,8 +1880,17 @@ function confirmBulkAction(): void {
                                     props.can.bulkApprove || props.can.bulkIssue
                                 "
                                 :model-value="selectedIds.has(r.id)"
-                                @update:model-value="() => toggleSelect(r.id)"
-                                :aria-label="`Select requisition ${r.id}`"
+                                :disabled="!isRowActionable(r)"
+                                :title="getRowDisabledReason(r) ?? undefined"
+                                @update:model-value="
+                                    () =>
+                                        isRowActionable(r) && toggleSelect(r.id)
+                                "
+                                :aria-label="
+                                    isRowActionable(r)
+                                        ? `Select requisition #${r.id}`
+                                        : `Requisition #${r.id} cannot be selected: ${getRowDisabledReason(r)}`
+                                "
                             />
                             <span class="font-semibold">#{{ r.id }}</span>
                         </div>
@@ -1777,8 +1959,16 @@ function confirmBulkAction(): void {
                                               ? 'indeterminate'
                                               : false
                                     "
+                                    :disabled="
+                                        actionableRequisitions.length === 0
+                                    "
+                                    :title="
+                                        actionableRequisitions.length === 0
+                                            ? 'No actionable requisitions on this page'
+                                            : 'Select all actionable requisitions on this page'
+                                    "
                                     @update:model-value="toggleSelectAll"
-                                    aria-label="Select all requisitions on this page"
+                                    aria-label="Select all actionable requisitions on this page"
                                 />
                             </th>
                             <th scope="col">Requisition</th>
@@ -1803,10 +1993,20 @@ function confirmBulkAction(): void {
                             >
                                 <Checkbox
                                     :model-value="selectedIds.has(r.id)"
-                                    @update:model-value="
-                                        () => toggleSelect(r.id)
+                                    :disabled="!isRowActionable(r)"
+                                    :title="
+                                        getRowDisabledReason(r) ?? undefined
                                     "
-                                    :aria-label="`Select requisition ${r.id}`"
+                                    @update:model-value="
+                                        () =>
+                                            isRowActionable(r) &&
+                                            toggleSelect(r.id)
+                                    "
+                                    :aria-label="
+                                        isRowActionable(r)
+                                            ? `Select requisition #${r.id}`
+                                            : `Requisition #${r.id} cannot be selected: ${getRowDisabledReason(r)}`
+                                    "
                                 />
                             </td>
                             <td class="max-w-xs">
@@ -2166,19 +2366,63 @@ function confirmBulkAction(): void {
         </Dialog>
 
         <Dialog v-model:open="bulkActionDialogOpen">
-            <DialogContent>
+            <DialogContent class="sm:max-w-md">
                 <DialogHeader class="space-y-3">
                     <DialogTitle>
                         {{
                             pendingBulkAction === 'approve'
-                                ? 'Approve selected requisitions?'
-                                : 'Issue selected requisitions?'
+                                ? `Approve ${selectedApprovableRows.length} requisition(s)?`
+                                : `Issue ${selectedIssuableRows.length} requisition(s)?`
                         }}
                     </DialogTitle>
                     <DialogDescription>
-                        This will process
-                        <strong>{{ selectedRequisitionLabel() }}</strong
-                        >. Your current filters and page will stay in place.
+                        <template v-if="pendingBulkAction === 'approve'">
+                            This will approve
+                            <strong
+                                >{{ selectedApprovableRows.length }} submitted
+                                requisition(s)</strong
+                            >
+                            and transition them to Approved status for inventory
+                            fulfillment.
+                            <span
+                                v-if="
+                                    selectedIds.size >
+                                    selectedApprovableRows.length
+                                "
+                                class="mt-2 block text-xs text-muted-foreground"
+                            >
+                                Note:
+                                {{
+                                    selectedIds.size -
+                                    selectedApprovableRows.length
+                                }}
+                                selected requisition(s) are not in submitted
+                                status and will be excluded.
+                            </span>
+                        </template>
+                        <template v-else>
+                            This will issue inventory for
+                            <strong
+                                >{{ selectedIssuableRows.length }} approved
+                                requisition(s)</strong
+                            >
+                            based on available stock.
+                            <span
+                                v-if="
+                                    selectedIds.size >
+                                    selectedIssuableRows.length
+                                "
+                                class="mt-2 block text-xs text-muted-foreground"
+                            >
+                                Note:
+                                {{
+                                    selectedIds.size -
+                                    selectedIssuableRows.length
+                                }}
+                                selected requisition(s) cannot be issued and
+                                will be excluded.
+                            </span>
+                        </template>
                     </DialogDescription>
                 </DialogHeader>
                 <DialogFooter class="gap-2">
@@ -2190,15 +2434,20 @@ function confirmBulkAction(): void {
                         >
                     </DialogClose>
                     <Button
-                        :disabled="bulkActionProcessing"
+                        :disabled="
+                            bulkActionProcessing ||
+                            (pendingBulkAction === 'approve'
+                                ? selectedApprovableRows.length === 0
+                                : selectedIssuableRows.length === 0)
+                        "
                         @click="confirmBulkAction"
                     >
                         {{
                             bulkActionProcessing
                                 ? 'Processing…'
                                 : pendingBulkAction === 'approve'
-                                  ? 'Approve Requisitions'
-                                  : 'Issue Requisitions'
+                                  ? `Approve Requisitions (${selectedApprovableRows.length})`
+                                  : `Issue Requisitions (${selectedIssuableRows.length})`
                         }}
                     </Button>
                 </DialogFooter>

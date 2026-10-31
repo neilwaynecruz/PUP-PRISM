@@ -48,7 +48,13 @@ type MovementRow = {
     performed_at?: string | null;
     ip_address?: string | null;
     notes?: string | null;
-    product?: { id: number; sku: string; name: string } | null;
+    product?: {
+        id: number;
+        sku: string;
+        name: string;
+        variant?: string | null;
+        unit?: string | null;
+    } | null;
     stock_lot?: {
         id: number;
         reference_no?: string | null;
@@ -1320,6 +1326,18 @@ onBeforeUnmount(() => {
                                     >
                                         {{ m.product.sku }}
                                     </Badge>
+                                    <span
+                                        v-if="m.product.variant"
+                                        class="text-muted-foreground"
+                                    >
+                                        {{ m.product.variant }}
+                                    </span>
+                                    <span
+                                        v-if="m.product.unit"
+                                        class="text-muted-foreground"
+                                    >
+                                        · {{ m.product.unit }}
+                                    </span>
                                     <Badge
                                         v-if="m.stock_lot?.reference_no"
                                         variant="secondary"

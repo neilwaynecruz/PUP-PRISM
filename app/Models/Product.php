@@ -18,11 +18,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'category_id',
     'origin_id',
     'supplier_id',
+    'unit_of_measurement_id',
+    'variant',
+    'brand',
+    'model',
+    'color',
+    'size',
+    'specifications',
     'type',
     'reorder_threshold',
     'lead_time_days',
     'unit_price',
     'is_active',
+    'is_bookable',
 ])]
 class Product extends Model
 {
@@ -42,6 +50,8 @@ class Product extends Model
             'lead_time_days' => 'integer',
             'unit_price' => 'float',
             'is_active' => 'boolean',
+            'is_bookable' => 'boolean',
+            'specifications' => 'array',
         ];
     }
 
@@ -67,6 +77,14 @@ class Product extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);
+    }
+
+    /**
+     * @return BelongsTo<UnitOfMeasurement, $this>
+     */
+    public function unitOfMeasurement(): BelongsTo
+    {
+        return $this->belongsTo(UnitOfMeasurement::class);
     }
 
     /**

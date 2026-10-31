@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class UatProcurementSeeder extends Seeder
@@ -201,6 +202,13 @@ class UatProcurementSeeder extends Seeder
             ],
         );
 
+        $this->seedFourYearProcurementHistory(
+            suppliers: $suppliers,
+            requestedBy: $requestedBy,
+            approvedBy: $approvedBy,
+            timeline: $timeline,
+        );
+
         DB::table('purchase_order_sequences')->updateOrInsert(
             ['date_prefix' => '20261001'],
             [
@@ -209,6 +217,58 @@ class UatProcurementSeeder extends Seeder
                 'updated_at' => $timeline,
             ],
         );
+    }
+
+    /**
+     * @param  Collection<string, Supplier>  $suppliers
+     */
+    private function seedFourYearProcurementHistory(
+        Collection $suppliers,
+        User $requestedBy,
+        User $approvedBy,
+        CarbonImmutable $timeline,
+    ): void {
+        $catalog = [
+            ['CON-PAPER-A4', 'CON-INK-BLK', 'Metro Manila Office Solutions Corporation', 218.50, 675.00],
+            ['CON-ALCOHOL-70', 'CON-GLOVES-M', 'Luzon Medical and Laboratory Supply, Inc.', 145.00, 380.00],
+            ['CON-DISINF-01', 'CON-HSOAP-500', 'Greenfield Janitorial and Sanitation Supply', 195.00, 92.50],
+            ['CON-BAT-AA', 'CON-TONER-151A', 'Metro Manila Office Solutions Corporation', 32.00, 5890.00],
+        ];
+        $firstQuarter = $timeline->startOfMonth()->subMonths(47)->startOfQuarter();
+
+        for ($quarterOffset = 0; $quarterOffset < 16; $quarterOffset++) {
+            $quarter = $firstQuarter->addQuarters($quarterOffset);
+            [$firstSku, $secondSku, $supplierName, $firstPrice, $secondPrice] = $catalog[$quarterOffset % count($catalog)];
+            $seasonalQuantity = in_array($quarter->month, [1, 7, 10], true) ? 120 : 80;
+
+            $this->syncPurchaseOrder(
+                poNumber: 'PO-HIST-'.$quarter->format('Ym'),
+                supplier: $suppliers[$supplierName],
+                requestedBy: $requestedBy,
+                approvedBy: $approvedBy,
+                status: PurchaseOrderStatus::Received,
+                createdAt: $quarter->subDays(14)->setTime(9, 0),
+                expectedDeliveryAt: $quarter->addDays(7)->setTime(9, 0),
+                sentAt: $quarter->subDays(12)->setTime(10, 0),
+                receivedAt: $quarter->addDays(6)->setTime(14, 0),
+                tax: 0,
+                notes: 'Quarterly institutional replenishment cycle.',
+                lines: [
+                    [
+                        'sku' => $firstSku,
+                        'qty_ordered' => $seasonalQuantity,
+                        'qty_received' => $seasonalQuantity,
+                        'unit_price' => round($firstPrice * (1 + ($quarterOffset * 0.012)), 2),
+                    ],
+                    [
+                        'sku' => $secondSku,
+                        'qty_ordered' => max(12, (int) round($seasonalQuantity / 5)),
+                        'qty_received' => max(12, (int) round($seasonalQuantity / 5)),
+                        'unit_price' => round($secondPrice * (1 + ($quarterOffset * 0.012)), 2),
+                    ],
+                ],
+            );
+        }
     }
 
     /**

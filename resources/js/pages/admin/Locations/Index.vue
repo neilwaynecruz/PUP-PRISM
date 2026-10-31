@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Head, router, useForm } from '@inertiajs/vue3';
 import { Building2, MapPin, Pencil, RotateCcw, Search } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import AdminCodeBadge from '@/components/admin/AdminCodeBadge.vue';
 import AdminCountBadge from '@/components/admin/AdminCountBadge.vue';
 import AdminStatusBadge from '@/components/admin/AdminStatusBadge.vue';
@@ -20,12 +20,21 @@ import { Input } from '@/components/ui/input';
 import { destroy, index, store, update } from '@/routes/admin/locations';
 
 type Department = { id: number; name: string };
+type SelectOption = { value: string; label: string };
+type LocationTypeOption = SelectOption & { facility_groups: string[] };
+type ParentLocation = { id: number; code: string; name: string };
 type Location = {
     id: number;
     code: string;
     name: string;
     building: string | null;
     room: string | null;
+    facility_group: string | null;
+    location_type: string | null;
+    parent_location_id: number | null;
+    parent: ParentLocation | null;
+    is_bookable: boolean;
+    capacity: number | null;
     is_active: boolean;
     assets_count: number;
     department: Department | null;
@@ -34,6 +43,9 @@ type Location = {
 const props = defineProps<{
     locations: Location[];
     departments: Department[];
+    parentLocations: ParentLocation[];
+    facilityGroups: SelectOption[];
+    locationTypes: LocationTypeOption[];
 }>();
 defineOptions({
     name: 'AdminLocationsIndexPage',
@@ -47,12 +59,14 @@ defineOptions({
 
 const searchQuery = ref('');
 const departmentFilter = ref('');
+const facilityGroupFilter = ref('');
 const statusFilter = ref<'all' | 'active' | 'inactive'>('all');
 
 const hasActiveFilters = computed(
     () =>
         searchQuery.value.trim() !== '' ||
         departmentFilter.value !== '' ||
+        facilityGroupFilter.value !== '' ||
         statusFilter.value !== 'all',
 );
 
@@ -65,6 +79,13 @@ const filteredLocations = computed(() => {
         }
 
         if (statusFilter.value === 'inactive' && location.is_active) {
+            return false;
+        }
+
+        if (
+            facilityGroupFilter.value !== '' &&
+            (location.facility_group ?? '') !== facilityGroupFilter.value
+        ) {
             return false;
         }
 
@@ -92,6 +113,8 @@ const filteredLocations = computed(() => {
             location.name.toLowerCase().includes(q) ||
             (location.building ?? '').toLowerCase().includes(q) ||
             (location.room ?? '').toLowerCase().includes(q) ||
+            (location.facility_group ?? '').toLowerCase().includes(q) ||
+            (location.location_type ?? '').toLowerCase().includes(q) ||
             (location.department?.name ?? '').toLowerCase().includes(q)
         );
     });
@@ -100,15 +123,41 @@ const filteredLocations = computed(() => {
 function clearFilters(): void {
     searchQuery.value = '';
     departmentFilter.value = '';
+    facilityGroupFilter.value = '';
     statusFilter.value = 'all';
+}
+
+/**
+ * Room and facility types allowed under a facility group; every type when unclassified.
+ */
+function typesForGroup(group: string): LocationTypeOption[] {
+    if (group === '') {
+        return props.locationTypes;
+    }
+
+    return props.locationTypes.filter((option) =>
+        option.facility_groups.includes(group),
+    );
+}
+
+function optionLabel(options: SelectOption[], value: string | null): string {
+    return (
+        options.find((option) => option.value === value)?.label ??
+        'Not classified'
+    );
 }
 
 const form = useForm({
     department_id: '',
+    parent_location_id: '',
     code: '',
     name: '',
+    facility_group: '',
+    location_type: '',
     building: '',
     room: '',
+    is_bookable: false,
+    capacity: '',
     is_active: true,
 });
 
@@ -123,12 +172,48 @@ const editingLocation = ref<Location | null>(null);
 const isEditOpen = ref(false);
 const editForm = useForm({
     department_id: '',
+    parent_location_id: '',
     code: '',
     name: '',
+    facility_group: '',
+    location_type: '',
     building: '',
     room: '',
+    is_bookable: false,
+    capacity: '',
     is_active: true,
 });
+
+const createTypeOptions = computed(() => typesForGroup(form.facility_group));
+const editTypeOptions = computed(() => typesForGroup(editForm.facility_group));
+
+// Changing the facility group clears a room type that does not belong to the new group.
+watch(
+    () => form.facility_group,
+    (group) => {
+        if (
+            form.location_type !== '' &&
+            !typesForGroup(group).some(
+                (option) => option.value === form.location_type,
+            )
+        ) {
+            form.location_type = '';
+        }
+    },
+);
+watch(
+    () => editForm.facility_group,
+    (group) => {
+        if (
+            editForm.location_type !== '' &&
+            !typesForGroup(group).some(
+                (option) => option.value === editForm.location_type,
+            )
+        ) {
+            editForm.location_type = '';
+        }
+    },
+);
 
 function openEdit(location: Location): void {
     editingLocation.value = location;
@@ -136,10 +221,17 @@ function openEdit(location: Location): void {
     editForm.department_id = location.department?.id
         ? String(location.department.id)
         : '';
+    editForm.parent_location_id = location.parent_location_id
+        ? String(location.parent_location_id)
+        : '';
     editForm.code = location.code;
     editForm.name = location.name;
+    editForm.facility_group = location.facility_group ?? '';
+    editForm.location_type = location.location_type ?? '';
     editForm.building = location.building ?? '';
     editForm.room = location.room ?? '';
+    editForm.is_bookable = location.is_bookable;
+    editForm.capacity = location.capacity ? String(location.capacity) : '';
     editForm.is_active = location.is_active;
     isEditOpen.value = true;
 }
@@ -155,8 +247,12 @@ function submitEdit(): void {
             department_id: data.department_id
                 ? Number(data.department_id)
                 : null,
+            parent_location_id: data.parent_location_id
+                ? Number(data.parent_location_id)
+                : null,
             building: data.building.trim() || null,
             room: data.room.trim() || null,
+            capacity: data.capacity ? Number(data.capacity) : null,
         }))
         .put(update(editingLocation.value.id).url, {
             preserveScroll: true,
@@ -176,10 +272,15 @@ function toggle(location: Location): void {
         update(location.id).url,
         {
             department_id: location.department?.id ?? null,
+            parent_location_id: location.parent_location_id,
             code: location.code,
             name: location.name,
+            facility_group: location.facility_group,
+            location_type: location.location_type,
             building: location.building,
             room: location.room,
+            is_bookable: location.is_bookable,
+            capacity: location.capacity,
             is_active: !location.is_active,
         },
         { preserveScroll: true },
@@ -224,7 +325,7 @@ function deactivate(location: Location): void {
         </div>
 
         <form
-            class="grid gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-xs md:grid-cols-3 xl:grid-cols-7 xl:items-end"
+            class="grid gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-xs sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:items-end"
             @submit.prevent="submit"
         >
             <label class="grid gap-1 text-sm font-medium"
@@ -265,6 +366,54 @@ function deactivate(location: Location): void {
                     class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
                     :message="form.errors.room"
             /></label>
+            <label class="grid gap-1 text-sm font-medium"
+                >Facility group<select
+                    v-model="form.facility_group"
+                    name="location_facility_group"
+                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                >
+                    <option value="">Not classified</option>
+                    <option
+                        v-for="option in facilityGroups"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}
+                    </option></select
+                ><InputError :message="form.errors.facility_group"
+            /></label>
+            <label class="grid gap-1 text-sm font-medium"
+                >Room or facility type<select
+                    v-model="form.location_type"
+                    name="location_type"
+                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                >
+                    <option value="">Not classified</option>
+                    <option
+                        v-for="option in createTypeOptions"
+                        :key="option.value"
+                        :value="option.value"
+                    >
+                        {{ option.label }}
+                    </option></select
+                ><InputError :message="form.errors.location_type"
+            /></label>
+            <label class="grid gap-1 text-sm font-medium"
+                >Parent location<select
+                    v-model="form.parent_location_id"
+                    name="location_parent"
+                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                >
+                    <option value="">No parent location</option>
+                    <option
+                        v-for="location in parentLocations"
+                        :key="location.id"
+                        :value="String(location.id)"
+                    >
+                        {{ location.code }} — {{ location.name }}
+                    </option></select
+                ><InputError :message="form.errors.parent_location_id"
+            /></label>
             <label class="grid gap-1 text-sm font-medium xl:col-span-2"
                 >Department<select
                     v-model="form.department_id"
@@ -282,6 +431,27 @@ function deactivate(location: Location): void {
                     </option></select
                 ><InputError :message="form.errors.department_id"
             /></label>
+            <label class="grid gap-1 text-sm font-medium"
+                >Capacity<input
+                    v-model="form.capacity"
+                    name="location_capacity"
+                    type="number"
+                    min="1"
+                    inputmode="numeric"
+                    placeholder="Optional"
+                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
+                    :message="form.errors.capacity"
+            /></label>
+            <label
+                class="flex min-h-11 items-center gap-2.5 rounded-lg border border-border/60 bg-muted/20 px-3 text-sm font-medium sm:min-h-9"
+            >
+                <input
+                    v-model="form.is_bookable"
+                    type="checkbox"
+                    class="size-4 accent-primary"
+                />
+                Bookable room or facility
+            </label>
             <Button
                 type="submit"
                 class="min-h-11 sm:min-h-9"
@@ -322,6 +492,22 @@ function deactivate(location: Location): void {
                     :value="String(department.id)"
                 >
                     {{ department.name }}
+                </option>
+            </select>
+
+            <select
+                v-model="facilityGroupFilter"
+                name="locations_facility_group_filter"
+                aria-label="Filter by facility group"
+                class="min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm sm:min-h-9 sm:w-48"
+            >
+                <option value="">All facility groups</option>
+                <option
+                    v-for="group in facilityGroups"
+                    :key="group.value"
+                    :value="group.value"
+                >
+                    {{ group.label }}
                 </option>
             </select>
 
@@ -408,6 +594,36 @@ function deactivate(location: Location): void {
                                 {{
                                     location.department?.name ??
                                     'Shared location'
+                                }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-muted-foreground">
+                                Classification
+                            </dt>
+                            <dd class="mt-0.5 text-foreground">
+                                {{
+                                    optionLabel(
+                                        facilityGroups,
+                                        location.facility_group,
+                                    )
+                                }}
+                                ·
+                                {{
+                                    optionLabel(
+                                        locationTypes,
+                                        location.location_type,
+                                    )
+                                }}
+                            </dd>
+                        </div>
+                        <div>
+                            <dt class="text-xs text-muted-foreground">Use</dt>
+                            <dd class="mt-0.5 text-foreground">
+                                {{
+                                    location.is_bookable
+                                        ? `Bookable${location.capacity ? ` · ${location.capacity} capacity` : ''}`
+                                        : 'Operational location'
                                 }}
                             </dd>
                         </div>
@@ -534,6 +750,86 @@ function deactivate(location: Location): void {
                             <InputError :message="editForm.errors.room" />
                         </label>
                     </div>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <label class="grid gap-1 text-sm font-medium">
+                            Facility group
+                            <select
+                                v-model="editForm.facility_group"
+                                name="edit_location_facility_group"
+                                class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                            >
+                                <option value="">Not classified</option>
+                                <option
+                                    v-for="option in facilityGroups"
+                                    :key="option.value"
+                                    :value="option.value"
+                                >
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                            <InputError
+                                :message="editForm.errors.facility_group"
+                            />
+                        </label>
+                        <label class="grid gap-1 text-sm font-medium">
+                            Room or facility type
+                            <select
+                                v-model="editForm.location_type"
+                                name="edit_location_type"
+                                class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                            >
+                                <option value="">Not classified</option>
+                                <option
+                                    v-for="option in editTypeOptions"
+                                    :key="option.value"
+                                    :value="option.value"
+                                >
+                                    {{ option.label }}
+                                </option>
+                            </select>
+                            <InputError
+                                :message="editForm.errors.location_type"
+                            />
+                        </label>
+                    </div>
+                    <div class="grid gap-3 sm:grid-cols-2">
+                        <label class="grid gap-1 text-sm font-medium">
+                            Parent location
+                            <select
+                                v-model="editForm.parent_location_id"
+                                name="edit_location_parent"
+                                class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                            >
+                                <option value="">No parent location</option>
+                                <option
+                                    v-for="parent in parentLocations.filter(
+                                        (candidate) =>
+                                            candidate.id !==
+                                            editingLocation?.id,
+                                    )"
+                                    :key="parent.id"
+                                    :value="String(parent.id)"
+                                >
+                                    {{ parent.code }} — {{ parent.name }}
+                                </option>
+                            </select>
+                            <InputError
+                                :message="editForm.errors.parent_location_id"
+                            />
+                        </label>
+                        <label class="grid gap-1 text-sm font-medium">
+                            Capacity
+                            <input
+                                v-model="editForm.capacity"
+                                name="edit_location_capacity"
+                                type="number"
+                                min="1"
+                                inputmode="numeric"
+                                class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                            />
+                            <InputError :message="editForm.errors.capacity" />
+                        </label>
+                    </div>
                     <label class="grid gap-1 text-sm font-medium">
                         Edit department
                         <select
@@ -561,6 +857,16 @@ function deactivate(location: Location): void {
                             class="size-4 accent-primary"
                         />
                         Active location
+                    </label>
+                    <label
+                        class="flex min-h-11 items-center gap-2.5 rounded-lg border border-border/60 bg-muted/20 px-3 text-sm font-medium sm:min-h-9"
+                    >
+                        <input
+                            v-model="editForm.is_bookable"
+                            type="checkbox"
+                            class="size-4 accent-primary"
+                        />
+                        Bookable room or facility
                     </label>
                     <DialogFooter class="gap-2">
                         <Button

@@ -154,7 +154,7 @@ class PurchaseOrderController extends Controller
 
             $purchaseOrder->recalculateTotals();
 
-            return $purchaseOrder->fresh(['supplier', 'requester', 'approver', 'lines.product']) ?? $purchaseOrder;
+            return $purchaseOrder->fresh(['supplier', 'requester', 'approver', 'lines.product.unitOfMeasurement']) ?? $purchaseOrder;
         });
 
         AuditLogService::logCreated($purchaseOrder);
@@ -172,7 +172,8 @@ class PurchaseOrderController extends Controller
             'supplier',
             'requester:id,name,email',
             'approver:id,name,email',
-            'lines.product:id,sku,name,type,supplier_id,category_id',
+            'lines.product:id,sku,name,type,variant,unit_of_measurement_id,supplier_id,category_id',
+            'lines.product.unitOfMeasurement:id,name,abbreviation',
             'lines.product.category:id,name',
             'lines.product.stock:id,product_id,on_hand_qty',
         ]);

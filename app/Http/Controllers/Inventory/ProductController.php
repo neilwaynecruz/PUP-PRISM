@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\StockMovement;
 use App\Models\Supplier;
+use App\Models\UnitOfMeasurement;
 use App\Services\AuditLogService;
 use App\Services\Forecasting\DemandForecaster;
 use App\Services\Forecasting\ForecastPresenter;
@@ -40,6 +41,7 @@ class ProductController extends Controller
         $categoryId = $request->integer('category_id') ?: null;
         $originId = $request->integer('origin_id') ?: null;
         $supplierId = $request->integer('supplier_id') ?: null;
+        $unitId = $request->integer('unit_of_measurement_id') ?: null;
         $active = $request->has('active') ? $request->boolean('active') : null;
 
         $products = Product::query()
@@ -47,19 +49,24 @@ class ProductController extends Controller
                 'category:id,name',
                 'origin:id,name',
                 'supplier:id,name',
+                'unitOfMeasurement:id,name,abbreviation',
                 'stock:id,product_id,on_hand_qty',
             ])
             ->withCount('assets')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->whereLike('sku', "%{$search}%")
-                        ->orWhereLike('name', "%{$search}%");
+                        ->orWhereLike('name', "%{$search}%")
+                        ->orWhereLike('variant', "%{$search}%")
+                        ->orWhereLike('brand', "%{$search}%")
+                        ->orWhereLike('model', "%{$search}%");
                 });
             })
             ->when($type !== '', fn ($query) => $query->where('type', $type))
             ->when($categoryId !== null, fn ($query) => $query->where('category_id', $categoryId))
             ->when($originId !== null, fn ($query) => $query->where('origin_id', $originId))
             ->when($supplierId !== null, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->when($unitId !== null, fn ($query) => $query->where('unit_of_measurement_id', $unitId))
             ->when($active !== null, fn ($query) => $query->where('is_active', $active))
             ->orderBy('name')
             ->paginate(15)
@@ -72,20 +79,22 @@ class ProductController extends Controller
                 'category_id' => $categoryId,
                 'origin_id' => $originId,
                 'supplier_id' => $supplierId,
+                'unit_of_measurement_id' => $unitId,
                 'active' => $active,
             ],
             'products' => (new ProductCollection($products))->toArray($request),
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
             'suppliers' => $this->supplierOptions(),
+            'unitsOfMeasurement' => $this->unitOptions(),
             'exportUrls' => [
                 'csv' => route('inventory.reports.products', [
                     'format' => 'csv',
-                    ...$request->only(['search', 'type', 'category_id', 'origin_id', 'supplier_id', 'active']),
+                    ...$request->only(['search', 'type', 'category_id', 'origin_id', 'supplier_id', 'unit_of_measurement_id', 'active']),
                 ], absolute: false),
                 'pdf' => route('inventory.reports.products', [
                     'format' => 'pdf',
-                    ...$request->only(['search', 'type', 'category_id', 'origin_id', 'supplier_id', 'active']),
+                    ...$request->only(['search', 'type', 'category_id', 'origin_id', 'supplier_id', 'unit_of_measurement_id', 'active']),
                 ], absolute: false),
             ],
             'can' => [
@@ -108,13 +117,16 @@ class ProductController extends Controller
         $page = max(1, $request->integer('page', 1));
 
         $products = Product::query()
-            ->with(['category:id,name', 'stock:id,product_id,on_hand_qty'])
+            ->with(['category:id,name', 'unitOfMeasurement:id,name,abbreviation', 'stock:id,product_id,on_hand_qty'])
             ->when($sku !== '', fn ($q) => $q->whereLike('sku', $sku))
             ->when($query !== '', function ($q) use ($query) {
                 foreach (explode(' ', $query) as $term) {
                     $q->where(function ($sub) use ($term) {
                         $sub->whereLike('sku', "%{$term}%")
-                            ->orWhereLike('name', "%{$term}%");
+                            ->orWhereLike('name', "%{$term}%")
+                            ->orWhereLike('variant', "%{$term}%")
+                            ->orWhereLike('brand', "%{$term}%")
+                            ->orWhereLike('model', "%{$term}%");
                     });
                 }
             })
@@ -131,6 +143,12 @@ class ProductController extends Controller
                 'name',
                 'type',
                 'category_id',
+                'unit_of_measurement_id',
+                'variant',
+                'brand',
+                'model',
+                'color',
+                'size',
                 'reorder_threshold',
                 'unit_price',
                 'is_active',
@@ -144,6 +162,12 @@ class ProductController extends Controller
                 'type' => $p->type?->value,
                 'category_id' => $p->category_id,
                 'category' => $p->category?->name,
+                'variant' => $p->variant,
+                'brand' => $p->brand,
+                'model' => $p->model,
+                'color' => $p->color,
+                'size' => $p->size,
+                'unit' => $p->unitOfMeasurement?->abbreviation,
                 'on_hand_qty' => $p->stock?->on_hand_qty ?? 0,
                 'reorder_threshold' => $p->reorder_threshold,
                 'unit_price' => $p->unit_price !== null ? (float) $p->unit_price : null,
@@ -167,6 +191,7 @@ class ProductController extends Controller
             'categories' => $this->categoryOptions(),
             'origins' => $this->originOptions(),
             'suppliers' => $this->supplierOptions(),
+            'unitsOfMeasurement' => $this->unitOptions(),
         ]);
     }
 
@@ -183,11 +208,19 @@ class ProductController extends Controller
                 'category_id' => $validated['category_id'] ?? null,
                 'origin_id' => $validated['origin_id'] ?? null,
                 'supplier_id' => $validated['supplier_id'] ?? null,
+                'unit_of_measurement_id' => $validated['unit_of_measurement_id'] ?? null,
+                'variant' => $validated['variant'] ?? null,
+                'brand' => $validated['brand'] ?? null,
+                'model' => $validated['model'] ?? null,
+                'color' => $validated['color'] ?? null,
+                'size' => $validated['size'] ?? null,
+                'specifications' => $validated['specifications'] ?? null,
                 'type' => $validated['type'],
                 'reorder_threshold' => $validated['reorder_threshold'] ?? 0,
                 'lead_time_days' => $validated['lead_time_days'] ?? null,
                 'unit_price' => $validated['unit_price'] ?? null,
                 'is_active' => $validated['is_active'],
+                'is_bookable' => $validated['is_bookable'] ?? false,
             ]);
 
             if ($product->type === ProductType::Consumable) {
@@ -214,6 +247,7 @@ class ProductController extends Controller
                 'category:id,name',
                 'origin:id,name',
                 'supplier:id,name',
+                'unitOfMeasurement:id,name,abbreviation',
                 'stock:id,product_id,on_hand_qty',
                 'forecastProfile:id,product_id,method,lookback_days,forecast_horizon_days,lead_time_days,safety_stock_days,smoothing_factor,trend_factor,is_active',
             ])
@@ -312,6 +346,7 @@ class ProductController extends Controller
                 'category:id,name',
                 'origin:id,name',
                 'supplier:id,name',
+                'unitOfMeasurement:id,name,abbreviation',
                 'stock:id,product_id,on_hand_qty',
             ])
             ->find($product);
@@ -335,6 +370,7 @@ class ProductController extends Controller
             'categories' => $this->categoryOptions($product->category_id),
             'origins' => $this->originOptions($product->origin_id),
             'suppliers' => $this->supplierOptions(),
+            'unitsOfMeasurement' => $this->unitOptions($product->unit_of_measurement_id),
             'can' => [
                 'delete' => $request->user()?->can('delete', $product) ?? false,
             ],
@@ -780,6 +816,28 @@ class ProductController extends Controller
                 ->values()
                 ->all(),
         );
+    }
+
+    /**
+     * @return array<int, array{id: int, name: string, abbreviation: string}>
+     */
+    private function unitOptions(?int $includeId = null): array
+    {
+        $query = UnitOfMeasurement::query()
+            ->where(function ($query) use ($includeId): void {
+                $query->where('is_active', true)
+                    ->when($includeId !== null, fn ($query) => $query->orWhere('id', $includeId));
+            })
+            ->orderBy('name');
+
+        return $query->get(['id', 'name', 'abbreviation'])
+            ->map(fn (UnitOfMeasurement $unit) => [
+                'id' => $unit->id,
+                'name' => $unit->name,
+                'abbreviation' => $unit->abbreviation,
+            ])
+            ->values()
+            ->all();
     }
 
     /**

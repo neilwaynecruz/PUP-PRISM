@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::adjust
- * @see app/Http/Controllers/Inventory/StockMovementController.php:138
+ * @see app/Http/Controllers/Inventory/StockMovementController.php:139
  * @route '/inventory/movements/adjustments'
  */
 export const adjust = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ adjust.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::adjust
- * @see app/Http/Controllers/Inventory/StockMovementController.php:138
+ * @see app/Http/Controllers/Inventory/StockMovementController.php:139
  * @route '/inventory/movements/adjustments'
  */
 adjust.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ adjust.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::adjust
- * @see app/Http/Controllers/Inventory/StockMovementController.php:138
+ * @see app/Http/Controllers/Inventory/StockMovementController.php:139
  * @route '/inventory/movements/adjustments'
  */
 adjust.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ adjust.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::adjust
- * @see app/Http/Controllers/Inventory/StockMovementController.php:138
+ * @see app/Http/Controllers/Inventory/StockMovementController.php:139
  * @route '/inventory/movements/adjustments'
  */
     const adjustForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +123,7 @@ adjust.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::adjust
- * @see app/Http/Controllers/Inventory/StockMovementController.php:138
+ * @see app/Http/Controllers/Inventory/StockMovementController.php:139
  * @route '/inventory/movements/adjustments'
  */
         adjustForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -134,7 +134,7 @@ adjust.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     adjust.form = adjustForm
 /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::cycleCount
- * @see app/Http/Controllers/Inventory/StockMovementController.php:168
+ * @see app/Http/Controllers/Inventory/StockMovementController.php:169
  * @route '/inventory/movements/cycle-counts'
  */
 export const cycleCount = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -149,7 +149,7 @@ cycleCount.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::cycleCount
- * @see app/Http/Controllers/Inventory/StockMovementController.php:168
+ * @see app/Http/Controllers/Inventory/StockMovementController.php:169
  * @route '/inventory/movements/cycle-counts'
  */
 cycleCount.url = (options?: RouteQueryOptions) => {
@@ -158,7 +158,7 @@ cycleCount.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::cycleCount
- * @see app/Http/Controllers/Inventory/StockMovementController.php:168
+ * @see app/Http/Controllers/Inventory/StockMovementController.php:169
  * @route '/inventory/movements/cycle-counts'
  */
 cycleCount.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -168,7 +168,7 @@ cycleCount.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::cycleCount
- * @see app/Http/Controllers/Inventory/StockMovementController.php:168
+ * @see app/Http/Controllers/Inventory/StockMovementController.php:169
  * @route '/inventory/movements/cycle-counts'
  */
     const cycleCountForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -178,7 +178,7 @@ cycleCount.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\StockMovementController::cycleCount
- * @see app/Http/Controllers/Inventory/StockMovementController.php:168
+ * @see app/Http/Controllers/Inventory/StockMovementController.php:169
  * @route '/inventory/movements/cycle-counts'
  */
         cycleCountForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

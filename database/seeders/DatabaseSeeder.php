@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             UatProcurementSeeder::class,
             UatWorkflowSeeder::class,
             UatAssetOperationsSeeder::class,
+            UatOperationalHistorySeeder::class,
             UatMonitoringSeeder::class,
         ]);
     }

@@ -50,6 +50,8 @@ type PurchaseOrderLineOption = {
         sku: string;
         name: string;
         type?: string | null;
+        variant?: string | null;
+        unit?: string | null;
         category?: string | null;
         on_hand_qty?: number | null;
     } | null;
@@ -2399,6 +2401,31 @@ function submitPoReceipt(): void {
                                             selectedPo.lines[index].product?.sku
                                         }}
                                     </Badge>
+                                    <span
+                                        v-if="
+                                            selectedPo.lines[index].product
+                                                ?.variant
+                                        "
+                                        class="text-xs text-muted-foreground"
+                                    >
+                                        {{
+                                            selectedPo.lines[index].product
+                                                ?.variant
+                                        }}
+                                    </span>
+                                    <span
+                                        v-if="
+                                            selectedPo.lines[index].product
+                                                ?.unit
+                                        "
+                                        class="text-xs text-muted-foreground"
+                                    >
+                                        per
+                                        {{
+                                            selectedPo.lines[index].product
+                                                ?.unit
+                                        }}
+                                    </span>
                                     <Badge
                                         variant="secondary"
                                         class="text-[11px] capitalize"

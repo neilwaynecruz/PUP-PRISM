@@ -27,11 +27,12 @@ class NotificationService
     ) {}
 
     /**
-     * Notify Supply Head users when a new requisition is submitted.
+     * Notify Admin and Supply Head users when a new requisition is submitted.
      */
     public function requisitionSubmitted(Requisition $requisition): void
     {
-        $recipients = $this->usersWithRole('Supply Head');
+        $recipients = $this->usersWithRoles(['Admin', 'Supply Head'])
+            ->reject(fn (User $user) => $user->id === $requisition->requester_id);
 
         if ($recipients->isEmpty()) {
             return;
@@ -67,11 +68,12 @@ class NotificationService
     }
 
     /**
-     * Notify Property Custodian users when a new booking is requested.
+     * Notify Admin and Property Custodian users when a new booking is requested.
      */
     public function bookingSubmitted(Booking $booking): void
     {
-        $recipients = $this->usersWithRole('Property Custodian');
+        $recipients = $this->usersWithRoles(['Admin', 'Property Custodian'])
+            ->reject(fn (User $user) => $user->id === $booking->requester_id);
 
         if ($recipients->isEmpty()) {
             return;
@@ -107,11 +109,11 @@ class NotificationService
     }
 
     /**
-     * Notify Supply Head users when a product drops below its reorder threshold.
+     * Notify Admin and Supply Head users when a product drops below its reorder threshold.
      */
     public function lowStockAlert(Product $product, int $currentStock): void
     {
-        $recipients = $this->usersWithRole('Supply Head');
+        $recipients = $this->usersWithRoles(['Admin', 'Supply Head']);
 
         if ($recipients->isEmpty()) {
             return;
@@ -125,11 +127,11 @@ class NotificationService
     }
 
     /**
-     * Notify Supply Head users when a stock lot is expiring soon.
+     * Notify Admin and Supply Head users when a stock lot is expiring soon.
      */
     public function expiringStockAlert(StockLot $lot, int $daysUntilExpiration): void
     {
-        $recipients = $this->usersWithRole('Supply Head');
+        $recipients = $this->usersWithRoles(['Admin', 'Supply Head']);
 
         if ($recipients->isEmpty()) {
             return;
@@ -143,14 +145,14 @@ class NotificationService
     }
 
     /**
-     * Notify Supply Head users when a forecast stockout alert is created for a product.
+     * Notify Admin and Supply Head users when a forecast stockout alert is created for a product.
      */
     public function procurementRecommendation(
         Product $product,
         int $predictedDaysUntilStockout,
         int $recommendedReorderQty,
     ): void {
-        $recipients = $this->usersWithRole('Supply Head');
+        $recipients = $this->usersWithRoles(['Admin', 'Supply Head']);
 
         if ($recipients->isEmpty()) {
             return;
@@ -196,12 +198,24 @@ class NotificationService
     }
 
     /**
+     * @param  array<int, string>|string  $roles
+     * @return Collection<int, User>
+     */
+    private function usersWithRoles(array|string $roles): Collection
+    {
+        $roleList = (array) $roles;
+
+        return User::query()
+            ->where('is_active', true)
+            ->whereHas('roles', fn ($query) => $query->whereIn('name', $roleList))
+            ->get();
+    }
+
+    /**
      * @return Collection<int, User>
      */
     private function usersWithRole(string $role): Collection
     {
-        return User::query()
-            ->whereHas('roles', fn ($query) => $query->where('name', $role))
-            ->get();
+        return $this->usersWithRoles([$role]);
     }
 }

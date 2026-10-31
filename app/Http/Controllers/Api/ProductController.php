@@ -20,15 +20,19 @@ class ProductController extends Controller
         $search = $request->string('search')->trim()->toString();
         $type = $request->string('type')->trim()->toString();
         $categoryId = $request->integer('category_id') ?: null;
+        $unitId = $request->integer('unit_of_measurement_id') ?: null;
         $active = $request->has('active') ? $request->boolean('active') : null;
 
         $products = Product::query()
-            ->with(['category:id,name', 'origin:id,name', 'stock:id,product_id,on_hand_qty'])
+            ->with(['category:id,name', 'origin:id,name', 'unitOfMeasurement:id,name,abbreviation', 'stock:id,product_id,on_hand_qty'])
             ->withCount('assets')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->whereLike('sku', "%{$search}%")
-                        ->orWhereLike('name', "%{$search}%");
+                        ->orWhereLike('name', "%{$search}%")
+                        ->orWhereLike('variant', "%{$search}%")
+                        ->orWhereLike('brand', "%{$search}%")
+                        ->orWhereLike('model', "%{$search}%");
                 });
             })
             ->when($type !== '', function ($query) use ($type) {
@@ -36,6 +40,9 @@ class ProductController extends Controller
             })
             ->when($categoryId, function ($query) use ($categoryId) {
                 $query->where('category_id', $categoryId);
+            })
+            ->when($unitId, function ($query) use ($unitId) {
+                $query->where('unit_of_measurement_id', $unitId);
             })
             ->when($active !== null, function ($query) use ($active) {
                 $query->where('is_active', $active);
@@ -59,7 +66,7 @@ class ProductController extends Controller
     {
         $this->authorize('view', $product);
 
-        $product->load(['category:id,name', 'origin:id,name', 'stock:id,product_id,on_hand_qty']);
+        $product->load(['category:id,name', 'origin:id,name', 'unitOfMeasurement:id,name,abbreviation', 'stock:id,product_id,on_hand_qty']);
         $product->loadCount('assets');
 
         return response()->json([

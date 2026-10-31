@@ -18,9 +18,15 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
     'position_id',
     'current_location_id',
     'tag_code',
+    'serial_number',
     'status',
     'lifecycle_status',
     'condition_status',
+    'acquisition_date',
+    'acquisition_cost',
+    'warranty_expires_at',
+    'installed_at',
+    'maintenance_interval_days',
 ])]
 class Asset extends Model
 {
@@ -38,6 +44,11 @@ class Asset extends Model
             'status' => AssetStatus::class,
             'lifecycle_status' => AssetLifecycleStatus::class,
             'condition_status' => AssetConditionStatus::class,
+            'acquisition_date' => 'date',
+            'acquisition_cost' => 'float',
+            'warranty_expires_at' => 'date',
+            'installed_at' => 'date',
+            'maintenance_interval_days' => 'integer',
         ];
     }
 

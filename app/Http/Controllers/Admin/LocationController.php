@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Enums\FacilityGroup;
+use App\Enums\LocationType;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\LocationStoreRequest;
 use App\Http\Requests\Admin\LocationUpdateRequest;
@@ -19,8 +21,22 @@ class LocationController extends Controller
         $this->authorize('viewAny', Location::class);
 
         return Inertia::render('admin/Locations/Index', [
-            'locations' => Location::query()->with('department:id,name')->withCount('assets')->orderBy('name')->get(),
+            'locations' => Location::query()
+                ->with(['department:id,name', 'parent:id,code,name'])
+                ->withCount(['assets', 'children'])
+                ->orderBy('name')
+                ->get(),
             'departments' => Department::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'parentLocations' => Location::query()->where('is_active', true)->orderBy('name')->get(['id', 'code', 'name']),
+            'facilityGroups' => collect(FacilityGroup::cases())->map(fn (FacilityGroup $group) => [
+                'value' => $group->value,
+                'label' => $group->label(),
+            ]),
+            'locationTypes' => collect(LocationType::cases())->map(fn (LocationType $type) => [
+                'value' => $type->value,
+                'label' => $type->label(),
+                'facility_groups' => array_map(fn (FacilityGroup $group): string => $group->value, $type->facilityGroups()),
+            ]),
         ]);
     }
 

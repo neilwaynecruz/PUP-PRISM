@@ -17,6 +17,12 @@ class ProductResource extends InertiaJsonResource
             'id' => (int) $this->id,
             'sku' => $this->sku,
             'name' => $this->name,
+            'variant' => $this->variant,
+            'brand' => $this->brand,
+            'model' => $this->model,
+            'color' => $this->color,
+            'size' => $this->size,
+            'specifications' => $this->specifications,
             'type' => $this->type?->value,
             'is_active' => $this->is_active,
             'reorder_threshold' => $this->reorder_threshold,
@@ -26,10 +32,19 @@ class ProductResource extends InertiaJsonResource
             'origin' => $this->relationLoaded('origin') ? $this->origin?->name : null,
             'supplier_id' => $this->supplier_id,
             'supplier' => $this->relationLoaded('supplier') ? $this->supplier?->name : null,
+            'unit_of_measurement_id' => $this->unit_of_measurement_id,
+            'unit_of_measurement' => $this->relationLoaded('unitOfMeasurement') && $this->unitOfMeasurement
+                ? [
+                    'id' => (int) $this->unitOfMeasurement->id,
+                    'name' => $this->unitOfMeasurement->name,
+                    'abbreviation' => $this->unitOfMeasurement->abbreviation,
+                ]
+                : null,
             'lead_time_days' => $this->lead_time_days,
             'unit_price' => $this->unit_price !== null ? round((float) $this->unit_price, 2) : null,
             'on_hand_qty' => $this->relationLoaded('stock') ? $this->stock?->on_hand_qty : null,
             'assets_count' => isset($this->assets_count) ? (int) $this->assets_count : null,
+            'is_bookable' => $this->is_bookable,
             'deleted_at' => $this->deleted_at?->toIso8601String(),
             'deleted_by' => $this->relationLoaded('deletedBy') && $this->deletedBy
                 ? (new UserResource($this->deletedBy))->resolve($request)

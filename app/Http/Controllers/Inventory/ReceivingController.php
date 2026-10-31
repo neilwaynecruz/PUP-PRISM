@@ -45,7 +45,8 @@ class ReceivingController extends Controller
         $purchaseOrders = PurchaseOrder::query()
             ->with([
                 'supplier:id,name,contact_person,email,phone',
-                'lines.product:id,sku,name,type,supplier_id,category_id',
+                'lines.product:id,sku,name,type,variant,unit_of_measurement_id,supplier_id,category_id',
+                'lines.product.unitOfMeasurement:id,name,abbreviation',
                 'lines.product.category:id,name',
                 'lines.product.stock:id,product_id,on_hand_qty',
             ])

@@ -29,6 +29,10 @@ class StockMovementResource extends InertiaJsonResource
                 'id' => (int) $this->product->id,
                 'sku' => $this->product->sku,
                 'name' => $this->product->name,
+                'variant' => $this->product->variant,
+                'unit' => $this->product->relationLoaded('unitOfMeasurement')
+                    ? $this->product->unitOfMeasurement?->abbreviation
+                    : null,
             ] : null,
             'stock_lot' => $this->relationLoaded('stockLot') && $this->stockLot ? [
                 'id' => (int) $this->stockLot->id,

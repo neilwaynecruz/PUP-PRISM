@@ -6,14 +6,19 @@ use App\Enums\RequisitionStatus;
 use App\Http\Resources\BookingResource;
 use App\Http\Resources\HandoverLogResource;
 use App\Http\Resources\ProductCollection;
+use App\Http\Resources\PurchaseOrderResource;
 use App\Http\Resources\RequisitionResource;
+use App\Http\Resources\StockMovementResource;
 use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\HandoverLog;
 use App\Models\Position;
 use App\Models\Product;
 use App\Models\ProductStock;
+use App\Models\PurchaseOrderLine;
 use App\Models\Requisition;
+use App\Models\StockMovement;
+use App\Models\UnitOfMeasurement;
 use App\Models\User;
 use Illuminate\Http\Request;
 
@@ -171,4 +176,34 @@ test('requisition and handover resources preserve nested relationships and nulla
         'qty_requested' => 3,
         'qty_issued' => 1,
     ]);
+});
+
+test('transaction resources expose product variant and unit abbreviation', function () {
+    $ream = UnitOfMeasurement::factory()->create(['name' => 'Ream', 'abbreviation' => 'rm']);
+    $product = Product::factory()->consumable()->create([
+        'sku' => 'OFF-PAPER-A4-RSRC',
+        'variant' => 'A4, 80 gsm',
+        'unit_of_measurement_id' => $ream->id,
+    ]);
+
+    $requisition = Requisition::factory()->create();
+    $requisition->lines()->create(['product_id' => $product->id, 'qty_requested' => 2, 'qty_issued' => 0]);
+    $requisition->load('lines.product.unitOfMeasurement');
+
+    $purchaseOrder = PurchaseOrderLine::factory()->create(['product_id' => $product->id])
+        ->purchaseOrder
+        ->load('lines.product.unitOfMeasurement');
+
+    $movement = StockMovement::factory()->create(['product_id' => $product->id])->load('product.unitOfMeasurement');
+
+    $request = Request::create('/inventory');
+    $payloads = [
+        (new RequisitionResource($requisition))->resolve($request)['lines'][0],
+        (new PurchaseOrderResource($purchaseOrder))->resolve($request)['lines'][0]['product'],
+        (new StockMovementResource($movement))->resolve($request)['product'],
+    ];
+
+    foreach ($payloads as $payload) {
+        expect($payload)->toMatchArray(['variant' => 'A4, 80 gsm', 'unit' => 'rm']);
+    }
 });

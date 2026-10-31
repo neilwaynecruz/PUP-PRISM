@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
+import { AlertTriangle, CheckCircle2, XCircle } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import RequisitionController from '@/actions/App/Http/Controllers/Inventory/RequisitionController';
 import Heading from '@/components/Heading.vue';
@@ -23,6 +24,8 @@ type Line = {
     id: number;
     sku: string | null;
     name: string | null;
+    variant: string | null;
+    unit: string | null;
     type: string | null;
     qty_requested: number;
     qty_issued: number;
@@ -394,12 +397,19 @@ defineOptions({
                 >
                     <div class="font-medium">{{ l.name ?? '—' }}</div>
                     <div class="text-xs text-muted-foreground">
-                        {{ l.sku ?? '—' }}
+                        {{ l.sku ?? '—'
+                        }}<template v-if="l.variant">
+                            · {{ l.variant }}</template
+                        >
                     </div>
                     <div class="mt-3 grid gap-2">
                         <div class="flex items-center justify-between gap-3">
                             <span class="text-muted-foreground">Type</span>
                             <span>{{ l.type ?? '—' }}</span>
+                        </div>
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="text-muted-foreground">Unit</span>
+                            <span>{{ l.unit ?? '—' }}</span>
                         </div>
                         <div class="flex items-center justify-between gap-3">
                             <span class="text-muted-foreground">Requested</span>
@@ -433,6 +443,7 @@ defineOptions({
                             <th scope="col" class="py-2 pr-3">SKU</th>
                             <th scope="col" class="py-2 pr-3">Name</th>
                             <th scope="col" class="py-2 pr-3">Type</th>
+                            <th scope="col" class="py-2 pr-3">Unit</th>
                             <th scope="col" class="py-2 pr-3">Requested</th>
                             <th scope="col" class="py-2 pr-3">Issued</th>
                             <th scope="col" class="py-2 pr-3">Remaining</th>
@@ -447,9 +458,20 @@ defineOptions({
                             <td class="py-2 pr-3 font-medium">
                                 {{ l.sku ?? '—' }}
                             </td>
-                            <td class="py-2 pr-3">{{ l.name ?? '—' }}</td>
+                            <td class="py-2 pr-3">
+                                <div>{{ l.name ?? '—' }}</div>
+                                <div
+                                    v-if="l.variant"
+                                    class="text-xs text-muted-foreground"
+                                >
+                                    {{ l.variant }}
+                                </div>
+                            </td>
                             <td class="py-2 pr-3 text-muted-foreground">
                                 {{ l.type ?? '—' }}
+                            </td>
+                            <td class="py-2 pr-3 text-muted-foreground">
+                                {{ l.unit ?? '—' }}
                             </td>
                             <td class="py-2 pr-3">{{ l.qty_requested }}</td>
                             <td
@@ -465,214 +487,334 @@ defineOptions({
             </div>
         </div>
 
-        <div class="flex flex-col gap-3 md:flex-row md:items-center">
-            <Form
-                v-if="can.approve"
-                v-bind="RequisitionController.approve.form(requisition.id)"
-                :preserve-state="false"
-                v-slot="{ errors, processing }"
-                id="approve-requisition-form"
-                @success="approveDialogOpen = false"
-                class="flex flex-1 items-end gap-2"
+        <!-- Requisition Decision & Review Action Card -->
+        <div
+            v-if="can.approve || can.reject"
+            class="overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-xs dark:border-border/60 dark:bg-card/90"
+        >
+            <div
+                class="border-b border-border/60 bg-muted/20 px-5 py-3.5 sm:flex sm:items-center sm:justify-between"
             >
-                <div class="grid flex-1 gap-1">
-                    <label for="approval-notes" class="text-sm font-medium"
-                        >Approval notes (optional)</label
-                    >
-                    <Input
-                        id="approval-notes"
-                        name="notes"
-                        placeholder="Add a note for the requester…"
-                        :aria-invalid="Boolean(errors.notes)"
-                        :aria-describedby="
-                            errors.notes ? 'approval-notes-error' : undefined
-                        "
-                        @keydown.enter.prevent="approveDialogOpen = true"
-                    />
-                    <InputError
-                        id="approval-notes-error"
-                        :message="errors.notes"
-                    />
-                </div>
-                <Dialog v-model:open="approveDialogOpen">
-                    <DialogTrigger as-child>
-                        <Button
-                            type="button"
-                            :disabled="processing"
-                            data-test="approve-requisition-button"
-                            data-testid="approve-requisition-button"
-                            >Approve Request</Button
-                        >
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader class="space-y-3">
-                            <DialogTitle>Approve this requisition?</DialogTitle>
-                            <DialogDescription>
-                                Approval allows authorized supply personnel to
-                                issue the requested items. Stock will be checked
-                                again during issuance.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter class="gap-2">
-                            <DialogClose as-child>
-                                <Button variant="secondary" type="button"
-                                    >Cancel</Button
-                                >
-                            </DialogClose>
-                            <Button
-                                type="submit"
-                                form="approve-requisition-form"
-                                :disabled="processing"
-                            >
-                                {{
-                                    processing
-                                        ? 'Approving…'
-                                        : 'Approve Request'
-                                }}
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </Form>
-
-            <Dialog v-if="can.reject" v-model:open="rejectDialogOpen">
-                <DialogTrigger as-child>
-                    <Button variant="secondary" type="button">Reject</Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader class="space-y-3">
-                        <DialogTitle>Reject requisition?</DialogTitle>
-                        <DialogDescription>
-                            This will permanently reject requisition #{{
-                                requisition.id
-                            }}. The requester will be notified.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <Form
-                        v-bind="
-                            RequisitionController.reject.form(requisition.id)
-                        "
-                        :preserve-state="false"
-                        v-slot="{ errors, processing }"
-                        @success="rejectDialogOpen = false"
-                        class="grid gap-4"
-                    >
-                        <div class="grid gap-2">
-                            <Label for="reject_notes">Rejection reason</Label>
-                            <Input
-                                id="reject_notes"
-                                name="notes"
-                                placeholder="Explain why this request is being rejected"
-                                required
-                            />
-                            <InputError :message="errors.notes" />
-                        </div>
-                        <DialogFooter class="gap-2">
-                            <DialogClose as-child>
-                                <Button variant="secondary" type="button"
-                                    >Cancel</Button
-                                >
-                            </DialogClose>
-                            <Button
-                                type="submit"
-                                :disabled="processing"
-                                variant="destructive"
-                                >{{
-                                    processing ? 'Rejecting…' : 'Reject Request'
-                                }}</Button
-                            >
-                        </DialogFooter>
-                    </Form>
-                </DialogContent>
-            </Dialog>
-
-            <Form
-                v-if="can.issue"
-                v-bind="RequisitionController.issue.form(requisition.id)"
-                :preserve-state="false"
-                v-slot="{ errors, processing }"
-                class="grid flex-1 gap-4"
-            >
-                <div class="grid gap-3 rounded-xl border border-border/60 p-4">
-                    <div class="text-sm font-medium">Items to issue</div>
-                    <p class="text-sm text-muted-foreground">
-                        Enter how many units to issue now. You cannot issue more
-                        than the remaining approved quantity.
+                <div>
+                    <h3 class="text-sm font-semibold text-foreground">
+                        Requisition Review & Final Decision
+                    </h3>
+                    <p class="text-xs text-muted-foreground">
+                        Authorize this request for warehouse fulfillment or
+                        reject with a documented institutional justification.
                     </p>
-                    <div
-                        v-for="(line, index) in requisition.lines"
-                        :key="line.id"
-                        class="grid gap-2 rounded-lg border border-border/40 p-3 md:grid-cols-[1.5fr_120px_120px]"
+                </div>
+                <div class="mt-2 sm:mt-0">
+                    <span
+                        class="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400"
                     >
-                        <div>
-                            <div class="font-medium">
-                                {{ line.name ?? line.sku ?? 'Line item' }}
-                            </div>
-                            <div class="text-xs text-muted-foreground">
-                                {{ line.sku ?? '—' }} · Remaining
-                                {{ line.qty_remaining }}
-                            </div>
-                        </div>
-                        <input
-                            type="hidden"
-                            :name="`lines[${index}][id]`"
-                            :value="line.id"
-                        />
-                        <div class="grid gap-1">
-                            <label
-                                class="text-xs font-medium text-muted-foreground"
-                                >Issue now</label
-                            >
-                            <Input
-                                :name="`lines[${index}][qty_to_issue]`"
-                                type="number"
-                                min="0"
-                                :max="line.qty_remaining"
-                                inputmode="numeric"
-                                :aria-label="`Quantity to issue for ${line.name ?? line.sku ?? 'item'}`"
-                                :default-value="line.qty_remaining"
-                            />
-                        </div>
-                        <div class="text-xs text-muted-foreground md:self-end">
-                            Requested {{ line.qty_requested }}<br />
-                            Issued {{ line.qty_issued }}
-                        </div>
-                    </div>
-                    <InputError :message="errors.lines" />
+                        <span class="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                        Pending Approval
+                    </span>
                 </div>
+            </div>
 
-                <div class="grid gap-3 rounded-xl border border-border/60 p-4">
-                    <label class="flex items-start gap-3">
-                        <input
-                            name="mark_as_backordered"
-                            type="checkbox"
-                            value="1"
-                            class="mt-0.5 h-4 w-4 rounded border border-input"
-                        />
-                        <span class="text-sm text-muted-foreground">
-                            Mark any unissued quantity as backordered so it can
-                            be fulfilled when stock becomes available.
-                        </span>
-                    </label>
-
-                    <div class="grid gap-1">
-                        <label class="text-sm font-medium"
-                            >Issuance notes (optional)</label
-                        >
-                        <Input name="notes" placeholder="Optional notes" />
-                        <InputError :message="errors.notes" />
-                    </div>
-                </div>
-
-                <Button
-                    type="submit"
-                    :disabled="processing"
-                    data-test="issue-requisition-button"
-                    data-testid="issue-requisition-button"
-                    class="w-full md:w-auto"
-                    >{{ processing ? 'Issuing Items…' : 'Issue Items' }}</Button
+            <div class="p-5">
+                <Form
+                    v-if="can.approve"
+                    v-bind="RequisitionController.approve.form(requisition.id)"
+                    :preserve-state="false"
+                    v-slot="{ errors, processing }"
+                    id="approve-requisition-form"
+                    @success="approveDialogOpen = false"
+                    class="space-y-4"
                 >
-            </Form>
+                    <div class="grid gap-1.5">
+                        <Label
+                            for="approval-notes"
+                            class="text-xs font-semibold text-foreground"
+                        >
+                            Approval Notes / Endorsement
+                            <span class="font-normal text-muted-foreground"
+                                >(optional)</span
+                            >
+                        </Label>
+                        <Input
+                            id="approval-notes"
+                            name="notes"
+                            placeholder="Add an endorsement or special instructions for the custodian and warehouse issuer…"
+                            class="h-10 text-sm"
+                            :aria-invalid="Boolean(errors.notes)"
+                            :aria-describedby="
+                                errors.notes
+                                    ? 'approval-notes-error'
+                                    : undefined
+                            "
+                            @keydown.enter.prevent="approveDialogOpen = true"
+                        />
+                        <InputError
+                            id="approval-notes-error"
+                            :message="errors.notes"
+                        />
+                    </div>
+
+                    <div
+                        class="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-end"
+                    >
+                        <!-- Enhanced Professional Reject Button -->
+                        <Dialog
+                            v-if="can.reject"
+                            v-model:open="rejectDialogOpen"
+                        >
+                            <DialogTrigger as-child>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    class="h-10 min-h-10 gap-2 rounded-lg border-rose-300/80 bg-rose-50/40 px-4 text-xs font-semibold text-rose-700 shadow-2xs transition-all hover:border-rose-400 hover:bg-rose-100/70 hover:text-rose-800 focus-visible:ring-rose-500 dark:border-rose-900/60 dark:bg-rose-950/20 dark:text-rose-300 dark:hover:border-rose-800 dark:hover:bg-rose-950/50 dark:hover:text-rose-200"
+                                    data-testid="reject-requisition-button"
+                                >
+                                    <XCircle
+                                        class="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400"
+                                    />
+                                    <span>Reject Request</span>
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent class="sm:max-w-md">
+                                <DialogHeader class="space-y-2">
+                                    <DialogTitle
+                                        class="flex items-center gap-2 text-rose-600 dark:text-rose-400"
+                                    >
+                                        <AlertTriangle class="h-5 w-5" />
+                                        <span
+                                            >Reject Requisition #{{
+                                                requisition.id
+                                            }}?</span
+                                        >
+                                    </DialogTitle>
+                                    <DialogDescription
+                                        class="text-sm text-muted-foreground"
+                                    >
+                                        Rejecting this requisition permanently
+                                        halts this request. The requester
+                                        (<strong class="text-foreground">{{
+                                            requisition.requester?.name ??
+                                            'Requester'
+                                        }}</strong
+                                        >) will be notified immediately along
+                                        with the official justification provided
+                                        below.
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <Form
+                                    v-bind="
+                                        RequisitionController.reject.form(
+                                            requisition.id,
+                                        )
+                                    "
+                                    :preserve-state="false"
+                                    v-slot="{
+                                        errors: rejectErrors,
+                                        processing: rejectProcessing,
+                                    }"
+                                    @success="rejectDialogOpen = false"
+                                    class="grid gap-4 py-2"
+                                >
+                                    <div class="grid gap-2">
+                                        <Label
+                                            for="reject_notes"
+                                            class="text-xs font-semibold text-foreground"
+                                        >
+                                            Rejection Justification
+                                            <span class="text-rose-500">*</span>
+                                        </Label>
+                                        <textarea
+                                            id="reject_notes"
+                                            name="notes"
+                                            rows="3"
+                                            placeholder="Provide a clear institutional reason (e.g. Budget limitation, insufficient inventory stock, alternative item requested)…"
+                                            required
+                                            class="flex min-h-[90px] w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+                                        />
+                                        <InputError
+                                            :message="rejectErrors.notes"
+                                        />
+                                    </div>
+
+                                    <DialogFooter class="gap-2 sm:justify-end">
+                                        <DialogClose as-child>
+                                            <Button
+                                                variant="outline"
+                                                type="button"
+                                                class="rounded-lg text-xs font-medium"
+                                            >
+                                                Cancel
+                                            </Button>
+                                        </DialogClose>
+                                        <Button
+                                            type="submit"
+                                            :disabled="rejectProcessing"
+                                            variant="destructive"
+                                            class="gap-1.5 rounded-lg text-xs font-semibold shadow-xs"
+                                        >
+                                            <XCircle class="h-3.5 w-3.5" />
+                                            <span>{{
+                                                rejectProcessing
+                                                    ? 'Rejecting…'
+                                                    : 'Confirm Rejection'
+                                            }}</span>
+                                        </Button>
+                                    </DialogFooter>
+                                </Form>
+                            </DialogContent>
+                        </Dialog>
+
+                        <!-- Primary Approve Button -->
+                        <Dialog v-model:open="approveDialogOpen">
+                            <DialogTrigger as-child>
+                                <Button
+                                    type="button"
+                                    :disabled="processing"
+                                    class="h-10 min-h-10 gap-2 rounded-lg px-5 text-xs font-semibold shadow-xs sm:min-h-10"
+                                    data-test="approve-requisition-button"
+                                    data-testid="approve-requisition-button"
+                                >
+                                    <CheckCircle2 class="h-4 w-4 shrink-0" />
+                                    <span>Approve Request</span>
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent class="sm:max-w-md">
+                                <DialogHeader class="space-y-2">
+                                    <DialogTitle
+                                        class="flex items-center gap-2 text-primary"
+                                    >
+                                        <CheckCircle2 class="h-5 w-5" />
+                                        <span
+                                            >Approve Requisition #{{
+                                                requisition.id
+                                            }}?</span
+                                        >
+                                    </DialogTitle>
+                                    <DialogDescription
+                                        class="text-sm text-muted-foreground"
+                                    >
+                                        Approving authorizes the supply office
+                                        to issue the requested items. Stock
+                                        availability will be deducted upon
+                                        actual warehouse release.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <DialogFooter class="gap-2 sm:justify-end">
+                                    <DialogClose as-child>
+                                        <Button
+                                            variant="outline"
+                                            type="button"
+                                            class="rounded-lg text-xs font-medium"
+                                        >
+                                            Cancel
+                                        </Button>
+                                    </DialogClose>
+                                    <Button
+                                        type="submit"
+                                        form="approve-requisition-form"
+                                        :disabled="processing"
+                                        class="gap-1.5 rounded-lg text-xs font-semibold shadow-xs"
+                                    >
+                                        <CheckCircle2 class="h-3.5 w-3.5" />
+                                        <span>{{
+                                            processing
+                                                ? 'Approving…'
+                                                : 'Confirm Approval'
+                                        }}</span>
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
+                </Form>
+            </div>
         </div>
+
+        <Form
+            v-if="can.issue"
+            v-bind="RequisitionController.issue.form(requisition.id)"
+            :preserve-state="false"
+            v-slot="{ errors, processing }"
+            class="grid flex-1 gap-4"
+        >
+            <div class="grid gap-3 rounded-xl border border-border/60 p-4">
+                <div class="text-sm font-medium">Items to issue</div>
+                <p class="text-sm text-muted-foreground">
+                    Enter how many units to issue now. You cannot issue more
+                    than the remaining approved quantity.
+                </p>
+                <div
+                    v-for="(line, index) in requisition.lines"
+                    :key="line.id"
+                    class="grid gap-2 rounded-lg border border-border/40 p-3 md:grid-cols-[1.5fr_120px_120px]"
+                >
+                    <div>
+                        <div class="font-medium">
+                            {{ line.name ?? line.sku ?? 'Line item' }}
+                        </div>
+                        <div class="text-xs text-muted-foreground">
+                            {{ line.sku ?? '—' }} · Remaining
+                            {{ line.qty_remaining }} {{ line.unit ?? '' }}
+                        </div>
+                    </div>
+                    <input
+                        type="hidden"
+                        :name="`lines[${index}][id]`"
+                        :value="line.id"
+                    />
+                    <div class="grid gap-1">
+                        <label class="text-xs font-medium text-muted-foreground"
+                            >Issue now</label
+                        >
+                        <Input
+                            :name="`lines[${index}][qty_to_issue]`"
+                            type="number"
+                            min="0"
+                            :max="line.qty_remaining"
+                            inputmode="numeric"
+                            :aria-label="`Quantity to issue for ${line.name ?? line.sku ?? 'item'}`"
+                            :default-value="line.qty_remaining"
+                        />
+                    </div>
+                    <div class="text-xs text-muted-foreground md:self-end">
+                        Requested {{ line.qty_requested }}<br />
+                        Issued {{ line.qty_issued }}
+                    </div>
+                </div>
+                <InputError :message="errors.lines" />
+            </div>
+
+            <div class="grid gap-3 rounded-xl border border-border/60 p-4">
+                <label class="flex items-start gap-3">
+                    <input
+                        name="mark_as_backordered"
+                        type="checkbox"
+                        value="1"
+                        class="mt-0.5 h-4 w-4 rounded border border-input"
+                    />
+                    <span class="text-sm text-muted-foreground">
+                        Mark any unissued quantity as backordered so it can be
+                        fulfilled when stock becomes available.
+                    </span>
+                </label>
+
+                <div class="grid gap-1">
+                    <label class="text-sm font-medium"
+                        >Issuance notes (optional)</label
+                    >
+                    <Input name="notes" placeholder="Optional notes" />
+                    <InputError :message="errors.notes" />
+                </div>
+            </div>
+
+            <Button
+                type="submit"
+                :disabled="processing"
+                data-test="issue-requisition-button"
+                data-testid="issue-requisition-button"
+                class="w-full md:w-auto"
+                >{{ processing ? 'Issuing Items…' : 'Issue Items' }}</Button
+            >
+        </Form>
     </div>
 </template>

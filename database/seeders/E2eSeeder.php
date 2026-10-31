@@ -12,6 +12,7 @@ use App\Models\Position;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\StockLot;
+use App\Models\UnitOfMeasurement;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
@@ -90,12 +91,22 @@ class E2eSeeder extends Seeder
             $categories[$catName] = Category::query()->updateOrCreate(['name' => $catName]);
         }
 
+        $ream = UnitOfMeasurement::query()->firstOrCreate(
+            ['code' => 'ream'],
+            ['name' => 'Ream', 'abbreviation' => 'ream', 'is_active' => true],
+        );
+        $piece = UnitOfMeasurement::query()->firstOrCreate(
+            ['code' => 'piece'],
+            ['name' => 'Piece', 'abbreviation' => 'pc', 'is_active' => true],
+        );
+
         $consumableProduct = Product::query()->updateOrCreate(
             ['sku' => 'CON-E2E-001'],
             [
                 'name' => 'Multipurpose Copy Paper, A4, 80 gsm',
                 'category_id' => $categories['Office Supplies']->id,
                 'origin_id' => $origin->id,
+                'unit_of_measurement_id' => $ream->id,
                 'type' => ProductType::Consumable,
                 'reorder_threshold' => 10,
                 'is_active' => true,
@@ -122,6 +133,7 @@ class E2eSeeder extends Seeder
                 'name' => 'Business Laptop, 14-inch',
                 'category_id' => $categories['IT Equipment']->id,
                 'origin_id' => $origin->id,
+                'unit_of_measurement_id' => $piece->id,
                 'type' => ProductType::Asset,
                 'reorder_threshold' => 0,
                 'is_active' => true,

@@ -113,15 +113,38 @@ class UatAssetOperationsSeeder extends Seeder
             ['code' => 'FMO-MECHANICAL', 'department' => 'FMO', 'name' => 'Facilities Mechanical Workshop', 'building' => 'Facilities Building', 'room' => 'Workshop A', 'is_active' => true],
             ['code' => 'BACC-FACULTY', 'department' => 'BACC', 'name' => 'Business and Accountancy Faculty Office', 'building' => 'Academic Building', 'room' => 'Room 401', 'is_active' => true],
             ['code' => 'ADMIN-RECORDS', 'department' => 'ADMIN', 'name' => 'Administrative Records Center', 'building' => 'Administration Building', 'room' => 'Basement Records Room', 'is_active' => true],
+            ['code' => 'COE-CLS-101', 'department' => 'COE', 'name' => 'Engineering Classroom 101', 'building' => 'Engineering and Science Building', 'room' => 'Room 101', 'facility_group' => 'academic', 'location_type' => 'classroom', 'is_bookable' => false, 'capacity' => 45, 'is_active' => true],
+            ['code' => 'COE-CLS-102', 'department' => 'COE', 'name' => 'Engineering Classroom 102', 'building' => 'Engineering and Science Building', 'room' => 'Room 102', 'facility_group' => 'academic', 'location_type' => 'classroom', 'is_bookable' => false, 'capacity' => 45, 'is_active' => true],
+            ['code' => 'COED-CLS-201', 'department' => 'COED', 'name' => 'Education Classroom 201', 'building' => 'Academic Building', 'room' => 'Room 201', 'facility_group' => 'academic', 'location_type' => 'classroom', 'is_bookable' => false, 'capacity' => 40, 'is_active' => true],
+            ['code' => 'BACC-CLS-301', 'department' => 'BACC', 'name' => 'Business Classroom 301', 'building' => 'Academic Building', 'room' => 'Room 301', 'facility_group' => 'academic', 'location_type' => 'classroom', 'is_bookable' => false, 'capacity' => 45, 'is_active' => true],
+            ['code' => 'COE-ELECLAB', 'department' => 'COE', 'name' => 'Electrical Engineering Laboratory', 'building' => 'Engineering and Science Building', 'room' => 'Room 305', 'facility_group' => 'academic', 'location_type' => 'laboratory', 'is_bookable' => false, 'capacity' => 30, 'is_active' => true],
+            ['code' => 'COED-SCILAB', 'department' => 'COED', 'name' => 'Science Teaching Laboratory', 'building' => 'Academic Building', 'room' => 'Room 208', 'facility_group' => 'academic', 'location_type' => 'laboratory', 'is_bookable' => false, 'capacity' => 32, 'is_active' => true],
+            ['code' => 'DIR-OFFICE', 'department' => 'DIR', 'name' => 'Director’s Office', 'building' => 'Administration Building', 'room' => 'Room 202', 'facility_group' => 'administrative', 'location_type' => 'administrative_office', 'is_bookable' => false, 'capacity' => 8, 'is_active' => true],
+            ['code' => 'ADMIN-HAP', 'department' => 'ADMIN', 'name' => 'HAP Office', 'building' => 'Administration Building', 'room' => 'Room 204', 'facility_group' => 'administrative', 'location_type' => 'administrative_office', 'is_bookable' => false, 'capacity' => 6, 'is_active' => true],
+            ['code' => 'ADMIN-ARO', 'department' => 'ADMIN', 'name' => 'ARO Office', 'building' => 'Administration Building', 'room' => 'Room 106', 'facility_group' => 'administrative', 'location_type' => 'administrative_office', 'is_bookable' => false, 'capacity' => 8, 'is_active' => true],
+            ['code' => 'ACCT-CASHIER', 'department' => 'ACCT', 'name' => 'Cashier’s Office', 'building' => 'Administration Building', 'room' => 'Room 103', 'facility_group' => 'administrative', 'location_type' => 'administrative_office', 'is_bookable' => false, 'capacity' => 12, 'is_active' => true],
+            ['code' => 'COE-FACULTY', 'department' => 'COE', 'name' => 'Engineering Faculty Office', 'building' => 'Engineering and Science Building', 'room' => 'Room 210', 'facility_group' => 'administrative', 'location_type' => 'faculty_office', 'is_bookable' => false, 'capacity' => 24, 'is_active' => true],
+            ['code' => 'COED-FACULTY', 'department' => 'COED', 'name' => 'Education Faculty Office', 'building' => 'Academic Building', 'room' => 'Room 212', 'facility_group' => 'administrative', 'location_type' => 'faculty_office', 'is_bookable' => false, 'capacity' => 20, 'is_active' => true],
+            ['code' => 'ADMIN-CONFERENCE', 'department' => 'ADMIN', 'name' => 'Administrative Conference Room', 'building' => 'Administration Building', 'room' => 'Room 203', 'facility_group' => 'administrative', 'location_type' => 'conference_room', 'is_bookable' => true, 'capacity' => 18, 'is_active' => true],
+            ['code' => 'LIB-READING', 'department' => 'LIB', 'name' => 'University Library Reading Hall', 'building' => 'University Library', 'room' => 'Main Reading Hall', 'facility_group' => 'administrative', 'location_type' => 'library', 'is_bookable' => false, 'capacity' => 120, 'is_active' => true],
+            ['code' => 'EVENT-AVR', 'department' => 'STUDENT', 'name' => 'Audio Visual Room', 'building' => 'Academic Building', 'room' => 'AVR', 'facility_group' => 'events', 'location_type' => 'audio_visual_room', 'is_bookable' => true, 'capacity' => 80, 'is_active' => true],
+            ['code' => 'EVENT-MPH', 'department' => 'STUDENT', 'name' => 'Multipurpose Hall', 'building' => 'Student Services Building', 'room' => 'Main Hall', 'facility_group' => 'events', 'location_type' => 'multipurpose_hall', 'is_bookable' => true, 'capacity' => 350, 'is_active' => true],
+            ['code' => 'EVENT-MINI', 'department' => 'STUDENT', 'name' => 'Mini Hall', 'building' => 'Student Services Building', 'room' => 'Second Floor Mini Hall', 'facility_group' => 'events', 'location_type' => 'mini_hall', 'is_bookable' => true, 'capacity' => 80, 'is_active' => true],
+            ['code' => 'SPORT-GYM', 'department' => 'STUDENT', 'name' => 'Gymnasium', 'building' => 'Sports Complex', 'room' => 'Main Court', 'facility_group' => 'sports', 'location_type' => 'gymnasium', 'is_bookable' => true, 'capacity' => 1200, 'is_active' => true],
             ['code' => 'SPMO-OLD-STORAGE', 'department' => 'SPMO', 'name' => 'Former Property Storage Room', 'building' => 'Old Administration Annex', 'room' => 'Room 3', 'is_active' => false],
         ] as $definition) {
+            $classification = $this->locationClassification($definition['code']);
             $location = Location::query()->updateOrCreate(
                 ['code' => $definition['code']],
                 [
                     'department_id' => $departments[$definition['department']]->id,
                     'name' => $definition['name'],
+                    'facility_group' => $definition['facility_group'] ?? $classification['facility_group'],
+                    'location_type' => $definition['location_type'] ?? $classification['location_type'],
                     'building' => $definition['building'],
                     'room' => $definition['room'],
+                    'is_bookable' => $definition['is_bookable'] ?? false,
+                    'capacity' => $definition['capacity'] ?? null,
                     'is_active' => $definition['is_active'],
                 ],
             );
@@ -130,6 +153,23 @@ class UatAssetOperationsSeeder extends Seeder
         }
 
         return $locations;
+    }
+
+    /**
+     * @return array{facility_group: string, location_type: string}
+     */
+    private function locationClassification(string $code): array
+    {
+        return match ($code) {
+            'COE-COMPLAB', 'COED-MEDIA' => ['facility_group' => 'academic', 'location_type' => 'laboratory'],
+            'DIR-CONFERENCE' => ['facility_group' => 'administrative', 'location_type' => 'conference_room'],
+            'IT-SERVER' => ['facility_group' => 'administrative', 'location_type' => 'server_room'],
+            'IT-WORKSHOP', 'FMO-MECHANICAL' => ['facility_group' => 'administrative', 'location_type' => 'workshop'],
+            'BACC-FACULTY' => ['facility_group' => 'administrative', 'location_type' => 'faculty_office'],
+            'LIB-SERVICE' => ['facility_group' => 'administrative', 'location_type' => 'library'],
+            'STUDENT-ACTIVITY' => ['facility_group' => 'events', 'location_type' => 'multipurpose_hall'],
+            default => ['facility_group' => 'administrative', 'location_type' => 'storage_area'],
+        };
     }
 
     /**
@@ -156,6 +196,91 @@ class UatAssetOperationsSeeder extends Seeder
         ] as $assetTag => $locationCode) {
             $assets[$assetTag]->forceFill(['current_location_id' => $locations[$locationCode]->id])->save();
         }
+
+        $assignmentLocations = collect($locations)
+            ->filter(fn (Location $location): bool => $location->is_active)
+            ->sortBy('code')
+            ->values();
+
+        Asset::query()
+            ->whereNull('current_location_id')
+            ->with('product')
+            ->orderBy('tag_code')
+            ->get()
+            ->each(function (Asset $asset, int $index) use ($locations, $assignmentLocations): void {
+                $candidateCodes = $asset->product !== null
+                    ? $this->targetLocationCodesForProduct($asset->product)
+                    : [];
+
+                $targetLocation = null;
+                if ($candidateCodes !== []) {
+                    $selectedCode = $candidateCodes[$index % count($candidateCodes)];
+                    $targetLocation = $locations[$selectedCode] ?? null;
+                }
+
+                $targetLocation ??= $assignmentLocations->get($index % $assignmentLocations->count());
+
+                $asset->forceFill(['current_location_id' => $targetLocation?->id])->save();
+            });
+    }
+
+    /**
+     * Category- and functional-use-appropriate rooms for catalog assets.
+     *
+     * @return array<int, string>
+     */
+    private function targetLocationCodesForProduct(Product $product): array
+    {
+        $sku = (string) $product->sku;
+
+        if (str_contains($sku, 'CLS')) {
+            return ['COE-CLS-101', 'COE-CLS-102', 'COED-CLS-201', 'BACC-CLS-301'];
+        }
+
+        if (str_contains($sku, 'LAB')) {
+            return ['COE-ELECLAB', 'COED-SCILAB', 'COE-COMPLAB'];
+        }
+
+        if (str_contains($sku, 'CMP') || str_contains($sku, 'DESK')) {
+            return ['COE-COMPLAB', 'COE-ELECLAB', 'LIB-READING', 'REG-RECORDS', 'ADMIN-RECORDS', 'ACCT-CASHIER'];
+        }
+
+        if (str_contains($sku, 'CON') || str_contains($sku, 'PROJ') || str_contains($sku, 'TV')) {
+            return ['DIR-CONFERENCE', 'ADMIN-CONFERENCE', 'EVENT-AVR', 'EVENT-MPH', 'EVENT-MINI', 'COED-MEDIA'];
+        }
+
+        if (str_contains($sku, 'MONO')) {
+            return ['EVENT-MPH', 'EVENT-MINI', 'SPORT-GYM', 'STUDENT-ACTIVITY'];
+        }
+
+        if (str_contains($sku, 'RTR') || str_contains($sku, 'SWCH') || str_contains($sku, 'HDD') || str_contains($sku, 'SSD') || str_contains($sku, 'USB')) {
+            return ['IT-SERVER', 'IT-WORKSHOP', 'ADMIN-RECORDS', 'COE-COMPLAB'];
+        }
+
+        if (str_contains($sku, 'BOOK') || str_contains($sku, 'SHELF')) {
+            return ['LIB-READING', 'LIB-SERVICE', 'ADMIN-RECORDS', 'SPMO-STOCKROOM'];
+        }
+
+        if (str_contains($sku, 'CAB')) {
+            return ['REG-RECORDS', 'ADMIN-RECORDS', 'ACCT-CASHIER', 'DIR-OFFICE', 'ADMIN-HAP', 'ADMIN-ARO'];
+        }
+
+        if (str_contains($sku, 'SOFA')) {
+            return ['DIR-OFFICE', 'DIR-CONFERENCE', 'ADMIN-CONFERENCE'];
+        }
+
+        if (str_contains($sku, 'AC-') || str_contains($sku, 'FAN-')) {
+            return [
+                'DIR-OFFICE', 'ADMIN-HAP', 'ADMIN-ARO', 'ACCT-CASHIER', 'COE-FACULTY', 'COED-FACULTY',
+                'BACC-FACULTY', 'ADMIN-CONFERENCE', 'LIB-READING', 'EVENT-AVR', 'COE-CLS-101', 'COE-CLS-102',
+                'COED-CLS-201', 'BACC-CLS-301', 'COE-ELECLAB', 'COED-SCILAB', 'IT-WORKSHOP', 'FMO-MECHANICAL',
+            ];
+        }
+
+        return [
+            'DIR-OFFICE', 'ADMIN-HAP', 'ADMIN-ARO', 'ACCT-CASHIER', 'COE-FACULTY',
+            'COED-FACULTY', 'BACC-FACULTY', 'REG-RECORDS', 'LIB-SERVICE',
+        ];
     }
 
     /**
@@ -246,7 +371,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'asset' => 'AST-COE-0001', 'from' => 'SPMO-PROP', 'to' => 'COE-COMPLAB',
                 'from_position' => 'POS-PC-CHIEF', 'to_position' => 'POS-COE-PC', 'status' => AssetTransferStatus::Approved,
                 'reason' => 'Permanent deployment for engineering laboratory instruction and faculty research.',
-                'date' => $timeline->subDays(45), 'initiated_by' => 'custodian@local.test', 'approved_by' => 'supply@local.test',
+                'date' => $timeline->subDays(45), 'initiated_by' => 'custodian@local.test', 'approved_by' => 'admin@local.test',
                 'approved_at' => $timeline->subDays(44), 'cancelled_by' => null, 'cancelled_at' => null,
                 'notes' => 'Asset tag and accessories were verified during acknowledgment.',
             ],
@@ -262,7 +387,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'asset' => 'AST-DIR-0001', 'from' => 'DIR-CONFERENCE', 'to' => 'LIB-SERVICE',
                 'from_position' => 'POS-DIR-PC', 'to_position' => 'POS-LIB-PC', 'status' => AssetTransferStatus::Rejected,
                 'reason' => 'Requested reassignment to support library audiovisual activities.',
-                'date' => $timeline->subDays(6), 'initiated_by' => 'library.custodian@local.test', 'approved_by' => 'supply@local.test',
+                'date' => $timeline->subDays(6), 'initiated_by' => 'library.custodian@local.test', 'approved_by' => 'admin@local.test',
                 'approved_at' => $timeline->subDays(5), 'cancelled_by' => null, 'cancelled_at' => null,
                 'notes' => 'Request declined because the projector is assigned to scheduled executive meetings.',
             ],
@@ -312,7 +437,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'from_condition' => null, 'to_condition' => AssetConditionStatus::Serviceable,
                 'reason' => 'Equipment accepted after delivery inspection and property tagging.', 'method' => 'Public procurement',
                 'reference' => 'IAR-2026-00418', 'proposed_for' => $timeline->subDays(90), 'occurred_at' => $timeline->subDays(89),
-                'initiated_by' => 'custodian@local.test', 'approved_by' => 'supply@local.test', 'approved_at' => $timeline->subDays(89),
+                'initiated_by' => 'custodian@local.test', 'approved_by' => 'admin@local.test', 'approved_at' => $timeline->subDays(89),
                 'notes' => 'Acceptance and inspection report completed with no exceptions.',
             ],
             'air-conditioner-condition' => [
@@ -321,7 +446,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'from_condition' => AssetConditionStatus::Serviceable, 'to_condition' => AssetConditionStatus::Damaged,
                 'reason' => 'Water leakage and inconsistent cooling require corrective maintenance.', 'method' => 'Facilities inspection',
                 'reference' => 'FMO-INS-2026-0037', 'proposed_for' => $timeline->subDay(), 'occurred_at' => $timeline->subDay(),
-                'initiated_by' => 'facilities.custodian@local.test', 'approved_by' => 'custodian@local.test', 'approved_at' => $timeline->subHours(18),
+                'initiated_by' => 'facilities.custodian@local.test', 'approved_by' => 'admin@local.test', 'approved_at' => $timeline->subHours(18),
                 'notes' => 'Asset remains active in the register but unavailable for operational use.',
             ],
             'laptop-retirement' => [
@@ -330,7 +455,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'from_condition' => AssetConditionStatus::Damaged, 'to_condition' => AssetConditionStatus::Unserviceable,
                 'reason' => 'Mainboard failure and discontinued replacement parts make repair uneconomical.', 'method' => 'Beyond economical repair',
                 'reference' => 'PAR-2026-00074', 'proposed_for' => $timeline->subDays(20), 'occurred_at' => $timeline->subDays(15),
-                'initiated_by' => 'custodian@local.test', 'approved_by' => 'supply@local.test', 'approved_at' => $timeline->subDays(15),
+                'initiated_by' => 'custodian@local.test', 'approved_by' => 'admin@local.test', 'approved_at' => $timeline->subDays(15),
                 'notes' => 'Asset secured in the property holding area pending authorized disposal.',
             ],
             'network-switch-disposal' => [
@@ -357,7 +482,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'from_condition' => AssetConditionStatus::Damaged, 'to_condition' => AssetConditionStatus::Unserviceable,
                 'reason' => 'Repeated paper-feed errors led to a disposal request.', 'method' => 'Property disposal',
                 'reference' => 'DISP-2026-00022', 'proposed_for' => $timeline->subDays(8), 'occurred_at' => null,
-                'initiated_by' => 'library.custodian@local.test', 'approved_by' => 'supply@local.test', 'approved_at' => $timeline->subDays(6),
+                'initiated_by' => 'library.custodian@local.test', 'approved_by' => 'admin@local.test', 'approved_at' => $timeline->subDays(6),
                 'notes' => 'Request rejected because the inspection found the pickup roller repairable.',
             ],
         ];

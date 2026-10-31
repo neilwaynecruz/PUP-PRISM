@@ -26,9 +26,15 @@ class AssetFactory extends Factory
             'product_id' => Product::factory()->asset(),
             'position_id' => null,
             'tag_code' => fake()->unique()->bothify('AST-########'),
+            'serial_number' => fake()->unique()->bothify('SN-########'),
             'status' => AssetStatus::Available,
             'lifecycle_status' => AssetLifecycleStatus::Active,
             'condition_status' => AssetConditionStatus::Serviceable,
+            'acquisition_date' => fake()->dateTimeBetween('-4 years', '-1 month'),
+            'acquisition_cost' => fake()->randomFloat(2, 1000, 100000),
+            'warranty_expires_at' => fake()->dateTimeBetween('+1 month', '+3 years'),
+            'installed_at' => null,
+            'maintenance_interval_days' => null,
         ];
     }
 

@@ -48,6 +48,10 @@ class PurchaseOrderResource extends InertiaJsonResource
                             'sku' => $line->product->sku,
                             'name' => $line->product->name,
                             'type' => $line->product->type?->value,
+                            'variant' => $line->product->variant,
+                            'unit' => $line->product->relationLoaded('unitOfMeasurement')
+                                ? $line->product->unitOfMeasurement?->abbreviation
+                                : null,
                             'supplier_id' => $line->product->supplier_id,
                             'category' => $line->product->relationLoaded('category')
                                 ? $line->product->category?->name

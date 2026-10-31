@@ -117,9 +117,15 @@ type MaintenanceDetails = {
 type Asset = {
     id: number;
     tag_code: string;
+    serial_number: string | null;
     status: string;
     lifecycle_status: string;
     condition_status: string;
+    acquisition_date: string | null;
+    acquisition_cost: number | null;
+    warranty_expires_at: string | null;
+    installed_at: string | null;
+    maintenance_interval_days: number | null;
     product: { name: string; sku: string };
     position: (Position & { department: { name: string } | null }) | null;
     current_location: Location | null;
@@ -539,6 +545,58 @@ function removeAttachment(record: Attachment): void {
                     {{ asset.position?.title ?? 'In stock' }}
                 </p>
             </div>
+        </section>
+
+        <section
+            aria-label="Asset acquisition and service details"
+            class="rounded-xl border border-border/70 bg-card p-4 shadow-xs"
+        >
+            <dl class="grid gap-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
+                <div>
+                    <dt class="text-xs text-muted-foreground">Serial number</dt>
+                    <dd class="mt-1 font-medium text-foreground">
+                        {{ asset.serial_number ?? 'Not recorded' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-muted-foreground">Acquired</dt>
+                    <dd class="mt-1 font-medium text-foreground">
+                        {{ asset.acquisition_date ?? 'Not recorded' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-muted-foreground">
+                        Acquisition cost
+                    </dt>
+                    <dd class="mt-1 font-medium text-foreground">
+                        {{
+                            asset.acquisition_cost !== null
+                                ? `₱${asset.acquisition_cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                : 'Not recorded'
+                        }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-muted-foreground">
+                        Warranty through
+                    </dt>
+                    <dd class="mt-1 font-medium text-foreground">
+                        {{ asset.warranty_expires_at ?? 'Not recorded' }}
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-muted-foreground">
+                        Service interval
+                    </dt>
+                    <dd class="mt-1 font-medium text-foreground">
+                        {{
+                            asset.maintenance_interval_days
+                                ? `${asset.maintenance_interval_days} days`
+                                : 'As needed'
+                        }}
+                    </dd>
+                </div>
+            </dl>
         </section>
 
         <div class="grid gap-6 xl:grid-cols-3">

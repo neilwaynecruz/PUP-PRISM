@@ -17,7 +17,7 @@ class ProcurementReportService extends AbstractTableReportService
         $dateTo = $request->string('date_to')->trim()->toString();
 
         $query = PurchaseOrder::query()
-            ->with(['supplier:id,name', 'lines.product:id,sku,name'])
+            ->with(['supplier:id,name', 'lines.product:id,sku,name,category_id', 'lines.product.category:id,name'])
             ->when($status !== '', fn ($query) => $query->where('status', $status))
             ->when($dateFrom !== '', fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
             ->when($dateTo !== '', fn ($query) => $query->whereDate('created_at', '<=', $dateTo))
@@ -53,10 +53,13 @@ class ProcurementReportService extends AbstractTableReportService
                 'supplier' => 'Supplier',
                 'created_at' => 'Created at',
                 'received_at' => 'Received at',
+                'category' => 'Category',
                 'product_sku' => 'Product SKU',
                 'product_name' => 'Product name',
                 'qty_ordered' => 'Qty ordered',
                 'qty_received' => 'Qty received',
+                'unit_price' => 'Unit price',
+                'subtotal' => 'Line total',
             ],
             rows: $rows,
             generatedBy: $this->generatedBy($request),
@@ -79,10 +82,13 @@ class ProcurementReportService extends AbstractTableReportService
             'received_at' => $purchaseOrder->received_at !== null
                 ? CarbonImmutable::parse((string) $purchaseOrder->received_at)->format('Y-m-d H:i:s T')
                 : '',
+            'category' => $line?->product?->category?->name ?? '',
             'product_sku' => $line?->product?->sku ?? '',
             'product_name' => $line?->product?->name ?? '',
             'qty_ordered' => $line?->qty_ordered ?? '',
             'qty_received' => $line?->qty_received ?? '',
+            'unit_price' => isset($line->unit_price) ? (float) $line->unit_price : null,
+            'subtotal' => isset($line->subtotal) ? (float) $line->subtotal : null,
         ];
     }
 }

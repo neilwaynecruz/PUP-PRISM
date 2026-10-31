@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::store
- * @see app/Http/Controllers/Inventory/ReceivingController.php:67
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:68
  * @route '/inventory/receiving'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -94,7 +94,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::store
- * @see app/Http/Controllers/Inventory/ReceivingController.php:67
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:68
  * @route '/inventory/receiving'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::store
- * @see app/Http/Controllers/Inventory/ReceivingController.php:67
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:68
  * @route '/inventory/receiving'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -113,7 +113,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::store
- * @see app/Http/Controllers/Inventory/ReceivingController.php:67
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:68
  * @route '/inventory/receiving'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -123,7 +123,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::store
- * @see app/Http/Controllers/Inventory/ReceivingController.php:67
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:68
  * @route '/inventory/receiving'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -134,7 +134,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::batch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:135
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:136
  * @route '/inventory/receiving/batch'
  */
 export const batch = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -149,7 +149,7 @@ batch.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::batch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:135
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:136
  * @route '/inventory/receiving/batch'
  */
 batch.url = (options?: RouteQueryOptions) => {
@@ -158,7 +158,7 @@ batch.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::batch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:135
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:136
  * @route '/inventory/receiving/batch'
  */
 batch.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -168,7 +168,7 @@ batch.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::batch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:135
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:136
  * @route '/inventory/receiving/batch'
  */
     const batchForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -178,7 +178,7 @@ batch.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\ReceivingController::batch
- * @see app/Http/Controllers/Inventory/ReceivingController.php:135
+ * @see app/Http/Controllers/Inventory/ReceivingController.php:136
  * @route '/inventory/receiving/batch'
  */
         batchForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

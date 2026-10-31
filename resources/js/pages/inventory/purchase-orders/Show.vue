@@ -42,6 +42,8 @@ type PurchaseOrderLineItem = {
         sku: string;
         name: string;
         type?: string | null;
+        variant?: string | null;
+        unit?: string | null;
         category?: string | null;
         on_hand_qty?: number | null;
     } | null;
@@ -938,8 +940,14 @@ const lifecycleSteps = computed(() => {
                                     <span class="font-mono">{{
                                         line.product?.sku ?? 'N/A'
                                     }}</span>
+                                    <span v-if="line.product?.variant">
+                                        • {{ line.product.variant }}
+                                    </span>
                                     <span v-if="line.product?.category">
                                         • {{ line.product.category }}
+                                    </span>
+                                    <span v-if="line.product?.unit">
+                                        • per {{ line.product.unit }}
                                     </span>
                                     <span
                                         v-if="
@@ -1038,6 +1046,23 @@ const lifecycleSteps = computed(() => {
                                 class="mt-0.5 font-mono text-xs text-muted-foreground"
                             >
                                 {{ line.product?.sku ?? 'N/A' }}
+                            </div>
+                            <div
+                                v-if="
+                                    line.product?.variant || line.product?.unit
+                                "
+                                class="text-xs text-muted-foreground"
+                            >
+                                {{ line.product?.variant ?? ''
+                                }}{{
+                                    line.product?.variant && line.product?.unit
+                                        ? ' · '
+                                        : ''
+                                }}{{
+                                    line.product?.unit
+                                        ? `per ${line.product.unit}`
+                                        : ''
+                                }}
                             </div>
                         </div>
                         <Badge variant="outline" class="capitalize">

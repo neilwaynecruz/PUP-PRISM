@@ -28,6 +28,12 @@ export type ProductLookupItem = {
     id: number;
     sku: string;
     name: string;
+    variant: string | null;
+    brand: string | null;
+    model: string | null;
+    color: string | null;
+    size: string | null;
+    unit: string | null;
     type: 'consumable' | 'asset';
     category_id: number | null;
     category: string | null;
@@ -266,7 +272,7 @@ onBeforeUnmount(() => {
                             v-model="searchTerm"
                             type="search"
                             aria-label="Search the product catalog"
-                            placeholder="Search by product name, SKU, or keyword..."
+                            placeholder="Search by product, SKU, variant, brand, or model..."
                             class="h-9.5 rounded-lg pr-8 pl-9 text-sm"
                             autofocus
                         />
@@ -428,6 +434,25 @@ onBeforeUnmount(() => {
                                 </Badge>
                             </div>
 
+                            <p
+                                v-if="
+                                    product.variant ||
+                                    product.brand ||
+                                    product.model
+                                "
+                                class="mt-1 text-xs text-muted-foreground"
+                            >
+                                {{
+                                    [
+                                        product.variant,
+                                        product.brand,
+                                        product.model,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' · ')
+                                }}
+                            </p>
+
                             <div
                                 class="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground"
                             >
@@ -456,7 +481,11 @@ onBeforeUnmount(() => {
                                             )
                                         "
                                     >
-                                        {{ product.on_hand_qty }} available
+                                        {{ product.on_hand_qty }} available<span
+                                            v-if="product.unit"
+                                        >
+                                            / {{ product.unit }}</span
+                                        >
                                     </span>
                                 </span>
                                 <span

@@ -27,6 +27,12 @@ type Product = {
     id: number;
     sku: string;
     name: string;
+    variant: string | null;
+    brand: string | null;
+    model: string | null;
+    color: string | null;
+    size: string | null;
+    specifications: Record<string, string> | null;
     type: 'asset' | 'consumable';
     is_active: boolean;
     reorder_threshold: number;
@@ -36,6 +42,11 @@ type Product = {
     origin: string | null;
     supplier_id: number | null;
     supplier: string | null;
+    unit_of_measurement: {
+        id: number;
+        name: string;
+        abbreviation: string;
+    } | null;
     lead_time_days: number | null;
     unit_price: number | null;
     on_hand_qty: number | null;
@@ -305,6 +316,43 @@ function stockToneClass(): string {
                         >
                         <span class="font-medium text-foreground capitalize">{{
                             product.type
+                        }}</span>
+                    </div>
+
+                    <div class="flex items-center justify-between gap-4 py-2.5">
+                        <span class="text-xs text-muted-foreground"
+                            >Unit of measurement</span
+                        >
+                        <span class="text-right font-medium text-foreground">{{
+                            product.unit_of_measurement
+                                ? `${product.unit_of_measurement.name} (${product.unit_of_measurement.abbreviation})`
+                                : 'Not specified'
+                        }}</span>
+                    </div>
+
+                    <div
+                        v-if="product.variant"
+                        class="flex items-center justify-between gap-4 py-2.5"
+                    >
+                        <span class="text-xs text-muted-foreground"
+                            >Variant</span
+                        >
+                        <span class="text-right font-medium text-foreground">{{
+                            product.variant
+                        }}</span>
+                    </div>
+
+                    <div
+                        v-if="product.brand || product.model"
+                        class="flex items-center justify-between gap-4 py-2.5"
+                    >
+                        <span class="text-xs text-muted-foreground"
+                            >Brand / model</span
+                        >
+                        <span class="text-right font-medium text-foreground">{{
+                            [product.brand, product.model]
+                                .filter(Boolean)
+                                .join(' · ')
                         }}</span>
                     </div>
 

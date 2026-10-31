@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\Origin;
 use App\Models\Product;
 use App\Models\Supplier;
+use App\Models\UnitOfMeasurement;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -27,11 +28,19 @@ class ProductFactory extends Factory
             'category_id' => Category::factory(),
             'origin_id' => Origin::factory(),
             'supplier_id' => Supplier::factory(),
+            'unit_of_measurement_id' => UnitOfMeasurement::factory(),
+            'variant' => null,
+            'brand' => null,
+            'model' => null,
+            'color' => null,
+            'size' => null,
+            'specifications' => null,
             'type' => ProductType::Consumable,
             'reorder_threshold' => fake()->numberBetween(0, 50),
             'lead_time_days' => fake()->numberBetween(3, 30),
             'unit_price' => fake()->randomFloat(2, 10, 2000),
             'is_active' => true,
+            'is_bookable' => false,
         ];
     }
 

@@ -12,6 +12,7 @@ use App\Models\AssetTransfer;
 use App\Models\Attachment;
 use App\Models\AuditLog;
 use App\Models\Booking;
+use App\Models\Category;
 use App\Models\Department;
 use App\Models\ForecastProfile;
 use App\Models\ForecastSnapshot;
@@ -28,6 +29,7 @@ use App\Models\RequisitionTemplate;
 use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\Supplier;
+use App\Models\UnitOfMeasurement;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\DatabaseSeeder;
@@ -69,14 +71,35 @@ test('database seeder creates uat organization and walkthrough data', function (
     expect(Booking::onlyTrashed()->exists())->toBeTrue();
     expect(Requisition::onlyTrashed()->exists())->toBeTrue();
     expect(RequisitionTemplate::query()->count())->toBeGreaterThanOrEqual(3);
-    expect(Supplier::query()->count())->toBeGreaterThanOrEqual(4);
-    expect(PurchaseOrder::query()->count())->toBeGreaterThanOrEqual(5);
+    expect(Supplier::query()->count())->toBeGreaterThanOrEqual(15);
+    expect(PurchaseOrder::query()->count())->toBeGreaterThanOrEqual(21);
     expect(ForecastSnapshot::query()->count())->toBeGreaterThanOrEqual(1);
     expect(InventoryAlert::query()->count())->toBeGreaterThanOrEqual(3);
     expect(AuditLog::query()->count())->toBeGreaterThanOrEqual(5);
     expect(DB::table('notifications')->count())->toBeGreaterThanOrEqual(5);
     expect(StockMovement::query()->distinct()->pluck('movement_type')->sort()->values()->all())
         ->toEqualCanonicalizing(['adjustment', 'condemn', 'cycle_count', 'issue', 'receive', 'return', 'transfer']);
+});
+
+test('database seeder provides the approved institutional catalog and facility classifications', function () {
+    seed(DatabaseSeeder::class);
+
+    expect(Category::query()->whereIn('name', [
+        'Office Supplies',
+        'Equipment',
+        'Furniture and Fixtures',
+        'Facilities Equipment',
+    ])->count())->toBe(4)
+        ->and(UnitOfMeasurement::query()->whereIn('code', ['piece', 'ream', 'box'])->count())->toBe(3)
+        ->and(Product::withTrashed()->count())->toBeBetween(80, 150)
+        ->and(Asset::query()->count())->toBeBetween(150, 300)
+        ->and(Supplier::query()->count())->toBeBetween(15, 30)
+        ->and(Location::query()->count())->toBeBetween(25, 60)
+        ->and(Location::query()->whereIn('facility_group', ['academic', 'administrative', 'sports', 'events'])->distinct()->count('facility_group'))->toBe(4)
+        ->and(Location::query()->where('location_type', 'gymnasium')->where('is_bookable', true)->exists())->toBeTrue()
+        ->and(Product::query()->where('sku', 'OFF-PAPER-A4-80')->whereNotNull('unit_of_measurement_id')->exists())->toBeTrue()
+        ->and(Product::query()->where('sku', 'AST-AC-SPLIT')->where('is_bookable', false)->exists())->toBeTrue()
+        ->and(Asset::query()->whereNotNull('serial_number')->whereNotNull('acquisition_date')->count())->toBeGreaterThanOrEqual(150);
 });
 
 test('origin factory can create a broad set of realistic unique sources', function () {
@@ -139,7 +162,7 @@ test('seeded stock lots balances and movement snapshots remain internally consis
         ->and(DB::table('purchase_order_sequences')->where('date_prefix', '20261001')->value('last_sequence'))->toBe(5);
 });
 
-test('forecast products have three years of traceable demand history', function () {
+test('forecast products have four years of traceable demand history', function () {
     seed(DatabaseSeeder::class);
 
     $forecastSkus = [
@@ -165,10 +188,10 @@ test('forecast products have three years of traceable demand history', function 
         $forecastHorizonDays = (int) $profile->getAttribute('forecast_horizon_days');
         $rawData = $snapshot->getAttribute('raw_data');
 
-        expect($issueDates->count())->toBeGreaterThanOrEqual(35)
-            ->and($issueDates->first()?->diffInMonths($issueDates->last()))->toBeGreaterThanOrEqual(35.0)
-            ->and($issueDates->map(static fn (CarbonImmutable $date): string => $date->format('Y-m'))->unique()->count())->toBeGreaterThanOrEqual(34)
-            ->and(StockLot::query()->whereBelongsTo($product)->count())->toBeGreaterThanOrEqual(12)
+        expect($issueDates->count())->toBeGreaterThanOrEqual(48)
+            ->and($issueDates->first()?->diffInMonths($issueDates->last()))->toBeGreaterThanOrEqual(47.0)
+            ->and($issueDates->map(static fn (CarbonImmutable $date): string => $date->format('Y-m'))->unique()->count())->toBeGreaterThanOrEqual(48)
+            ->and(StockLot::query()->whereBelongsTo($product)->count())->toBeGreaterThanOrEqual(16)
             ->and($lookbackDays)->toBe(365)
             ->and($forecastHorizonDays)->toBeLessThanOrEqual(90)
             ->and(data_get($rawData, 'summary.lookback_days'))->toBe(365)
@@ -277,7 +300,11 @@ test('month-boundary reruns roll historical demand without unintended movement d
         $forecastProductIds = Product::query()
             ->whereIn('sku', $forecastSkus)
             ->pluck('id');
-        $movementsBefore = StockMovement::query()->count();
+        // Office supply (OFF-*) history rolls a month forward on its own; it is covered by UatOperationalHistoryTest.
+        $curatedMovements = static fn (): int => StockMovement::query()
+            ->whereDoesntHave('product', static fn (Builder $query): Builder => $query->withTrashed()->whereLike('sku', 'OFF-%'))
+            ->count();
+        $movementsBefore = $curatedMovements();
         $historicalMovementIdsBefore = StockMovement::query()
             ->whereIn('product_id', $forecastProductIds)
             ->where('movement_type', 'issue')
@@ -308,15 +335,15 @@ test('month-boundary reruns roll historical demand without unintended movement d
             ->groupBy($movementIdentity)
             ->filter(static fn (Collection $movements): bool => $movements->count() > 1);
 
-        expect(StockMovement::query()->count())->toBe($movementsBefore + 7)
-            ->and($historicalMovementIdsBefore)->toHaveCount(198)
-            ->and($historicalMovementIdsAfter)->toHaveCount(198)
-            ->and($stableHistoricalIdentityKeys)->toHaveCount(192)
+        expect($curatedMovements())->toBe($movementsBefore + 7)
+            ->and($historicalMovementIdsBefore)->toHaveCount(288)
+            ->and($historicalMovementIdsAfter)->toHaveCount(288)
+            ->and($stableHistoricalIdentityKeys)->toHaveCount(282)
             ->and($stableHistoricalIdentityKeys->every(
                 fn (string $key): bool => $historicalMovementIdsAfter->get($key) === $historicalMovementIdsBefore->get($key),
             ))->toBeTrue()
             ->and($historicalMovementsAfter->filter(
-                fn (StockMovement $movement): bool => str_ends_with((string) $movement->notes, 'October 2023'),
+                fn (StockMovement $movement): bool => str_ends_with((string) $movement->notes, 'July 2022'),
             ))->toBeEmpty()
             ->and($historicalMovementsAfter->filter(
                 fn (StockMovement $movement): bool => str_ends_with((string) $movement->notes, 'July 2026'),
@@ -349,6 +376,44 @@ test('month-boundary reruns roll historical demand without unintended movement d
 
         StockMovement::query()
             ->whereIn('product_id', $forecastProductIds)
+            ->whereNotNull('qty_delta')
+            ->get()
+            ->each(function (StockMovement $movement): void {
+                expect((int) $movement->qty_after)
+                    ->toBe((int) $movement->qty_before + (int) $movement->qty_delta)
+                    ->and((int) $movement->qty_after)->toBeGreaterThanOrEqual(0);
+            });
+    } finally {
+        CarbonImmutable::setTestNow();
+    }
+});
+
+test('year-boundary reruns preserve master identities and valid four-year ledgers', function () {
+    $initialDate = CarbonImmutable::parse('2026-12-31 09:00:00', (string) config('app.timezone'));
+    CarbonImmutable::setTestNow($initialDate);
+
+    try {
+        seed(DatabaseSeeder::class);
+
+        $productIds = Product::withTrashed()->pluck('id', 'sku');
+        $assetIds = Asset::query()->pluck('id', 'tag_code');
+        $locationIds = Location::query()->pluck('id', 'code');
+        $unitIds = UnitOfMeasurement::query()->pluck('id', 'code');
+
+        CarbonImmutable::setTestNow($initialDate->addDay());
+        seed(DatabaseSeeder::class);
+
+        expect(Product::withTrashed()->pluck('id', 'sku')->all())->toBe($productIds->all())
+            ->and(Asset::query()->pluck('id', 'tag_code')->all())->toBe($assetIds->all())
+            ->and(Location::query()->pluck('id', 'code')->all())->toBe($locationIds->all())
+            ->and(UnitOfMeasurement::query()->pluck('id', 'code')->all())->toBe($unitIds->all())
+            ->and(Product::withTrashed()->select('sku')->groupBy('sku')->havingRaw('COUNT(*) > 1')->exists())->toBeFalse()
+            ->and(Asset::query()->whereNotNull('serial_number')->select('serial_number')->groupBy('serial_number')->havingRaw('COUNT(*) > 1')->exists())->toBeFalse()
+            ->and(Location::query()->select('code')->groupBy('code')->havingRaw('COUNT(*) > 1')->exists())->toBeFalse()
+            ->and(PurchaseOrder::query()->select('po_number')->groupBy('po_number')->havingRaw('COUNT(*) > 1')->exists())->toBeFalse()
+            ->and(PurchaseOrder::query()->whereLike('po_number', 'PO-HIST-%')->whereNotLike('po_number', 'PO-HIST-%-%')->count())->toBe(16);
+
+        StockMovement::query()
             ->whereNotNull('qty_delta')
             ->get()
             ->each(function (StockMovement $movement): void {

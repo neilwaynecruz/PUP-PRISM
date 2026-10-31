@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:50
+ * @see app/Http/Controllers/Api/AssetController.php:58
  * @route '/api/assets/{asset}'
  */
 export const show = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:50
+ * @see app/Http/Controllers/Api/AssetController.php:58
  * @route '/api/assets/{asset}'
  */
 show.url = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -127,7 +127,7 @@ show.url = (args: { asset: number | { id: number } } | [asset: number | { id: nu
 
 /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:50
+ * @see app/Http/Controllers/Api/AssetController.php:58
  * @route '/api/assets/{asset}'
  */
 show.get = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -136,7 +136,7 @@ show.get = (args: { asset: number | { id: number } } | [asset: number | { id: nu
 })
 /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:50
+ * @see app/Http/Controllers/Api/AssetController.php:58
  * @route '/api/assets/{asset}'
  */
 show.head = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -146,7 +146,7 @@ show.head = (args: { asset: number | { id: number } } | [asset: number | { id: n
 
     /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:50
+ * @see app/Http/Controllers/Api/AssetController.php:58
  * @route '/api/assets/{asset}'
  */
     const showForm = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -156,7 +156,7 @@ show.head = (args: { asset: number | { id: number } } | [asset: number | { id: n
 
             /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:50
+ * @see app/Http/Controllers/Api/AssetController.php:58
  * @route '/api/assets/{asset}'
  */
         showForm.get = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -165,7 +165,7 @@ show.head = (args: { asset: number | { id: number } } | [asset: number | { id: n
         })
             /**
 * @see \App\Http\Controllers\Api\AssetController::show
- * @see app/Http/Controllers/Api/AssetController.php:50
+ * @see app/Http/Controllers/Api/AssetController.php:58
  * @route '/api/assets/{asset}'
  */
         showForm.head = (args: { asset: number | { id: number } } | [asset: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

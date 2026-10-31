@@ -22,6 +22,7 @@ type Location = { id: number; code: string; name: string };
 type Asset = {
     id: number;
     tag_code: string;
+    serial_number: string | null;
     status: string;
     lifecycle_status: string;
     condition_status: string;
@@ -200,7 +201,7 @@ function statusTone(value: string): string {
                         <Input
                             id="asset-search"
                             v-model="search"
-                            placeholder="Enter an asset tag, product, or SKU"
+                            placeholder="Asset tag, serial number, product, variant, or SKU"
                             autocomplete="off"
                             class="h-10 rounded-lg pl-9 text-sm"
                         />
@@ -297,6 +298,15 @@ function statusTone(value: string): string {
                         >
                             <Tag class="h-3 w-3 text-muted-foreground/70" />
                             {{ asset.product.sku }}
+                        </p>
+                        <p
+                            v-if="asset.serial_number"
+                            class="mt-1 text-xs text-muted-foreground"
+                        >
+                            Serial:
+                            <span class="font-mono">{{
+                                asset.serial_number
+                            }}</span>
                         </p>
                     </div>
 

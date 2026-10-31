@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link, router } from '@inertiajs/vue3';
 import {
+    AlertCircle,
     ArrowLeft,
     Boxes,
     Building2,
@@ -34,6 +35,7 @@ import {
 } from '@/routes/inventory/products';
 
 type Option = { id: number; name: string };
+type UnitOption = Option & { abbreviation: string };
 
 type Product = {
     id: number;
@@ -42,11 +44,18 @@ type Product = {
     category_id: number | null;
     origin_id: number | null;
     supplier_id: number | null;
+    unit_of_measurement_id: number | null;
+    variant: string | null;
+    brand: string | null;
+    model: string | null;
+    color: string | null;
+    size: string | null;
     type: 'asset' | 'consumable';
     reorder_threshold: number;
     lead_time_days: number | null;
     unit_price: number | null;
     is_active: boolean;
+    is_bookable: boolean;
 };
 
 const props = defineProps<{
@@ -54,6 +63,7 @@ const props = defineProps<{
     categories: Option[];
     origins: Option[];
     suppliers: Option[];
+    unitsOfMeasurement: UnitOption[];
     can: {
         delete: boolean;
     };
@@ -174,6 +184,28 @@ function confirmDelete(): void {
             class="flex flex-col gap-6"
             v-slot="{ errors, processing }"
         >
+            <!-- Form Validation Summary Banner -->
+            <div
+                v-if="Object.keys(errors).length > 0"
+                class="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+                role="alert"
+            >
+                <div class="flex items-center gap-2 font-semibold">
+                    <AlertCircle class="h-4 w-4 shrink-0" />
+                    <span
+                        >Unable to save changes. Please review the errors
+                        below:</span
+                    >
+                </div>
+                <ul
+                    class="mt-2 list-inside list-disc space-y-1 text-xs text-destructive/90"
+                >
+                    <li v-for="(errMsg, errField) in errors" :key="errField">
+                        {{ errMsg }}
+                    </li>
+                </ul>
+            </div>
+
             <!-- Section 1: Product Identity -->
             <div
                 class="overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
@@ -263,6 +295,11 @@ function confirmDelete(): void {
                         >
                             Product Type (Locked)
                         </Label>
+                        <input
+                            type="hidden"
+                            name="type"
+                            :value="product.type"
+                        />
                         <Input
                             id="type-disabled"
                             :default-value="product.type"
@@ -275,6 +312,7 @@ function confirmDelete(): void {
                             be changed after creation because existing inventory
                             stock lots and property tags depend on it.
                         </p>
+                        <InputError :message="errors.type" />
                     </div>
 
                     <!-- Category & Origin Grid -->
@@ -291,13 +329,19 @@ function confirmDelete(): void {
                                 name="category_id"
                                 data-testid="product-category-input"
                                 class="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                                :defaultValue="product.category_id ?? ''"
+                                :value="product.category_id ?? ''"
                             >
-                                <option value="">None (uncategorized)</option>
+                                <option
+                                    value=""
+                                    :selected="!product.category_id"
+                                >
+                                    None (uncategorized)
+                                </option>
                                 <option
                                     v-for="c in categories"
                                     :key="c.id"
                                     :value="c.id"
+                                    :selected="c.id === product.category_id"
                                 >
                                     {{ c.name }}
                                 </option>
@@ -317,13 +361,16 @@ function confirmDelete(): void {
                                 name="origin_id"
                                 data-testid="product-origin-input"
                                 class="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                                :defaultValue="product.origin_id ?? ''"
+                                :value="product.origin_id ?? ''"
                             >
-                                <option value="">None (unspecified)</option>
+                                <option value="" :selected="!product.origin_id">
+                                    None (unspecified)
+                                </option>
                                 <option
                                     v-for="s in origins"
                                     :key="s.id"
                                     :value="s.id"
+                                    :selected="s.id === product.origin_id"
                                 >
                                     {{ s.name }}
                                 </option>
@@ -331,6 +378,139 @@ function confirmDelete(): void {
                             <InputError :message="errors.origin_id" />
                         </div>
                     </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label
+                                for="unit_of_measurement_id"
+                                class="text-xs font-semibold text-foreground"
+                                >Unit of measurement</Label
+                            >
+                            <select
+                                id="unit_of_measurement_id"
+                                name="unit_of_measurement_id"
+                                :value="product.unit_of_measurement_id ?? ''"
+                                class="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            >
+                                <option
+                                    value=""
+                                    :selected="!product.unit_of_measurement_id"
+                                >
+                                    Not specified
+                                </option>
+                                <option
+                                    v-for="unit in unitsOfMeasurement"
+                                    :key="unit.id"
+                                    :value="unit.id"
+                                    :selected="
+                                        unit.id ===
+                                        product.unit_of_measurement_id
+                                    "
+                                >
+                                    {{ unit.name }} ({{ unit.abbreviation }})
+                                </option>
+                            </select>
+                            <InputError
+                                :message="errors.unit_of_measurement_id"
+                            />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label
+                                for="variant"
+                                class="text-xs font-semibold text-foreground"
+                                >Variant or specification</Label
+                            >
+                            <Input
+                                id="variant"
+                                name="variant"
+                                :default-value="product.variant ?? ''"
+                                placeholder="e.g. A4 · 80 gsm · 500 sheets"
+                                class="h-10 rounded-lg"
+                            />
+                            <InputError :message="errors.variant" />
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="grid gap-2">
+                            <Label
+                                for="brand"
+                                class="text-xs font-semibold text-foreground"
+                                >Brand</Label
+                            >
+                            <Input
+                                id="brand"
+                                name="brand"
+                                :default-value="product.brand ?? ''"
+                                class="h-10 rounded-lg"
+                            />
+                            <InputError :message="errors.brand" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label
+                                for="model"
+                                class="text-xs font-semibold text-foreground"
+                                >Model</Label
+                            >
+                            <Input
+                                id="model"
+                                name="model"
+                                :default-value="product.model ?? ''"
+                                class="h-10 rounded-lg"
+                            />
+                            <InputError :message="errors.model" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label
+                                for="color"
+                                class="text-xs font-semibold text-foreground"
+                                >Color</Label
+                            >
+                            <Input
+                                id="color"
+                                name="color"
+                                :default-value="product.color ?? ''"
+                                class="h-10 rounded-lg"
+                            />
+                            <InputError :message="errors.color" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label
+                                for="size"
+                                class="text-xs font-semibold text-foreground"
+                                >Size / capacity</Label
+                            >
+                            <Input
+                                id="size"
+                                name="size"
+                                :default-value="product.size ?? ''"
+                                class="h-10 rounded-lg"
+                            />
+                            <InputError :message="errors.size" />
+                        </div>
+                    </div>
+
+                    <label
+                        v-if="product.type === 'asset'"
+                        class="flex min-h-11 items-center gap-3 rounded-lg border border-border/70 bg-muted/20 px-3 text-sm"
+                    >
+                        <input type="hidden" name="is_bookable" value="0" />
+                        <input
+                            type="checkbox"
+                            name="is_bookable"
+                            value="1"
+                            :checked="product.is_bookable"
+                            class="size-4 accent-primary"
+                        />
+                        <span
+                            ><strong class="font-medium"
+                                >Bookable resource</strong
+                            ><span class="block text-xs text-muted-foreground"
+                                >Allow availability-managed use when individual
+                                assets are serviceable.</span
+                            ></span
+                        >
+                    </label>
 
                     <!-- Status -->
                     <div class="grid gap-2">
@@ -346,14 +526,14 @@ function confirmDelete(): void {
                             name="is_active"
                             data-testid="product-status-input"
                             class="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                            :defaultValue="product.is_active ? '1' : '0'"
+                            :value="product.is_active ? '1' : '0'"
                             required
                         >
-                            <option value="1">
+                            <option value="1" :selected="product.is_active">
                                 Active (available for requisitions and
                                 receiving)
                             </option>
-                            <option value="0">
+                            <option value="0" :selected="!product.is_active">
                                 Inactive (hidden from standard selection)
                             </option>
                         </select>
@@ -419,15 +599,21 @@ function confirmDelete(): void {
                                 id="supplier_id"
                                 name="supplier_id"
                                 class="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                                :defaultValue="product.supplier_id ?? ''"
+                                :value="product.supplier_id ?? ''"
                             >
-                                <option value="">
+                                <option
+                                    value=""
+                                    :selected="!product.supplier_id"
+                                >
                                     None (no preferred supplier)
                                 </option>
                                 <option
                                     v-for="supplier in suppliers"
                                     :key="supplier.id"
                                     :value="supplier.id"
+                                    :selected="
+                                        supplier.id === product.supplier_id
+                                    "
                                 >
                                     {{ supplier.name }}
                                 </option>

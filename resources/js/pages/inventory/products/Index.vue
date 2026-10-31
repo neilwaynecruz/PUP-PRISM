@@ -59,11 +59,22 @@ import {
 import { sheet as productLabelsSheet } from '@/routes/inventory/products/labels';
 
 type Option = { id: number; name: string };
+type UnitOption = Option & { abbreviation: string };
 
 type ProductRow = {
     id: number;
     sku: string;
     name: string;
+    variant: string | null;
+    brand: string | null;
+    model: string | null;
+    color: string | null;
+    size: string | null;
+    unit_of_measurement: {
+        id: number;
+        name: string;
+        abbreviation: string;
+    } | null;
     type: 'asset' | 'consumable';
     is_active: boolean;
     reorder_threshold: number;
@@ -95,12 +106,14 @@ const props = defineProps<{
         category_id: number | null;
         origin_id: number | null;
         supplier_id: number | null;
+        unit_of_measurement_id: number | null;
         active: boolean | null;
     };
     products: Paginated<ProductRow>;
     categories: Option[];
     origins: Option[];
     suppliers: Option[];
+    unitsOfMeasurement: UnitOption[];
     exportUrls: { csv: string; pdf: string };
     can: { create: boolean; bulkUpdate: boolean };
 }>();
@@ -128,6 +141,11 @@ const originId = ref<string>(
 const supplierId = ref<string>(
     props.filters.supplier_id ? String(props.filters.supplier_id) : '',
 );
+const unitId = ref<string>(
+    props.filters.unit_of_measurement_id
+        ? String(props.filters.unit_of_measurement_id)
+        : '',
+);
 const active = ref<string>(
     props.filters.active === null ? '' : props.filters.active ? '1' : '0',
 );
@@ -141,6 +159,7 @@ const hasActiveFilters = computed(() => {
         Boolean(categoryId.value) ||
         Boolean(originId.value) ||
         Boolean(supplierId.value) ||
+        Boolean(unitId.value) ||
         active.value !== ''
     );
 });
@@ -168,6 +187,10 @@ const activeFilterCount = computed(() => {
         count++;
     }
 
+    if (unitId.value) {
+        count++;
+    }
+
     if (active.value !== '') {
         count++;
     }
@@ -181,6 +204,7 @@ function clearAllFilters(): void {
     categoryId.value = '';
     originId.value = '';
     supplierId.value = '';
+    unitId.value = '';
     active.value = '';
 }
 
@@ -439,13 +463,14 @@ const query = computed(() => ({
     category_id: categoryId.value || undefined,
     origin_id: originId.value || undefined,
     supplier_id: supplierId.value || undefined,
+    unit_of_measurement_id: unitId.value || undefined,
     active: active.value === '' ? undefined : active.value === '1',
 }));
 
 let searchTimer: number | undefined;
 let isComponentActive = true;
 
-watch([search, type, categoryId, originId, supplierId, active], () => {
+watch([search, type, categoryId, originId, supplierId, unitId, active], () => {
     window.clearTimeout(searchTimer);
     searchTimer = window.setTimeout(() => {
         if (
@@ -711,7 +736,7 @@ onBeforeUnmount(() => {
                 </div>
 
                 <fieldset
-                    class="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
+                    class="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7"
                     :class="{ 'hidden sm:grid': !showMobileFilters }"
                 >
                     <legend class="sr-only">Filter products</legend>
@@ -728,7 +753,7 @@ onBeforeUnmount(() => {
                                 data-testid="product-search-input"
                                 data-shortcut="search"
                                 autocomplete="off"
-                                placeholder="SKU or product name…"
+                                placeholder="SKU, product, variant, brand, or model…"
                                 class="h-10 w-full rounded-lg pr-8 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-2"
                             />
                             <button
@@ -822,6 +847,28 @@ onBeforeUnmount(() => {
                                 :value="String(supplier.id)"
                             >
                                 {{ supplier.name }}
+                            </option>
+                        </select>
+                    </label>
+
+                    <!-- Unit of measurement -->
+                    <label
+                        class="grid min-w-0 gap-1.5 text-xs font-medium text-muted-foreground"
+                    >
+                        <span>Unit</span>
+                        <select
+                            v-model="unitId"
+                            name="unit_of_measurement_id"
+                            aria-label="Unit of measurement"
+                            class="h-10 w-full min-w-0 truncate rounded-lg border border-input bg-background px-3 text-sm text-foreground transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                        >
+                            <option value="">All units</option>
+                            <option
+                                v-for="unit in unitsOfMeasurement"
+                                :key="unit.id"
+                                :value="String(unit.id)"
+                            >
+                                {{ unit.name }} ({{ unit.abbreviation }})
                             </option>
                         </select>
                     </label>
@@ -956,6 +1003,26 @@ onBeforeUnmount(() => {
                                 class="hover:text-foreground"
                                 aria-label="Remove status filter"
                                 @click="active = ''"
+                            >
+                                <X class="h-3 w-3" />
+                            </button>
+                        </Badge>
+                        <Badge
+                            v-if="unitId"
+                            variant="secondary"
+                            class="h-6 gap-1 rounded-md px-2 text-[11px] font-normal"
+                        >
+                            Unit:
+                            {{
+                                unitsOfMeasurement.find(
+                                    (unit) => String(unit.id) === unitId,
+                                )?.name
+                            }}
+                            <button
+                                type="button"
+                                class="hover:text-foreground"
+                                aria-label="Remove unit filter"
+                                @click="unitId = ''"
                             >
                                 <X class="h-3 w-3" />
                             </button>
@@ -1098,6 +1165,12 @@ onBeforeUnmount(() => {
                                 <div class="font-medium text-foreground">
                                     {{ p.name }}
                                 </div>
+                                <div
+                                    v-if="p.variant"
+                                    class="mt-0.5 text-xs text-muted-foreground"
+                                >
+                                    {{ p.variant }}
+                                </div>
                                 <div class="mt-1 flex items-center gap-2">
                                     <AdminCodeBadge :value="p.sku" />
                                     <span
@@ -1142,6 +1215,13 @@ onBeforeUnmount(() => {
                             <span class="text-muted-foreground">Category:</span>
                             <span class="ml-1 font-medium text-foreground">{{
                                 p.category ?? 'Not assigned'
+                            }}</span>
+                        </div>
+                        <div>
+                            <span class="text-muted-foreground">Unit:</span>
+                            <span class="ml-1 font-medium text-foreground">{{
+                                p.unit_of_measurement?.abbreviation ??
+                                'Not specified'
                             }}</span>
                         </div>
                         <div>

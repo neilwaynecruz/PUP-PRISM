@@ -16,6 +16,7 @@ class AssetConditionReportService extends AbstractTableReportService
             ->whereIn('status', [AssetStatus::Unserviceable, AssetStatus::Condemned])
             ->with([
                 'product:id,name,sku',
+                'currentLocation:id,code,name,building,room',
                 'position:id,department_id,title,code',
                 'position.department:id,name',
             ])
@@ -26,9 +27,12 @@ class AssetConditionReportService extends AbstractTableReportService
             foreach ($query->lazy(200) as $asset) {
                 yield [
                     'tag_code' => $asset->tag_code,
+                    'serial_number' => $asset->serial_number ?? '',
                     'product_sku' => $asset->product?->sku ?? '',
                     'product_name' => $asset->product?->name ?? '',
                     'status' => $asset->status->value,
+                    'condition' => $asset->condition_status?->value ?? '',
+                    'location' => $asset->currentLocation ? "{$asset->currentLocation->code} - {$asset->currentLocation->name}" : '',
                     'accountable_position' => $this->formatPosition(
                         $asset->position?->title,
                         $asset->position?->department?->name,
@@ -49,9 +53,12 @@ class AssetConditionReportService extends AbstractTableReportService
             ]),
             columns: [
                 'tag_code' => 'Tag code',
+                'serial_number' => 'Serial number',
                 'product_sku' => 'Product SKU',
                 'product_name' => 'Product name',
                 'status' => 'Status',
+                'condition' => 'Condition',
+                'location' => 'Location / Room',
                 'accountable_position' => 'Accountable position',
                 'updated_at' => 'Updated at',
             ],

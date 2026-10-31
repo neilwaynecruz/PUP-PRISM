@@ -788,6 +788,8 @@ class InventoryService
                 'position_id' => null,
                 'tag_code' => $tagCode,
                 'status' => AssetStatus::Available,
+                'acquisition_date' => ($receivedAt ?? CarbonImmutable::now())->toDateString(),
+                'acquisition_cost' => $product->unit_price,
             ]);
 
             StockMovement::create([

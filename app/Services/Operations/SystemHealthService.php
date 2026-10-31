@@ -409,6 +409,10 @@ class SystemHealthService
 
         $socket = @fsockopen($host, $port, $errorCode, $errorMessage, 1.0);
 
+        if ($socket === false && in_array(strtolower($host), ['localhost', '::1'], true)) {
+            $socket = @fsockopen('127.0.0.1', $port, $errorCode, $errorMessage, 1.0);
+        }
+
         if ($socket === false) {
             return $this->check('realtime', 'Realtime updates', self::WARNING,
                 __('The Reverb server is not accepting connections. PRISM still works, but pages will not refresh live.'),

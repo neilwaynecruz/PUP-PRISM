@@ -32,7 +32,8 @@ class StockMovementController extends Controller
 
         $movements = StockMovement::query()
             ->with([
-                'product:id,sku,name',
+                'product:id,sku,name,variant,unit_of_measurement_id',
+                'product.unitOfMeasurement:id,name,abbreviation',
                 'stockLot:id,product_id,reference_no,received_at,expires_at',
                 'asset:id,product_id,position_id,tag_code,status',
                 'performedBy:id,name,email',

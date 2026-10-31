@@ -77,6 +77,10 @@ class RequisitionResource extends InertiaJsonResource
                 'id' => (int) $line->id,
                 'sku' => $line->relationLoaded('product') ? $line->product?->sku : null,
                 'name' => $line->relationLoaded('product') ? $line->product?->name : null,
+                'variant' => $line->relationLoaded('product') ? $line->product?->variant : null,
+                'unit' => $line->relationLoaded('product') && $line->product?->relationLoaded('unitOfMeasurement')
+                    ? $line->product->unitOfMeasurement?->abbreviation
+                    : null,
                 'type' => $line->relationLoaded('product') ? $line->product?->type?->value : null,
                 'qty_requested' => (int) $line->qty_requested,
                 'qty_issued' => (int) $line->qty_issued,

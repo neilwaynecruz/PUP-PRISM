@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Form, Head, Link } from '@inertiajs/vue3';
 import {
+    AlertCircle,
     ArrowLeft,
     Building2,
     Info,
@@ -21,11 +22,13 @@ import {
 } from '@/routes/inventory/products';
 
 type Option = { id: number; name: string };
+type UnitOption = Option & { abbreviation: string };
 
 defineProps<{
     categories: Option[];
     origins: Option[];
     suppliers: Option[];
+    unitsOfMeasurement: UnitOption[];
 }>();
 
 defineOptions({
@@ -80,6 +83,28 @@ const selectedType = ref<'consumable' | 'asset'>('consumable');
             class="flex flex-col gap-6"
             v-slot="{ errors, processing }"
         >
+            <!-- Form Validation Summary Banner -->
+            <div
+                v-if="Object.keys(errors).length > 0"
+                class="rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
+                role="alert"
+            >
+                <div class="flex items-center gap-2 font-semibold">
+                    <AlertCircle class="h-4 w-4 shrink-0" />
+                    <span
+                        >Unable to create product. Please review the errors
+                        below:</span
+                    >
+                </div>
+                <ul
+                    class="mt-2 list-inside list-disc space-y-1 text-xs text-destructive/90"
+                >
+                    <li v-for="(errMsg, errField) in errors" :key="errField">
+                        {{ errMsg }}
+                    </li>
+                </ul>
+            </div>
+
             <!-- Section 1: Product Identity -->
             <div
                 class="overflow-hidden rounded-xl border border-border/70 bg-card/95 shadow-2xs ring-1 ring-black/[0.02] dark:border-border/60 dark:bg-card/90 dark:ring-white/[0.03]"
@@ -284,6 +309,133 @@ const selectedType = ref<'consumable' | 'asset'>('consumable');
                             <InputError :message="errors.origin_id" />
                         </div>
                     </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div class="grid gap-2">
+                            <Label
+                                for="unit_of_measurement_id"
+                                class="text-xs font-semibold text-foreground"
+                            >
+                                Unit of measurement
+                            </Label>
+                            <select
+                                id="unit_of_measurement_id"
+                                name="unit_of_measurement_id"
+                                class="h-10 rounded-lg border border-input bg-background px-3 text-sm text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                            >
+                                <option value="">Not specified</option>
+                                <option
+                                    v-for="unit in unitsOfMeasurement"
+                                    :key="unit.id"
+                                    :value="unit.id"
+                                >
+                                    {{ unit.name }} ({{ unit.abbreviation }})
+                                </option>
+                            </select>
+                            <InputError
+                                :message="errors.unit_of_measurement_id"
+                            />
+                        </div>
+
+                        <div class="grid gap-2">
+                            <Label
+                                for="variant"
+                                class="text-xs font-semibold text-foreground"
+                                >Variant or specification</Label
+                            >
+                            <Input
+                                id="variant"
+                                name="variant"
+                                placeholder="e.g. A4 · 80 gsm · 500 sheets"
+                                class="h-10 rounded-lg"
+                            />
+                            <InputError :message="errors.variant" />
+                        </div>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div class="grid gap-2">
+                            <Label
+                                for="brand"
+                                class="text-xs font-semibold text-foreground"
+                                >Brand</Label
+                            >
+                            <Input
+                                id="brand"
+                                name="brand"
+                                autocomplete="organization"
+                                placeholder="Optional"
+                                class="h-10 rounded-lg"
+                            />
+                            <InputError :message="errors.brand" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label
+                                for="model"
+                                class="text-xs font-semibold text-foreground"
+                                >Model</Label
+                            >
+                            <Input
+                                id="model"
+                                name="model"
+                                autocomplete="off"
+                                placeholder="Optional"
+                                class="h-10 rounded-lg"
+                            />
+                            <InputError :message="errors.model" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label
+                                for="color"
+                                class="text-xs font-semibold text-foreground"
+                                >Color</Label
+                            >
+                            <Input
+                                id="color"
+                                name="color"
+                                autocomplete="off"
+                                placeholder="Optional"
+                                class="h-10 rounded-lg"
+                            />
+                            <InputError :message="errors.color" />
+                        </div>
+                        <div class="grid gap-2">
+                            <Label
+                                for="size"
+                                class="text-xs font-semibold text-foreground"
+                                >Size / capacity</Label
+                            >
+                            <Input
+                                id="size"
+                                name="size"
+                                autocomplete="off"
+                                placeholder="Optional"
+                                class="h-10 rounded-lg"
+                            />
+                            <InputError :message="errors.size" />
+                        </div>
+                    </div>
+
+                    <label
+                        v-if="selectedType === 'asset'"
+                        class="flex min-h-11 items-center gap-3 rounded-lg border border-border/70 bg-muted/20 px-3 text-sm"
+                    >
+                        <input type="hidden" name="is_bookable" value="0" />
+                        <input
+                            type="checkbox"
+                            name="is_bookable"
+                            value="1"
+                            class="size-4 accent-primary"
+                        />
+                        <span
+                            ><strong class="font-medium"
+                                >Bookable resource</strong
+                            ><span class="block text-xs text-muted-foreground"
+                                >Allow availability-managed use in bookings when
+                                the asset is serviceable.</span
+                            ></span
+                        >
+                    </label>
 
                     <!-- Status -->
                     <div class="grid gap-2">
