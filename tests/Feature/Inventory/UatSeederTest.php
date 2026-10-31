@@ -39,8 +39,10 @@ use Database\Seeders\UatMonitoringSeeder;
 use Database\Seeders\UatOrganizationSeeder;
 use Database\Seeders\UatProcurementSeeder;
 use Database\Seeders\UatWorkflowSeeder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Seeder;
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -104,7 +106,7 @@ test('database seeder covers physical counts and the complete asset lifecycle', 
         ->and(Attachment::query()->count())->toBe(4);
 
     Attachment::query()->get()->each(function (Attachment $attachment): void {
-        Storage::disk($attachment->disk)->assertExists($attachment->path);
+        expect(Storage::disk($attachment->disk)->exists($attachment->path))->toBeTrue();
         expect(hash('sha256', Storage::disk($attachment->disk)->get($attachment->path)))
             ->toBe($attachment->checksum);
     });
@@ -197,47 +199,166 @@ test('operational records use professional names without placeholder wording', f
 });
 
 test('rerunning operational seeders on a later day does not duplicate stable business records', function () {
-    seed(DatabaseSeeder::class);
-
-    $counts = [
-        'users' => User::query()->count(),
-        'products' => Product::withTrashed()->count(),
-        'assets' => Asset::query()->count(),
-        'bookings' => Booking::withTrashed()->count(),
-        'requisitions' => Requisition::withTrashed()->count(),
-        'movements' => StockMovement::query()->count(),
-        'locations' => Location::query()->count(),
-        'counts' => InventoryCountSession::query()->count(),
-        'maintenances' => AssetMaintenance::query()->count(),
-        'transfers' => AssetTransfer::query()->count(),
-        'lifecycle_events' => AssetLifecycleEvent::query()->count(),
-        'attachments' => Attachment::query()->count(),
-        'purchase_orders' => PurchaseOrder::query()->count(),
-        'notifications' => DB::table('notifications')->count(),
-    ];
-
-    CarbonImmutable::setTestNow(CarbonImmutable::now()->addDay());
+    $initialDate = CarbonImmutable::parse('2026-10-15 09:00:00', (string) config('app.timezone'));
+    CarbonImmutable::setTestNow($initialDate);
 
     try {
         seed(DatabaseSeeder::class);
+
+        $counts = [
+            'users' => User::query()->count(),
+            'products' => Product::withTrashed()->count(),
+            'assets' => Asset::query()->count(),
+            'bookings' => Booking::withTrashed()->count(),
+            'requisitions' => Requisition::withTrashed()->count(),
+            'movements' => StockMovement::query()->count(),
+            'locations' => Location::query()->count(),
+            'counts' => InventoryCountSession::query()->count(),
+            'maintenances' => AssetMaintenance::query()->count(),
+            'transfers' => AssetTransfer::query()->count(),
+            'lifecycle_events' => AssetLifecycleEvent::query()->count(),
+            'attachments' => Attachment::query()->count(),
+            'purchase_orders' => PurchaseOrder::query()->count(),
+            'notifications' => DB::table('notifications')->count(),
+        ];
+
+        CarbonImmutable::setTestNow($initialDate->addDay());
+        seed(DatabaseSeeder::class);
+
+        expect(User::query()->count())->toBe($counts['users'])
+            ->and(Product::withTrashed()->count())->toBe($counts['products'])
+            ->and(Asset::query()->count())->toBe($counts['assets'])
+            ->and(Booking::withTrashed()->count())->toBe($counts['bookings'])
+            ->and(Requisition::withTrashed()->count())->toBe($counts['requisitions'])
+            ->and(StockMovement::query()->count())->toBe($counts['movements'])
+            ->and(Location::query()->count())->toBe($counts['locations'])
+            ->and(InventoryCountSession::query()->count())->toBe($counts['counts'])
+            ->and(AssetMaintenance::query()->count())->toBe($counts['maintenances'])
+            ->and(AssetTransfer::query()->count())->toBe($counts['transfers'])
+            ->and(AssetLifecycleEvent::query()->count())->toBe($counts['lifecycle_events'])
+            ->and(Attachment::query()->count())->toBe($counts['attachments'])
+            ->and(PurchaseOrder::query()->count())->toBe($counts['purchase_orders'])
+            ->and(DB::table('notifications')->count())->toBe($counts['notifications']);
     } finally {
         CarbonImmutable::setTestNow();
     }
+});
 
-    expect(User::query()->count())->toBe($counts['users'])
-        ->and(Product::withTrashed()->count())->toBe($counts['products'])
-        ->and(Asset::query()->count())->toBe($counts['assets'])
-        ->and(Booking::withTrashed()->count())->toBe($counts['bookings'])
-        ->and(Requisition::withTrashed()->count())->toBe($counts['requisitions'])
-        ->and(StockMovement::query()->count())->toBe($counts['movements'])
-        ->and(Location::query()->count())->toBe($counts['locations'])
-        ->and(InventoryCountSession::query()->count())->toBe($counts['counts'])
-        ->and(AssetMaintenance::query()->count())->toBe($counts['maintenances'])
-        ->and(AssetTransfer::query()->count())->toBe($counts['transfers'])
-        ->and(AssetLifecycleEvent::query()->count())->toBe($counts['lifecycle_events'])
-        ->and(Attachment::query()->count())->toBe($counts['attachments'])
-        ->and(PurchaseOrder::query()->count())->toBe($counts['purchase_orders'])
-        ->and(DB::table('notifications')->count())->toBe($counts['notifications']);
+test('month-boundary reruns roll historical demand without unintended movement duplicates', function () {
+    $initialDate = CarbonImmutable::parse('2026-10-31 09:00:00', (string) config('app.timezone'));
+    $forecastSkus = [
+        'CON-PAPER-A4',
+        'CON-INK-BLK',
+        'CON-ALCOHOL-70',
+        'CON-BAT-AA',
+        'CON-DISINF-01',
+        'CON-GLOVES-M',
+    ];
+    $expectedNewQuarterReferences = [
+        'DR-202607-A4P',
+        'DR-202607-ALC',
+        'DR-202607-BAT',
+        'DR-202607-DSF',
+        'DR-202607-GLV',
+        'DR-202607-INK',
+    ];
+    $movementIdentity = static fn (StockMovement $movement): string => sprintf('%s|%s|%s|%s',
+        $movement->movement_type,
+        $movement->product_id,
+        $movement->stock_lot_id,
+        $movement->notes,
+    );
+
+    CarbonImmutable::setTestNow($initialDate);
+
+    try {
+        seed(DatabaseSeeder::class);
+
+        $forecastProductIds = Product::query()
+            ->whereIn('sku', $forecastSkus)
+            ->pluck('id');
+        $movementsBefore = StockMovement::query()->count();
+        $historicalMovementIdsBefore = StockMovement::query()
+            ->whereIn('product_id', $forecastProductIds)
+            ->where('movement_type', 'issue')
+            ->where('notes', 'like', 'Monthly % allocation - %')
+            ->get()
+            ->mapWithKeys(static fn (StockMovement $movement): array => [
+                $movementIdentity($movement) => $movement->id,
+            ]);
+
+        CarbonImmutable::setTestNow($initialDate->addDay());
+        seed(DatabaseSeeder::class);
+
+        $historicalMovementsAfter = StockMovement::query()
+            ->whereIn('product_id', $forecastProductIds)
+            ->where('movement_type', 'issue')
+            ->where('notes', 'like', 'Monthly % allocation - %')
+            ->get();
+        $historicalMovementIdsAfter = $historicalMovementsAfter
+            ->mapWithKeys(static fn (StockMovement $movement): array => [
+                $movementIdentity($movement) => $movement->id,
+            ]);
+        $stableHistoricalIdentityKeys = $historicalMovementIdsBefore
+            ->keys()
+            ->intersect($historicalMovementIdsAfter->keys());
+        $duplicateMovementIdentities = StockMovement::query()
+            ->whereIn('product_id', $forecastProductIds)
+            ->get()
+            ->groupBy($movementIdentity)
+            ->filter(static fn (Collection $movements): bool => $movements->count() > 1);
+
+        expect(StockMovement::query()->count())->toBe($movementsBefore + 7)
+            ->and($historicalMovementIdsBefore)->toHaveCount(198)
+            ->and($historicalMovementIdsAfter)->toHaveCount(198)
+            ->and($stableHistoricalIdentityKeys)->toHaveCount(192)
+            ->and($stableHistoricalIdentityKeys->every(
+                fn (string $key): bool => $historicalMovementIdsAfter->get($key) === $historicalMovementIdsBefore->get($key),
+            ))->toBeTrue()
+            ->and($historicalMovementsAfter->filter(
+                fn (StockMovement $movement): bool => str_ends_with((string) $movement->notes, 'October 2023'),
+            ))->toBeEmpty()
+            ->and($historicalMovementsAfter->filter(
+                fn (StockMovement $movement): bool => str_ends_with((string) $movement->notes, 'July 2026'),
+            ))->toHaveCount(6)
+            ->and(StockLot::query()
+                ->whereIn('product_id', $forecastProductIds)
+                ->whereIn('reference_no', $expectedNewQuarterReferences)
+                ->pluck('reference_no')
+                ->sort()
+                ->values()
+                ->all())->toBe($expectedNewQuarterReferences)
+            ->and(StockMovement::query()
+                ->where('movement_type', 'receive')
+                ->whereHas('stockLot', static fn (Builder $query): Builder => $query->whereIn('reference_no', $expectedNewQuarterReferences))
+                ->count())->toBe(6)
+            ->and($duplicateMovementIdentities)->toBeEmpty()
+            ->and(StockMovement::query()
+                ->whereIn('product_id', $forecastProductIds)
+                ->where('movement_type', 'issue')
+                ->whereNull('stock_lot_id')
+                ->exists())->toBeFalse();
+
+        Product::query()
+            ->whereIn('id', $forecastProductIds)
+            ->get()
+            ->each(function (Product $product): void {
+                expect((int) $product->lots()->sum('qty_remaining'))
+                    ->toBe((int) ($product->stock()->value('on_hand_qty') ?? 0));
+            });
+
+        StockMovement::query()
+            ->whereIn('product_id', $forecastProductIds)
+            ->whereNotNull('qty_delta')
+            ->get()
+            ->each(function (StockMovement $movement): void {
+                expect((int) $movement->qty_after)
+                    ->toBe((int) $movement->qty_before + (int) $movement->qty_delta)
+                    ->and((int) $movement->qty_after)->toBeGreaterThanOrEqual(0);
+            });
+    } finally {
+        CarbonImmutable::setTestNow();
+    }
 });
 
 test('database seeder can be rerun without duplicating seeded positions', function () {
