@@ -529,14 +529,12 @@ defineOptions({
                             for="approval-notes"
                             class="text-xs font-semibold text-foreground"
                         >
-                            Approval Notes / Endorsement
-                            <span class="font-normal text-muted-foreground"
-                                >(optional)</span
-                            >
+                            Approval notes (optional)
                         </Label>
                         <Input
                             id="approval-notes"
                             name="notes"
+                            aria-label="Approval notes (optional)"
                             placeholder="Add an endorsement or special instructions for the custodian and warehouse issuer…"
                             class="h-10 text-sm"
                             :aria-invalid="Boolean(errors.notes)"
@@ -580,11 +578,7 @@ defineOptions({
                                         class="flex items-center gap-2 text-rose-600 dark:text-rose-400"
                                     >
                                         <AlertTriangle class="h-5 w-5" />
-                                        <span
-                                            >Reject Requisition #{{
-                                                requisition.id
-                                            }}?</span
-                                        >
+                                        <span>Reject requisition?</span>
                                     </DialogTitle>
                                     <DialogDescription
                                         class="text-sm text-muted-foreground"
@@ -656,7 +650,7 @@ defineOptions({
                                             <span>{{
                                                 rejectProcessing
                                                     ? 'Rejecting…'
-                                                    : 'Confirm Rejection'
+                                                    : 'Reject Request'
                                             }}</span>
                                         </Button>
                                     </DialogFooter>
@@ -684,11 +678,7 @@ defineOptions({
                                         class="flex items-center gap-2 text-primary"
                                     >
                                         <CheckCircle2 class="h-5 w-5" />
-                                        <span
-                                            >Approve Requisition #{{
-                                                requisition.id
-                                            }}?</span
-                                        >
+                                        <span>Approve this requisition?</span>
                                     </DialogTitle>
                                     <DialogDescription
                                         class="text-sm text-muted-foreground"
@@ -719,7 +709,7 @@ defineOptions({
                                         <span>{{
                                             processing
                                                 ? 'Approving…'
-                                                : 'Confirm Approval'
+                                                : 'Approve Request'
                                         }}</span>
                                     </Button>
                                 </DialogFooter>

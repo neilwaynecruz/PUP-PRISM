@@ -331,8 +331,10 @@ test.describe('Settings', () => {
         await expect(firstMail).toHaveAttribute('data-state', after);
 
         await page.getByRole('button', { name: 'Save preferences' }).click();
-        await page.waitForLoadState('networkidle');
-        await page.reload();
+        await expect(
+            page.getByText('Notification preferences updated.'),
+        ).toBeVisible();
+        await page.reload({ waitUntil: 'domcontentloaded' });
 
         await expect(
             page
