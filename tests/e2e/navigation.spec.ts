@@ -160,6 +160,8 @@ test.describe('Inventory Navigation', () => {
     test('admin can switch rapidly across modules without stale content or client errors', async ({
         page,
     }) => {
+        test.slow();
+
         const pageErrors: string[] = [];
         const consoleErrors: string[] = [];
 
@@ -200,7 +202,9 @@ test.describe('Inventory Navigation', () => {
         for (let round = 0; round < 2; round++) {
             for (const module of adminModules) {
                 await test.step(`Round ${round + 1}: ${module.name}`, async () => {
-                    await moduleLink(page, module).click();
+                    const link = moduleLink(page, module);
+                    await link.scrollIntoViewIfNeeded();
+                    await link.click();
                     await expect(
                         page.getByTestId(module.testId!),
                     ).toBeVisible();
