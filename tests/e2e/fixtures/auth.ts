@@ -25,18 +25,25 @@ export async function loginAs(
     await page.getByTestId('login-password-input').fill(password);
 
     await Promise.all([
-        page.waitForURL(/\/(dashboard|user\/confirm-password|two-factor-challenge)$/),
+        page.waitForURL(
+            /\/(dashboard|user\/confirm-password|two-factor-challenge)$/,
+            {
+                waitUntil: 'domcontentloaded',
+            },
+        ),
         page.getByTestId('login-button').click(),
     ]);
 
     if (page.url().includes('/two-factor-challenge')) {
         await page.getByRole('button', { name: /recovery code/i }).click();
-        await page.locator('input[name="recovery_code"]').fill(
-            'e2e-recovery-code',
-        );
+        await page
+            .locator('input[name="recovery_code"]')
+            .fill('e2e-recovery-code');
 
         await Promise.all([
-            page.waitForURL(/\/(dashboard|user\/confirm-password)$/),
+            page.waitForURL(/\/(dashboard|user\/confirm-password)$/, {
+                waitUntil: 'domcontentloaded',
+            }),
             page.getByRole('button', { name: 'Continue' }).click(),
         ]);
     }
@@ -49,6 +56,7 @@ export async function loginAs(
                 (url) =>
                     !url.pathname.endsWith('/user/confirm-password') &&
                     !url.pathname.endsWith('/login'),
+                { waitUntil: 'domcontentloaded' },
             ),
             page.getByRole('button', { name: 'Confirm password' }).click(),
         ]);
@@ -66,7 +74,9 @@ export async function registerUser(
     await page.getByTestId('register-name-input').fill(name);
     await page.getByTestId('register-email-input').fill(email);
     await page.getByTestId('register-password-input').fill(password);
-    await page.getByTestId('register-password-confirmation-input').fill(password);
+    await page
+        .getByTestId('register-password-confirmation-input')
+        .fill(password);
 
     await Promise.all([
         page.waitForURL(/\/email\/verify$/),

@@ -55,7 +55,7 @@ test.describe('Global search', () => {
         browserName,
     }) => {
         test.skip(
-            browserName === 'webkit',
+            browserName === 'webkit' && process.platform === 'win32',
             'Playwright request interception does not reach fetch() in this Windows WebKit build, so delayed and failed responses cannot be simulated.',
         );
 
@@ -115,7 +115,7 @@ test.describe('Global search', () => {
         browserName,
     }) => {
         test.skip(
-            browserName === 'webkit',
+            browserName === 'webkit' && process.platform === 'win32',
             'Playwright request interception does not reach fetch() in this Windows WebKit build, so delayed and failed responses cannot be simulated.',
         );
 
@@ -259,8 +259,6 @@ test.describe('Header and account menus', () => {
 
         await firstNotification.click();
         await expect(page).toHaveURL(/\/inventory\/products$/);
-        await page.waitForLoadState('networkidle');
-
         await expectPageInteractive(page);
     });
 });
@@ -309,10 +307,19 @@ test.describe('Settings', () => {
         await expect(name).toHaveValue('Adrian M. Mercado');
 
         await email.fill(originalEmail);
+        const successfulUpdate = page.waitForResponse(
+            (response) =>
+                new URL(response.url()).pathname === '/settings/profile' &&
+                response.request().method() === 'POST' &&
+                new URL(response.url()).searchParams.get('_method') ===
+                    'PATCH' &&
+                response.status() === 303,
+        );
         await page.locator('[data-test="update-profile-button"]').click();
+        await successfulUpdate;
         await expect(page.getByText(/valid email/i)).toBeHidden();
 
-        await page.reload();
+        await page.reload({ waitUntil: 'domcontentloaded' });
         await expect(page.locator('#name')).toHaveValue('Adrian M. Mercado');
     });
 

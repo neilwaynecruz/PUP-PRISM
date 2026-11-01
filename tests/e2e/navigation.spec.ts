@@ -160,6 +160,11 @@ test.describe('Inventory Navigation', () => {
     test('admin can switch rapidly across modules without stale content or client errors', async ({
         page,
     }) => {
+        // Navigation does not depend on an external font service being reachable.
+        await page.route('https://fonts.googleapis.com/**', (route) =>
+            route.fulfill({ status: 200, contentType: 'text/css', body: '' }),
+        );
+
         const pageErrors: string[] = [];
         const consoleErrors: string[] = [];
 
@@ -183,7 +188,9 @@ test.describe('Inventory Navigation', () => {
                 return;
             }
 
-            consoleErrors.push(text);
+            consoleErrors.push(
+                `${text} (${message.location().url || 'unknown source'})`,
+            );
         });
 
         await loginAs(page, 'admin@e2e.test');
@@ -191,7 +198,6 @@ test.describe('Inventory Navigation', () => {
         for (let round = 0; round < 2; round++) {
             for (const module of adminModules) {
                 await moduleLink(page, module).click();
-                await page.waitForLoadState('networkidle');
                 await expect(page.getByTestId(module.testId!)).toBeVisible();
                 await expect(page).toHaveURL(module.url!);
             }
