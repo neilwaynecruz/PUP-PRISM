@@ -105,6 +105,16 @@ test.describe('Phase 3 visual review', () => {
         });
 
         await loginAs(page, 'admin@e2e.test');
+        const fontFaces = await page.evaluate(async () => {
+            const [inter, mono] = await Promise.all([
+                document.fonts.load('400 16px Inter'),
+                document.fonts.load('600 16px "JetBrains Mono"'),
+            ]);
+
+            return [inter.length, mono.length];
+        });
+        expect(fontFaces[0]).toBeGreaterThan(0);
+        expect(fontFaces[1]).toBeGreaterThan(0);
 
         for (const appearance of ['light', 'dark'] as const) {
             await page.evaluate((value) => {

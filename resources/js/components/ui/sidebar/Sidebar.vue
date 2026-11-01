@@ -18,6 +18,17 @@ const props = withDefaults(defineProps<SidebarProps>(), {
 })
 
 const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+
+function restoreMobileTriggerFocus(event: Event) {
+  if (!isMobile.value) return
+
+  const trigger = document.querySelector<HTMLButtonElement>('[data-slot="sidebar-trigger"][aria-controls="app-navigation-sidebar"]')
+
+  if (trigger) {
+    event.preventDefault()
+    trigger.focus()
+  }
+}
 </script>
 
 <template>
@@ -37,6 +48,7 @@ const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
       data-slot="sidebar"
       data-mobile="true"
       :side="side"
+      @close-auto-focus="restoreMobileTriggerFocus"
       class="bg-sidebar text-sidebar-foreground w-(--sidebar-width) max-w-[calc(100vw-2rem)] p-0 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]"
       :style="{
         '--sidebar-width': SIDEBAR_WIDTH_MOBILE,

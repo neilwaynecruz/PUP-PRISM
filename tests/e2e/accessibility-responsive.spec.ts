@@ -291,6 +291,7 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
 
         await closeButton.click();
         await expect(closeButton).toBeHidden();
+        await expect(trigger).toBeFocused();
 
         await trigger.click();
         const overlay = page.locator('[data-slot="sheet-overlay"]');

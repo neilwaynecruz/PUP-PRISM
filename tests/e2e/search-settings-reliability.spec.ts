@@ -110,43 +110,45 @@ test.describe('Global search', () => {
         await expect(dialog).toBeHidden();
     });
 
-    test('a failed search explains the problem and can be retried', async ({
-        page,
-        browserName,
-    }) => {
-        test.skip(
-            browserName === 'webkit' && process.platform === 'win32',
-            'Playwright request interception does not reach fetch() in this Windows WebKit build, so delayed and failed responses cannot be simulated.',
-        );
+    test.describe('search service failure', () => {
+        test.use({ serviceWorkers: 'block' });
 
-        await loginAs(page, 'admin@e2e.test');
-        await page.goto('/dashboard');
+        test('a failed search explains the problem and can be retried', async ({
+            page,
+        }) => {
+            await loginAs(page, 'admin@e2e.test');
+            await page.goto('/dashboard');
 
-        // Every search fails until the user asks to try again.
-        let serviceDown = true;
-        await page.route('**/search?**', async (route) => {
-            if (serviceDown) {
-                await route.fulfill({ status: 500, body: '{}' });
+            // Every search fails until the user asks to try again.
+            let serviceDown = true;
+            let interceptedRequests = 0;
+            await page.route('**/search?**', async (route) => {
+                interceptedRequests++;
 
-                return;
-            }
+                if (serviceDown) {
+                    await route.fulfill({ status: 500, body: '{}' });
 
-            await route.continue();
+                    return;
+                }
+
+                await route.continue();
+            });
+
+            const dialog = await openGlobalSearch(page);
+            await page.getByTestId('global-search-input').fill('laptop');
+
+            await expect.poll(() => interceptedRequests).toBeGreaterThan(0);
+            const error = dialog.getByTestId('global-search-error');
+            await expect(error).toBeVisible();
+            await expect(error).toHaveAttribute('role', 'alert');
+
+            serviceDown = false;
+            await error.getByRole('button', { name: 'Try again' }).click();
+            await expect(
+                dialog.getByRole('option', { name: /Business Laptop/ }).first(),
+            ).toBeVisible();
+            await expect(error).toBeHidden();
         });
-
-        const dialog = await openGlobalSearch(page);
-        await page.getByTestId('global-search-input').fill('laptop');
-
-        const error = dialog.getByTestId('global-search-error');
-        await expect(error).toBeVisible();
-        await expect(error).toHaveAttribute('role', 'alert');
-
-        serviceDown = false;
-        await error.getByRole('button', { name: 'Try again' }).click();
-        await expect(
-            dialog.getByRole('option', { name: /Business Laptop/ }).first(),
-        ).toBeVisible();
-        await expect(error).toBeHidden();
     });
 
     test('a query with no matches says so only after the search finishes', async ({
@@ -337,10 +339,20 @@ test.describe('Settings', () => {
         const after = before === 'checked' ? 'unchecked' : 'checked';
         await expect(firstMail).toHaveAttribute('data-state', after);
 
-        await page.getByRole('button', { name: 'Save preferences' }).click();
+        const save = page.getByRole('button', { name: 'Save preferences' });
+        const saved = page.waitForResponse(
+            (response) =>
+                new URL(response.url()).pathname ===
+                    '/settings/notifications' &&
+                response.request().method() === 'PUT' &&
+                response.status() === 303,
+        );
+        await save.click();
+        await saved;
         await expect(
             page.getByText('Notification preferences updated.'),
         ).toBeVisible();
+        await expect(save).toBeEnabled();
         await page.reload({ waitUntil: 'domcontentloaded' });
 
         await expect(

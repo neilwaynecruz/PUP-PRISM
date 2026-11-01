@@ -7,6 +7,22 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@font-face {
+    font-family: 'Inter';
+    src: url('../fonts/Inter-Variable.ttf') format('truetype');
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('../fonts/JetBrainsMono-Variable.ttf') format('truetype');
+    font-style: normal;
+    font-weight: 100 800;
+    font-display: swap;
+}
+
 @theme inline {
     --font-sans:
         'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',

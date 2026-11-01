@@ -160,11 +160,6 @@ test.describe('Inventory Navigation', () => {
     test('admin can switch rapidly across modules without stale content or client errors', async ({
         page,
     }) => {
-        // Navigation does not depend on an external font service being reachable.
-        await page.route('https://fonts.googleapis.com/**', (route) =>
-            route.fulfill({ status: 200, contentType: 'text/css', body: '' }),
-        );
-
         const pageErrors: string[] = [];
         const consoleErrors: string[] = [];
 
@@ -178,6 +173,9 @@ test.describe('Inventory Navigation', () => {
             if (
                 message.type() !== 'error' ||
                 text.includes('fonts.googleapis.com') ||
+                message
+                    .location()
+                    .url.startsWith('https://fonts.googleapis.com/') ||
                 text.includes('ERR_NETWORK_ACCESS_DENIED') ||
                 (text.includes('localhost:8080') &&
                     (text.includes('WebSocket connection to') ||
@@ -194,12 +192,29 @@ test.describe('Inventory Navigation', () => {
         });
 
         await loginAs(page, 'admin@e2e.test');
+        const sidebar = page.locator('[data-slot="sidebar-content"]');
+        await sidebar.evaluate((element) => {
+            element.setAttribute('data-navigation-test-instance', 'original');
+        });
 
         for (let round = 0; round < 2; round++) {
             for (const module of adminModules) {
-                await moduleLink(page, module).click();
-                await expect(page.getByTestId(module.testId!)).toBeVisible();
-                await expect(page).toHaveURL(module.url!);
+                await test.step(`Round ${round + 1}: ${module.name}`, async () => {
+                    await moduleLink(page, module).click();
+                    await expect(
+                        page.getByTestId(module.testId!),
+                    ).toBeVisible();
+                    await expect(page).toHaveURL(module.url!);
+                    await expect(
+                        page
+                            .getByRole('status')
+                            .filter({ hasText: /Loading page/ }),
+                    ).toBeHidden();
+                    await expect(sidebar).toHaveAttribute(
+                        'data-navigation-test-instance',
+                        'original',
+                    );
+                });
             }
         }
 
