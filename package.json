@@ -4,6 +4,7 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
+        "build:e2e": "vite build --mode=e2e",
         "build:ssr": "vite build && vite build --ssr",
         "dev": "vite",
         "format": "prettier --write resources/",
@@ -12,7 +13,7 @@
         "lint:check": "eslint .",
         "type-check": "vue-tsc --noEmit",
         "types:check": "vue-tsc --noEmit",
-        "e2e:setup": "vite build --mode e2e && php artisan e2e:setup --fresh --env=e2e",
+        "e2e:setup": "npm run build:e2e && php artisan e2e:setup --fresh --env=e2e",
         "e2e:test": "playwright test",
         "e2e:check:drawer": "playwright test tests/e2e/accessibility-responsive.spec.ts --project=webkit --grep \"mobile navigation drawer has an explicit close control|navigation toggle exposes state\" --retries=0",
         "e2e:check:visual": "playwright test tests/e2e/phase3-visual-review.spec.ts --project=firefox --retries=0",
@@ -42,7 +43,7 @@
         "typescript": "^5.2.2",
         "typescript-eslint": "^8.23.0",
         "vite": "^8.0.0",
-        "vue-tsc": "^2.2.4"
+        "vue-tsc": "^3.3.14"
     },
     "dependencies": {
         "@fullcalendar/core": "^6.1.20",
@@ -62,11 +63,17 @@
         "reka-ui": "^2.6.1",
         "tailwind-merge": "^3.2.0",
         "tailwindcss": "^4.1.1",
+        "tesseract.js": "^7.0.0",
         "tw-animate-css": "^1.2.5",
         "vue": "^3.5.13",
         "vue-input-otp": "^0.3.2",
         "vue-signature-pad": "^3.0.2",
         "vue-sonner": "^2.0.0"
+    },
+    "overrides": {
+        "@typescript-eslint/typescript-estree": {
+            "minimatch": "11.0.1"
+        }
     },
     "optionalDependencies": {
         "@rollup/rollup-linux-x64-gnu": "4.9.5",

@@ -58,7 +58,7 @@ jobs:
         run: npm ci
 
       - name: Build frontend assets
-        run: npm run build
+        run: npm run build:e2e
 
       - name: Prepare application environment
         run: |

@@ -21,6 +21,7 @@ export function useQrScanner(options: UseQrScannerOptions) {
     let stream: MediaStream | null = null;
     let frameRequestId: number | null = null;
     let lastDetectionAt = 0;
+    let cameraSession = 0;
 
     const hasCameraSupport =
         typeof navigator !== 'undefined' &&
@@ -61,6 +62,8 @@ export function useQrScanner(options: UseQrScannerOptions) {
     }
 
     function stop(): void {
+        cameraSession += 1;
+
         if (frameRequestId !== null) {
             window.cancelAnimationFrame(frameRequestId);
             frameRequestId = null;
@@ -185,6 +188,8 @@ export function useQrScanner(options: UseQrScannerOptions) {
 
         stop();
 
+        const session = cameraSession;
+
         isStarting.value = true;
         error.value = null;
         lastDetectedValue.value = null;
@@ -192,12 +197,20 @@ export function useQrScanner(options: UseQrScannerOptions) {
         status.value = 'Requesting camera access…';
 
         try {
-            stream = await navigator.mediaDevices.getUserMedia({
+            const requestedStream = await navigator.mediaDevices.getUserMedia({
                 video: {
                     facingMode: { ideal: 'environment' },
                 },
                 audio: false,
             });
+
+            if (session !== cameraSession) {
+                requestedStream.getTracks().forEach((track) => track.stop());
+
+                return;
+            }
+
+            stream = requestedStream;
 
             if (!videoRef.value) {
                 throw new Error('Scanner preview is not available.');
@@ -206,6 +219,10 @@ export function useQrScanner(options: UseQrScannerOptions) {
             videoRef.value.srcObject = stream;
             await videoRef.value.play();
 
+            if (session !== cameraSession) {
+                return;
+            }
+
             isRunning.value = true;
             isStarting.value = false;
             status.value = options.continuous
@@ -213,6 +230,10 @@ export function useQrScanner(options: UseQrScannerOptions) {
                 : 'Camera ready. Point it at a QR code.';
             scanFrame();
         } catch (caughtError) {
+            if (session !== cameraSession) {
+                return;
+            }
+
             stop();
             error.value = cameraErrorMessage(caughtError);
             status.value = 'Scanner unavailable.';

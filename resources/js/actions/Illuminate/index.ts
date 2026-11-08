@@ -1,7 +1,9 @@
+import Foundation from './Foundation'
 import Routing from './Routing'
 import Broadcasting from './Broadcasting'
 const Illuminate = {
-    Routing: Object.assign(Routing, Routing),
+    Foundation: Object.assign(Foundation, Foundation),
+Routing: Object.assign(Routing, Routing),
 Broadcasting: Object.assign(Broadcasting, Broadcasting),
 }
 

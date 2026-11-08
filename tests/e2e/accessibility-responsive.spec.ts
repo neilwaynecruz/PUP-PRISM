@@ -460,6 +460,51 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
         }
     });
 
+    test('locations search and form fields retain usable space with the tablet sidebar open', async ({
+        page,
+    }, testInfo) => {
+        await page.setViewportSize({ width: 768, height: 1024 });
+        await loginAs(page, 'admin@e2e.test');
+        await page.goto('/admin/locations');
+
+        const search = page.getByRole('textbox', { name: 'Search locations' });
+        const searchBox = await search.boundingBox();
+        expect(searchBox).not.toBeNull();
+        expect(searchBox!.width).toBeGreaterThanOrEqual(240);
+
+        const form = page.locator('form').filter({
+            has: page.getByRole('button', {
+                name: 'Create Location',
+                exact: true,
+            }),
+        });
+        const formBox = await form.boundingBox();
+        expect(formBox).not.toBeNull();
+
+        for (const field of await form
+            .locator('input:not([type="checkbox"]), select')
+            .all()) {
+            const box = await field.boundingBox();
+            expect(box).not.toBeNull();
+            expect(box!.x).toBeGreaterThanOrEqual(formBox!.x + 12);
+            expect(box!.x + box!.width).toBeLessThanOrEqual(
+                formBox!.x + formBox!.width - 12,
+            );
+        }
+
+        await search.fill('not-a-location');
+        await expect(
+            page.getByRole('button', { name: 'Clear', exact: true }),
+        ).toBeVisible();
+        await page.getByRole('button', { name: 'Clear', exact: true }).click();
+        await expect(search).toHaveValue('');
+
+        await page.screenshot({
+            path: testInfo.outputPath('locations-tablet-filters.png'),
+            fullPage: true,
+        });
+    });
+
     test('suppliers page renders mobile record cards without horizontal overflow', async ({
         page,
     }) => {

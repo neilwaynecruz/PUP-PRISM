@@ -1026,8 +1026,8 @@ function submitPoReceipt(): void {
                                     1. Identify product &amp; delivery reference
                                 </h2>
                                 <p class="text-xs text-muted-foreground">
-                                    Scan QR/barcode, enter SKU manually, search
-                                    by product name, or browse the catalog.
+                                    Scan QR code, enter SKU manually, search by
+                                    product name, or browse the catalog.
                                 </p>
                             </div>
                         </div>
@@ -2212,7 +2212,7 @@ function submitPoReceipt(): void {
                                 button-label="Scan Product QR / SKU"
                                 button-size="sm"
                                 title="Scan delivered PO product"
-                                description="Scan a product barcode or QR code to match it against this purchase order and increment its received quantity."
+                                description="Scan a product QR code to match it against this purchase order and increment its received quantity."
                                 :continuous="true"
                                 :close-on-scan="false"
                                 @scanned="handlePoProductMatch"

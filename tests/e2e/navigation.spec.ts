@@ -164,6 +164,11 @@ test.describe('Inventory Navigation', () => {
 
         const pageErrors: string[] = [];
         const consoleErrors: string[] = [];
+        const websocketUrls: string[] = [];
+
+        page.on('websocket', (socket) => {
+            websocketUrls.push(socket.url());
+        });
 
         page.on('pageerror', (error) => {
             pageErrors.push(error.message);
@@ -224,5 +229,9 @@ test.describe('Inventory Navigation', () => {
 
         expect(pageErrors).toEqual([]);
         expect(consoleErrors).toEqual([]);
+        expect(
+            websocketUrls,
+            'The isolated E2E environment disables broadcasting; build assets with --mode=e2e.',
+        ).toEqual([]);
     });
 });

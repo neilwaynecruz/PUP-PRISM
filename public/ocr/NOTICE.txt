@@ -1,0 +1,8 @@
+English recognition model: Tesseract tessdata_fast, eng.traineddata.
+Source: https://github.com/tesseract-ocr/tessdata_fast
+Downloaded from the official repository on 2026-11-08.
+License: Apache License 2.0; see LICENSE in this directory.
+
+The JavaScript engine and WebAssembly runtime are supplied by the npm-locked
+tesseract.js and tesseract.js-core packages, under Apache License 2.0.
+Vite emits these runtime assets locally during the application build.

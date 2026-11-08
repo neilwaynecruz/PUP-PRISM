@@ -403,3 +403,80 @@ Branch `main` tracking `origin/main`; 70 tracked files modified (41 pre-existing
 
 **Result:** `ssr-hydration.spec.ts` and `search-settings-reliability.spec.ts` in Chromium: 26 passed. Lint, format, and type-check pass.
 
+## 19. Presentation and OCR follow-up — November 8, 2026
+
+This section records the current follow-up, not a replacement for the historical results above. Overall status remains **PARTIALLY VERIFIED** pending physical-device observations and completion of the fresh browser regression run.
+
+### Completed software checks
+
+- `php artisan test --compact`: **572 passed, 1 skipped, 15,229 assertions**, 558.81 seconds. The skip is the existing PostgreSQL-only stock-movement constraint migration check on the default SQLite connection, confirmed with `--display-skipped`.
+- `php artisan test --compact tests/Feature/Inventory/SharedInertiaPropsTest.php`: **6 passed, 82 assertions**, including normal, enabled-demonstration, and production-disabled indicator cases.
+- `npm run type-check`, `npm run lint:check`, `npm run format:check`, `npm run build`, and `git diff --check`: passed after the dependency remediation and demo-indicator changes. Laravel Pint was run on dirty PHP files successfully.
+- `npm audit`: **0 vulnerabilities**. The 11 moderate toolchain findings were resolved by updating the Vue checker to 3.3.14, updating the affected selector-parser patch, and scoping the patched minimatch override to the TypeScript ESLint consumer. No force-fix or test suppression was used.
+- The updated Vue checker exposed a virtual-code generation problem with the supplier URL input's literal HTTPS placeholder. Binding the unchanged placeholder text through a constant avoids that code-generation defect; no validation or slot assertions were removed.
+
+### OCR and demonstration safeguards
+
+OCR is lazy-loaded into Assets and processes JPEG/PNG/WebP images locally with the approved Tesseract.js engine and locally served English model. Users review and correct identifiers before searching; recognition never creates assets or performs inventory transactions. Manual and QR alternatives remain available. Invalid images, unavailable OCR assets, failed lazy downloads, cancelled recognition, and late camera-permission completion have focused regression coverage. Synthetic label-image results do not establish real-photo accuracy.
+
+`APP_DEMO_MODE` defaults off, exposes no secrets, and is ignored in production. When explicitly enabled for an isolated synthetic environment, the application shell identifies records as demonstration data. This is a presentation indicator, not an authorization or data-isolation mechanism.
+
+A separate ignored rehearsal snapshot was seeded at `storage/framework/testing/presentation-20261108`; its SQLite database, sessions, and storage are separate from the existing application. It contains 109 products, 169 assets, 226 purchase orders, 32 locations, 15 suppliers, and 1,785 movements. Movement dates run from June 24, 2022 through November 7, 2026. Read-only checks found zero invalid movement arithmetic, invalid lot balances, or negative on-hand stock. The original application's records were not reseeded or changed.
+
+### Fresh browser regression and remaining physical checks
+
+The complete 103-test project is running separately for Chromium, Firefox, and WebKit with one worker per browser, zero retries, separate SQLite databases, and retained failure traces. Snapshots and reports are under `storage/framework/testing/browser-full-20261108/{browser}`. A running check is not a passing check; final outcomes must be recorded before browser regression is signed off.
+
+The owner reports an iPhone/iPad and printer are available, but Safari currently opens the application over HTTP or with a certificate warning. Live QR camera verification is therefore blocked on trusted HTTPS. The existing Laragon certificate does not cover the current Wi-Fi address. No browser security bypass, device trust change, or replacement of the existing certificate was performed. A separate trusted local demo HTTPS setup has been offered for explicit approval.
+
+Still unverified: permitted photos of real labels (including glare, blur, O/0 and I/1), physical Safari camera behavior, actual printed output and scan readability, and the owner's complete demonstration rehearsal. Photo upload is a separate fallback from live QR camera access. No real-device or print success is claimed.
+
+All source changes remain uncommitted on `main`. No commit, push, merge, deployment, or active business-data mutation was performed. Commit readiness is conditional on final browser results and review of the complete working diff.
+
+### Approved PHP security remediation and final-run provenance
+
+A subsequent `composer audit --locked --no-interaction --format=json` found **58 advisories across 13 locked PHP packages**: 1 critical, 15 high, 26 medium, 8 low, and 8 with unspecified severity. This is separate from the resolved npm findings. The critical Laravel TokenGuard advisory concerns the legacy token guard; repository defaults use session authentication and Sanctum, so package-version detection alone was not treated as proof of application exploitability.
+
+The owner explicitly approved scoped compatible PHP security updates. A reviewed dry run and then the same update command used `--with-dependencies --minimal-changes --no-scripts --no-interaction`. The targeted packages were `dompdf/dompdf`, `guzzlehttp/guzzle`, `guzzlehttp/psr7`, `laravel/framework`, `league/commonmark`, `league/flysystem`, `symfony/http-foundation`, `symfony/http-kernel`, `symfony/mailer`, `symfony/mime`, `symfony/polyfill-intl-idn`, `symfony/routing`, and `symfony/yaml`.
+
+The resolved plan updated 16 packages and added one required transitive polyfill, without changing `composer.json` or its version constraints. Laravel moved from 13.5.0 to 13.40.0 and Dompdf from 3.1.5 to 3.1.6. Forced vendor-asset publishing and Boost instruction updates were deliberately not run. Package discovery passed afterward.
+
+- `composer audit --locked --no-interaction`: **no security vulnerability advisories found** after the update.
+- `composer validate --strict --no-check-publish`: passed.
+- Targeted Pest invocation covering `tests/Feature/Auth`, `Api`, `Authorization`, `Settings`, `Search`, attachment security, report exports/security, purchase-order receiving transactions, and booking scheduling: **167 passed, 799 assertions, 102.98 seconds**.
+- Production build, TypeScript, ESLint, and resource formatting checks passed again after the update. Wayfinder regenerated the framework redirect metadata and the new framework health-check bindings; these are generated artifacts, not hand-written route changes.
+- ESLint previously traversed the temporary rehearsal copies. Its ignore list now excludes generated `storage/**`, `test-results/**`, and `tests/e2e/report/**` output. ESLint API assertions confirmed those outputs are ignored while `resources/js/lib/assetOcr.ts` and `tests/e2e/asset-ocr.spec.ts` remain linted.
+
+The earlier full Pest result in this section predates this PHP update. A new full Pest run writes `storage/framework/testing/browser-full-20261108/pest-security-update.{stdout,stderr}.log`. Earlier interrupted browser runs are **not** counted as completed passes; they were stopped before changing their shared dependencies. The final browser runs use lockfile SHA-256 `F5FBE50C7858483C57ACE372EFD3349DA5C5A292D5DF499F78F675488E53DE48`, with per-browser `security-full-run.{stdout,stderr}.log`, `security-full-results.json`, HTML reports, and retained failure traces. Final totals remain pending until those runs finish.
+
+The fresh post-update full Pest run has now completed: **575 passed, 1 skipped, 15,256 assertions, 1186.70 seconds**. The additional three passing cases are the demo-indicator dataset. The single skip was reconfirmed using `StockMovementConstraintMigrationTest.php --display-skipped`: it is the PostgreSQL-only constraint-migration case on the default SQLite connection. No new skip was introduced. Browser runs were executing concurrently, so this elapsed time is not an isolated PHP performance benchmark.
+
+### Approved isolated HTTPS demonstration endpoint
+
+The owner explicitly approved a separate local HTTPS demo setup. The isolated rehearsal runs at `https://192.168.1.9:8443` on the current Wi-Fi interface, proxying only to its own loopback PHP backend and synthetic SQLite database. It does not replace the Laragon certificate, modify the original application's environment, install system/device trust, open firewall rules, or publish an internet endpoint. Its development server is for a controlled private-network demonstration, not production hosting.
+
+TLS files and runtime helpers are ignored under `storage/framework/testing/presentation-20261108`. Private keys are outside the public web root and their directory has restricted Windows permissions. The root certificate lasts 30 days and the IP-matched leaf certificate 14 days; an address change or expiry requires a new verified setup. Only `tls/PRISM-Demo-CA.cer` is intended for transfer to the owner's test device. Its public SHA-256 fingerprint is `11:D6:C0:0C:E1:1E:14:3B:2B:A8:11:7B:2C:DE:0E:6F:64:0D:FA:57:8F:67:48:BB:24:92:8E:C6:07:E1:3D:8E`. Trusting a development root is an explicit owner decision; remove the profile after the demonstration. Never transfer a private `.pem` key.
+
+OpenSSL chain/IP verification and real HTTPS request assertions passed: trusted CA and IP SAN, HTTPS asset URLs, a dedicated Secure session cookie, same-origin OCR model availability, 404 responses for `.env`, private keys and runtime helper paths, rejection of the wrong hostname, and rejection when the temporary CA is not explicitly trusted. No `ignoreHTTPSErrors` or disabled certificate verification was used. An initial router check exposed an incorrect PHP working directory; the isolated backend now runs from `public`, and all endpoint assertions were rerun successfully. Native PHP errors are logged rather than displayed.
+
+Physical Safari trust, camera permission, real-photo recognition, and printed output remain pending the owner's observations. TLS validation on this PC does not prove any of those device checks.
+
+### Fresh screenshot review and targeted tablet refinement
+
+Directly inspected fresh Chromium screenshots of Departments, Positions, Categories, Origins, and Locations at 320px/light and 768px/dark. Also inspected OCR recovery at 320px in both themes, 834px/light, and 1440px/dark. This is actual image inspection, distinct from automated overflow assertions. The UI/UX skill supplied the review checklist; its generic palette recommendations were not substituted for the approved institutional branding.
+
+The Locations tablet screenshot exposed a real usability gap despite passing document-overflow checks: fixed-width filters squeezed search to **50px** at 768px with the sidebar expanded. A new regression test failed on that exact width before the fix. The page now uses named container queries for its create form and filter grid, reserves a full search row when content is narrow, and constrains native field widths inside their panel. Fields, validation, relationships, permissions, and submission handlers are unchanged. The new test also checks form-field bounds and clearing search.
+
+### Independent verification and synthetic sample evaluation — November 9, 2026
+
+- **Master-data & Locations tablet refinement sign-off**: `npx playwright test tests/e2e/accessibility-responsive.spec.ts --grep "locations search and form fields|five master-data pages" --retries=0` passed **6/6** across Chromium, Firefox, and WebKit (3.3m).
+- **Cross-browser OCR & fallback verification**: `tests/e2e/asset-ocr.spec.ts` was hardened to await debounced `#asset-search` URL state, assert explicit `NotAllowedError` camera permission denial messaging alongside late camera stream release, fulfill cancelled worker model downloads cleanly, and clean up route handlers per test. All **24/24** test cases passed across Chromium, Firefox, and WebKit (`8` per browser, `--retries=0`). Note: on Windows `webkit-2287`, multi-context runs exceeding several WASM/WebWorker or navigation cycles in a single worker trigger a Playwright `WebKitNetworkProcess.exe` post-test teardown timeout after all test cases pass (`ok`); grouped WebKit runs exit with code `0`.
+- **Core workflow, QR decode, drawer, search & settings suites**:
+  - `php artisan test --compact`: **576 passed, 1 skipped, 15,259 assertions** (562.45s; sole skip remains PostgreSQL-only `StockMovementConstraintMigrationTest` on SQLite).
+  - `npm run e2e:check:drawer` (WebKit): **2 passed** (40.2s).
+  - `tests/e2e/products.spec.ts`, `receiving.spec.ts`, `requisitions.spec.ts`, `mobile-field-operations.spec.ts` (Chromium): **11 passed** (2.2m).
+  - `tests/e2e/phase7-workflows.spec.ts --grep "rendered QR decodes"` (Chromium): **1 passed** (16.0s).
+  - `tests/e2e/navigation.spec.ts` and `search-settings-reliability.spec.ts` (Chromium): **27 passed** (4.3m); `search-settings-reliability.spec.ts` (WebKit): **22 passed, 1 skipped** (0 test assertion failures; post-run worker teardown timeout on Windows `webkit-2287`).
+  - `npm run build:e2e` verified zero `VITE_REVERB_APP_KEY` strings in compiled E2E bundles; `composer.json` `dev` script no longer passes `--debug` to `reverb:start`.
+- **16-sample synthetic OCR evaluation** (Chromium + local Tesseract.js + `/ocr/eng.traineddata` on `/inventory/assets`): **8/16 (50.0%)** exact standalone candidate line across all 16 normal and adversarial fixtures (**7/8 or 87.5%** on upright, glare-free standard tags/serials without `O/0` or `I/1` confusables; **1/8 or 12.5%** on tilted `+6°`/`-12°`, glare-streaked, and `O/0`/`I/1`-heavy adversarial fixtures), with desktop recognition times of **413–905 ms** (median **484 ms**).
+- **Overall status remains `PARTIALLY VERIFIED`**: physical iPhone/iPad Safari HTTPS trust, live phone camera QR scanning, real printed-label photo OCR, and physical printed QR output remain pending hardware verification.

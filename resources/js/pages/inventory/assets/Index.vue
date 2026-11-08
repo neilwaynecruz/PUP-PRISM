@@ -10,10 +10,12 @@ import {
     SlidersHorizontal,
     Tag,
 } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
+import type { Component } from 'vue';
 import AdminCodeBadge from '@/components/admin/AdminCodeBadge.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
+import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { index, show } from '@/routes/inventory/assets';
@@ -48,6 +50,42 @@ defineOptions({
 });
 
 const search = ref(props.filters.search ?? '');
+const ocrComponent = shallowRef<Component | null>(null);
+const ocrOpen = ref(false);
+const ocrLoading = ref(false);
+const ocrLoadError = ref('');
+const ocrTrigger = ref<InstanceType<typeof Button> | null>(null);
+
+async function openOcr(): Promise<void> {
+    if (ocrLoading.value) {
+        return;
+    }
+
+    ocrLoading.value = true;
+    ocrLoadError.value = '';
+
+    try {
+        ocrComponent.value ??= (
+            await import('@/components/inventory/AssetOcrDialog.vue')
+        ).default;
+        ocrOpen.value = true;
+    } catch {
+        ocrLoadError.value =
+            'The printed-tag reader could not load. Check your connection and reload the page to retry, or use manual asset search below.';
+    } finally {
+        ocrLoading.value = false;
+    }
+}
+
+function restoreOcrFocus(): void {
+    ocrTrigger.value?.$el?.focus();
+}
+
+function searchIdentifier(value: string): void {
+    locationId.value = '';
+    lifecycleStatus.value = '';
+    search.value = value.trim();
+}
 const locationId = ref(
     props.filters.location_id ? String(props.filters.location_id) : '',
 );
@@ -67,6 +105,10 @@ function resetFilters(): void {
 }
 
 let timer: number | undefined;
+
+function cancelPendingSearch(): void {
+    window.clearTimeout(timer);
+}
 
 watch([search, locationId, lifecycleStatus], () => {
     window.clearTimeout(timer);
@@ -144,7 +186,23 @@ function statusTone(value: string): string {
                 </div>
             </div>
 
-            <div class="flex items-center gap-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <Button
+                    ref="ocrTrigger"
+                    variant="outline"
+                    class="min-h-11 w-full sm:w-auto"
+                    :disabled="ocrLoading"
+                    :aria-busy="ocrLoading"
+                    @click="openOcr"
+                    >{{
+                        ocrLoading ? 'Loading tag reader…' : 'Read printed tag'
+                    }}</Button
+                >
+                <QrScannerDialog
+                    button-label="Scan asset QR code"
+                    title="Scan asset QR code"
+                    @scanned="searchIdentifier"
+                />
                 <div
                     class="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-1.5 text-xs text-muted-foreground"
                 >
@@ -156,6 +214,14 @@ function statusTone(value: string): string {
                 </div>
             </div>
         </div>
+
+        <p
+            v-if="ocrLoadError"
+            role="alert"
+            class="rounded-lg border border-destructive/30 bg-card p-3 text-sm text-destructive"
+        >
+            {{ ocrLoadError }}
+        </p>
 
         <!-- Filter Bar -->
         <div class="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
@@ -271,6 +337,7 @@ function statusTone(value: string): string {
                 v-for="asset in assets.data"
                 :key="asset.id"
                 :href="show(asset.id)"
+                @click="cancelPendingSearch"
                 class="group flex flex-col justify-between rounded-xl border border-border/70 bg-card p-5 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
                 <div>
@@ -389,5 +456,12 @@ function statusTone(value: string): string {
         </div>
 
         <AdminPagination :links="assets.links" />
+        <component
+            :is="ocrComponent"
+            v-if="ocrComponent"
+            v-model:open="ocrOpen"
+            @search="searchIdentifier"
+            @closed="restoreOcrFocus"
+        />
     </div>
 </template>

@@ -17,6 +17,7 @@ declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
             name: string;
+            demoMode: boolean;
             auth: Auth;
             session: SessionMeta;
             notifications: SharedNotifications;

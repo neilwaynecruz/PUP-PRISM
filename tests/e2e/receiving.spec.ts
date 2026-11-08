@@ -59,5 +59,10 @@ test.describe('Stock Receiving Flow', () => {
         await expect(page.getByTestId('product-assets-count-value')).toHaveText(
             '4',
         );
+        await expect(
+            page.getByText(
+                'Individual assets are tracked by property identifier and custodian assignment.',
+            ),
+        ).toBeVisible();
     });
 });

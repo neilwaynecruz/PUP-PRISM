@@ -11,6 +11,21 @@ beforeEach(function () {
     $this->withoutVite();
 });
 
+test('synthetic data indicator is explicitly enabled and never shown in production', function (bool $enabled, string $environment, bool $expected) {
+    config(['app.demo_mode' => $enabled]);
+    app()->detectEnvironment(fn (): string => $environment);
+    $user = User::factory()->create();
+
+    $this->actingAs($user)
+        ->get(route('dashboard', absolute: false))
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $page) => $page->where('demoMode', $expected));
+})->with([
+    'normal application' => [false, 'testing', false],
+    'isolated demonstration' => [true, 'testing', true],
+    'production safeguard' => [true, 'production', false],
+]);
+
 test('authenticated inertia pages share session timeout metadata', function () {
     $user = User::factory()->create();
 

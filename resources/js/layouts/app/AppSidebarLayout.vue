@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { usePage } from '@inertiajs/vue3';
 import AppContent from '@/components/AppContent.vue';
 import AppShell from '@/components/AppShell.vue';
 import AppSidebar from '@/components/AppSidebar.vue';
@@ -13,6 +14,7 @@ import type { BreadcrumbItem } from '@/types';
 
 useInertiaToast();
 useKeyboardShortcuts();
+const page = usePage();
 
 type Props = {
     breadcrumbs?: BreadcrumbItem[];
@@ -35,6 +37,15 @@ withDefaults(defineProps<Props>(), {
         <AppSidebar />
         <AppContent variant="sidebar" class="overflow-x-hidden">
             <AppSidebarHeader :breadcrumbs="breadcrumbs" />
+            <div
+                v-if="page.props.demoMode"
+                role="note"
+                aria-label="Synthetic demonstration environment"
+                class="border-b border-border bg-accent/40 px-4 py-3 text-sm text-foreground sm:px-6"
+            >
+                <strong>Demonstration environment.</strong> Records are
+                synthetic and are not evidence of actual institutional activity.
+            </div>
             <slot />
         </AppContent>
         <GlobalSearchDialog />

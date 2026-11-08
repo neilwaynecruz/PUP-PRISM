@@ -301,7 +301,7 @@ function deactivate(location: Location): void {
 <template>
     <Head title="Locations" />
     <div
-        class="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8"
+        class="@container/locations mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8"
         data-testid="admin-locations-index-page"
     >
         <div
@@ -325,7 +325,7 @@ function deactivate(location: Location): void {
         </div>
 
         <form
-            class="grid gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-xs sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 xl:items-end"
+            class="grid gap-3 rounded-xl border border-border/70 bg-card p-4 shadow-xs @min-[28rem]/locations:grid-cols-2 @min-[42rem]/locations:grid-cols-3 @min-[56rem]/locations:grid-cols-4 @min-[56rem]/locations:items-end"
             @submit.prevent="submit"
         >
             <label class="grid gap-1 text-sm font-medium"
@@ -335,7 +335,7 @@ function deactivate(location: Location): void {
                     autocomplete="off"
                     required
                     placeholder="Example: MAIN-STOCK"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
+                    class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
                     :message="form.errors.code"
             /></label>
             <label class="grid gap-1 text-sm font-medium"
@@ -345,7 +345,7 @@ function deactivate(location: Location): void {
                     autocomplete="off"
                     required
                     placeholder="Main Supply Room"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
+                    class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
                     :message="form.errors.name"
             /></label>
             <label class="grid gap-1 text-sm font-medium"
@@ -354,7 +354,7 @@ function deactivate(location: Location): void {
                     name="location_building"
                     autocomplete="off"
                     placeholder="Building name"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
+                    class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
                     :message="form.errors.building"
             /></label>
             <label class="grid gap-1 text-sm font-medium"
@@ -363,14 +363,14 @@ function deactivate(location: Location): void {
                     name="location_room"
                     autocomplete="off"
                     placeholder="Room or area"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
+                    class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
                     :message="form.errors.room"
             /></label>
             <label class="grid gap-1 text-sm font-medium"
                 >Facility group<select
                     v-model="form.facility_group"
                     name="location_facility_group"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                    class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
                 >
                     <option value="">Not classified</option>
                     <option
@@ -386,7 +386,7 @@ function deactivate(location: Location): void {
                 >Room or facility type<select
                     v-model="form.location_type"
                     name="location_type"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                    class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
                 >
                     <option value="">Not classified</option>
                     <option
@@ -402,7 +402,7 @@ function deactivate(location: Location): void {
                 >Parent location<select
                     v-model="form.parent_location_id"
                     name="location_parent"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                    class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
                 >
                     <option value="">No parent location</option>
                     <option
@@ -414,12 +414,13 @@ function deactivate(location: Location): void {
                     </option></select
                 ><InputError :message="form.errors.parent_location_id"
             /></label>
-            <label class="grid gap-1 text-sm font-medium xl:col-span-2"
+            <label
+                class="grid gap-1 text-sm font-medium @min-[56rem]/locations:col-span-2"
                 >Department<select
                     v-model="form.department_id"
                     name="location_department"
                     autocomplete="off"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                    class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
                 >
                     <option value="">Shared or not assigned</option>
                     <option
@@ -439,7 +440,7 @@ function deactivate(location: Location): void {
                     min="1"
                     inputmode="numeric"
                     placeholder="Optional"
-                    class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
+                    class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9" /><InputError
                     :message="form.errors.capacity"
             /></label>
             <label
@@ -462,9 +463,11 @@ function deactivate(location: Location): void {
 
         <!-- Search & Filter Bar -->
         <div
-            class="flex flex-col gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-xs sm:flex-row sm:items-center"
+            class="grid grid-cols-1 gap-3 rounded-xl border border-border/70 bg-card p-3 shadow-xs @min-[28rem]/locations:grid-cols-2 @min-[64rem]/locations:grid-cols-[minmax(16rem,1fr)_repeat(3,minmax(0,1fr))]"
         >
-            <div class="relative flex-1">
+            <div
+                class="relative min-w-0 @min-[28rem]/locations:col-span-2 @min-[64rem]/locations:col-span-1"
+            >
                 <Search
                     class="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
                 />
@@ -482,7 +485,7 @@ function deactivate(location: Location): void {
                 v-model="departmentFilter"
                 name="locations_department_filter"
                 aria-label="Filter by department"
-                class="min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm sm:min-h-9 sm:w-56"
+                class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
             >
                 <option value="">All departments</option>
                 <option value="shared">Shared locations only</option>
@@ -499,7 +502,7 @@ function deactivate(location: Location): void {
                 v-model="facilityGroupFilter"
                 name="locations_facility_group_filter"
                 aria-label="Filter by facility group"
-                class="min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm sm:min-h-9 sm:w-48"
+                class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
             >
                 <option value="">All facility groups</option>
                 <option
@@ -515,7 +518,7 @@ function deactivate(location: Location): void {
                 v-model="statusFilter"
                 name="locations_status_filter"
                 aria-label="Filter locations by status"
-                class="min-h-11 w-full rounded-md border border-input bg-background px-3 text-sm sm:min-h-9 sm:w-44"
+                class="min-h-11 w-full min-w-0 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
             >
                 <option value="all">All statuses</option>
                 <option value="active">Active only</option>

@@ -712,8 +712,8 @@ function submitPurchaseOrder(): void {
                                     Order line items
                                 </h2>
                                 <p class="text-xs text-muted-foreground">
-                                    Add products by name search, manual SKU,
-                                    QR/barcode scan, or catalog browser.
+                                    Add products by name search, manual SKU, QR
+                                    scan, or catalog browser.
                                 </p>
                             </div>
                         </div>
@@ -730,9 +730,9 @@ function submitPurchaseOrder(): void {
                                 Browse Catalog
                             </Button>
                             <QrScannerDialog
-                                button-label="Scan QR / Barcode"
+                                button-label="Scan QR Code"
                                 button-size="sm"
-                                title="Scan product QR or barcode"
+                                title="Scan product QR code"
                                 description="Scan a product SKU label to add or increment it on this purchase order."
                                 @scanned="handleScannedCode"
                             />

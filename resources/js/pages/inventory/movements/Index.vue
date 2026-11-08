@@ -642,7 +642,7 @@ onBeforeUnmount(() => {
                                 button-label="Scan SKU"
                                 button-size="sm"
                                 title="Scan consumable SKU for adjustment"
-                                description="Scan a product barcode/QR to select it for manual stock adjustment."
+                                description="Scan a product QR code to select it for manual stock adjustment."
                                 @scanned="handleScanFor('adjust', $event)"
                             />
                         </div>
@@ -832,7 +832,7 @@ onBeforeUnmount(() => {
                                 button-label="Scan SKU"
                                 button-size="sm"
                                 title="Scan consumable SKU for cycle count"
-                                description="Scan a product barcode/QR to select it for cycle count reconciliation."
+                                description="Scan a product QR code to select it for cycle count reconciliation."
                                 @scanned="handleScanFor('cycle', $event)"
                             />
                         </div>

@@ -10,6 +10,7 @@ import {
     DialogDescription,
     DialogHeader,
     DialogTitle,
+    DialogTrigger,
 } from '@/components/ui/dialog';
 import { useQrScanner } from '@/composables/useQrScanner';
 
@@ -82,19 +83,19 @@ watch(isOpen, async (open) => {
 </script>
 
 <template>
-    <Button
-        type="button"
-        variant="outline"
-        :size="props.buttonSize"
-        class="w-full sm:w-auto"
-        :data-testid="triggerTestId"
-        @click="isOpen = true"
-    >
-        <ScanLine aria-hidden="true" class="mr-2 size-4" />
-        {{ props.buttonLabel }}
-    </Button>
-
     <Dialog :open="isOpen" @update:open="isOpen = $event">
+        <DialogTrigger as-child>
+            <Button
+                type="button"
+                variant="outline"
+                :size="props.buttonSize"
+                class="min-h-11 w-full sm:w-auto"
+                :data-testid="triggerTestId"
+            >
+                <ScanLine aria-hidden="true" class="mr-2 size-4" />
+                {{ props.buttonLabel }}
+            </Button>
+        </DialogTrigger>
         <DialogContent
             class="max-h-[calc(100vh-2rem)] overflow-y-auto sm:max-w-lg"
         >

@@ -1131,7 +1131,7 @@ const lifecycleSteps = computed(() => {
                                 Receive delivered items
                             </h2>
                             <p class="text-xs text-muted-foreground">
-                                Scan product barcodes, search by SKU/name, or
+                                Scan product QR codes, search by SKU/name, or
                                 enter partial/full quantities delivered by the
                                 supplier.
                             </p>

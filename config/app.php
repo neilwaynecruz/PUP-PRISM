@@ -15,6 +15,8 @@ return [
 
     'name' => env('APP_NAME', 'Laravel'),
 
+    'demo_mode' => (bool) env('APP_DEMO_MODE', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Environment

@@ -44,6 +44,7 @@ const contactPerson = ref('');
 const email = ref('');
 const phone = ref('');
 const website = ref('');
+const websitePlaceholder = 'https://example.com';
 const paymentTerms = ref('Net 30');
 const leadTimeDays = ref('7');
 const isActive = ref('1');
@@ -256,7 +257,7 @@ function resetFormFields(): void {
                                     v-model="website"
                                     name="website"
                                     type="url"
-                                    placeholder="https://example.com"
+                                    :placeholder="websitePlaceholder"
                                     class="pl-9"
                                     @blur="normalizeWebsite"
                                 />

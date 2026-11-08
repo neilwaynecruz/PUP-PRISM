@@ -71,6 +71,7 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'demoMode' => ! app()->isProduction() && (bool) config('app.demo_mode', false),
             'auth' => [
                 'user' => $user,
                 'roles' => $user?->getRoleNames() ?? [],

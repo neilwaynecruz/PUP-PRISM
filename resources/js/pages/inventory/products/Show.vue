@@ -470,8 +470,8 @@ function stockToneClass(): string {
                     <div
                         class="mt-4 border-t border-border/40 pt-3 text-xs text-muted-foreground"
                     >
-                        Each asset is individually tagged with a barcode
-                        property identifier and custodian assignment.
+                        Individual assets are tracked by property identifier and
+                        custodian assignment.
                     </div>
                 </div>
             </div>

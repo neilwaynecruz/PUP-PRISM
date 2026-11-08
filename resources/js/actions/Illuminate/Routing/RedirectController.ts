@@ -10,9 +10,9 @@ const RedirectController = (options?: RouteQueryOptions): RouteDefinition<'get'>
 })
 
 RedirectController.definition = {
-    methods: ["get","head","post","put","patch","delete","options"],
+    methods: ["get","head","post","put","patch","delete","options","query"],
     url: '/settings',
-} satisfies RouteDefinition<["get","head","post","put","patch","delete","options"]>
+} satisfies RouteDefinition<["get","head","post","put","patch","delete","options","query"]>
 
 /**
 * @see \Illuminate\Routing\RedirectController::__invoke
@@ -85,6 +85,15 @@ RedirectController.delete = (options?: RouteQueryOptions): RouteDefinition<'dele
 RedirectController.options = (options?: RouteQueryOptions): RouteDefinition<'options'> => ({
     url: RedirectController.url(options),
     method: 'options',
+})
+/**
+* @see \Illuminate\Routing\RedirectController::__invoke
+ * @see vendor/laravel/framework/src/Illuminate/Routing/RedirectController.php:19
+ * @route '/settings'
+ */
+RedirectController.query = (options?: RouteQueryOptions): RouteDefinition<'query'> => ({
+    url: RedirectController.url(options),
+    method: 'query',
 })
 
     /**
@@ -184,6 +193,20 @@ RedirectController.options = (options?: RouteQueryOptions): RouteDefinition<'opt
                         }
                     }),
             method: 'get',
+        })
+            /**
+* @see \Illuminate\Routing\RedirectController::__invoke
+ * @see vendor/laravel/framework/src/Illuminate/Routing/RedirectController.php:19
+ * @route '/settings'
+ */
+        RedirectControllerForm.query = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
+            action: RedirectController.url({
+                        [options?.mergeQuery ? 'mergeQuery' : 'query']: {
+                            _method: 'QUERY',
+                            ...(options?.query ?? options?.mergeQuery ?? {}),
+                        }
+                    }),
+            method: 'post',
         })
     
     RedirectController.form = RedirectControllerForm
