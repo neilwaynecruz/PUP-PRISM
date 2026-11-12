@@ -1,7 +1,14 @@
 <script setup lang="ts">
-import { Link, router } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 import { Bell, CheckCheck, LoaderCircle, Radio } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+    computed,
+    nextTick,
+    onBeforeUnmount,
+    onMounted,
+    ref,
+    watch,
+} from 'vue';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -31,21 +38,58 @@ const {
  * next page and leaves Search, notifications, and the profile menu unclickable.
  */
 const open = ref(false);
-let removeNavigateListener: (() => void) | undefined;
+let removeRouterListeners: (() => void) | undefined;
 
-onMounted(() => {
-    removeNavigateListener = router.on('navigate', () => {
-        open.value = false;
-    });
+function releaseStaleBodyPointerLock(): void {
+    if (typeof document === 'undefined') {
+        return;
+    }
+
+    const hasOpenModalLayer = document.querySelector(
+        '[data-slot="dialog-content"][data-state="open"], [data-slot="dropdown-menu-content"][data-state="open"]',
+    );
+
+    if (!hasOpenModalLayer && document.body.style.pointerEvents === 'none') {
+        document.body.style.pointerEvents = '';
+        document.body.style.overflow = '';
+    }
+}
+
+watch(open, (isOpen) => {
+    if (!isOpen) {
+        void nextTick(() => {
+            releaseStaleBodyPointerLock();
+        });
+    }
 });
 
-onBeforeUnmount(() => removeNavigateListener?.());
+onMounted(() => {
+    const removeBefore = router.on('before', () => {
+        open.value = false;
+    });
+    const removeNavigate = router.on('navigate', () => {
+        open.value = false;
+        releaseStaleBodyPointerLock();
+    });
+
+    removeRouterListeners = () => {
+        removeBefore();
+        removeNavigate();
+    };
+});
+
+onBeforeUnmount(() => removeRouterListeners?.());
 
 function openNotificationAndClose(
     notification: (typeof notifications.value)[number],
 ): void {
     open.value = false;
     openNotification(notification);
+}
+
+function openNotificationHistory(): void {
+    open.value = false;
+    router.visit(notificationsIndex().url);
 }
 
 const connectionTone = computed(() => {
@@ -100,7 +144,7 @@ function formatTimestamp(timestamp: string | null): string {
         <DropdownMenuContent
             align="end"
             :side-offset="10"
-            class="w-[calc(100vw-2rem)] max-w-[24rem] rounded-2xl border border-border/70 p-0 shadow-2xl"
+            class="w-[calc(100vw-2rem)] max-w-[24rem] rounded-2xl border border-border/70 p-0 shadow-2xl data-[state=closed]:animate-none"
         >
             <div class="flex items-center justify-between px-4 py-3">
                 <div>
@@ -209,13 +253,13 @@ function formatTimestamp(timestamp: string | null): string {
                 class="flex items-center justify-between px-4 py-2.5 text-[11px] text-muted-foreground"
             >
                 <div class="flex items-center gap-3">
-                    <Link
+                    <a
                         :href="notificationsIndex().url"
                         class="font-medium text-primary hover:underline"
-                        @click="open = false"
+                        @click.prevent="openNotificationHistory"
                     >
                         View notification history
-                    </Link>
+                    </a>
                     <span>{{
                         hasUnread ? `${unreadCount} unread` : 'All caught up'
                     }}</span>

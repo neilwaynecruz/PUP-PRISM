@@ -11,6 +11,14 @@ export default defineConfig({
         hmr: {
             host: 'localhost',
         },
+        warmup: {
+            clientFiles: [
+                'resources/js/app.ts',
+                'resources/css/app.css',
+                'resources/js/layouts/AppLayout.vue',
+                'resources/js/pages/Dashboard.vue',
+            ],
+        },
     },
     plugins: [
         laravel({

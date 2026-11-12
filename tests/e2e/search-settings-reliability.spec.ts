@@ -278,7 +278,7 @@ test.describe('Settings', () => {
             page.getByRole('button', { name: 'Dark' }),
         ).toHaveAttribute('aria-pressed', 'true');
 
-        await page.reload();
+        await page.reload({ waitUntil: 'domcontentloaded' });
         await expect(page.locator('html')).toHaveClass(/dark/);
         await expect(
             page.getByRole('button', { name: 'Dark' }),

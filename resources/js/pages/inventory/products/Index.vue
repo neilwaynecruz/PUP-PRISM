@@ -1717,7 +1717,7 @@ onBeforeUnmount(() => {
                 <DialogHeader class="space-y-2">
                     <DialogTitle class="flex items-center gap-2">
                         <Printer class="h-5 w-5 text-primary" />
-                        <span>Print QR labels for filtered products?</span>
+                        <span>Print labels for filtered products?</span>
                     </DialogTitle>
                     <DialogDescription class="text-sm text-muted-foreground">
                         No products are selected. This will prepare one QR label
