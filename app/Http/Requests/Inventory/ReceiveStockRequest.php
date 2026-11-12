@@ -36,6 +36,8 @@ class ReceiveStockRequest extends FormRequest
             'qty' => ['nullable', 'integer', 'min:1'],
             'tag_codes' => ['nullable', 'array', 'min:1'],
             'tag_codes.*' => ['string', 'max:64', 'distinct'],
+            'serial_numbers' => ['nullable', 'array', 'list'],
+            'serial_numbers.*' => ['nullable', 'string', 'max:120', 'distinct', Rule::unique('assets', 'serial_number')],
             'purchase_order_id' => ['nullable', 'integer', Rule::exists('purchase_orders', 'id')],
             'purchase_order_line_id' => ['nullable', 'integer', Rule::exists('purchase_order_lines', 'id')],
             'notes' => ['nullable', 'string', 'max:2000'],

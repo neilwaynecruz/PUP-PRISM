@@ -123,14 +123,14 @@ const selectedType = ref<'consumable' | 'asset'>('consumable');
                 </div>
 
                 <div class="grid gap-5 p-5">
-                    <!-- SKU / Barcode -->
+                    <!-- SKU / QR Identifier -->
                     <div class="grid gap-2">
                         <div class="flex items-center justify-between">
                             <Label
                                 for="sku"
                                 class="text-xs font-semibold text-foreground"
                             >
-                                SKU or Barcode
+                                SKU / QR Identifier
                                 <span class="text-rose-500">*</span>
                             </Label>
                             <span class="text-[11px] text-muted-foreground"
@@ -144,12 +144,12 @@ const selectedType = ref<'consumable' | 'asset'>('consumable');
                             required
                             autocomplete="off"
                             aria-describedby="sku-help sku-error"
-                            placeholder="e.g. 4801234567890 or PAP-A4-70G"
+                            placeholder="e.g. PAP-A4-70G or 4801234567890"
                             class="h-10 rounded-lg font-mono text-sm uppercase placeholder:font-sans placeholder:normal-case focus-visible:ring-2"
                         />
                         <p id="sku-help" class="text-xs text-muted-foreground">
-                            Standard SKU, barcode, or property code used for
-                            physical inventory and scanning.
+                            Standard product SKU or property code encoded into
+                            printable QR labels for mobile scanning.
                         </p>
                         <InputError id="sku-error" :message="errors.sku" />
                     </div>

@@ -22,9 +22,11 @@ import PurchaseOrderController from '@/actions/App/Http/Controllers/Inventory/Pu
 import ReceivingController from '@/actions/App/Http/Controllers/Inventory/ReceivingController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
 import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
 import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
 import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
+import ReceivingSerialFields from '@/components/inventory/ReceivingSerialFields.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -164,6 +166,8 @@ type SingleReceivingForm = {
     qty: string;
     tag_codes_text: string;
     tag_codes: string[] | null;
+    serials: Record<string, string>;
+    serial_numbers: (string | null)[];
     notes: string;
 };
 
@@ -175,6 +179,8 @@ const form = useForm<SingleReceivingForm>({
     qty: '',
     tag_codes_text: '',
     tag_codes: null,
+    serials: {},
+    serial_numbers: [],
     notes: '',
 });
 
@@ -283,11 +289,21 @@ function submitSingle(): void {
         expires_at: data.expires_at || null,
         qty: data.qty ? Number(data.qty) : null,
         tag_codes: data.tag_codes,
+        serial_numbers: tagCodes.map(
+            (tag) => data.serials[tag]?.trim() || null,
+        ),
         notes: data.notes.trim() || null,
     })).post(ReceivingController.store().url, {
         preserveScroll: true,
         onSuccess: () => {
-            form.reset('qty', 'tag_codes_text', 'tag_codes', 'notes');
+            form.reset(
+                'qty',
+                'tag_codes_text',
+                'tag_codes',
+                'serials',
+                'serial_numbers',
+                'notes',
+            );
         },
     });
 }
@@ -302,6 +318,7 @@ type BatchLineForm = {
     expires_at: string;
     qty: string;
     tag_codes_text: string;
+    serials: Record<string, string>;
     notes: string;
 };
 
@@ -316,6 +333,7 @@ function createEmptyBatchLine(
         expires_at: '',
         qty: '',
         tag_codes_text: '',
+        serials: {},
         notes: '',
     };
 }
@@ -422,6 +440,7 @@ function addOrMergeProductIntoBatch(
         expires_at: '',
         qty: product.type === 'asset' ? '' : String(qty),
         tag_codes_text: '',
+        serials: {},
         notes: '',
     };
 
@@ -511,6 +530,9 @@ function submitBatch(): void {
                     expires_at: line.expires_at || null,
                     qty: line.qty ? Number(line.qty) : null,
                     tag_codes: tagCodes.length ? tagCodes : null,
+                    serial_numbers: tagCodes.map(
+                        (tag) => line.serials[tag]?.trim() || null,
+                    ),
                     notes: line.notes.trim() || null,
                 };
             }),
@@ -588,6 +610,7 @@ type PoReceiveLineState = {
     received_at: string;
     expires_at: string;
     tag_codes_text: string;
+    serials: Record<string, string>;
     notes: string;
 };
 
@@ -620,6 +643,7 @@ function syncPoReceiveLines(po: ReceivablePurchaseOrder | null): void {
         received_at: '',
         expires_at: '',
         tag_codes_text: '',
+        serials: {},
         notes: '',
     }));
 }
@@ -737,6 +761,7 @@ function clearAllPoQuantities(): void {
     poReceiveForm.lines.forEach((line) => {
         line.qty_received = '';
         line.tag_codes_text = '';
+        line.serials = {};
     });
 }
 
@@ -872,6 +897,10 @@ function submitPoReceipt(): void {
                         ? line.expires_at || null
                         : null,
                 tag_codes: line.product_type === 'asset' ? tags : null,
+                serial_numbers:
+                    line.product_type === 'asset'
+                        ? tags.map((tag) => line.serials[tag]?.trim() || null)
+                        : [],
                 notes: line.notes.trim() || null,
             };
         })
@@ -1182,6 +1211,17 @@ function submitPoReceipt(): void {
                                 data-testid="receiving-reference-input"
                             />
                             <InputError :message="form.errors.reference_no" />
+                            <OcrAssistButton
+                                label="Read delivery reference"
+                                title="Read delivery reference"
+                                description="Read and correct the delivery reference. This does not confirm delivery or change received quantities."
+                                field-label="Delivery reference (editable)"
+                                submit-label="Apply reviewed reference"
+                                help="Only the reference field changes. Check the document and complete the receipt yourself."
+                                @reviewed="
+                                    form.reference_no = $event.slice(0, 64)
+                                "
+                            />
                         </div>
 
                         <div class="grid content-start gap-2">
@@ -1385,6 +1425,22 @@ function submitPoReceipt(): void {
                                 trigger-test-id="receiving-tag-scanner-button"
                                 @scanned="appendTagCode"
                             />
+                            <OcrAssistButton
+                                v-if="matchedSingleProduct?.type === 'asset'"
+                                label="Read printed asset tags"
+                                title="Read receiving asset tags"
+                                description="Review institutional asset tags, one per line. Manufacturer serial numbers are not asset tags and must not be substituted."
+                                field-label="Institutional asset tags, one per line (editable)"
+                                submit-label="Add reviewed tags"
+                                help="Tags are added to the draft only. Verify the physical items; do not infer accepted quantities from a document."
+                                multiline
+                                @reviewed="
+                                    (value) =>
+                                        parseTagCodes(value).forEach(
+                                            appendTagCode,
+                                        )
+                                "
+                            />
                         </div>
 
                         <div class="mt-3 grid gap-2">
@@ -1411,6 +1467,19 @@ function submitPoReceipt(): void {
                                 class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
                             />
                             <InputError :message="form.errors.tag_codes" />
+                            <ReceivingSerialFields
+                                v-if="matchedSingleProduct?.type === 'asset'"
+                                v-model="form.serials"
+                                :tags="singleTagList"
+                            />
+                            <InputError
+                                :message="
+                                    form.errors.serial_numbers ||
+                                    Object.entries(form.errors).find(([key]) =>
+                                        key.startsWith('serial_numbers.'),
+                                    )?.[1]
+                                "
+                            />
                         </div>
                     </section>
                 </div>
@@ -1692,6 +1761,15 @@ function submitPoReceipt(): void {
                                 placeholder="DR / Invoice no."
                                 class="bg-background"
                             />
+                            <OcrAssistButton
+                                label="Read delivery reference"
+                                title="Read batch delivery reference"
+                                description="Review the delivery reference before applying it to batch lines. Receipt dates and accepted quantities remain manual."
+                                field-label="Delivery reference (editable)"
+                                submit-label="Apply reviewed reference"
+                                help="Only the shared draft reference changes. Use Apply to copy it to the intended lines, then confirm the receipt normally."
+                                @reviewed="batchSharedRef = $event.slice(0, 64)"
+                            />
                             <Input
                                 id="batch-shared-date"
                                 v-model="batchSharedDate"
@@ -1713,6 +1791,13 @@ function submitPoReceipt(): void {
                 </div>
 
                 <InputError :message="batchForm.errors.lines" class="mt-2" />
+                <InputError
+                    v-for="[key, message] in Object.entries(
+                        batchForm.errors,
+                    ).filter(([key]) => key.includes('serial_numbers'))"
+                    :key="key"
+                    :message="message"
+                />
 
                 <!-- Mobile Batch Lines (Preserves data-testid="receiving-batch-mobile-lines" & "Batch line X") -->
                 <div
@@ -1809,6 +1894,28 @@ function submitPoReceipt(): void {
                                             appendBatchTagCode(index, $event)
                                         "
                                     />
+                                    <OcrAssistButton
+                                        v-if="
+                                            findCatalogProductBySku(line.sku)
+                                                ?.type === 'asset'
+                                        "
+                                        label="Read printed tags"
+                                        title="Read batch receiving tags"
+                                        description="Review institutional tags for this line, not manufacturer serial numbers. Keep physical acceptance explicit."
+                                        field-label="Institutional asset tags, one per line"
+                                        submit-label="Add reviewed tags"
+                                        multiline
+                                        @reviewed="
+                                            (value) =>
+                                                parseTagCodes(value).forEach(
+                                                    (tag) =>
+                                                        appendBatchTagCode(
+                                                            index,
+                                                            tag,
+                                                        ),
+                                                )
+                                        "
+                                    />
                                 </div>
                                 <textarea
                                     :id="`batch-mobile-tags-${index}`"
@@ -1816,6 +1923,14 @@ function submitPoReceipt(): void {
                                     rows="3"
                                     placeholder="TAG-0001&#10;TAG-0002"
                                     class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
+                                />
+                                <ReceivingSerialFields
+                                    v-if="
+                                        findCatalogProductBySku(line.sku)
+                                            ?.type === 'asset'
+                                    "
+                                    v-model="line.serials"
+                                    :tags="parseTagCodes(line.tag_codes_text)"
                                 />
                                 <InputError
                                     :message="
@@ -2056,6 +2171,36 @@ function submitPoReceipt(): void {
                                     rows="2"
                                     placeholder="TAG-0001&#10;TAG-0002"
                                     class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
+                                />
+                                <OcrAssistButton
+                                    v-if="
+                                        findCatalogProductBySku(line.sku)
+                                            ?.type === 'asset'
+                                    "
+                                    label="Read printed tags"
+                                    title="Read batch receiving tags"
+                                    description="Review institutional tags for this line, not manufacturer serial numbers."
+                                    field-label="Institutional asset tags, one per line"
+                                    submit-label="Add reviewed tags"
+                                    multiline
+                                    @reviewed="
+                                        (value) =>
+                                            parseTagCodes(value).forEach(
+                                                (tag) =>
+                                                    appendBatchTagCode(
+                                                        index,
+                                                        tag,
+                                                    ),
+                                            )
+                                    "
+                                />
+                                <ReceivingSerialFields
+                                    v-if="
+                                        findCatalogProductBySku(line.sku)
+                                            ?.type === 'asset'
+                                    "
+                                    v-model="line.serials"
+                                    :tags="parseTagCodes(line.tag_codes_text)"
                                 />
                                 <InputError
                                     :message="
@@ -2361,6 +2506,16 @@ function submitPoReceipt(): void {
                                     placeholder="DR / Invoice no."
                                     class="bg-background"
                                 />
+                                <OcrAssistButton
+                                    label="Read delivery reference"
+                                    title="Read PO delivery reference"
+                                    description="Review a delivery-document reference for this purchase order. Quantities and product details still come from the selected order."
+                                    field-label="Delivery reference (editable)"
+                                    submit-label="Apply reviewed reference"
+                                    @reviewed="
+                                        poSharedRef = $event.slice(0, 64)
+                                    "
+                                />
                                 <Input
                                     id="po-mode-shared-date"
                                     v-model="poSharedDate"
@@ -2373,6 +2528,13 @@ function submitPoReceipt(): void {
                     </div>
 
                     <InputError :message="poReceiveErrors.lines" class="mt-3" />
+                    <InputError
+                        v-for="[key, message] in Object.entries(
+                            poReceiveErrors,
+                        ).filter(([key]) => key.includes('serial_numbers'))"
+                        :key="key"
+                        :message="message"
+                    />
 
                     <!-- PO Lines List -->
                     <div v-if="selectedPo" class="mt-4 space-y-3">
@@ -2644,6 +2806,24 @@ function submitPoReceipt(): void {
                                             appendPoAssetTag(index, $event)
                                         "
                                     />
+                                    <OcrAssistButton
+                                        label="Read printed tags"
+                                        title="Read PO receiving tags"
+                                        description="Review institutional asset tags for this PO line. Manufacturer serial numbers are separate and must not replace tags."
+                                        field-label="Institutional asset tags, one per line"
+                                        submit-label="Add reviewed tags"
+                                        multiline
+                                        @reviewed="
+                                            (value) =>
+                                                parseTagCodes(value).forEach(
+                                                    (tag) =>
+                                                        appendPoAssetTag(
+                                                            index,
+                                                            tag,
+                                                        ),
+                                                )
+                                        "
+                                    />
                                 </div>
                                 <textarea
                                     :id="`po-mode-tags-${index}`"
@@ -2654,6 +2834,15 @@ function submitPoReceipt(): void {
                                     rows="2"
                                     placeholder="AST-0001&#10;AST-0002"
                                     class="w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-xs"
+                                />
+                                <ReceivingSerialFields
+                                    v-model="poReceiveForm.lines[index].serials"
+                                    :tags="
+                                        parseTagCodes(
+                                            poReceiveForm.lines[index]
+                                                .tag_codes_text,
+                                        )
+                                    "
                                 />
                                 <InputError
                                     :message="

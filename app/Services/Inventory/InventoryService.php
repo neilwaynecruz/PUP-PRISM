@@ -25,6 +25,7 @@ use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class InventoryService
 {
@@ -705,6 +706,7 @@ class InventoryService
             user: $user,
             product: $product,
             tagCodes: $tagCodes,
+            serialNumbers: $payload['serial_numbers'] ?? [],
             receivedAt: $payload['received_at'] ?? null,
             notes: $payload['notes'] ?? null,
             ipAddress: $ipAddress,
@@ -770,23 +772,35 @@ class InventoryService
 
     /**
      * @param  array<int, string>  $tagCodes
+     * @param  list<string|null>  $serialNumbers
      * @return array{product: Product, on_hand_qty: int|null, delta: int}
      */
     private function performAssetReceipt(
         User $user,
         Product $product,
         array $tagCodes,
+        array $serialNumbers = [],
         ?CarbonImmutable $receivedAt = null,
         ?string $notes = null,
         ?string $ipAddress = null,
     ): array {
         $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
 
-        foreach ($tagCodes as $tagCode) {
+        if ($serialNumbers !== [] && count($serialNumbers) !== count($tagCodes)) {
+            throw ValidationException::withMessages([
+                'serial_numbers' => __('Provide one optional serial-number entry for each asset tag.'),
+            ]);
+        }
+
+        foreach (array_values($tagCodes) as $index => $tagCode) {
+            $rawSerial = $serialNumbers[$index] ?? null;
+            $serialNumber = is_string($rawSerial) && trim($rawSerial) !== '' ? trim($rawSerial) : null;
+
             $asset = Asset::create([
                 'product_id' => $product->id,
                 'position_id' => null,
                 'tag_code' => $tagCode,
+                'serial_number' => $serialNumber,
                 'status' => AssetStatus::Available,
                 'acquisition_date' => ($receivedAt ?? CarbonImmutable::now())->toDateString(),
                 'acquisition_cost' => $product->unit_price,

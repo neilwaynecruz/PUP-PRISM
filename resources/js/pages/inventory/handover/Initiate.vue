@@ -17,6 +17,7 @@ import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import HandoverController from '@/actions/App/Http/Controllers/Inventory/HandoverController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
 import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
 import {
@@ -689,6 +690,12 @@ const historyTabs: { value: '' | HandoverStatus; label: string }[] = [
                                     description="Point the camera at the asset's QR label, or type the tag code manually."
                                     trigger-test-id="handover-scan-button"
                                     @scanned="applyScannedTag"
+                                />
+                                <OcrAssistButton
+                                    label="Find asset from label"
+                                    title="Find handover asset from label"
+                                    description="Review the printed tag or serial number, then search eligible handover candidates. Select the correct asset yourself."
+                                    @reviewed="assetSearch = $event"
                                 />
                             </div>
 

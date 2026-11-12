@@ -19,13 +19,15 @@ import { computed, ref } from 'vue';
 import PurchaseOrderController from '@/actions/App/Http/Controllers/Inventory/PurchaseOrderController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
+import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
 import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
+import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
 import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { ProcurementOcrDraft } from '@/lib/ocrReview';
 import {
     create as purchaseOrdersCreate,
     index as purchaseOrdersIndex,
@@ -95,6 +97,34 @@ const form = useForm({
 });
 
 const quickEntryQuery = ref('');
+const procurementDraft = ref<ProcurementOcrDraft | null>(null);
+const documentNotice = ref('');
+const documentSuppliers = computed(() => {
+    const query = procurementDraft.value?.supplier.trim().toLowerCase();
+
+    return query
+        ? props.suppliers
+              .filter((supplier) => supplier.name.toLowerCase().includes(query))
+              .slice(0, 10)
+        : [];
+});
+
+function addDocumentNote(): void {
+    const draft = procurementDraft.value;
+
+    if (!draft) {
+        return;
+    }
+
+    const note = `${draft.documentType.replaceAll('_', ' ')}${draft.reference ? ` reference: ${draft.reference}` : ''}${draft.documentDate ? `; document date: ${draft.documentDate}` : ''}`;
+
+    if (!form.notes.split('\n').includes(note)) {
+        form.notes = [form.notes, note].filter(Boolean).join('\n');
+    }
+
+    documentNotice.value =
+        'Reviewed source reference added to draft notes. Delivery date, quantities, prices, and tax were not changed.';
+}
 const quickEntryQty = ref(1);
 const showQuickSuggestions = ref(false);
 const isCatalogOpen = ref(false);
@@ -544,6 +574,117 @@ function submitPurchaseOrder(): void {
         >
             <!-- Left Main Column -->
             <div class="flex flex-col gap-6">
+                <section
+                    class="grid min-w-0 gap-3 rounded-2xl border border-border bg-card p-5"
+                    aria-labelledby="procurement-ocr-title"
+                >
+                    <h2 id="procurement-ocr-title" class="font-semibold">
+                        Procurement document assistance
+                    </h2>
+                    <p class="text-sm text-muted-foreground">
+                        Read a quotation, invoice, or delivery-receipt image.
+                        Review fields, then explicitly match existing records.
+                        Selected PDF pages and images are supported. No table,
+                        price, or quantity extraction.
+                    </p>
+                    <OcrAssistButton
+                        label="Read procurement document"
+                        title="Review procurement document"
+                        description="Review source text and correct suggested fields. Ambiguous dates must be corrected; nothing creates or submits an order."
+                        submit-label="Review draft matches"
+                        help="Only draft suggestions are returned. Match existing suppliers and products, then complete the normal purchase-order workflow."
+                        document
+                        @document="
+                            procurementDraft = $event;
+                            documentNotice = '';
+                        "
+                    />
+                    <div
+                        v-if="procurementDraft"
+                        class="grid min-w-0 gap-3"
+                        data-testid="procurement-ocr-draft"
+                    >
+                        <p class="text-sm break-words">
+                            Reviewed
+                            {{
+                                procurementDraft.documentType.replaceAll(
+                                    '_',
+                                    ' ',
+                                )
+                            }}
+                            · Reference:
+                            {{ procurementDraft.reference || 'unresolved' }} ·
+                            Document date:
+                            {{ procurementDraft.documentDate || 'unresolved' }}
+                        </p>
+                        <Button
+                            v-if="
+                                procurementDraft.reference ||
+                                procurementDraft.documentDate
+                            "
+                            type="button"
+                            variant="outline"
+                            class="min-h-11 whitespace-normal"
+                            @click="addDocumentNote"
+                            >Add reviewed reference to order notes</Button
+                        >
+                        <p class="text-sm">
+                            Supplier text:
+                            {{ procurementDraft.supplier || 'unresolved' }}.
+                            Choose a matching supplier explicitly:
+                        </p>
+                        <div class="flex flex-wrap gap-2">
+                            <Button
+                                v-for="supplier in documentSuppliers"
+                                :key="supplier.id"
+                                type="button"
+                                variant="outline"
+                                class="min-h-11 max-w-full whitespace-normal"
+                                @click="
+                                    form.supplier_id = String(supplier.id);
+                                    documentNotice =
+                                        'Supplier selected. Review the order lines before saving.';
+                                "
+                                >{{ supplier.name }}</Button
+                            >
+                        </div>
+                        <p
+                            v-if="!documentSuppliers.length"
+                            class="text-sm text-muted-foreground"
+                        >
+                            No supplier match. Use the supplier selector below;
+                            no supplier has been created.
+                        </p>
+                        <Button
+                            v-if="procurementDraft.productCode"
+                            type="button"
+                            variant="outline"
+                            class="min-h-11 whitespace-normal"
+                            @click="
+                                quickEntryQuery = procurementDraft.productCode;
+                                showQuickSuggestions = true;
+                                documentNotice =
+                                    'Product search filled. Select the correct catalog item; no line was added.';
+                            "
+                            >Search reviewed code:
+                            {{ procurementDraft.productCode }}</Button
+                        >
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            class="min-h-11"
+                            @click="procurementDraft = null"
+                            >Discard document suggestions</Button
+                        >
+                    </div>
+                    <p
+                        v-if="documentNotice"
+                        role="status"
+                        class="text-sm text-muted-foreground"
+                    >
+                        {{ documentNotice }}
+                    </p>
+                </section>
                 <!-- Section 1: Supplier & Order Parameters -->
                 <section
                     class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs sm:p-6"

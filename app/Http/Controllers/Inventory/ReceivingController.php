@@ -28,7 +28,7 @@ class ReceivingController extends Controller
             ->where('is_active', true)
             ->orderBy('name')
             ->get(['id', 'sku', 'name', 'type', 'category_id', 'supplier_id', 'reorder_threshold', 'unit_price'])
-            ->map(fn (Product $product): array => [
+            ->map(fn ($product): array => [
                 'id' => (int) $product->id,
                 'sku' => $product->sku,
                 'name' => $product->name,
@@ -54,7 +54,7 @@ class ReceivingController extends Controller
             ->orderByDesc('created_at')
             ->limit(50)
             ->get()
-            ->map(fn (PurchaseOrder $po): array => (new PurchaseOrderResource($po))->resolve($request))
+            ->map(fn ($po): array => (new PurchaseOrderResource($po))->resolve($request))
             ->values()
             ->all();
 
@@ -85,6 +85,7 @@ class ReceivingController extends Controller
                     [
                         'qty_received' => $validated['qty'] ?? null,
                         'tag_codes' => $validated['tag_codes'] ?? null,
+                        'serial_numbers' => $validated['serial_numbers'] ?? [],
                         'reference_no' => $validated['reference_no'] ?? null,
                         'received_at' => $payload['received_at'],
                         'expires_at' => $payload['expires_at'],

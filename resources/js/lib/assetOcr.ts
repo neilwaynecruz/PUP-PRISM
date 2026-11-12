@@ -5,6 +5,7 @@ export async function readAssetLabel(
     image: HTMLCanvasElement,
     signal: AbortSignal,
     onProgress: (message: string) => void,
+    layout: 'label' | 'document' = 'label',
 ): Promise<string> {
     if (typeof Worker === 'undefined' || typeof WebAssembly === 'undefined') {
         throw new Error(
@@ -67,7 +68,8 @@ export async function readAssetLabel(
 
         try {
             await worker.setParameters({
-                tessedit_pageseg_mode: PSM.SPARSE_TEXT,
+                tessedit_pageseg_mode:
+                    layout === 'document' ? PSM.AUTO : PSM.SPARSE_TEXT,
             });
             const result = await Promise.race([
                 worker.recognize(image),

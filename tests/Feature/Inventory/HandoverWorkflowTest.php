@@ -71,6 +71,27 @@ test('custodians can browse and search assets by name with availability flags', 
                 && collect($options)->firstWhere('tag_code', 'TAG-BUSY')['unavailable_reason'] === 'Handover awaiting verification'));
 });
 
+test('reviewed serial numbers search handover candidates without bypassing eligibility', function () {
+    $custodian = workflowCustodian();
+    $asset = workflowAsset(tag: 'TAG-SERIAL-OK');
+    $asset->update(['serial_number' => 'SN-OCR-ONLY']);
+    $excluded = workflowAsset(tag: 'TAG-SERIAL-EXCLUDED');
+    $excluded->update(['serial_number' => 'SN-OCR-ONLY-2', 'status' => AssetStatus::Condemned]);
+
+    $this->actingAs($custodian)
+        ->get(route('inventory.handover.index', ['asset_search' => 'SN-OCR-ONLY'], absolute: false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('assetOptions', 1)
+            ->where('assetOptions.0.id', $asset->id)
+            ->where('selectedAsset', null));
+
+    $this->get(route('inventory.handover.index', ['asset_search' => 'SN-NO-MATCH'], absolute: false))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->has('assetOptions', 0));
+    expect(HandoverLog::query()->count())->toBe(0);
+});
+
 test('selecting an asset shows its accountability, location, and eligibility', function () {
     $custodian = workflowCustodian();
     $department = Department::factory()->create(['name' => 'College of Engineering']);

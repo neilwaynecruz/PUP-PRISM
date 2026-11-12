@@ -407,6 +407,7 @@ class HandoverController extends Controller
             ->when($search !== '', function (Builder $query) use ($search): void {
                 $query->where(function (Builder $nested) use ($search): void {
                     $nested->whereLike('tag_code', "%{$search}%")
+                        ->orWhereLike('serial_number', "%{$search}%")
                         ->orWhereHas('product', fn (Builder $product) => $product->whereLike('name', "%{$search}%"))
                         ->orWhereHas('position', fn (Builder $position) => $position->whereLike('title', "%{$search}%"))
                         ->orWhereHas('currentLocation', fn (Builder $location) => $location->whereLike('name', "%{$search}%"));
@@ -419,7 +420,7 @@ class HandoverController extends Controller
         $unavailable = $this->batchUnavailableReasons($assets);
 
         return $assets
-            ->map(fn (Asset $asset): array => [
+            ->map(fn ($asset): array => [
                 'id' => (int) $asset->id,
                 'tag_code' => $asset->tag_code,
                 'name' => $asset->product?->name,
@@ -574,7 +575,7 @@ class HandoverController extends Controller
             ->orderBy('name')
             ->limit(25)
             ->get(['id', 'name', 'email', 'position_id'])
-            ->map(function (User $user) use ($assetPositionId): array {
+            ->map(function ($user) use ($assetPositionId): array {
                 $reason = match (true) {
                     $user->position === null => __('No position assigned'),
                     ! $user->position->is_active => __('Position is inactive'),

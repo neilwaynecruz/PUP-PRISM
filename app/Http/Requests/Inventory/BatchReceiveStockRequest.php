@@ -6,6 +6,7 @@ use App\Enums\ProductType;
 use App\Models\Product;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class BatchReceiveStockRequest extends FormRequest
@@ -34,6 +35,8 @@ class BatchReceiveStockRequest extends FormRequest
             'lines.*.expires_at' => ['nullable', 'date'],
             'lines.*.tag_codes' => ['nullable', 'array'],
             'lines.*.tag_codes.*' => ['string', 'distinct'],
+            'lines.*.serial_numbers' => ['nullable', 'array', 'list'],
+            'lines.*.serial_numbers.*' => ['nullable', 'string', 'max:120', 'distinct', Rule::unique('assets', 'serial_number')],
             'lines.*.notes' => ['nullable', 'string'],
         ];
     }
@@ -93,6 +96,7 @@ class BatchReceiveStockRequest extends FormRequest
                     'expires_at' => null,
                     'notes' => $line['notes'] ?? null,
                     'tag_codes' => $tagCodes,
+                    'serial_numbers' => $line['serial_numbers'] ?? [],
                 ];
             }
         }

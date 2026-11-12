@@ -60,6 +60,7 @@
         "jsqr": "^1.4.0",
         "laravel-vite-plugin": "^3.0.0",
         "lucide-vue-next": "^0.468.0",
+        "pdfjs-dist": "6.5.438",
         "reka-ui": "^2.6.1",
         "tailwind-merge": "^3.2.0",
         "tailwindcss": "^4.1.1",

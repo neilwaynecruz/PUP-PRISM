@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CameraOff, ScanLine } from 'lucide-vue-next';
+import { CameraOff, QrCode } from 'lucide-vue-next';
 import { computed, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +28,7 @@ const props = withDefaults(
         buttonLabel: 'Scan QR Code',
         title: 'Scan QR code',
         description:
-            'Use your phone or tablet camera. Manual entry stays available if the camera is unavailable.',
+            'Use your phone or tablet camera to scan a QR code. Manual entry stays available if the camera is unavailable.',
         continuous: false,
         closeOnScan: undefined,
         triggerTestId: undefined,
@@ -92,7 +92,7 @@ watch(isOpen, async (open) => {
                 class="min-h-11 w-full sm:w-auto"
                 :data-testid="triggerTestId"
             >
-                <ScanLine aria-hidden="true" class="mr-2 size-4" />
+                <QrCode aria-hidden="true" class="mr-2 size-4" />
                 {{ props.buttonLabel }}
             </Button>
         </DialogTrigger>
@@ -162,12 +162,36 @@ watch(isOpen, async (open) => {
                             class="hidden"
                         />
 
+                        <!-- QR Alignment Reticle -->
                         <div
                             class="pointer-events-none absolute inset-0 flex items-center justify-center p-6"
                         >
                             <div
-                                class="size-full rounded-xl border-2 border-dashed border-white/80 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]"
-                            />
+                                class="relative aspect-square w-3/4 max-w-[240px] rounded-xl border border-white/40 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
+                            >
+                                <!-- Reticle Corner Accents -->
+                                <div
+                                    class="absolute -top-1 -left-1 size-5 rounded-tl border-t-3 border-l-3 border-primary"
+                                    aria-hidden="true"
+                                />
+                                <div
+                                    class="absolute -top-1 -right-1 size-5 rounded-tr border-t-3 border-r-3 border-primary"
+                                    aria-hidden="true"
+                                />
+                                <div
+                                    class="absolute -bottom-1 -left-1 size-5 rounded-bl border-b-3 border-l-3 border-primary"
+                                    aria-hidden="true"
+                                />
+                                <div
+                                    class="absolute -right-1 -bottom-1 size-5 rounded-br border-r-3 border-b-3 border-primary"
+                                    aria-hidden="true"
+                                />
+                                <!-- Laser Line -->
+                                <div
+                                    class="absolute inset-x-2 top-1/2 h-0.5 -translate-y-1/2 animate-pulse rounded-full bg-rose-500/80 shadow-[0_0_10px_rgba(244,63,94,0.9)]"
+                                    aria-hidden="true"
+                                />
+                            </div>
                         </div>
 
                         <div

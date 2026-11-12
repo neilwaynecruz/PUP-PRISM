@@ -224,13 +224,13 @@ function confirmDelete(): void {
                 </div>
 
                 <div class="grid gap-5 p-5">
-                    <!-- SKU / Barcode -->
+                    <!-- SKU / QR Identifier -->
                     <div class="grid gap-2">
                         <Label
                             for="sku"
                             class="text-xs font-semibold text-foreground"
                         >
-                            SKU or Barcode
+                            SKU / QR Identifier
                             <span class="text-rose-500">*</span>
                         </Label>
                         <Input
@@ -243,7 +243,8 @@ function confirmDelete(): void {
                         />
                         <p class="text-xs text-muted-foreground">
                             Unique alphanumeric code identifying this item.
-                            Modifying this affects future label printing.
+                            Modifying this affects future QR label printing and
+                            scanning.
                         </p>
                         <InputError :message="errors.sku" />
                     </div>

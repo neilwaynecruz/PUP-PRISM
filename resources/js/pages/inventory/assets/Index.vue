@@ -50,18 +50,24 @@ defineOptions({
 });
 
 const search = ref(props.filters.search ?? '');
+const lookupWorkflow = ref<'maintenance' | 'transfer' | ''>('');
 const ocrComponent = shallowRef<Component | null>(null);
 const ocrOpen = ref(false);
 const ocrLoading = ref(false);
 const ocrLoadError = ref('');
 const ocrTrigger = ref<InstanceType<typeof Button> | null>(null);
+let activeOcrTrigger: HTMLElement | null = null;
 
-async function openOcr(): Promise<void> {
+async function openOcr(event?: MouseEvent): Promise<void> {
     if (ocrLoading.value) {
         return;
     }
 
     ocrLoading.value = true;
+    activeOcrTrigger =
+        event?.currentTarget instanceof HTMLElement
+            ? event.currentTarget
+            : null;
     ocrLoadError.value = '';
 
     try {
@@ -78,7 +84,7 @@ async function openOcr(): Promise<void> {
 }
 
 function restoreOcrFocus(): void {
-    ocrTrigger.value?.$el?.focus();
+    (activeOcrTrigger ?? ocrTrigger.value?.$el)?.focus();
 }
 
 function searchIdentifier(value: string): void {
@@ -193,7 +199,10 @@ function statusTone(value: string): string {
                     class="min-h-11 w-full sm:w-auto"
                     :disabled="ocrLoading"
                     :aria-busy="ocrLoading"
-                    @click="openOcr"
+                    @click="
+                        lookupWorkflow = '';
+                        openOcr($event);
+                    "
                     >{{
                         ocrLoading ? 'Loading tag reader…' : 'Read printed tag'
                     }}</Button
@@ -203,6 +212,26 @@ function statusTone(value: string): string {
                     title="Scan asset QR code"
                     @scanned="searchIdentifier"
                 />
+                <Button
+                    type="button"
+                    variant="outline"
+                    class="min-h-11 whitespace-normal"
+                    @click="
+                        lookupWorkflow = 'maintenance';
+                        openOcr($event);
+                    "
+                    >Find maintenance asset from label</Button
+                >
+                <Button
+                    type="button"
+                    variant="outline"
+                    class="min-h-11 whitespace-normal"
+                    @click="
+                        lookupWorkflow = 'transfer';
+                        openOcr($event);
+                    "
+                    >Find transfer asset from label</Button
+                >
                 <div
                     class="flex items-center gap-1.5 rounded-lg border border-border/60 bg-muted/20 px-3 py-1.5 text-xs text-muted-foreground"
                 >
@@ -224,6 +253,19 @@ function statusTone(value: string): string {
         </p>
 
         <!-- Filter Bar -->
+        <p
+            v-if="lookupWorkflow"
+            role="status"
+            class="rounded-lg border border-border bg-card p-3 text-sm text-muted-foreground"
+        >
+            Review the matching asset below to open
+            {{
+                lookupWorkflow === 'maintenance'
+                    ? 'maintenance'
+                    : 'location transfers'
+            }}. Its current location, status, and assignment come from the
+            database; requests and approvals remain explicit.
+        </p>
         <div class="rounded-xl border border-border/70 bg-card p-4 shadow-xs">
             <div class="mb-3 flex items-center justify-between">
                 <div
@@ -336,7 +378,11 @@ function statusTone(value: string): string {
             <Link
                 v-for="asset in assets.data"
                 :key="asset.id"
-                :href="show(asset.id)"
+                :href="
+                    lookupWorkflow
+                        ? `${show.url(asset.id)}#${lookupWorkflow === 'maintenance' ? 'maintenance-title' : 'transfer-title'}`
+                        : show(asset.id)
+                "
                 @click="cancelPendingSearch"
                 class="group flex flex-col justify-between rounded-xl border border-border/70 bg-card p-5 shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >

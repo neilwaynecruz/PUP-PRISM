@@ -9,7 +9,10 @@ import {
 } from 'lucide-vue-next';
 import { computed, reactive, ref } from 'vue';
 import Heading from '@/components/Heading.vue';
+import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
+import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     approve,
     cancel,
@@ -207,6 +210,21 @@ const editable = computed(
         ['draft', 'in_progress'].includes(props.session.status),
 );
 const submitted = computed(() => props.session.status === 'submitted');
+const identifierSearch = ref('');
+const visibleLines = computed(() => {
+    const query = identifierSearch.value.trim().toLowerCase();
+
+    return props.session.lines.filter(
+        (line) =>
+            !query ||
+            [
+                line.asset?.tag_code,
+                line.product.sku,
+                line.stock_lot?.reference_no,
+                line.product.name,
+            ].some((value) => value?.toLowerCase().includes(query)),
+    );
+});
 </script>
 
 <template>
@@ -312,6 +330,49 @@ const submitted = computed(() => props.session.status === 'submitted');
         </section>
 
         <section aria-labelledby="count-lines-title" class="space-y-3">
+            <div class="grid gap-3 rounded-xl border border-border bg-card p-4">
+                <label for="count-identifier-search" class="text-sm font-medium"
+                    >Find an item in this count session</label
+                >
+                <Input
+                    id="count-identifier-search"
+                    v-model="identifierSearch"
+                    type="search"
+                    placeholder="Asset tag, SKU, lot reference, or product name"
+                    class="min-h-11"
+                />
+                <div class="flex flex-wrap gap-2">
+                    <QrScannerDialog
+                        button-label="Scan count item QR"
+                        title="Find count item by QR"
+                        @scanned="identifierSearch = $event"
+                    />
+                    <OcrAssistButton
+                        label="Find count item from label"
+                        title="Find count item from label"
+                        description="Review the asset tag, SKU, or lot reference. Only items already in this count session are searched. OCR does not count physical objects."
+                        field-label="Tag, SKU, or lot reference (editable)"
+                        submit-label="Find session item"
+                        help="Select the matching row and enter the observed physical quantity yourself. Existing counts are never overwritten by OCR."
+                        @reviewed="identifierSearch = $event"
+                    />
+                    <Button
+                        v-if="identifierSearch"
+                        type="button"
+                        variant="outline"
+                        class="min-h-11"
+                        @click="identifierSearch = ''"
+                        >Show all items</Button
+                    >
+                </div>
+                <p role="status" class="text-sm text-muted-foreground">
+                    {{
+                        identifierSearch && !visibleLines.length
+                            ? 'No matching item in this session. Check the identifier or session scope.'
+                            : `${visibleLines.length} matching session item(s). Previously counted items retain their saved quantities.`
+                    }}
+                </p>
+            </div>
             <div>
                 <h2 id="count-lines-title" class="text-lg font-semibold">
                     Items to count
@@ -322,7 +383,7 @@ const submitted = computed(() => props.session.status === 'submitted');
                 </p>
             </div>
             <article
-                v-for="line in session.lines"
+                v-for="line in visibleLines"
                 :key="line.id"
                 class="rounded-xl border border-border/70 bg-card p-4 shadow-xs sm:p-5"
             >

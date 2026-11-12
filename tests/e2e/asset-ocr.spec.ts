@@ -54,7 +54,7 @@ test('invalid image types, empty files and oversized photos have actionable erro
             name: 'document.pdf',
             mimeType: 'application/pdf',
             buffer: Buffer.from('%PDF'),
-            message: 'Choose a JPEG, PNG, or WebP',
+            message: 'This PDF could not be read',
         },
         {
             name: 'empty.png',

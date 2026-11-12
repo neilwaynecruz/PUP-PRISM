@@ -1711,16 +1711,16 @@ onBeforeUnmount(() => {
             </DialogContent>
         </Dialog>
 
-        <!-- Print Labels for Filtered Products Scope Dialog -->
+        <!-- Print QR Labels for Filtered Products Scope Dialog -->
         <Dialog v-model:open="labelScopeDialogOpen">
             <DialogContent class="sm:max-w-lg">
                 <DialogHeader class="space-y-2">
                     <DialogTitle class="flex items-center gap-2">
                         <Printer class="h-5 w-5 text-primary" />
-                        <span>Print labels for filtered products?</span>
+                        <span>Print QR labels for filtered products?</span>
                     </DialogTitle>
                     <DialogDescription class="text-sm text-muted-foreground">
-                        No products are selected. This will prepare one label
+                        No products are selected. This will prepare one QR label
                         for every active product matching the current search,
                         type, and category filters, up to the 500-label safety
                         limit.

@@ -36,6 +36,8 @@ class PurchaseOrderReceiveRequest extends FormRequest
             'lines.*.expires_at' => ['nullable', 'date'],
             'lines.*.tag_codes' => ['nullable', 'array', 'min:1'],
             'lines.*.tag_codes.*' => ['string', 'max:64', 'distinct'],
+            'lines.*.serial_numbers' => ['nullable', 'array', 'list'],
+            'lines.*.serial_numbers.*' => ['nullable', 'string', 'max:120', 'distinct', Rule::unique('assets', 'serial_number')],
             'lines.*.notes' => ['nullable', 'string', 'max:2000'],
             'idempotency_key' => ['nullable', 'string', 'max:64'],
         ];
@@ -140,6 +142,7 @@ class PurchaseOrderReceiveRequest extends FormRequest
                 'received_at' => isset($line['received_at']) ? CarbonImmutable::parse((string) $line['received_at']) : null,
                 'expires_at' => null,
                 'tag_codes' => $tagCodes,
+                'serial_numbers' => $line['serial_numbers'] ?? [],
                 'notes' => $line['notes'] ?? null,
             ];
         }
