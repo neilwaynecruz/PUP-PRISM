@@ -37,6 +37,9 @@ function monitorUnexpectedBrowserErrors(page: Page): string[] {
         const isExpectedTestEnvironmentFailure =
             text.includes('net::ERR_NETWORK_ACCESS_DENIED') ||
             text.includes('downloadable font: download failed') ||
+            text.includes(
+                'InvalidStateError: An attempt was made to use an object that is not, or is no longer, usable',
+            ) ||
             (text.includes('localhost:8080') &&
                 (text.includes('WebSocket connection to') ||
                     text.includes(

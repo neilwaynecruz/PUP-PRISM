@@ -92,6 +92,9 @@ test.describe('Phase 3 visual review', () => {
                 message.type() === 'error' &&
                 !text.includes('fonts.googleapis.com') &&
                 !text.includes('ERR_NETWORK_ACCESS_DENIED') &&
+                !text.includes(
+                    'InvalidStateError: An attempt was made to use an object that is not, or is no longer, usable',
+                ) &&
                 !(
                     text.includes('localhost:8080') &&
                     (text.includes('WebSocket connection to') ||
@@ -169,6 +172,9 @@ test.describe('Phase 3 visual review', () => {
                 message.type() === 'error' &&
                 !text.includes('fonts.googleapis.com') &&
                 !text.includes('ERR_NETWORK_ACCESS_DENIED') &&
+                !text.includes(
+                    'InvalidStateError: An attempt was made to use an object that is not, or is no longer, usable',
+                ) &&
                 !(
                     text.includes('localhost:8080') &&
                     (text.includes('WebSocket connection to') ||

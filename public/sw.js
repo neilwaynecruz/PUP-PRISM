@@ -9,7 +9,6 @@ const PRECACHE_URLS = [
 ];
 
 self.addEventListener('install', (event) => {
-    self.skipWaiting();
     event.waitUntil(
         caches.open(CACHE_NAME).then(async (cache) => {
             await cache.add('/offline.html');
@@ -75,23 +74,6 @@ self.addEventListener('fetch', (event) => {
     if (PRECACHE_URLS.includes(requestUrl.pathname)) {
         event.respondWith(
             caches.match(event.request).then(async (cachedResponse) => {
-                if (requestUrl.pathname === '/offline.html') {
-                    try {
-                        const networkResponse = await fetch(event.request);
-                        if (networkResponse.ok) {
-                            const cache = await caches.open(CACHE_NAME);
-                            await cache.put(
-                                event.request,
-                                networkResponse.clone(),
-                            );
-
-                            return networkResponse;
-                        }
-                    } catch {
-                        // Fall back to cached copy when offline
-                    }
-                }
-
                 if (cachedResponse) {
                     return cachedResponse;
                 }

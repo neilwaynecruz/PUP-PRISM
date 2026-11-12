@@ -309,6 +309,7 @@ test.describe('Settings', () => {
         await expect(name).toHaveValue('Adrian M. Mercado');
 
         await email.fill(originalEmail);
+        const save = page.locator('[data-test="update-profile-button"]');
         const successfulUpdate = page.waitForResponse(
             (response) =>
                 new URL(response.url()).pathname === '/settings/profile' &&
@@ -317,9 +318,10 @@ test.describe('Settings', () => {
                     'PATCH' &&
                 response.status() === 303,
         );
-        await page.locator('[data-test="update-profile-button"]').click();
+        await save.click();
         await successfulUpdate;
         await expect(page.getByText(/valid email/i)).toBeHidden();
+        await expect(save).toBeEnabled();
 
         await page.reload({ waitUntil: 'domcontentloaded' });
         await expect(page.locator('#name')).toHaveValue('Adrian M. Mercado');

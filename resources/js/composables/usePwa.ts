@@ -47,8 +47,19 @@ function trackServiceWorkerUpdate(
 
 async function registerServiceWorker(): Promise<void> {
     try {
+        if (navigator.serviceWorker.controller) {
+            const existing =
+                await navigator.serviceWorker.getRegistration('/sw.js');
+
+            if (existing) {
+                registrationFailed.value = false;
+                trackServiceWorkerUpdate(existing);
+
+                return;
+            }
+        }
+
         const registration = await navigator.serviceWorker.register('/sw.js');
-        void registration.update();
 
         registrationFailed.value = false;
         trackServiceWorkerUpdate(registration);

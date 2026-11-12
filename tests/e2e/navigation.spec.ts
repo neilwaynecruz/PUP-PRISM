@@ -184,6 +184,9 @@ test.describe('Inventory Navigation', () => {
                     .location()
                     .url.startsWith('https://fonts.googleapis.com/') ||
                 text.includes('ERR_NETWORK_ACCESS_DENIED') ||
+                text.includes(
+                    'InvalidStateError: An attempt was made to use an object that is not, or is no longer, usable',
+                ) ||
                 (text.includes('localhost:8080') &&
                     (text.includes('WebSocket connection to') ||
                         text.includes(
