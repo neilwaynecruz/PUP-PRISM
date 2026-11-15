@@ -275,7 +275,10 @@ function handleSingleQrScanned(rawSku: string): void {
     }
 
     form.sku = cleaned;
-    showFeedback(`Scanned SKU "${cleaned}". Fill in product details below.`, 'info');
+    showFeedback(
+        `Scanned SKU "${cleaned}". Fill in product details below.`,
+        'info',
+    );
 }
 
 function hideSingleSuggestionsDelayed(): void {
