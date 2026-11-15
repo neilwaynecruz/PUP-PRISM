@@ -25,6 +25,10 @@ class PruneOperationalData extends Command
 
         $counts = $this->resolveCounts($retentionService, $dryRun, is_string($only) ? $only : null);
 
+        if ($counts === null) {
+            return self::FAILURE;
+        }
+
         foreach ($counts as $dataset => $count) {
             $this->components->info(sprintf(
                 '%s %d %s row(s).',
@@ -42,13 +46,13 @@ class PruneOperationalData extends Command
     }
 
     /**
-     * @return array<string, int>
+     * @return array<string, int>|null
      */
     private function resolveCounts(
         OperationalDataRetentionService $retentionService,
         bool $dryRun,
         ?string $only,
-    ): array {
+    ): ?array {
         if ($only === null || $only === '') {
             return $retentionService->prune($dryRun);
         }
@@ -62,13 +66,10 @@ class PruneOperationalData extends Command
         };
     }
 
-    /**
-     * @return array<string, int>
-     */
-    private function invalidOnlyOption(string $only): array
+    private function invalidOnlyOption(string $only): null
     {
         $this->components->error("Unknown --only value [{$only}]. Use audit_logs, forecast_snapshots, notifications, or failed_jobs.");
 
-        exit(self::FAILURE);
+        return null;
     }
 }

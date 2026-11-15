@@ -15,29 +15,29 @@ defineProps<{
         aria-label="Pagination"
         class="flex flex-wrap items-center justify-center gap-1.5 pt-1"
     >
-        <Button
-            v-for="(link, i) in links"
-            :key="i"
-            variant="ghost"
-            size="sm"
-            as-child
-            :disabled="!link.url"
-            class="min-h-11 min-w-11 rounded-lg px-3 text-xs transition-colors sm:min-h-8 sm:min-w-8"
-            :class="
-                link.active
-                    ? 'bg-primary/12 text-primary shadow-xs hover:bg-primary/15'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            "
-        >
-            <Link
+        <template v-for="(link, i) in links" :key="i">
+            <Button
                 v-if="link.url"
-                :href="link.url"
-                preserve-scroll
-                preserve-state
+                variant="ghost"
+                size="sm"
+                as-child
+                class="min-h-11 min-w-11 rounded-lg px-3 text-xs transition-colors sm:min-h-8 sm:min-w-8"
+                :class="
+                    link.active
+                        ? 'bg-primary/12 text-primary shadow-xs hover:bg-primary/15'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                "
             >
-                <span v-html="link.label" />
-            </Link>
-            <span v-else v-html="link.label" />
-        </Button>
+                <Link :href="link.url" preserve-scroll preserve-state>
+                    <span v-html="link.label" />
+                </Link>
+            </Button>
+            <span
+                v-else
+                aria-disabled="true"
+                class="pointer-events-none inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg px-3 text-xs text-muted-foreground/50 select-none sm:min-h-8 sm:min-w-8"
+                v-html="link.label"
+            />
+        </template>
     </nav>
 </template>

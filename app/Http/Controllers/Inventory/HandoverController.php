@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Enums\AssetLifecycleStatus;
 use App\Enums\AssetStatus;
+use App\Enums\AssetTransferStatus;
 use App\Enums\MaintenanceStatus;
 use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
@@ -12,6 +13,7 @@ use App\Http\Requests\Inventory\HandoverInitiateRequest;
 use App\Http\Resources\HandoverLogResource;
 use App\Models\Asset;
 use App\Models\AssetMaintenance;
+use App\Models\AssetTransfer;
 use App\Models\Booking;
 use App\Models\HandoverLog;
 use App\Models\StockMovement;
@@ -271,7 +273,7 @@ class HandoverController extends Controller
             $request->session()->forget("handover_verify_token.{$handoverLog->id}");
             Inertia::flash('toast', ['type' => 'info', 'message' => __('Already verified.')]);
 
-            return redirect()->route('inventory.handover.index');
+            return $this->postVerifyRedirect($user);
         }
 
         if ($handoverLog->cancelled_at !== null) {
@@ -365,7 +367,7 @@ class HandoverController extends Controller
         if (! $wasVerified) {
             Inertia::flash('toast', ['type' => 'info', 'message' => __('Already verified.')]);
 
-            return redirect()->route('inventory.handover.index');
+            return $this->postVerifyRedirect($user);
         }
 
         $this->realtime->handoverVerified($handoverLog->fresh() ?? $handoverLog);
@@ -384,7 +386,14 @@ class HandoverController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Handover verified.')]);
 
-        return redirect()->route('inventory.handover.index');
+        return $this->postVerifyRedirect($user);
+    }
+
+    private function postVerifyRedirect(User $user): RedirectResponse
+    {
+        return $user->hasAnyRole(['Admin', 'Property Custodian'])
+            ? redirect()->route('inventory.handover.index')
+            : redirect()->route('dashboard');
     }
 
     /**
@@ -485,6 +494,16 @@ class HandoverController extends Controller
 
         foreach ($pendingIds as $id) {
             $reasons[(int) $id] = __('Handover awaiting verification');
+        }
+
+        $transferIds = AssetTransfer::query()
+            ->whereIn('asset_id', $ids)
+            ->where('status', AssetTransferStatus::Pending->value)
+            ->distinct()
+            ->pluck('asset_id');
+
+        foreach ($transferIds as $id) {
+            $reasons[(int) $id] = __('Location transfer awaiting approval');
         }
 
         return $reasons;

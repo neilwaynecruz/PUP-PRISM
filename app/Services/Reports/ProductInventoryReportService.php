@@ -5,6 +5,7 @@ namespace App\Services\Reports;
 use App\Models\Category;
 use App\Models\Origin;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Models\UnitOfMeasurement;
 use App\Services\Reports\Support\TableReport;
 use Carbon\CarbonImmutable;
@@ -18,6 +19,7 @@ class ProductInventoryReportService extends AbstractTableReportService
         $type = $request->string('type')->trim()->toString();
         $categoryId = $request->integer('category_id') ?: null;
         $originId = $request->integer('origin_id') ?: null;
+        $supplierId = $request->integer('supplier_id') ?: null;
         $unitId = $request->integer('unit_of_measurement_id') ?: null;
         $active = $request->has('active') ? $request->boolean('active') : null;
 
@@ -25,6 +27,7 @@ class ProductInventoryReportService extends AbstractTableReportService
             ->with([
                 'category:id,name',
                 'origin:id,name',
+                'supplier:id,name',
                 'unitOfMeasurement:id,name,abbreviation',
                 'stock:id,product_id,on_hand_qty',
             ])
@@ -41,6 +44,7 @@ class ProductInventoryReportService extends AbstractTableReportService
             ->when($type !== '', fn ($builder) => $builder->where('type', $type))
             ->when($categoryId !== null, fn ($builder) => $builder->where('category_id', $categoryId))
             ->when($originId !== null, fn ($builder) => $builder->where('origin_id', $originId))
+            ->when($supplierId !== null, fn ($builder) => $builder->where('supplier_id', $supplierId))
             ->when($unitId !== null, fn ($builder) => $builder->where('unit_of_measurement_id', $unitId))
             ->when($active !== null, fn ($builder) => $builder->where('is_active', $active))
             ->orderBy('name');
@@ -71,6 +75,7 @@ class ProductInventoryReportService extends AbstractTableReportService
                 'Type' => $type,
                 'Category' => $categoryId ? Category::query()->whereKey($categoryId)->value('name') : null,
                 'Origin' => $originId ? Origin::query()->whereKey($originId)->value('name') : null,
+                'Supplier' => $supplierId ? Supplier::query()->whereKey($supplierId)->value('name') : null,
                 'Unit' => $unitId ? UnitOfMeasurement::query()->whereKey($unitId)->value('name') : null,
                 'Status' => $active === null ? null : ($active ? 'Active' : 'Inactive'),
             ]),

@@ -1066,7 +1066,7 @@ bulkRestore.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     bulkRestore.form = bulkRestoreForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/ProductController.php:544
+ * @see app/Http/Controllers/Inventory/ProductController.php:555
  * @route '/inventory/products/bulk-force-delete'
  */
 export const bulkForceDelete = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1081,7 +1081,7 @@ bulkForceDelete.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/ProductController.php:544
+ * @see app/Http/Controllers/Inventory/ProductController.php:555
  * @route '/inventory/products/bulk-force-delete'
  */
 bulkForceDelete.url = (options?: RouteQueryOptions) => {
@@ -1090,7 +1090,7 @@ bulkForceDelete.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/ProductController.php:544
+ * @see app/Http/Controllers/Inventory/ProductController.php:555
  * @route '/inventory/products/bulk-force-delete'
  */
 bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1100,7 +1100,7 @@ bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
     /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/ProductController.php:544
+ * @see app/Http/Controllers/Inventory/ProductController.php:555
  * @route '/inventory/products/bulk-force-delete'
  */
     const bulkForceDeleteForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1110,7 +1110,7 @@ bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
 
             /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkForceDelete
- * @see app/Http/Controllers/Inventory/ProductController.php:544
+ * @see app/Http/Controllers/Inventory/ProductController.php:555
  * @route '/inventory/products/bulk-force-delete'
  */
         bulkForceDeleteForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1121,7 +1121,7 @@ bulkForceDelete.post = (options?: RouteQueryOptions): RouteDefinition<'post'> =>
     bulkForceDelete.form = bulkForceDeleteForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkActivate
- * @see app/Http/Controllers/Inventory/ProductController.php:588
+ * @see app/Http/Controllers/Inventory/ProductController.php:607
  * @route '/inventory/products/bulk-activate'
  */
 export const bulkActivate = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1136,7 +1136,7 @@ bulkActivate.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkActivate
- * @see app/Http/Controllers/Inventory/ProductController.php:588
+ * @see app/Http/Controllers/Inventory/ProductController.php:607
  * @route '/inventory/products/bulk-activate'
  */
 bulkActivate.url = (options?: RouteQueryOptions) => {
@@ -1145,7 +1145,7 @@ bulkActivate.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkActivate
- * @see app/Http/Controllers/Inventory/ProductController.php:588
+ * @see app/Http/Controllers/Inventory/ProductController.php:607
  * @route '/inventory/products/bulk-activate'
  */
 bulkActivate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1155,7 +1155,7 @@ bulkActivate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkActivate
- * @see app/Http/Controllers/Inventory/ProductController.php:588
+ * @see app/Http/Controllers/Inventory/ProductController.php:607
  * @route '/inventory/products/bulk-activate'
  */
     const bulkActivateForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1165,7 +1165,7 @@ bulkActivate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkActivate
- * @see app/Http/Controllers/Inventory/ProductController.php:588
+ * @see app/Http/Controllers/Inventory/ProductController.php:607
  * @route '/inventory/products/bulk-activate'
  */
         bulkActivateForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1176,7 +1176,7 @@ bulkActivate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     bulkActivate.form = bulkActivateForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkDeactivate
- * @see app/Http/Controllers/Inventory/ProductController.php:635
+ * @see app/Http/Controllers/Inventory/ProductController.php:660
  * @route '/inventory/products/bulk-deactivate'
  */
 export const bulkDeactivate = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1191,7 +1191,7 @@ bulkDeactivate.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkDeactivate
- * @see app/Http/Controllers/Inventory/ProductController.php:635
+ * @see app/Http/Controllers/Inventory/ProductController.php:660
  * @route '/inventory/products/bulk-deactivate'
  */
 bulkDeactivate.url = (options?: RouteQueryOptions) => {
@@ -1200,7 +1200,7 @@ bulkDeactivate.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkDeactivate
- * @see app/Http/Controllers/Inventory/ProductController.php:635
+ * @see app/Http/Controllers/Inventory/ProductController.php:660
  * @route '/inventory/products/bulk-deactivate'
  */
 bulkDeactivate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1210,7 +1210,7 @@ bulkDeactivate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
 
     /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkDeactivate
- * @see app/Http/Controllers/Inventory/ProductController.php:635
+ * @see app/Http/Controllers/Inventory/ProductController.php:660
  * @route '/inventory/products/bulk-deactivate'
  */
     const bulkDeactivateForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1220,7 +1220,7 @@ bulkDeactivate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
 
             /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkDeactivate
- * @see app/Http/Controllers/Inventory/ProductController.php:635
+ * @see app/Http/Controllers/Inventory/ProductController.php:660
  * @route '/inventory/products/bulk-deactivate'
  */
         bulkDeactivateForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1231,7 +1231,7 @@ bulkDeactivate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => 
     bulkDeactivate.form = bulkDeactivateForm
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkChangeCategory
- * @see app/Http/Controllers/Inventory/ProductController.php:682
+ * @see app/Http/Controllers/Inventory/ProductController.php:713
  * @route '/inventory/products/bulk-change-category'
  */
 export const bulkChangeCategory = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1246,7 +1246,7 @@ bulkChangeCategory.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkChangeCategory
- * @see app/Http/Controllers/Inventory/ProductController.php:682
+ * @see app/Http/Controllers/Inventory/ProductController.php:713
  * @route '/inventory/products/bulk-change-category'
  */
 bulkChangeCategory.url = (options?: RouteQueryOptions) => {
@@ -1255,7 +1255,7 @@ bulkChangeCategory.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkChangeCategory
- * @see app/Http/Controllers/Inventory/ProductController.php:682
+ * @see app/Http/Controllers/Inventory/ProductController.php:713
  * @route '/inventory/products/bulk-change-category'
  */
 bulkChangeCategory.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -1265,7 +1265,7 @@ bulkChangeCategory.post = (options?: RouteQueryOptions): RouteDefinition<'post'>
 
     /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkChangeCategory
- * @see app/Http/Controllers/Inventory/ProductController.php:682
+ * @see app/Http/Controllers/Inventory/ProductController.php:713
  * @route '/inventory/products/bulk-change-category'
  */
     const bulkChangeCategoryForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -1275,7 +1275,7 @@ bulkChangeCategory.post = (options?: RouteQueryOptions): RouteDefinition<'post'>
 
             /**
 * @see \App\Http\Controllers\Inventory\ProductController::bulkChangeCategory
- * @see app/Http/Controllers/Inventory/ProductController.php:682
+ * @see app/Http/Controllers/Inventory/ProductController.php:713
  * @route '/inventory/products/bulk-change-category'
  */
         bulkChangeCategoryForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

@@ -2,6 +2,7 @@
 
 namespace App\Services\Inventory;
 
+use App\Enums\AssetConditionStatus;
 use App\Enums\AssetStatus;
 use App\Enums\ProductType;
 use App\Enums\RequisitionStatus;
@@ -22,6 +23,8 @@ use App\Services\InventoryRealtimeService;
 use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -113,125 +116,139 @@ class InventoryService
 
         // Serialize identical requests so concurrent retries cannot both pass the
         // idempotency check before either transaction records its completion.
-        $cacheKey = 'po_receive_idempotency:'.$purchaseOrder->id.':'.($idempotencyKey ?: sha1(json_encode($lines)));
+        $normalizedIdempotencyKey = $idempotencyKey !== null && trim($idempotencyKey) !== ''
+            ? trim($idempotencyKey)
+            : null;
+
+        $execute = function () use ($user, $purchaseOrder, $lines, $ipAddress): PurchaseOrder {
+            /** @var array{0: PurchaseOrder, 1: array<int, array{product: Product, on_hand_qty: int|null, delta: int}>} $transactionResult */
+            $transactionResult = DB::transaction(function () use ($user, $purchaseOrder, $lines, $ipAddress): array {
+                // 1. Lock the PurchaseOrder first to serialize receipt attempts and prevent concurrent race conditions
+                /** @var PurchaseOrder $lockedPo */
+                $lockedPo = PurchaseOrder::query()
+                    ->lockForUpdate()
+                    ->findOrFail($purchaseOrder->id);
+
+                if (! $lockedPo->canReceive()) {
+                    throw new \RuntimeException('Only sent or partially received purchase orders can accept receipts.');
+                }
+
+                // 2. Lock all affected purchase order lines in strictly ascending ID order to avoid deadlocks
+                $submittedLineIds = collect($lines)->pluck('purchase_order_line_id')->map(fn ($id) => (int) $id)->sort()->values()->all();
+
+                $lockedLines = PurchaseOrderLine::query()
+                    ->where('purchase_order_id', $lockedPo->id)
+                    ->whereIn('id', $submittedLineIds)
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                // 3. Lock all affected products in strictly ascending ID order
+                $productIds = $lockedLines->pluck('product_id')->unique()->sort()->values()->all();
+                $lockedProducts = Product::query()
+                    ->whereIn('id', $productIds)
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('id');
+
+                $events = [];
+
+                // 4. Validate and process each line
+                foreach ($lines as $linePayload) {
+                    $lineId = (int) $linePayload['purchase_order_line_id'];
+                    /** @var PurchaseOrderLine|null $line */
+                    $line = $lockedLines->get($lineId);
+
+                    if (! $line) {
+                        throw new \RuntimeException("Purchase order line #{$lineId} does not belong to this purchase order.");
+                    }
+
+                    $product = $lockedProducts->get($line->product_id);
+                    if (! $product) {
+                        throw new \RuntimeException("Product #{$line->product_id} not found.");
+                    }
+
+                    $remainingQty = $line->remainingQty();
+                    $receivedQuantity = $this->resolveReceivedQuantity($line, $linePayload);
+
+                    if ($receivedQuantity <= 0) {
+                        throw new \RuntimeException("Received quantity must be greater than zero for product {$product->sku}.");
+                    }
+
+                    if ($receivedQuantity > $remainingQty) {
+                        throw new \RuntimeException("Receipt exceeds remaining quantity for product {$product->sku}.");
+                    }
+
+                    // If asset, check tag uniqueness against database
+                    if ($product->type === ProductType::Asset) {
+                        /** @var array<int, string> $tagCodes */
+                        $tagCodes = $linePayload['tag_codes'] ?? [];
+                        if (Asset::query()->whereIn('tag_code', $tagCodes)->exists()) {
+                            throw new \RuntimeException('One or more asset tag codes have already been registered.');
+                        }
+                    }
+
+                    // Execute receipt
+                    $receiptResult = $this->performReceipt(
+                        user: $user,
+                        product: $product,
+                        payload: [
+                            ...$linePayload,
+                            'reference_no' => $linePayload['reference_no'] ?? $lockedPo->po_number,
+                            'notes' => $linePayload['notes'] ?? "Received against {$lockedPo->po_number}.",
+                        ],
+                        ipAddress: $ipAddress,
+                    );
+
+                    $line->forceFill([
+                        'qty_received' => $line->qty_received + $receivedQuantity,
+                    ])->save();
+
+                    $events[] = $receiptResult;
+                }
+
+                // 5. Update purchase order receipt status and audit log atomically
+                $oldValues = [
+                    'status' => $lockedPo->status->value,
+                    'received_at' => $lockedPo->received_at?->toIso8601String(),
+                ];
+
+                $lockedPo->refreshReceiptStatus();
+
+                AuditLogService::logUpdated($lockedPo, $oldValues);
+
+                return [$lockedPo->fresh(['lines.product', 'supplier']) ?? $lockedPo, $events];
+            });
+
+            [$updatedPo, $realtimeEvents] = $transactionResult;
+
+            // Dispatch realtime events strictly after transaction has committed.
+            foreach ($realtimeEvents as $event) {
+                $this->dispatchReceiptRealtime($event);
+            }
+
+            return $updatedPo;
+        };
+
+        if ($normalizedIdempotencyKey === null) {
+            return $execute();
+        }
+
+        $cacheKey = 'po_receive_idempotency:'.$purchaseOrder->id.':'.$normalizedIdempotencyKey;
         $lockKey = $cacheKey.':lock';
 
         try {
-            return Cache::lock($lockKey, 120)->block(5, function () use ($cacheKey, $user, $purchaseOrder, $lines, $ipAddress): PurchaseOrder {
+            return Cache::lock($lockKey, 120)->block(5, function () use ($cacheKey, $purchaseOrder, $execute): PurchaseOrder {
                 if (Cache::has($cacheKey)) {
                     return $purchaseOrder->fresh(['supplier', 'requester', 'approver', 'lines.product']) ?? $purchaseOrder;
                 }
 
-                /** @var array{0: PurchaseOrder, 1: array<int, array{product: Product, on_hand_qty: int|null, delta: int}>} $transactionResult */
-                $transactionResult = DB::transaction(function () use ($user, $purchaseOrder, $lines, $ipAddress): array {
-                    // 1. Lock the PurchaseOrder first to serialize receipt attempts and prevent concurrent race conditions
-                    /** @var PurchaseOrder $lockedPo */
-                    $lockedPo = PurchaseOrder::query()
-                        ->lockForUpdate()
-                        ->findOrFail($purchaseOrder->id);
+                $updatedPo = $execute();
 
-                    if (! $lockedPo->canReceive()) {
-                        throw new \RuntimeException('Only sent or partially received purchase orders can accept receipts.');
-                    }
-
-                    // 2. Lock all affected purchase order lines in strictly ascending ID order to avoid deadlocks
-                    $submittedLineIds = collect($lines)->pluck('purchase_order_line_id')->map(fn ($id) => (int) $id)->sort()->values()->all();
-
-                    $lockedLines = PurchaseOrderLine::query()
-                        ->where('purchase_order_id', $lockedPo->id)
-                        ->whereIn('id', $submittedLineIds)
-                        ->orderBy('id')
-                        ->lockForUpdate()
-                        ->get()
-                        ->keyBy('id');
-
-                    // 3. Lock all affected products in strictly ascending ID order
-                    $productIds = $lockedLines->pluck('product_id')->unique()->sort()->values()->all();
-                    $lockedProducts = Product::query()
-                        ->whereIn('id', $productIds)
-                        ->orderBy('id')
-                        ->lockForUpdate()
-                        ->get()
-                        ->keyBy('id');
-
-                    $events = [];
-
-                    // 4. Validate and process each line
-                    foreach ($lines as $linePayload) {
-                        $lineId = (int) $linePayload['purchase_order_line_id'];
-                        /** @var PurchaseOrderLine|null $line */
-                        $line = $lockedLines->get($lineId);
-
-                        if (! $line) {
-                            throw new \RuntimeException("Purchase order line #{$lineId} does not belong to this purchase order.");
-                        }
-
-                        $product = $lockedProducts->get($line->product_id);
-                        if (! $product) {
-                            throw new \RuntimeException("Product #{$line->product_id} not found.");
-                        }
-
-                        $remainingQty = $line->remainingQty();
-                        $receivedQuantity = $this->resolveReceivedQuantity($line, $linePayload);
-
-                        if ($receivedQuantity <= 0) {
-                            throw new \RuntimeException("Received quantity must be greater than zero for product {$product->sku}.");
-                        }
-
-                        if ($receivedQuantity > $remainingQty) {
-                            throw new \RuntimeException("Receipt exceeds remaining quantity for product {$product->sku}.");
-                        }
-
-                        // If asset, check tag uniqueness against database
-                        if ($product->type === ProductType::Asset) {
-                            /** @var array<int, string> $tagCodes */
-                            $tagCodes = $linePayload['tag_codes'] ?? [];
-                            if (Asset::query()->whereIn('tag_code', $tagCodes)->exists()) {
-                                throw new \RuntimeException('One or more asset tag codes have already been registered.');
-                            }
-                        }
-
-                        // Execute receipt
-                        $receiptResult = $this->performReceipt(
-                            user: $user,
-                            product: $product,
-                            payload: [
-                                ...$linePayload,
-                                'reference_no' => $linePayload['reference_no'] ?? $lockedPo->po_number,
-                                'notes' => $linePayload['notes'] ?? "Received against {$lockedPo->po_number}.",
-                            ],
-                            ipAddress: $ipAddress,
-                        );
-
-                        $line->forceFill([
-                            'qty_received' => $line->qty_received + $receivedQuantity,
-                        ])->save();
-
-                        $events[] = $receiptResult;
-                    }
-
-                    // 5. Update purchase order receipt status and audit log atomically
-                    $oldValues = [
-                        'status' => $lockedPo->status->value,
-                        'received_at' => $lockedPo->received_at?->toIso8601String(),
-                    ];
-
-                    $lockedPo->refreshReceiptStatus();
-
-                    AuditLogService::logUpdated($lockedPo, $oldValues);
-
-                    return [$lockedPo->fresh(['lines.product', 'supplier']) ?? $lockedPo, $events];
-                });
-
-                [$updatedPo, $realtimeEvents] = $transactionResult;
-
-                // 6. Record idempotency token before releasing the request lock.
+                // 6. Record explicit idempotency token before releasing the request lock.
                 Cache::put($cacheKey, true, now()->addSeconds(60));
-
-                // 7. Dispatch realtime events strictly after transaction has committed
-                foreach ($realtimeEvents as $event) {
-                    $this->dispatchReceiptRealtime($event);
-                }
 
                 return $updatedPo;
             });
@@ -248,6 +265,7 @@ class InventoryService
         PurchaseOrderLine $purchaseOrderLine,
         array $payload,
         ?string $ipAddress = null,
+        ?string $idempotencyKey = null,
     ): void {
         $purchaseOrder = $purchaseOrderLine->purchaseOrder
             ?? PurchaseOrder::query()->findOrFail($purchaseOrderLine->purchase_order_id);
@@ -257,7 +275,7 @@ class InventoryService
                 ...$payload,
                 'purchase_order_line_id' => $purchaseOrderLine->id,
             ],
-        ], $ipAddress);
+        ], $ipAddress, $idempotencyKey);
     }
 
     /**
@@ -265,12 +283,82 @@ class InventoryService
      */
     public function batchReceive(User $user, array $lines, ?string $ipAddress = null): void
     {
+        if ($lines === []) {
+            return;
+        }
+
         /** @var array<int, array{product: Product, on_hand_qty: int|null, delta: int}> $stockChanges */
         $stockChanges = DB::transaction(function () use ($user, $lines, $ipAddress): array {
+            // Validate intra-batch asset tag and serial uniqueness before acquiring locks.
+            $seenTags = [];
+            $seenSerials = [];
+            foreach ($lines as $lineIndex => $line) {
+                foreach (array_values($line['tag_codes'] ?? []) as $tagIndex => $rawTag) {
+                    $tag = trim((string) $rawTag);
+                    if ($tag !== '') {
+                        if (isset($seenTags[$tag])) {
+                            throw ValidationException::withMessages([
+                                "lines.{$lineIndex}.tag_codes.{$tagIndex}" => __('Duplicate asset tag code :tag in batch.', ['tag' => $tag]),
+                            ]);
+                        }
+                        $seenTags[$tag] = true;
+                    }
+                }
+                foreach (array_values($line['serial_numbers'] ?? []) as $serialIndex => $rawSerial) {
+                    $serial = is_string($rawSerial) && trim($rawSerial) !== '' ? trim($rawSerial) : null;
+                    if ($serial !== null) {
+                        if (isset($seenSerials[$serial])) {
+                            throw ValidationException::withMessages([
+                                "lines.{$lineIndex}.serial_numbers.{$serialIndex}" => __('Duplicate serial number :serial in batch.', ['serial' => $serial]),
+                            ]);
+                        }
+                        $seenSerials[$serial] = true;
+                    }
+                }
+            }
+
+            // Lock all products (and consumable stocks) in deterministic ascending product_id order to prevent deadlocks.
+            $skus = collect($lines)->pluck('sku')->filter()->unique()->values()->all();
+            $productIdsBySku = Product::query()
+                ->whereIn('sku', $skus)
+                ->pluck('id', 'sku');
+
+            foreach ($skus as $sku) {
+                if (! $productIdsBySku->has($sku)) {
+                    throw (new ModelNotFoundException)->setModel(Product::class);
+                }
+            }
+
+            $orderedProductIds = $productIdsBySku->values()->map(fn ($id): int => (int) $id)->sort()->values()->all();
+
+            $lockedProducts = Product::query()
+                ->whereIn('id', $orderedProductIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('sku');
+
+            $consumableIds = $lockedProducts
+                ->filter(fn (Product $product): bool => $product->type === ProductType::Consumable)
+                ->pluck('id')
+                ->sort()
+                ->values()
+                ->all();
+
+            if ($consumableIds !== []) {
+                ProductStock::query()
+                    ->whereIn('product_id', $consumableIds)
+                    ->orderBy('product_id')
+                    ->lockForUpdate()
+                    ->get();
+            }
+
             $changes = [];
 
             foreach ($lines as $line) {
-                $product = Product::query()->where('sku', $line['sku'])->firstOrFail();
+                /** @var Product $product */
+                $product = $lockedProducts->get($line['sku'])
+                    ?? throw (new ModelNotFoundException)->setModel(Product::class);
 
                 $changes[] = $this->performReceipt(
                     user: $user,
@@ -317,6 +405,8 @@ class InventoryService
             $lines = RequisitionLine::query()
                 ->where('requisition_id', $requisition->id)
                 ->with('product:id,sku,type')
+                ->orderBy('product_id')
+                ->orderBy('id')
                 ->lockForUpdate()
                 ->get();
 
@@ -347,10 +437,21 @@ class InventoryService
                 ->mapWithKeys(fn (array $line): array => [(int) $line['id'] => (int) $line['qty_to_issue']])
                 ->all();
 
-            $issuedAnyQuantity = false;
+            // Lock all affected Products and ProductStocks in ascending product_id order before validating/allocating lots.
+            $orderedProductIds = $lines->pluck('product_id')->unique()->sort()->values()->all();
 
+            /** @var Collection<int, Product> $lockedProducts */
+            $lockedProducts = Product::query()
+                ->whereIn('id', $orderedProductIds)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
+
+            $activeProductIds = [];
             foreach ($lines as $line) {
-                $product = Product::query()->whereKey($line->product_id)->lockForUpdate()->firstOrFail();
+                $product = $lockedProducts->get($line->product_id)
+                    ?? throw (new ModelNotFoundException)->setModel(Product::class);
 
                 if ($product->type !== ProductType::Consumable) {
                     throw new \RuntimeException('Only consumable requisition lines can be issued here.');
@@ -364,13 +465,59 @@ class InventoryService
                     throw new \RuntimeException("Issue quantity exceeds the remaining quantity for SKU {$product->sku}.");
                 }
 
+                if ($qty > 0) {
+                    $activeProductIds[] = (int) $product->id;
+                }
+            }
+
+            $activeProductIds = collect($activeProductIds)->unique()->sort()->values()->all();
+
+            /** @var Collection<int, ProductStock> $lockedStocks */
+            $lockedStocks = $activeProductIds !== []
+                ? ProductStock::query()
+                    ->whereIn('product_id', $activeProductIds)
+                    ->orderBy('product_id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->keyBy('product_id')
+                : collect();
+
+            $issuedAnyQuantity = false;
+
+            foreach ($lines as $line) {
+                /** @var Product $product */
+                $product = $lockedProducts->get($line->product_id);
+
+                $qty = array_key_exists($line->id, $requestedQuantities)
+                    ? $requestedQuantities[$line->id]
+                    : $line->remainingQuantity();
+
                 if ($qty === 0) {
                     continue;
                 }
 
-                $stock = ProductStock::query()->where('product_id', $product->id)->lockForUpdate()->firstOrFail();
+                /** @var ProductStock|null $stock */
+                $stock = $lockedStocks->get($product->id);
 
-                if ($stock->on_hand_qty < $qty) {
+                if (! $stock) {
+                    throw (new ModelNotFoundException)->setModel(ProductStock::class);
+                }
+
+                $committedByOthers = (int) RequisitionLine::query()
+                    ->join('requisitions', 'requisitions.id', '=', 'requisition_lines.requisition_id')
+                    ->where('requisition_lines.product_id', $product->id)
+                    ->where('requisition_lines.requisition_id', '!=', $requisition->id)
+                    ->whereNull('requisitions.deleted_at')
+                    ->whereIn('requisitions.status', [
+                        RequisitionStatus::Approved->value,
+                        RequisitionStatus::PartiallyIssued->value,
+                    ])
+                    ->selectRaw('COALESCE(SUM(CASE WHEN requisition_lines.qty_requested > requisition_lines.qty_issued THEN requisition_lines.qty_requested - requisition_lines.qty_issued ELSE 0 END), 0) as committed_qty')
+                    ->value('committed_qty');
+
+                $availableOnHand = (int) $stock->on_hand_qty - $committedByOthers;
+
+                if ($stock->on_hand_qty < $qty || $availableOnHand < $qty) {
                     throw new \RuntimeException("Insufficient stock for SKU {$product->sku}.");
                 }
 
@@ -412,6 +559,10 @@ class InventoryService
                     }
 
                     throw new \RuntimeException("Unable to allocate lots for SKU {$product->sku}.");
+                }
+
+                if (($unexpiredAvailable - $committedByOthers) < $qty) {
+                    throw new \RuntimeException("Insufficient stock for SKU {$product->sku}. Remaining unexpired stock is committed to approved requisitions.");
                 }
 
                 foreach ($lots as $lot) {
@@ -457,24 +608,22 @@ class InventoryService
 
                 $issuedAnyQuantity = true;
 
-                $freshStock = $stock->fresh();
-                if ($freshStock !== null) {
-                    $stockChanges[] = [
-                        'product' => $product->fresh() ?? $product,
-                        'on_hand_qty' => (int) $freshStock->on_hand_qty,
-                        'delta' => -$qty,
-                        'requisition_id' => $requisition->id,
-                    ];
+                $updatedOnHand = (int) $stock->on_hand_qty;
+                $stockChanges[] = [
+                    'product' => $product,
+                    'on_hand_qty' => $updatedOnHand,
+                    'delta' => -$qty,
+                    'requisition_id' => $requisition->id,
+                ];
 
-                    if (
-                        $product->reorder_threshold !== null
-                        && $freshStock->on_hand_qty <= $product->reorder_threshold
-                    ) {
-                        $lowStockAlerts[] = [
-                            'product' => $product->fresh() ?? $product,
-                            'on_hand_qty' => (int) $freshStock->on_hand_qty,
-                        ];
-                    }
+                if (
+                    $product->reorder_threshold !== null
+                    && $updatedOnHand <= $product->reorder_threshold
+                ) {
+                    $lowStockAlerts[] = [
+                        'product' => $product,
+                        'on_hand_qty' => $updatedOnHand,
+                    ];
                 }
             }
 
@@ -483,7 +632,7 @@ class InventoryService
             }
 
             $hasRemainingQuantities = $lines->contains(
-                fn (RequisitionLine $line) => $line->fresh()?->remainingQuantity() > 0,
+                fn (RequisitionLine $line) => $line->remainingQuantity() > 0,
             );
 
             $status = match (true) {
@@ -582,7 +731,7 @@ class InventoryService
     /**
      * Apply a reviewed count variance while the caller owns the surrounding transaction.
      *
-     * @return array{product: Product, on_hand_qty: int, delta: int, movement: StockMovement}
+     * @return array{product: Product, on_hand_qty: int|null, delta: int, movement: StockMovement}
      */
     public function applyApprovedCountVariance(
         User $user,
@@ -597,11 +746,69 @@ class InventoryService
             throw new \RuntimeException('This count discrepancy has already been posted.');
         }
 
-        if ($line->stock_lot_id === null || $line->variance_qty === null || $line->counted_qty === null) {
-            throw new \RuntimeException('This count line does not contain a postable stock-lot variance.');
+        if (($line->stock_lot_id === null && $line->asset_id === null) || $line->variance_qty === null || $line->counted_qty === null) {
+            throw new \RuntimeException('This count line does not contain a postable count variance.');
         }
 
         $product = Product::query()->whereKey($line->product_id)->lockForUpdate()->firstOrFail();
+
+        if ($line->asset_id !== null && $line->stock_lot_id === null) {
+            if ($product->type !== ProductType::Asset) {
+                throw new \RuntimeException('Only tagged asset count lines can update asset status.');
+            }
+
+            /** @var Asset $asset */
+            $asset = Asset::query()
+                ->whereKey($line->asset_id)
+                ->where('product_id', $product->id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $qtyDelta = (int) $line->variance_qty;
+            if ($qtyDelta === 0) {
+                throw new \RuntimeException('This count line has no variance to apply.');
+            }
+
+            if ($qtyDelta < 0) {
+                $oldAssetValues = $asset->toArray();
+                $asset->update([
+                    'status' => AssetStatus::Unserviceable,
+                    'condition_status' => AssetConditionStatus::Damaged,
+                ]);
+                AuditLogService::logUpdated(
+                    $asset,
+                    $oldAssetValues,
+                    "Asset {$asset->tag_code} marked unserviceable and damaged from approved physical count {$line->session->reference_no}.",
+                );
+            }
+
+            $movement = StockMovement::create([
+                'movement_type' => 'cycle_count',
+                'reason_code' => StockMovementReasonCode::VarianceReview->value,
+                'product_id' => $product->id,
+                'stock_lot_id' => null,
+                'asset_id' => $asset->id,
+                'requisition_id' => null,
+                'qty_delta' => 0,
+                'qty_before' => 1,
+                'qty_after' => (int) $line->counted_qty,
+                'counted_qty' => (int) $line->counted_qty,
+                'variance_qty' => $qtyDelta,
+                'performed_by' => $user->id,
+                'accountable_position_id' => $asset->position_id ?? $user->position_id,
+                'ip_address' => $ipAddress,
+                'performed_at' => CarbonImmutable::now(),
+                'notes' => "Approved physical count {$line->session->reference_no}; asset {$asset->tag_code}.",
+            ]);
+
+            return [
+                'product' => $product->fresh() ?? $product,
+                'on_hand_qty' => null,
+                'delta' => 0,
+                'movement' => $movement,
+            ];
+        }
+
         if ($product->type !== ProductType::Consumable) {
             throw new \RuntimeException('Only consumable count lines can change stock quantities.');
         }
@@ -630,14 +837,18 @@ class InventoryService
             $countedLot->decrement('qty_remaining', abs($qtyDelta));
             $stock->decrement('on_hand_qty', abs($qtyDelta));
         } elseif ($qtyDelta > 0) {
-            $movementLot = StockLot::create([
-                'product_id' => $product->id,
-                'reference_no' => 'COUNT-'.$line->session->reference_no.'-'.$line->id,
-                'received_at' => CarbonImmutable::now(),
-                'expires_at' => $countedLot->expires_at,
-                'qty_received' => $qtyDelta,
-                'qty_remaining' => $qtyDelta,
-            ]);
+            if (((int) $countedLot->qty_remaining + $qtyDelta) <= (int) $countedLot->qty_received) {
+                $countedLot->increment('qty_remaining', $qtyDelta);
+            } else {
+                $movementLot = StockLot::create([
+                    'product_id' => $product->id,
+                    'reference_no' => 'COUNT-'.$line->session->reference_no.'-'.$line->id,
+                    'received_at' => CarbonImmutable::now(),
+                    'expires_at' => $countedLot->expires_at,
+                    'qty_received' => $qtyDelta,
+                    'qty_remaining' => $qtyDelta,
+                ]);
+            }
 
             $stock->increment('on_hand_qty', $qtyDelta);
         }
@@ -670,7 +881,7 @@ class InventoryService
     }
 
     /**
-     * @param  array{product: Product, on_hand_qty: int, delta: int}  $result
+     * @param  array{product: Product, on_hand_qty: int|null, delta: int}  $result
      */
     public function publishInventoryDelta(array $result): void
     {
@@ -792,19 +1003,86 @@ class InventoryService
             ]);
         }
 
-        foreach (array_values($tagCodes) as $index => $tagCode) {
+        $normalizedTags = [];
+        $normalizedSerials = [];
+        foreach (array_values($tagCodes) as $index => $rawTag) {
+            $tagCode = trim((string) $rawTag);
+            if ($tagCode === '') {
+                throw ValidationException::withMessages([
+                    "tag_codes.{$index}" => __('Asset tag codes cannot be blank.'),
+                ]);
+            }
+            if (in_array($tagCode, $normalizedTags, true)) {
+                throw ValidationException::withMessages([
+                    "tag_codes.{$index}" => __('Duplicate asset tag code :tag in submission.', ['tag' => $tagCode]),
+                ]);
+            }
+            $normalizedTags[] = $tagCode;
+
             $rawSerial = $serialNumbers[$index] ?? null;
             $serialNumber = is_string($rawSerial) && trim($rawSerial) !== '' ? trim($rawSerial) : null;
+            if ($serialNumber !== null && in_array($serialNumber, $normalizedSerials, true)) {
+                throw ValidationException::withMessages([
+                    "serial_numbers.{$index}" => __('Duplicate serial number :serial in submission.', ['serial' => $serialNumber]),
+                ]);
+            }
+            $normalizedSerials[] = $serialNumber;
+        }
 
-            $asset = Asset::create([
-                'product_id' => $product->id,
-                'position_id' => null,
-                'tag_code' => $tagCode,
-                'serial_number' => $serialNumber,
-                'status' => AssetStatus::Available,
-                'acquisition_date' => ($receivedAt ?? CarbonImmutable::now())->toDateString(),
-                'acquisition_cost' => $product->unit_price,
+        $existingTags = Asset::query()
+            ->whereIn('tag_code', $normalizedTags)
+            ->pluck('tag_code')
+            ->all();
+
+        if ($existingTags !== []) {
+            throw ValidationException::withMessages([
+                'tag_codes' => __('Duplicate asset tag code(s) already exist: :tags', ['tags' => implode(', ', $existingTags)]),
             ]);
+        }
+
+        $nonNullSerials = array_values(array_filter($normalizedSerials, static fn (?string $serial): bool => $serial !== null));
+        if ($nonNullSerials !== []) {
+            $existingSerials = Asset::query()
+                ->whereIn('serial_number', $nonNullSerials)
+                ->pluck('serial_number')
+                ->all();
+
+            if ($existingSerials !== []) {
+                throw ValidationException::withMessages([
+                    'serial_numbers' => __('Serial number(s) already exist: :serials', ['serials' => implode(', ', $existingSerials)]),
+                ]);
+            }
+        }
+
+        foreach ($normalizedTags as $index => $tagCode) {
+            $serialNumber = $normalizedSerials[$index] ?? null;
+
+            try {
+                // Use a savepoint so a concurrent unique constraint conflict rolls back safely on PostgreSQL.
+                $asset = DB::transaction(fn (): Asset => Asset::create([
+                    'product_id' => $product->id,
+                    'position_id' => null,
+                    'tag_code' => $tagCode,
+                    'serial_number' => $serialNumber,
+                    'status' => AssetStatus::Available,
+                    'acquisition_date' => ($receivedAt ?? CarbonImmutable::now())->toDateString(),
+                    'acquisition_cost' => $product->unit_price,
+                ]));
+            } catch (QueryException $exception) {
+                if (! $this->isUniqueConstraintViolation($exception)) {
+                    throw $exception;
+                }
+
+                if ($serialNumber !== null && Asset::query()->where('serial_number', $serialNumber)->exists()) {
+                    throw ValidationException::withMessages([
+                        "serial_numbers.{$index}" => __('The serial number :serial has already been registered.', ['serial' => $serialNumber]),
+                    ]);
+                }
+
+                throw ValidationException::withMessages([
+                    "tag_codes.{$index}" => __('The asset tag code :tag has already been registered.', ['tag' => $tagCode]),
+                ]);
+            }
 
             StockMovement::create([
                 'movement_type' => 'receive',
@@ -826,8 +1104,20 @@ class InventoryService
         return [
             'product' => $product->fresh() ?? $product,
             'on_hand_qty' => null,
-            'delta' => count($tagCodes),
+            'delta' => count($normalizedTags),
         ];
+    }
+
+    private function isUniqueConstraintViolation(QueryException $exception): bool
+    {
+        $sqlState = (string) ($exception->errorInfo[0] ?? $exception->getCode());
+        if (in_array($sqlState, ['23505', '23000'], true)) {
+            return true;
+        }
+
+        $message = strtolower($exception->getMessage());
+
+        return str_contains($message, 'unique constraint') || str_contains($message, 'duplicate key');
     }
 
     /**

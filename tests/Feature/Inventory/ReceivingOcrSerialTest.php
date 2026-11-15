@@ -9,6 +9,8 @@ use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
 use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
@@ -74,7 +76,13 @@ test('postgresql retains reviewed serials and its unique constraint rolls back d
 
         expect(Asset::query()->where('tag_code', 'OCR-PG-TAG-1')->firstOrFail()->serial_number)->toBe('OCR-PG-SERIAL-1');
         expect(fn () => $inventory->receive($user, $product, ['tag_codes' => ['OCR-PG-TAG-2'], 'serial_numbers' => ['OCR-PG-SERIAL-1']]))
-            ->toThrow(UniqueConstraintViolationException::class);
+            ->toThrow(ValidationException::class);
+        expect(fn () => DB::connection('pgsql_testing')->transaction(fn () => Asset::query()->create([
+            'product_id' => $product->id,
+            'tag_code' => 'OCR-PG-TAG-2',
+            'serial_number' => 'OCR-PG-SERIAL-1',
+            'status' => 'Available',
+        ])))->toThrow(UniqueConstraintViolationException::class);
         expect(Asset::query()->where('tag_code', 'OCR-PG-TAG-2')->exists())->toBeFalse();
         expect(StockMovement::query()->where('product_id', $product->id)->count())->toBe(1);
     });

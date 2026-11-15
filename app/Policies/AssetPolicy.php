@@ -16,4 +16,9 @@ class AssetPolicy
     {
         return $user->hasAnyRole(['Admin', 'Supply Head', 'Property Custodian']);
     }
+
+    public function returnToStock(User $user, Asset $asset): bool
+    {
+        return $user->hasAnyRole(['Admin', 'Property Custodian']);
+    }
 }

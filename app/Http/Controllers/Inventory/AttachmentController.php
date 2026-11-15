@@ -47,7 +47,13 @@ class AttachmentController extends Controller
     public function destroy(Attachment $attachment, AttachmentService $service): RedirectResponse
     {
         $this->authorize('delete', $attachment);
-        $service->remove($attachment);
+
+        try {
+            $service->remove($attachment);
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['attachment' => $exception->getMessage()]);
+        }
+
         Inertia::flash('toast', ['type' => 'success', 'message' => __('The document has been removed from active use.')]);
 
         return back();

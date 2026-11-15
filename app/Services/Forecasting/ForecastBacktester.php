@@ -76,11 +76,14 @@ class ForecastBacktester
                 'label' => 'Moving Average',
                 'predictions' => $this->movingAverage->forecast($trainingData, $evaluationDays),
             ],
-            'seasonal' => [
+        ];
+
+        if ($trainingCount >= 56) {
+            $methodDefinitions['seasonal'] = [
                 'label' => 'Seasonal Pattern',
                 'predictions' => $this->seasonalMethod->forecast($trainingData, $evaluationDays),
-            ],
-        ];
+            ];
+        }
 
         $results = [];
         $actualsByDate = [];

@@ -2,15 +2,13 @@
 
 namespace App\Services\Inventory;
 
-use App\Enums\AssetLifecycleStatus;
+use App\Enums\AssetConditionStatus;
+use App\Enums\AssetStatus;
 use App\Enums\AssetTransferStatus;
-use App\Enums\MaintenanceStatus;
 use App\Models\Asset;
-use App\Models\AssetMaintenance;
 use App\Models\AssetTransfer;
-use App\Models\Booking;
-use App\Models\HandoverLog;
 use App\Models\Location;
+use App\Models\Position;
 use App\Models\User;
 use App\Services\AuditLogService;
 use Carbon\CarbonImmutable;
@@ -18,13 +16,26 @@ use Illuminate\Support\Facades\DB;
 
 class AssetTransferService
 {
+    public function __construct(private readonly AssetIntegrityService $integrity) {}
+
     /** @param array<string, mixed> $payload */
     public function create(User $user, array $payload): AssetTransfer
     {
         return DB::transaction(function () use ($user, $payload): AssetTransfer {
             $asset = Asset::query()->whereKey($payload['asset_id'])->lockForUpdate()->firstOrFail();
             $destination = Location::query()->whereKey($payload['to_location_id'])->lockForUpdate()->firstOrFail();
-            $this->ensureEligible($asset, $destination);
+            $this->integrity->ensureCanTransfer($asset, $destination);
+
+            if (! empty($payload['to_position_id'])) {
+                $targetPosition = Position::query()
+                    ->whereKey((int) $payload['to_position_id'])
+                    ->where('is_active', true)
+                    ->first();
+
+                if (! $targetPosition instanceof Position) {
+                    throw new \RuntimeException('Select an active custodian position for the destination.');
+                }
+            }
 
             $transfer = AssetTransfer::create([
                 ...$payload,
@@ -52,12 +63,38 @@ class AssetTransferService
 
             $asset = Asset::query()->whereKey($transfer->asset_id)->lockForUpdate()->firstOrFail();
             $destination = Location::query()->whereKey($transfer->to_location_id)->lockForUpdate()->firstOrFail();
-            if ($asset->current_location_id !== $transfer->from_location_id) {
-                throw new \RuntimeException('The asset location changed after this request was created. Create a new transfer.');
+            if ($asset->current_location_id !== $transfer->from_location_id
+                || $asset->position_id !== $transfer->from_position_id) {
+                throw new \RuntimeException('The asset location or assignment changed after this request was created. Create a new transfer.');
             }
-            $this->ensureEligible($asset, $destination, $transfer->id);
+            $this->integrity->ensureCanTransfer($asset, $destination, $transfer->id);
 
-            $asset->update(['current_location_id' => $destination->id]);
+            $nextPositionId = $transfer->to_position_id;
+            if ($nextPositionId !== null) {
+                $targetPosition = Position::query()
+                    ->whereKey($nextPositionId)
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->first();
+
+                if (! $targetPosition instanceof Position) {
+                    throw new \RuntimeException('The destination position is inactive. Reject or cancel this transfer.');
+                }
+            }
+
+            $nextStatus = $asset->status;
+            if ($asset->condition_status === AssetConditionStatus::Serviceable
+                && in_array($asset->status, [AssetStatus::Available, AssetStatus::CheckedOut], true)) {
+                $nextStatus = $nextPositionId !== null
+                    ? AssetStatus::CheckedOut
+                    : AssetStatus::Available;
+            }
+
+            $asset->update([
+                'current_location_id' => $destination->id,
+                'position_id' => $nextPositionId,
+                'status' => $nextStatus,
+            ]);
             $transfer->update([
                 'status' => AssetTransferStatus::Approved,
                 'approved_by' => $approver->id,
@@ -105,37 +142,5 @@ class AssetTransferService
 
             return $transfer->fresh() ?? $transfer;
         });
-    }
-
-    private function ensureEligible(Asset $asset, Location $destination, ?int $ignoreTransferId = null): void
-    {
-        if (! $destination->is_active) {
-            throw new \RuntimeException('Choose an active destination.');
-        }
-        if ($asset->lifecycle_status !== AssetLifecycleStatus::Active) {
-            throw new \RuntimeException('Only active assets can be transferred.');
-        }
-        if ($asset->current_location_id === $destination->id) {
-            throw new \RuntimeException('The destination must be different from the current location.');
-        }
-        if (AssetTransfer::query()->where('asset_id', $asset->id)->where('status', AssetTransferStatus::Pending)->when(
-            $ignoreTransferId,
-            fn ($query) => $query->whereKeyNot($ignoreTransferId),
-        )->lockForUpdate()->exists()) {
-            throw new \RuntimeException('This asset already has a pending location transfer.');
-        }
-        if (HandoverLog::query()->where('asset_id', $asset->id)->pending()->lockForUpdate()->exists()) {
-            throw new \RuntimeException('This asset has a handover waiting for verification.');
-        }
-        if (Booking::query()->blocking()->where('asset_id', $asset->id)->where('end_at', '>', now())->lockForUpdate()->exists()) {
-            throw new \RuntimeException('This asset has an approved booking. Resolve the booking before transferring it.');
-        }
-        if (AssetMaintenance::query()->where('asset_id', $asset->id)->whereIn('status', [
-            MaintenanceStatus::Reported->value,
-            MaintenanceStatus::Scheduled->value,
-            MaintenanceStatus::InProgress->value,
-        ])->lockForUpdate()->exists()) {
-            throw new \RuntimeException('Complete or cancel the open maintenance record before transferring this asset.');
-        }
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inventory\AssetReturnRequest;
 use App\Models\Asset;
 use App\Models\AssetLifecycleEvent;
 use App\Models\AssetMaintenance;
@@ -10,6 +11,8 @@ use App\Models\AssetTransfer;
 use App\Models\Location;
 use App\Models\Position;
 use App\Models\User;
+use App\Services\Inventory\AssetLifecycleService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -68,7 +71,34 @@ class AssetController extends Controller
                 'createMaintenance' => request()->user()->can('create', AssetMaintenance::class),
                 'createTransfer' => request()->user()->can('create', AssetTransfer::class),
                 'createLifecycle' => request()->user()->can('create', AssetLifecycleEvent::class),
+                'returnAsset' => request()->user()->can('returnToStock', $asset),
             ],
         ]);
+    }
+
+    public function returnToStock(
+        AssetReturnRequest $request,
+        Asset $asset,
+        AssetLifecycleService $lifecycle,
+    ): RedirectResponse {
+        $this->authorize('returnToStock', $asset);
+
+        try {
+            $lifecycle->returnToStock(
+                $request->user(),
+                $asset,
+                $request->validated(),
+                $request->ip(),
+            );
+        } catch (\RuntimeException $exception) {
+            return back()->withErrors(['return' => $exception->getMessage()]);
+        }
+
+        Inertia::flash('toast', [
+            'type' => 'success',
+            'message' => __('Asset returned to stock successfully.'),
+        ]);
+
+        return back();
     }
 }

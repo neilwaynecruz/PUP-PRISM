@@ -18,6 +18,7 @@ import Heading from '@/components/Heading.vue';
 import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { index, show } from '@/routes/inventory/assets';
 
 type Location = { id: number; code: string; name: string };
@@ -119,6 +120,10 @@ function cancelPendingSearch(): void {
 watch([search, locationId, lifecycleStatus], () => {
     window.clearTimeout(timer);
     timer = window.setTimeout(() => {
+        if (!shouldApplyDebouncedVisit('/inventory/assets')) {
+            return;
+        }
+
         router.get(
             index().url,
             {
@@ -216,6 +221,8 @@ function statusTone(value: string): string {
                     type="button"
                     variant="outline"
                     class="min-h-11 whitespace-normal"
+                    :disabled="ocrLoading"
+                    :aria-busy="ocrLoading"
                     @click="
                         lookupWorkflow = 'maintenance';
                         openOcr($event);
@@ -226,6 +233,8 @@ function statusTone(value: string): string {
                     type="button"
                     variant="outline"
                     class="min-h-11 whitespace-normal"
+                    :disabled="ocrLoading"
+                    :aria-busy="ocrLoading"
                     @click="
                         lookupWorkflow = 'transfer';
                         openOcr($event);

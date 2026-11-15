@@ -85,7 +85,7 @@ test('property custodian can initiate handover and recipient can verify (creates
             '_token' => $verifyToken,
             'signature_png' => validHandoverSignaturePng(),
         ])
-        ->assertRedirect(route('inventory.handover.index', absolute: false));
+        ->assertRedirect(route('dashboard', absolute: false));
 
     $asset->refresh();
     expect($asset->status)->toBe(AssetStatus::CheckedOut);
@@ -290,7 +290,7 @@ test('valid png data uri signatures are accepted', function () {
             '_token' => $csrfToken,
             'signature_png' => validHandoverSignaturePng(),
         ])
-        ->assertRedirect(route('inventory.handover.index', absolute: false));
+        ->assertRedirect(route('dashboard', absolute: false));
 
     $handover->refresh();
 

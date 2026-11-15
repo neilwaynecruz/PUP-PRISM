@@ -22,7 +22,7 @@ class StockMovementController extends Controller
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
             'product_id' => ['nullable', 'integer', 'exists:products,id'],
-            'movement_type' => ['nullable', 'string', 'in:receive,issue,adjustment,transfer,cycle_count'],
+            'movement_type' => ['nullable', 'string', 'in:receive,issue,transfer,condemn,return,adjustment,cycle_count'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:'.config('api.pagination.max_per_page', 100)],
         ])->validate();
 

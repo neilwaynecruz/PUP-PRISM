@@ -8,8 +8,6 @@ use App\Enums\AssetStatus;
 use App\Enums\MaintenanceStatus;
 use App\Models\Asset;
 use App\Models\AssetMaintenance;
-use App\Models\Booking;
-use App\Models\HandoverLog;
 use App\Models\User;
 use App\Services\AuditLogService;
 use Carbon\CarbonImmutable;
@@ -17,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 
 class AssetMaintenanceService
 {
+    public function __construct(private readonly AssetIntegrityService $integrity) {}
+
     /** @param array<string, mixed> $payload */
     public function create(User $user, array $payload): AssetMaintenance
     {
@@ -74,18 +74,24 @@ class AssetMaintenanceService
             }
 
             if ($nextStatus === MaintenanceStatus::InProgress) {
-                $this->ensureAssetCanEnterMaintenance($asset);
+                $this->integrity->ensureCanStartMaintenance($asset);
                 $asset->update(['status' => AssetStatus::Unserviceable]);
             }
 
             if (in_array($nextStatus, [MaintenanceStatus::Completed, MaintenanceStatus::Cancelled], true)
                 && $maintenance->status === MaintenanceStatus::InProgress
                 && $asset->lifecycle_status === AssetLifecycleStatus::Active) {
+                $nextCondition = $nextStatus === MaintenanceStatus::Completed
+                    ? AssetConditionStatus::Serviceable
+                    : $asset->condition_status;
+
+                $restoredStatus = $nextCondition === AssetConditionStatus::Serviceable
+                    ? ($asset->position_id === null ? AssetStatus::Available : AssetStatus::CheckedOut)
+                    : AssetStatus::Unserviceable;
+
                 $asset->update([
-                    'status' => $asset->position_id === null ? AssetStatus::Available : AssetStatus::CheckedOut,
-                    'condition_status' => $nextStatus === MaintenanceStatus::Completed
-                        ? AssetConditionStatus::Serviceable
-                        : $asset->condition_status,
+                    'status' => $restoredStatus,
+                    'condition_status' => $nextCondition,
                 ]);
             }
 
@@ -104,24 +110,5 @@ class AssetMaintenanceService
 
             return $maintenance->fresh() ?? $maintenance;
         });
-    }
-
-    private function ensureAssetCanEnterMaintenance(Asset $asset): void
-    {
-        if ($asset->lifecycle_status !== AssetLifecycleStatus::Active) {
-            throw new \RuntimeException('Only active assets can enter maintenance.');
-        }
-
-        if ($asset->status !== AssetStatus::Available) {
-            throw new \RuntimeException('The asset must be available before maintenance can begin.');
-        }
-
-        if (Booking::query()->blocking()->where('asset_id', $asset->id)->where('end_at', '>', now())->lockForUpdate()->exists()) {
-            throw new \RuntimeException('This asset has an approved booking. Resolve the booking before starting maintenance.');
-        }
-
-        if (HandoverLog::query()->where('asset_id', $asset->id)->pending()->lockForUpdate()->exists()) {
-            throw new \RuntimeException('This asset has a handover waiting for verification.');
-        }
     }
 }

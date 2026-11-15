@@ -15,8 +15,8 @@ use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 uses(TestCase::class, RefreshDatabase::class);
@@ -125,7 +125,7 @@ test('receive assets rolls back when a duplicate tag code is encountered', funct
         tagCodes: ['AST-DUP-0001', 'AST-DUP-0002'],
         notes: 'Duplicate asset load',
         ipAddress: '10.0.0.21',
-    ))->toThrow(QueryException::class);
+    ))->toThrow(ValidationException::class);
 
     expect(Asset::query()->where('tag_code', 'AST-DUP-0002')->exists())->toBeFalse();
     expect(StockMovement::query()->where('notes', 'Duplicate asset load')->count())->toBe(0);

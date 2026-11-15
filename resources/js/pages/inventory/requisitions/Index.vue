@@ -10,7 +10,7 @@ import {
     Search,
     Trash2,
 } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
@@ -868,6 +868,39 @@ const statusTabs = computed(() => {
             })),
     ];
 });
+
+function focusStatusTab(index: number): void {
+    const tabs = statusTabs.value;
+    const bounded = ((index % tabs.length) + tabs.length) % tabs.length;
+    const targetTab = tabs[bounded];
+
+    if (!targetTab) {
+        return;
+    }
+
+    status.value = targetTab.value;
+    void nextTick(() => {
+        statusTabRefs.value[bounded]?.focus();
+    });
+}
+
+const statusTabRefs = ref<Array<HTMLButtonElement | null>>([]);
+
+function onStatusTabKeydown(event: KeyboardEvent, index: number): void {
+    if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        focusStatusTab(index + 1);
+    } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        focusStatusTab(index - 1);
+    } else if (event.key === 'Home') {
+        event.preventDefault();
+        focusStatusTab(0);
+    } else if (event.key === 'End') {
+        event.preventDefault();
+        focusStatusTab(statusTabs.value.length - 1);
+    }
+}
 
 function statusBadgeClass(value: string): string {
     switch (value) {
@@ -1733,11 +1766,18 @@ function confirmBulkAction(): void {
                     aria-label="Filter by status"
                 >
                     <button
-                        v-for="tab in statusTabs"
+                        v-for="(tab, tabIndex) in statusTabs"
                         :key="tab.value"
+                        :ref="
+                            (el) => {
+                                statusTabRefs[tabIndex] =
+                                    el as HTMLButtonElement | null;
+                            }
+                        "
                         type="button"
                         role="tab"
                         :aria-selected="status === tab.value"
+                        :tabindex="status === tab.value ? 0 : -1"
                         class="-mb-px inline-flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2 text-xs font-medium transition-colors"
                         :class="
                             status === tab.value
@@ -1745,6 +1785,7 @@ function confirmBulkAction(): void {
                                 : 'border-transparent text-muted-foreground hover:text-foreground'
                         "
                         @click="status = tab.value"
+                        @keydown="onStatusTabKeydown($event, tabIndex)"
                     >
                         {{ tab.label }}
                         <span

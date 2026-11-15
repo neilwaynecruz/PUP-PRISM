@@ -1,5 +1,12 @@
 <script setup lang="ts">
-import { Head, Link, router, useForm, usePage } from '@inertiajs/vue3';
+import {
+    Head,
+    Link,
+    router,
+    setLayoutProps,
+    useForm,
+    usePage,
+} from '@inertiajs/vue3';
 import {
     Activity,
     ArrowLeft,
@@ -7,6 +14,7 @@ import {
     Download,
     FileText,
     MapPin,
+    RotateCcw,
     ShieldCheck,
     UserCheck,
     Wrench,
@@ -15,6 +23,15 @@ import { computed, reactive, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import {
     approve as approveLifecycle,
     reject as rejectLifecycle,
@@ -26,7 +43,7 @@ import {
     reject as rejectTransfer,
     store as storeTransfer,
 } from '@/routes/inventory/asset-transfers';
-import { index } from '@/routes/inventory/assets';
+import { index, returnMethod, show } from '@/routes/inventory/assets';
 import {
     destroy as destroyAttachment,
     download as downloadAttachment,
@@ -122,7 +139,7 @@ type Asset = {
     lifecycle_status: string;
     condition_status: string;
     acquisition_date: string | null;
-    acquisition_cost: number | null;
+    acquisition_cost: number | string | null;
     warranty_expires_at: string | null;
     installed_at: string | null;
     maintenance_interval_days: number | null;
@@ -144,17 +161,25 @@ const props = defineProps<{
         createMaintenance: boolean;
         createTransfer: boolean;
         createLifecycle: boolean;
+        returnAsset?: boolean;
     };
 }>();
 defineOptions({
     name: 'InventoryAssetShowPage',
-    layout: {
-        breadcrumbs: [
-            { title: 'Assets', href: index() },
-            { title: 'Asset details', href: index() },
-        ],
-    },
 });
+
+watch(
+    () => [props.asset.id, props.asset.tag_code] as const,
+    ([id, tagCode]) => {
+        setLayoutProps({
+            breadcrumbs: [
+                { title: 'Assets', href: index() },
+                { title: tagCode || 'Asset details', href: show(id) },
+            ],
+        });
+    },
+    { immediate: true },
+);
 
 const page = usePage();
 const auth = computed(() => page.props.auth as Auth);
@@ -165,8 +190,16 @@ const maintenanceDetails = reactive<Record<number, MaintenanceDetails>>({});
 watch(
     () => props.asset.maintenances,
     (records) => {
+        const activeIds = new Set(records.map((record) => record.id));
+
+        for (const existingId of Object.keys(maintenanceDetails)) {
+            if (!activeIds.has(Number(existingId))) {
+                delete maintenanceDetails[Number(existingId)];
+            }
+        }
+
         for (const record of records) {
-            maintenanceDetails[record.id] ??= {
+            maintenanceDetails[record.id] = {
                 assigned_to: record.assignee?.id
                     ? String(record.assignee.id)
                     : '',
@@ -249,6 +282,41 @@ const attachmentForm = useForm<{
     file: File | null;
 }>({ title: '', category: 'other', description: '', file: null });
 
+const returnDialogOpen = ref(false);
+const returnForm = useForm({
+    location_id: props.asset.current_location?.id
+        ? String(props.asset.current_location.id)
+        : '',
+    condition_status: props.asset.condition_status || 'serviceable',
+    notes: '',
+});
+
+function openReturnDialog(): void {
+    returnForm.location_id = props.asset.current_location?.id
+        ? String(props.asset.current_location.id)
+        : '';
+    returnForm.condition_status = props.asset.condition_status || 'serviceable';
+    returnForm.notes = '';
+    returnForm.clearErrors();
+    returnDialogOpen.value = true;
+}
+
+function submitReturnToStock(): void {
+    returnForm
+        .transform((data) => ({
+            location_id: data.location_id ? Number(data.location_id) : null,
+            condition_status: data.condition_status || null,
+            notes: data.notes.trim() || null,
+        }))
+        .post(returnMethod(props.asset.id).url, {
+            preserveScroll: true,
+            onSuccess: () => {
+                returnDialogOpen.value = false;
+                returnForm.reset('notes');
+            },
+        });
+}
+
 function submitMaintenance(): void {
     maintenanceForm.post(storeMaintenance().url, {
         preserveScroll: true,
@@ -305,6 +373,20 @@ function formatDate(value: string): string {
         dateStyle: 'medium',
         timeZone: 'Asia/Manila',
     }).format(new Date(value));
+}
+
+function formatCurrency(value: number | string | null): string {
+    if (value === null || value === '') {
+        return 'Not recorded';
+    }
+
+    const numeric = Number(value);
+
+    if (!Number.isFinite(numeric)) {
+        return 'Not recorded';
+    }
+
+    return `₱${numeric.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 function transitionMaintenanceStatus(
     record: Maintenance,
@@ -442,18 +524,130 @@ function removeAttachment(record: Attachment): void {
     <div
         class="mx-auto flex w-full max-w-[1600px] flex-col gap-6 p-4 sm:p-6 lg:p-8"
     >
-        <div>
-            <Link
-                :href="index()"
-                class="mb-3 inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
-                ><ArrowLeft aria-hidden="true" class="h-4 w-4" />Asset
-                registry</Link
-            ><Heading
-                variant="small"
-                :title="asset.tag_code"
-                :description="`${asset.product.name} · ${asset.product.sku}`"
-            />
+        <div
+            class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between"
+        >
+            <div>
+                <Link
+                    :href="index()"
+                    class="mb-3 inline-flex min-h-10 items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+                    ><ArrowLeft aria-hidden="true" class="h-4 w-4" />Asset
+                    registry</Link
+                ><Heading
+                    variant="small"
+                    :title="asset.tag_code"
+                    :description="`${asset.product.name} · ${asset.product.sku}`"
+                />
+            </div>
+
+            <Button
+                v-if="can.returnAsset && asset.status === 'Checked_Out'"
+                type="button"
+                variant="outline"
+                data-testid="return-asset-button"
+                class="min-h-10 gap-2 self-start sm:self-auto"
+                @click="openReturnDialog"
+            >
+                <RotateCcw aria-hidden="true" class="h-4 w-4" />
+                Return to stock
+            </Button>
         </div>
+
+        <Dialog v-model:open="returnDialogOpen">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Return asset to stock</DialogTitle>
+                    <DialogDescription>
+                        Release custodian accountability for
+                        <strong>{{ asset.tag_code }}</strong> and return it to
+                        available stock.
+                    </DialogDescription>
+                </DialogHeader>
+
+                <form
+                    id="return-asset-form"
+                    class="grid gap-4 py-2"
+                    @submit.prevent="submitReturnToStock"
+                >
+                    <label class="grid gap-1.5 text-xs font-medium">
+                        <span>Destination storage location</span>
+                        <select
+                            v-model="returnForm.location_id"
+                            data-testid="return-asset-location"
+                            class="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+                        >
+                            <option value="">Keep current location</option>
+                            <option
+                                v-for="location in locations"
+                                :key="location.id"
+                                :value="String(location.id)"
+                            >
+                                {{ location.name }} ({{ location.code }})
+                            </option>
+                        </select>
+                        <InputError :message="returnForm.errors.location_id" />
+                    </label>
+
+                    <label class="grid gap-1.5 text-xs font-medium">
+                        <span>Condition upon return</span>
+                        <select
+                            v-model="returnForm.condition_status"
+                            data-testid="return-asset-condition"
+                            class="h-10 w-full rounded-lg border border-input bg-background px-3 text-sm text-foreground"
+                        >
+                            <option value="serviceable">Serviceable</option>
+                            <option value="unserviceable">Unserviceable</option>
+                            <option value="damaged">Damaged</option>
+                        </select>
+                        <InputError
+                            :message="returnForm.errors.condition_status"
+                        />
+                    </label>
+
+                    <label class="grid gap-1.5 text-xs font-medium">
+                        <span>Return notes (optional)</span>
+                        <textarea
+                            v-model="returnForm.notes"
+                            rows="3"
+                            placeholder="Condition check notes or custodian turnover remarks"
+                            data-testid="return-asset-notes"
+                            class="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+                        />
+                        <InputError :message="returnForm.errors.notes" />
+                        <InputError
+                            :message="
+                                (
+                                    returnForm.errors as Record<
+                                        string,
+                                        string | undefined
+                                    >
+                                ).return
+                            "
+                        />
+                    </label>
+                </form>
+
+                <DialogFooter class="gap-2">
+                    <DialogClose as-child>
+                        <Button type="button" variant="secondary">
+                            Cancel
+                        </Button>
+                    </DialogClose>
+                    <Button
+                        type="submit"
+                        form="return-asset-form"
+                        data-testid="confirm-return-asset-button"
+                        :disabled="returnForm.processing"
+                    >
+                        {{
+                            returnForm.processing
+                                ? 'Returning…'
+                                : 'Confirm return'
+                        }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
         <section
             aria-label="Asset summary"
@@ -569,11 +763,7 @@ function removeAttachment(record: Attachment): void {
                         Acquisition cost
                     </dt>
                     <dd class="mt-1 font-medium text-foreground">
-                        {{
-                            asset.acquisition_cost !== null
-                                ? `₱${asset.acquisition_cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
-                                : 'Not recorded'
-                        }}
+                        {{ formatCurrency(asset.acquisition_cost) }}
                     </dd>
                 </div>
                 <div>

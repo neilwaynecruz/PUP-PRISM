@@ -2,11 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\GuardsE2eExecution;
 use App\Models\Requisition;
 use Illuminate\Console\Command;
 
 class E2eLatestRequisitionIdCommand extends Command
 {
+    use GuardsE2eExecution;
+
     protected $signature = 'e2e:latest-requisition-id
                             {requester_email : Requester email address}';
 
@@ -14,6 +17,10 @@ class E2eLatestRequisitionIdCommand extends Command
 
     public function handle(): int
     {
+        if (! $this->ensureSafeE2eExecution()) {
+            return Command::FAILURE;
+        }
+
         $requesterEmail = $this->argument('requester_email');
 
         $requisition = Requisition::query()

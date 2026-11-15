@@ -17,7 +17,7 @@ import {
     Trash2,
     Truck,
 } from 'lucide-vue-next';
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import PurchaseOrderController from '@/actions/App/Http/Controllers/Inventory/PurchaseOrderController';
 import ReceivingController from '@/actions/App/Http/Controllers/Inventory/ReceivingController';
 import Heading from '@/components/Heading.vue';
@@ -119,13 +119,23 @@ const feedbackBanner = ref<{
     type: 'info' | 'warning' | 'success';
     text: string;
 } | null>(null);
+let feedbackTimer: number | undefined;
+let singleSuggestionsTimer: number | undefined;
+let batchSuggestionsTimer: number | undefined;
+
+onBeforeUnmount(() => {
+    window.clearTimeout(feedbackTimer);
+    window.clearTimeout(singleSuggestionsTimer);
+    window.clearTimeout(batchSuggestionsTimer);
+});
 
 function showFeedback(
     text: string,
     type: 'info' | 'warning' | 'success' = 'info',
 ): void {
     feedbackBanner.value = { type, text };
-    setTimeout(() => {
+    window.clearTimeout(feedbackTimer);
+    feedbackTimer = window.setTimeout(() => {
         if (feedbackBanner.value?.text === text) {
             feedbackBanner.value = null;
         }
@@ -249,8 +259,28 @@ function handleSingleSearchEnter(): void {
     }
 }
 
+function handleSingleQrScanned(rawSku: string): void {
+    const cleaned = rawSku.trim();
+
+    if (!cleaned) {
+        return;
+    }
+
+    const match = findCatalogProductBySku(cleaned);
+
+    if (match) {
+        selectSingleProduct(match);
+
+        return;
+    }
+
+    form.sku = cleaned;
+    showFeedback(`Scanned SKU "${cleaned}". Fill in product details below.`, 'info');
+}
+
 function hideSingleSuggestionsDelayed(): void {
-    setTimeout(() => {
+    window.clearTimeout(singleSuggestionsTimer);
+    singleSuggestionsTimer = window.setTimeout(() => {
         showSingleSuggestions.value = false;
     }, 180);
 }
@@ -312,6 +342,7 @@ function submitSingle(): void {
 // Mode 2: Batch Delivery Receiving
 // ============================================================================
 type BatchLineForm = {
+    localKey: string;
     sku: string;
     reference_no: string;
     received_at: string;
@@ -322,11 +353,18 @@ type BatchLineForm = {
     notes: string;
 };
 
+let nextBatchLineKey = 1;
+
+function createBatchLineKey(): string {
+    return `batch-line-${nextBatchLineKey++}`;
+}
+
 function createEmptyBatchLine(
     defaultRef = '',
     defaultDate = '',
 ): BatchLineForm {
     return {
+        localKey: createBatchLineKey(),
         sku: '',
         reference_no: defaultRef,
         received_at: defaultDate,
@@ -434,6 +472,7 @@ function addOrMergeProductIntoBatch(
 
     const emptyIndex = batchForm.lines.findIndex((line) => !line.sku.trim());
     const targetLine: BatchLineForm = {
+        localKey: createBatchLineKey(),
         sku: product.sku,
         reference_no: batchSharedRef.value,
         received_at: batchSharedDate.value,
@@ -479,9 +518,31 @@ function handleBatchQuickAdd(selectedItem?: CatalogProductOption): void {
 }
 
 function hideBatchSuggestionsDelayed(): void {
-    setTimeout(() => {
+    window.clearTimeout(batchSuggestionsTimer);
+    batchSuggestionsTimer = window.setTimeout(() => {
         showBatchSuggestions.value = false;
     }, 180);
+}
+
+function applyBatchLineQrScanned(index: number, rawSku: string): void {
+    const line = batchForm.lines[index];
+    const cleaned = rawSku.trim();
+
+    if (!line || !cleaned) {
+        return;
+    }
+
+    const match = findCatalogProductBySku(cleaned);
+
+    if (match) {
+        line.sku = match.sku;
+
+        if (match.type !== 'asset' && !line.qty) {
+            line.qty = '1';
+        }
+    } else {
+        line.sku = cleaned;
+    }
 }
 
 function applyBatchSharedMetadata(): void {
@@ -1077,7 +1138,7 @@ function submitPoReceipt(): void {
                                 button-size="sm"
                                 title="Scan product SKU"
                                 description="Scan the product label QR code to populate the SKU field."
-                                @scanned="form.sku = $event"
+                                @scanned="handleSingleQrScanned"
                             />
                         </div>
                     </div>
@@ -1236,7 +1297,13 @@ function submitPoReceipt(): void {
                             <InputError :message="form.errors.received_at" />
                         </div>
 
-                        <div class="grid content-start gap-2">
+                        <div
+                            v-if="
+                                !matchedSingleProduct ||
+                                matchedSingleProduct.type !== 'asset'
+                            "
+                            class="grid content-start gap-2"
+                        >
                             <Label for="expires_at" class="font-medium">
                                 Expiry date (consumables only)
                             </Label>
@@ -1317,9 +1384,16 @@ function submitPoReceipt(): void {
                 </section>
 
                 <!-- Step 2: Quantity (Consumables) & Tag Codes (Assets) -->
-                <div class="grid gap-6 md:grid-cols-2">
+                <div
+                    class="grid gap-6"
+                    :class="matchedSingleProduct ? '' : 'md:grid-cols-2'"
+                >
                     <!-- Consumable Quantity Card -->
                     <section
+                        v-if="
+                            !matchedSingleProduct ||
+                            matchedSingleProduct.type !== 'asset'
+                        "
                         class="rounded-2xl border p-5 shadow-xs transition"
                         :class="
                             matchedSingleProduct?.type === 'consumable'
@@ -1394,6 +1468,10 @@ function submitPoReceipt(): void {
 
                     <!-- Serialized Asset Tag Codes Card -->
                     <section
+                        v-if="
+                            !matchedSingleProduct ||
+                            matchedSingleProduct.type === 'asset'
+                        "
                         class="rounded-2xl border p-5 shadow-xs transition"
                         :class="
                             matchedSingleProduct?.type === 'asset'
@@ -1753,7 +1831,7 @@ function submitPoReceipt(): void {
                             Shared delivery reference &amp; date
                         </Label>
                         <div
-                            class="mt-1.5 grid gap-2 sm:grid-cols-[minmax(0,1fr)_140px_auto]"
+                            class="mt-1.5 grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_150px_auto]"
                         >
                             <Input
                                 id="batch-shared-ref"
@@ -1806,7 +1884,7 @@ function submitPoReceipt(): void {
                 >
                     <div
                         v-for="(line, index) in batchForm.lines"
-                        :key="`mobile-${index}`"
+                        :key="`mobile-${line.localKey}`"
                         class="rounded-xl border border-border/70 bg-background p-4 shadow-2xs"
                     >
                         <div class="flex items-center justify-between gap-2">
@@ -1847,7 +1925,12 @@ function submitPoReceipt(): void {
                                         button-label="Scan SKU"
                                         title="Scan batch line SKU"
                                         description="Scan a product QR code to fill this batch line SKU."
-                                        @scanned="line.sku = $event"
+                                        @scanned="
+                                            applyBatchLineQrScanned(
+                                                index,
+                                                $event,
+                                            )
+                                        "
                                     />
                                 </div>
                                 <Input
@@ -1861,7 +1944,13 @@ function submitPoReceipt(): void {
                                 />
                             </div>
 
-                            <div class="grid gap-2">
+                            <div
+                                v-if="
+                                    findCatalogProductBySku(line.sku)?.type !==
+                                    'asset'
+                                "
+                                class="grid gap-2"
+                            >
                                 <Label :for="`batch-mobile-qty-${index}`">
                                     Quantity (consumables)
                                 </Label>
@@ -1877,7 +1966,14 @@ function submitPoReceipt(): void {
                                 />
                             </div>
 
-                            <div class="grid gap-2">
+                            <div
+                                v-if="
+                                    !findCatalogProductBySku(line.sku) ||
+                                    findCatalogProductBySku(line.sku)?.type ===
+                                        'asset'
+                                "
+                                class="grid gap-2"
+                            >
                                 <div
                                     class="flex flex-wrap items-center justify-between gap-2"
                                 >
@@ -1963,7 +2059,13 @@ function submitPoReceipt(): void {
                                         type="date"
                                     />
                                 </div>
-                                <div class="grid gap-2">
+                                <div
+                                    v-if="
+                                        findCatalogProductBySku(line.sku)
+                                            ?.type !== 'asset'
+                                    "
+                                    class="grid gap-2"
+                                >
                                     <Label
                                         :for="`batch-mobile-expires-${index}`"
                                     >
@@ -1984,7 +2086,7 @@ function submitPoReceipt(): void {
                 <div class="mt-4 hidden space-y-3 md:block">
                     <div
                         v-for="(line, index) in batchForm.lines"
-                        :key="index"
+                        :key="line.localKey"
                         class="rounded-xl border border-border/70 bg-background p-4 shadow-2xs"
                     >
                         <div
@@ -2051,7 +2153,12 @@ function submitPoReceipt(): void {
                                         button-label="Scan SKU"
                                         title="Scan batch line SKU"
                                         description="Scan a product QR code to fill this batch line SKU."
-                                        @scanned="line.sku = $event"
+                                        @scanned="
+                                            applyBatchLineQrScanned(
+                                                index,
+                                                $event,
+                                            )
+                                        "
                                     />
                                 </div>
                                 <Input
@@ -2066,7 +2173,13 @@ function submitPoReceipt(): void {
                                 />
                             </div>
 
-                            <div class="grid content-start gap-1.5">
+                            <div
+                                v-if="
+                                    findCatalogProductBySku(line.sku)?.type !==
+                                    'asset'
+                                "
+                                class="grid content-start gap-1.5"
+                            >
                                 <Label
                                     :for="`batch-qty-${index}`"
                                     class="text-xs font-medium"
@@ -2123,7 +2236,13 @@ function submitPoReceipt(): void {
                                 />
                             </div>
 
-                            <div class="grid content-start gap-1.5">
+                            <div
+                                v-if="
+                                    findCatalogProductBySku(line.sku)?.type !==
+                                    'asset'
+                                "
+                                class="grid content-start gap-1.5"
+                            >
                                 <Label
                                     :for="`batch-expires-${index}`"
                                     class="text-xs font-medium"
@@ -2144,7 +2263,14 @@ function submitPoReceipt(): void {
                         </div>
 
                         <div class="mt-3 grid gap-3 md:grid-cols-2">
-                            <div class="grid gap-1.5">
+                            <div
+                                v-if="
+                                    !findCatalogProductBySku(line.sku) ||
+                                    findCatalogProductBySku(line.sku)?.type ===
+                                        'asset'
+                                "
+                                class="grid gap-1.5"
+                            >
                                 <div
                                     class="flex flex-wrap items-center justify-between gap-2"
                                 >
@@ -2499,7 +2625,9 @@ function submitPoReceipt(): void {
                             >
                                 Delivery receipt reference &amp; date
                             </Label>
-                            <div class="grid gap-2 sm:grid-cols-2">
+                            <div
+                                class="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto_150px]"
+                            >
                                 <Input
                                     id="po-mode-shared-ref"
                                     v-model="poSharedRef"

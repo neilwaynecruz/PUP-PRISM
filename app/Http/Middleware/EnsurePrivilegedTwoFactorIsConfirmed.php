@@ -28,6 +28,10 @@ class EnsurePrivilegedTwoFactorIsConfirmed
             ], 403);
         }
 
+        if (! $user->hasVerifiedEmail()) {
+            return redirect()->route('verification.notice');
+        }
+
         Inertia::flash('toast', [
             'type' => 'warning',
             'message' => __('Two-factor authentication is required for Admin and Supply Head accounts before accessing protected areas.'),
@@ -46,6 +50,13 @@ class EnsurePrivilegedTwoFactorIsConfirmed
         return $request->is(
             'logout',
             'session/keep-alive',
+            'email/verify',
+            'email/verify/*',
+            'email/verification-notification',
+            'two-factor-challenge',
+            'forgot-password',
+            'reset-password',
+            'reset-password/*',
             'settings/security',
             'settings/security/two-factor/setup-data',
             'settings/password',

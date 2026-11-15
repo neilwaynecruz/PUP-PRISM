@@ -2,11 +2,14 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\GuardsE2eExecution;
 use App\Models\HandoverLog;
 use Illuminate\Console\Command;
 
 class E2ePrepareHandoverVerificationCommand extends Command
 {
+    use GuardsE2eExecution;
+
     protected $signature = 'e2e:prepare-handover-verification
                             {asset_tag_code : Tag code of the handed-over asset}
                             {recipient_email : Recipient email address}
@@ -17,6 +20,10 @@ class E2ePrepareHandoverVerificationCommand extends Command
 
     public function handle(): int
     {
+        if (! $this->ensureSafeE2eExecution()) {
+            return Command::FAILURE;
+        }
+
         $assetTagCode = $this->argument('asset_tag_code');
         $recipientEmail = $this->argument('recipient_email');
         $token = $this->argument('token');

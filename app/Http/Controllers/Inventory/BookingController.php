@@ -19,6 +19,7 @@ use App\Services\AuditLogService;
 use App\Services\Inventory\AssetIntegrityService;
 use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -74,25 +75,31 @@ class BookingController extends Controller
 
         $calendarWindowStart = CarbonImmutable::now()->subDays(30);
         $calendarWindowEnd = CarbonImmutable::now()->addMonths(6);
+        $canViewAllBookings = $currentUser instanceof User
+            && $currentUser->hasAnyRole(['Admin', 'Property Custodian']);
 
         $calendarEvents = Booking::query()
             ->with($bookingPayload)
+            ->when(! $canViewAllBookings, fn ($query) => $query->where('requester_id', $currentUser?->id))
             ->where('end_at', '>=', $calendarWindowStart)
             ->where('start_at', '<=', $calendarWindowEnd)
             ->orderBy('start_at')
             ->get();
 
-        $approvalQueue = Booking::query()
-            ->with($bookingPayload)
-            ->where('status', BookingStatus::Requested)
-            ->orderBy('start_at')
-            ->limit(15)
-            ->get();
+        $approvalQueue = $canViewAllBookings
+            ? Booking::query()
+                ->with($bookingPayload)
+                ->where('status', BookingStatus::Requested)
+                ->orderBy('start_at')
+                ->limit(15)
+                ->get()
+            : collect();
 
         $bookings = Booking::query()
             ->with([
                 ...$bookingPayload,
             ])
+            ->when(! $canViewAllBookings, fn ($query) => $query->where('requester_id', $currentUser?->id))
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     if (ctype_digit($search)) {
@@ -112,7 +119,7 @@ class BookingController extends Controller
             ->when($status !== null, fn ($query) => $query->where('status', $status))
             ->when(isset($validated['date_from']), fn ($query) => $query->whereDate('start_at', '>=', $validated['date_from']))
             ->when(isset($validated['date_to']), fn ($query) => $query->whereDate('start_at', '<=', $validated['date_to']))
-            ->when(isset($validated['requester_id']), fn ($query) => $query->where('requester_id', $validated['requester_id']))
+            ->when(isset($validated['requester_id']) && $canViewAllBookings, fn ($query) => $query->where('requester_id', $validated['requester_id']))
             ->orderByDesc('created_at')
             ->paginate(15)
             ->withQueryString();
@@ -229,18 +236,41 @@ class BookingController extends Controller
                 return back()->withErrors($exception->errors());
             }
 
-            AuditLogService::logCustom('approve', "Booking #{$booking->id} approved.", $booking->fresh());
-            $this->notifications->bookingStatusChanged($booking, 'approved');
+            $freshBooking = $booking->fresh() ?? $booking;
+            AuditLogService::logCustom('approve', "Booking #{$booking->id} approved.", $freshBooking);
+            $this->notifications->bookingStatusChanged($freshBooking, 'approved');
         } else {
-            $booking->update([
-                'status' => BookingStatus::Rejected,
-                'approver_id' => $request->user()->id,
-                'approver_position_id' => $request->user()->position_id,
-                'approved_ip_address' => $request->ip(),
-            ]);
+            /** @var Booking|null $rejectedBooking */
+            $rejectedBooking = DB::transaction(function () use ($request, $booking): ?Booking {
+                /** @var Booking $lockedBooking */
+                $lockedBooking = Booking::query()->whereKey($booking->id)->lockForUpdate()->firstOrFail();
 
-            AuditLogService::logCustom('reject', "Booking #{$booking->id} rejected.", $booking);
-            $this->notifications->bookingStatusChanged($booking, 'rejected');
+                if ($lockedBooking->status !== BookingStatus::Requested) {
+                    return null;
+                }
+
+                $lockedBooking->update([
+                    'status' => BookingStatus::Rejected,
+                    'approver_id' => $request->user()->id,
+                    'approver_position_id' => $request->user()->position_id,
+                    'approved_ip_address' => $request->ip(),
+                ]);
+
+                AuditLogService::logCustom('reject', "Booking #{$lockedBooking->id} rejected.", $lockedBooking);
+
+                return $lockedBooking;
+            });
+
+            if (! $rejectedBooking instanceof Booking) {
+                Inertia::flash('toast', [
+                    'type' => 'warning',
+                    'message' => __('This booking has already been processed.'),
+                ]);
+
+                return back();
+            }
+
+            $this->notifications->bookingStatusChanged($rejectedBooking, 'rejected');
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking updated.')]);
@@ -250,39 +280,65 @@ class BookingController extends Controller
 
     public function bulkApprove(Request $request): RedirectResponse
     {
+        abort_unless(
+            $request->user()?->hasAnyRole(['Admin', 'Property Custodian']),
+            403,
+            __('You are not authorized to approve bookings.'),
+        );
+
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct'],
+            'ids.*' => ['integer', 'distinct', 'exists:bookings,id'],
         ]);
 
-        $ids = $validated['ids'];
-        $bookings = Booking::query()
-            ->whereIn('id', $ids)
-            ->orderBy('start_at')
-            ->get();
+        /** @var array{approved: array<int, Booking>, conflicts: int, skipped: int} $result */
+        $result = DB::transaction(function () use ($request, $validated): array {
+            $bookings = Booking::query()
+                ->whereIn('id', $validated['ids'])
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get()
+                ->sortBy('start_at')
+                ->values();
 
-        $updated = 0;
-        $conflicts = 0;
-        $skipped = 0;
-
-        foreach ($bookings as $booking) {
-            $this->authorize('approve', $booking);
-
-            if ($booking->status !== BookingStatus::Requested) {
-                $skipped++;
-
-                continue;
+            foreach ($bookings as $booking) {
+                $this->authorize('approve', $booking);
             }
 
-            try {
-                $this->approveBooking($booking, $request);
-                AuditLogService::logCustom('approve', "Booking #{$booking->id} approved.", $booking->fresh());
-                $this->notifications->bookingStatusChanged($booking, 'approved');
-                $updated++;
-            } catch (ValidationException) {
-                $conflicts++;
+            $approved = [];
+            $conflicts = 0;
+            $skipped = 0;
+
+            foreach ($bookings as $booking) {
+                if ($booking->status !== BookingStatus::Requested) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                try {
+                    DB::transaction(function () use ($booking, $request): void {
+                        $this->approveBooking($booking, $request);
+                    });
+
+                    $freshBooking = $booking->fresh() ?? $booking;
+                    AuditLogService::logCustom('approve', "Booking #{$booking->id} approved.", $freshBooking);
+                    $approved[] = $freshBooking;
+                } catch (ValidationException) {
+                    $conflicts++;
+                }
             }
+
+            return ['approved' => $approved, 'conflicts' => $conflicts, 'skipped' => $skipped];
+        });
+
+        foreach ($result['approved'] as $approvedBooking) {
+            $this->notifications->bookingStatusChanged($approvedBooking, 'approved');
         }
+
+        $updated = count($result['approved']);
+        $conflicts = $result['conflicts'];
+        $skipped = $result['skipped'];
 
         $message = trans_choice(
             '{1} :count booking approved.|[0,*] :count bookings approved.',
@@ -308,36 +364,56 @@ class BookingController extends Controller
 
     public function bulkReject(Request $request): RedirectResponse
     {
+        abort_unless(
+            $request->user()?->hasAnyRole(['Admin', 'Property Custodian']),
+            403,
+            __('You are not authorized to reject bookings.'),
+        );
+
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct'],
+            'ids.*' => ['integer', 'distinct', 'exists:bookings,id'],
         ]);
 
-        $ids = $validated['ids'];
-        $bookings = Booking::query()
-            ->whereIn('id', $ids)
-            ->get();
+        /** @var array{rejected: array<int, Booking>, skipped: int} $result */
+        $result = DB::transaction(function () use ($request, $validated): array {
+            $bookings = Booking::query()
+                ->whereIn('id', $validated['ids'])
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
 
-        $updated = 0;
-        $skipped = 0;
-
-        foreach ($bookings as $booking) {
-            $this->authorize('reject', $booking);
-
-            if ($booking->status === BookingStatus::Requested) {
-                $booking->update([
-                    'status' => BookingStatus::Rejected,
-                    'approver_id' => $request->user()->id,
-                    'approver_position_id' => $request->user()->position_id,
-                    'approved_ip_address' => $request->ip(),
-                ]);
-                AuditLogService::logCustom('reject', "Booking #{$booking->id} rejected.", $booking);
-                $this->notifications->bookingStatusChanged($booking, 'rejected');
-                $updated++;
-            } else {
-                $skipped++;
+            foreach ($bookings as $booking) {
+                $this->authorize('reject', $booking);
             }
+
+            $rejected = [];
+            $skipped = 0;
+
+            foreach ($bookings as $booking) {
+                if ($booking->status === BookingStatus::Requested) {
+                    $booking->update([
+                        'status' => BookingStatus::Rejected,
+                        'approver_id' => $request->user()->id,
+                        'approver_position_id' => $request->user()->position_id,
+                        'approved_ip_address' => $request->ip(),
+                    ]);
+                    AuditLogService::logCustom('reject', "Booking #{$booking->id} rejected.", $booking);
+                    $rejected[] = $booking;
+                } else {
+                    $skipped++;
+                }
+            }
+
+            return ['rejected' => $rejected, 'skipped' => $skipped];
+        });
+
+        foreach ($result['rejected'] as $rejectedBooking) {
+            $this->notifications->bookingStatusChanged($rejectedBooking, 'rejected');
         }
+
+        $updated = count($result['rejected']);
+        $skipped = $result['skipped'];
 
         $message = trans_choice(
             '{1} :count booking rejected.|[0,*] :count bookings rejected.',
@@ -458,23 +534,34 @@ class BookingController extends Controller
 
     public function bulkRestore(Request $request): RedirectResponse
     {
-        $ids = $request->input('ids', []);
+        $this->authorize('trash', Booking::class);
 
-        if (empty($ids)) {
-            return back();
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:bookings,id'],
+        ]);
+
+        $bookings = Booking::query()
+            ->onlyTrashed()
+            ->whereIn('id', $validated['ids'])
+            ->orderBy('id')
+            ->get();
+
+        foreach ($bookings as $booking) {
+            $this->authorize('restore', $booking);
         }
 
-        $restored = 0;
-        foreach ($ids as $id) {
-            /** @var Booking|null $booking */
-            $booking = Booking::query()->withTrashed()->find($id);
-            if ($booking && $booking->trashed()) {
-                $this->authorize('restore', $booking);
+        $restored = DB::transaction(function () use ($bookings): int {
+            $count = 0;
+
+            foreach ($bookings as $booking) {
                 $booking->restore();
                 AuditLogService::logRestored($booking);
-                $restored++;
+                $count++;
             }
-        }
+
+            return $count;
+        });
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -490,31 +577,52 @@ class BookingController extends Controller
 
     public function bulkForceDelete(Request $request): RedirectResponse
     {
-        $ids = $request->input('ids', []);
+        $this->authorize('trash', Booking::class);
 
-        if (empty($ids)) {
-            return back();
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:bookings,id'],
+        ]);
+
+        $bookings = Booking::query()
+            ->onlyTrashed()
+            ->whereIn('id', $validated['ids'])
+            ->orderBy('id')
+            ->get();
+
+        foreach ($bookings as $booking) {
+            $this->authorize('forceDelete', $booking);
         }
 
         $deleted = 0;
-        foreach ($ids as $id) {
-            /** @var Booking|null $booking */
-            $booking = Booking::query()->withTrashed()->find($id);
-            if ($booking && $booking->trashed()) {
-                $this->authorize('forceDelete', $booking);
-                AuditLogService::logForceDeleted($booking);
-                $booking->forceDelete();
+        $errors = 0;
+
+        foreach ($bookings as $booking) {
+            try {
+                DB::transaction(function () use ($booking): void {
+                    AuditLogService::logForceDeleted($booking);
+                    $booking->forceDelete();
+                });
                 $deleted++;
+            } catch (QueryException $e) {
+                report($e);
+                $errors++;
             }
         }
 
+        $message = trans_choice(
+            '{1} :count booking permanently deleted.|[0,*] :count bookings permanently deleted.',
+            $deleted,
+            ['count' => $deleted],
+        );
+
+        if ($errors > 0) {
+            $message .= " {$errors} could not be deleted due to references.";
+        }
+
         Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => trans_choice(
-                '{1} :count booking permanently deleted.|[0,*] :count bookings permanently deleted.',
-                $deleted,
-                ['count' => $deleted],
-            ),
+            'type' => $errors > 0 ? 'warning' : 'success',
+            'message' => __($message),
         ]);
 
         return back();

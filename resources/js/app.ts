@@ -1,5 +1,6 @@
-import { createInertiaApp } from '@inertiajs/vue3';
+import { createInertiaApp, router } from '@inertiajs/vue3';
 import { configureEcho } from '@laravel/echo-vue';
+import { toast } from 'vue-sonner';
 import { initializeTheme } from '@/composables/useAppearance';
 import { initializeAppNavigation } from '@/composables/useAppNavigation';
 import { initializePwa } from '@/composables/usePwa';
@@ -21,7 +22,15 @@ if (
     });
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'PUP PRISM';
+
+if (typeof window !== 'undefined') {
+    router.on('networkError', () => {
+        toast.error(
+            'Unable to reach the server. Check your connection and try again.',
+        );
+    });
+}
 
 createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),

@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Attachment;
 use App\Models\User;
+use App\Services\Attachments\AttachmentService;
 use Illuminate\Database\Eloquent\Model;
 
 class AttachmentPolicy
@@ -48,7 +49,11 @@ class AttachmentPolicy
      */
     public function delete(User $user, Attachment $attachment): bool
     {
-        return $user->hasRole('Admin') || $attachment->uploaded_by === $user->id;
+        if (! ($user->hasRole('Admin') || $attachment->uploaded_by === $user->id)) {
+            return false;
+        }
+
+        return AttachmentService::deletionBlocker($attachment) === null;
     }
 
     /**

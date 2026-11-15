@@ -48,16 +48,12 @@ class PurchaseOrderNumberGenerator
         if (! $exists) {
             $maxSeq = $this->resolveMaxExistingSequence($datePrefix);
 
-            try {
-                DB::table('purchase_order_sequences')->insert([
-                    'date_prefix' => $datePrefix,
-                    'last_sequence' => $maxSeq,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            } catch (\Throwable) {
-                // Another concurrent request may have inserted the row, proceed to lockForUpdate
-            }
+            DB::table('purchase_order_sequences')->insertOrIgnore([
+                'date_prefix' => $datePrefix,
+                'last_sequence' => $maxSeq,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
         }
     }
 

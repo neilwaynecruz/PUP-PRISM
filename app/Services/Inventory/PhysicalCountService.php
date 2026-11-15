@@ -11,6 +11,7 @@ use App\Models\InventoryCountLine;
 use App\Models\InventoryCountSession;
 use App\Models\Location;
 use App\Models\Product;
+use App\Models\ProductStock;
 use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\User;
@@ -49,9 +50,18 @@ class PhysicalCountService
                 throw new \RuntimeException('One or more selected products cannot be included in a physical count.');
             }
 
+            if ($productIds->isNotEmpty()) {
+                ProductStock::query()
+                    ->whereIn('product_id', $productIds)
+                    ->orderBy('product_id')
+                    ->lockForUpdate()
+                    ->get();
+            }
+
             $lots = StockLot::query()
                 ->whereIn('product_id', $productIds)
                 ->where('qty_remaining', '>', 0)
+                ->orderBy('product_id')
                 ->orderBy('id')
                 ->lockForUpdate()
                 ->get();
@@ -144,12 +154,10 @@ class PhysicalCountService
                 throw new \RuntimeException('Counts can only be entered while the session is a draft or in progress.');
             }
 
-            if ($line->asset_id !== null && $countedQuantity > 1) {
-                throw new \RuntimeException('A tagged asset count must be 0 for missing or 1 for present.');
-            }
+            $lot = null;
 
             if ($line->stock_lot_id !== null) {
-                StockLot::query()
+                $lot = StockLot::query()
                     ->whereKey($line->stock_lot_id)
                     ->where('product_id', $line->product_id)
                     ->lockForUpdate()
@@ -164,17 +172,15 @@ class PhysicalCountService
                 if ($session->location_id !== null && $asset->current_location_id !== $session->location_id) {
                     throw new \RuntimeException('This asset moved after the count session was created. Review its location before counting.');
                 }
+                if ($countedQuantity > 1) {
+                    throw new \RuntimeException('A tagged asset count must be 0 for missing or 1 for present.');
+                }
             }
 
             $countedAt = CarbonImmutable::now();
-            $movementDelta = $line->stock_lot_id === null
-                ? 0
-                : (int) StockMovement::query()
-                    ->where('stock_lot_id', $line->stock_lot_id)
-                    ->where('id', '>', $session->movement_cutoff_id)
-                    ->where('created_at', '<=', $countedAt)
-                    ->sum('qty_delta');
-            $expectedAtCount = $line->expected_qty_snapshot + $movementDelta;
+            $expectedAtCount = $lot instanceof StockLot
+                ? (int) $lot->qty_remaining
+                : (int) $line->expected_qty_snapshot;
 
             if ($expectedAtCount < 0) {
                 throw new \RuntimeException('The movement history for this line is inconsistent. Review the stock lot before counting.');
@@ -298,7 +304,7 @@ class PhysicalCountService
                 throw new \RuntimeException('Only submitted count sessions can be approved.');
             }
 
-            $lines = $session->lines()->with('session')->orderBy('id')->lockForUpdate()->get();
+            $lines = $session->lines()->with('session')->orderBy('product_id')->orderBy('id')->lockForUpdate()->get();
             if ($lines->contains(fn (InventoryCountLine $line): bool => in_array(
                 $line->review_status,
                 [InventoryCountReviewStatus::Pending, InventoryCountReviewStatus::RecountRequested],
@@ -314,7 +320,8 @@ class PhysicalCountService
             $changes = [];
             foreach ($lines as $line) {
                 if ($line->review_status !== InventoryCountReviewStatus::Approved
-                    || $line->stock_lot_id === null
+                    || ($line->stock_lot_id === null && $line->asset_id === null)
+                    || $line->variance_qty === null
                     || $line->variance_qty === 0) {
                     continue;
                 }

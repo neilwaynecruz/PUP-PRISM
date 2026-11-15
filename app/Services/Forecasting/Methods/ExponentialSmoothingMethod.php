@@ -24,6 +24,7 @@ class ExponentialSmoothingMethod
         $count = count($values);
         $level = $values[0];
         $trend = $count > 1 ? $values[1] - $values[0] : 0.0;
+        $dampingFactor = 0.85;
 
         for ($index = 1; $index < $count; $index++) {
             $previousLevel = $level;
@@ -34,17 +35,19 @@ class ExponentialSmoothingMethod
                 continue;
             }
 
-            $level = ($alpha * $values[$index]) + ((1 - $alpha) * ($level + $trend));
-            $trend = ($beta * ($level - $previousLevel)) + ((1 - $beta) * $trend);
+            $level = ($alpha * $values[$index]) + ((1 - $alpha) * ($level + ($dampingFactor * $trend)));
+            $trend = ($beta * ($level - $previousLevel)) + ((1 - $beta) * ($dampingFactor * $trend));
         }
 
         $lastDate = CarbonImmutable::parse($dailyData[array_key_last($dailyData)]['date']);
         $predictions = [];
+        $cumulativeDamping = 0.0;
 
         for ($day = 1; $day <= $horizonDays; $day++) {
+            $cumulativeDamping += $dampingFactor ** $day;
             $predictedValue = $beta === null
                 ? $level
-                : $level + ($day * $trend);
+                : $level + ($cumulativeDamping * $trend);
 
             $predictions[] = [
                 'date' => $lastDate->addDays($day)->toDateString(),

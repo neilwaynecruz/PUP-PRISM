@@ -14,6 +14,7 @@ use App\Services\AuditLogService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -66,6 +67,7 @@ class SupplierController extends Controller
         $this->authorize('create', Supplier::class);
 
         $supplier = Supplier::query()->create($request->validated());
+        Cache::forget(Supplier::OPTIONS_CACHE_KEY);
 
         AuditLogService::logCreated($supplier);
 
@@ -137,6 +139,7 @@ class SupplierController extends Controller
 
         $oldValues = $supplier->toArray();
         $supplier->update($request->validated());
+        Cache::forget(Supplier::OPTIONS_CACHE_KEY);
 
         AuditLogService::logUpdated($supplier, $oldValues);
 
@@ -161,6 +164,7 @@ class SupplierController extends Controller
         try {
             AuditLogService::logDeleted($supplier);
             $supplier->delete();
+            Cache::forget(Supplier::OPTIONS_CACHE_KEY);
         } catch (QueryException $exception) {
             report($exception);
 

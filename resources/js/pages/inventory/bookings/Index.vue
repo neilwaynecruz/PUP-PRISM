@@ -189,13 +189,18 @@ function formatDateTime(iso: string | null): string {
 
     const d = new Date(iso);
 
-    return d.toLocaleString('en-US', {
+    if (Number.isNaN(d.getTime())) {
+        return '—';
+    }
+
+    return d.toLocaleString('en-PH', {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
         hour: 'numeric',
         minute: '2-digit',
         hour12: true,
+        timeZone: props.timezone || 'Asia/Manila',
     });
 }
 
@@ -440,8 +445,15 @@ function toLocalInput(date: Date): string {
 }
 
 const minStartInput = ref(toLocalInput(new Date()));
+let minStartRefreshTimer: ReturnType<typeof setInterval> | null = null;
+
+function refreshMinStartInput(): void {
+    minStartInput.value = toLocalInput(new Date());
+}
 
 function prefillSchedule(start: Date, end: Date): void {
+    refreshMinStartInput();
+
     if (end.getTime() <= Date.now()) {
         return;
     }
@@ -576,6 +588,11 @@ onBeforeUnmount(() => {
     isComponentActive = false;
     window.clearTimeout(assetSearchTimer);
 
+    if (minStartRefreshTimer !== null) {
+        clearInterval(minStartRefreshTimer);
+        minStartRefreshTimer = null;
+    }
+
     compactCalendarMediaQuery?.removeEventListener(
         'change',
         syncCompactCalendarMode,
@@ -607,6 +624,9 @@ onMounted(() => {
     if (typeof window === 'undefined') {
         return;
     }
+
+    refreshMinStartInput();
+    minStartRefreshTimer = setInterval(refreshMinStartInput, 30_000);
 
     compactCalendarMediaQuery = window.matchMedia('(max-width: 767px)');
     tabletCalendarMediaQuery = window.matchMedia(

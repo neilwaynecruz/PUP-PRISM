@@ -212,7 +212,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generate
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:313
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:347
  * @route '/inventory/purchase-orders/generate'
  */
 export const generate = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -227,7 +227,7 @@ generate.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generate
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:313
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:347
  * @route '/inventory/purchase-orders/generate'
  */
 generate.url = (options?: RouteQueryOptions) => {
@@ -236,7 +236,7 @@ generate.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generate
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:313
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:347
  * @route '/inventory/purchase-orders/generate'
  */
 generate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -246,7 +246,7 @@ generate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generate
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:313
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:347
  * @route '/inventory/purchase-orders/generate'
  */
     const generateForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -256,7 +256,7 @@ generate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generate
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:313
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:347
  * @route '/inventory/purchase-orders/generate'
  */
         generateForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -267,7 +267,7 @@ generate.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     generate.form = generateForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:340
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:374
  * @route '/inventory/purchase-orders/generate-from-forecasts'
  */
 export const generateFromForecasts = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -282,7 +282,7 @@ generateFromForecasts.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:340
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:374
  * @route '/inventory/purchase-orders/generate-from-forecasts'
  */
 generateFromForecasts.url = (options?: RouteQueryOptions) => {
@@ -291,7 +291,7 @@ generateFromForecasts.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:340
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:374
  * @route '/inventory/purchase-orders/generate-from-forecasts'
  */
 generateFromForecasts.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -301,7 +301,7 @@ generateFromForecasts.post = (options?: RouteQueryOptions): RouteDefinition<'pos
 
     /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:340
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:374
  * @route '/inventory/purchase-orders/generate-from-forecasts'
  */
     const generateFromForecastsForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -311,7 +311,7 @@ generateFromForecasts.post = (options?: RouteQueryOptions): RouteDefinition<'pos
 
             /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::generateFromForecasts
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:340
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:374
  * @route '/inventory/purchase-orders/generate-from-forecasts'
  */
         generateFromForecastsForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -513,7 +513,7 @@ send.put = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: n
     send.form = sendForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::receive
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:235
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:245
  * @route '/inventory/purchase-orders/{purchaseOrder}/receive'
  */
 export const receive = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -528,7 +528,7 @@ receive.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::receive
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:235
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:245
  * @route '/inventory/purchase-orders/{purchaseOrder}/receive'
  */
 receive.url = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -561,7 +561,7 @@ receive.url = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder
 
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::receive
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:235
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:245
  * @route '/inventory/purchase-orders/{purchaseOrder}/receive'
  */
 receive.post = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -571,7 +571,7 @@ receive.post = (args: { purchaseOrder: number | { id: number } } | [purchaseOrde
 
     /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::receive
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:235
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:245
  * @route '/inventory/purchase-orders/{purchaseOrder}/receive'
  */
     const receiveForm = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -581,7 +581,7 @@ receive.post = (args: { purchaseOrder: number | { id: number } } | [purchaseOrde
 
             /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::receive
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:235
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:245
  * @route '/inventory/purchase-orders/{purchaseOrder}/receive'
  */
         receiveForm.post = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -592,7 +592,7 @@ receive.post = (args: { purchaseOrder: number | { id: number } } | [purchaseOrde
     receive.form = receiveForm
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::cancel
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:280
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:290
  * @route '/inventory/purchase-orders/{purchaseOrder}/cancel'
  */
 export const cancel = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -607,7 +607,7 @@ cancel.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::cancel
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:280
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:290
  * @route '/inventory/purchase-orders/{purchaseOrder}/cancel'
  */
 cancel.url = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -640,7 +640,7 @@ cancel.url = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder:
 
 /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::cancel
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:280
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:290
  * @route '/inventory/purchase-orders/{purchaseOrder}/cancel'
  */
 cancel.put = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -650,7 +650,7 @@ cancel.put = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder:
 
     /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::cancel
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:280
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:290
  * @route '/inventory/purchase-orders/{purchaseOrder}/cancel'
  */
     const cancelForm = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -665,7 +665,7 @@ cancel.put = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder:
 
             /**
 * @see \App\Http\Controllers\Inventory\PurchaseOrderController::cancel
- * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:280
+ * @see app/Http/Controllers/Inventory/PurchaseOrderController.php:290
  * @route '/inventory/purchase-orders/{purchaseOrder}/cancel'
  */
         cancelForm.put = (args: { purchaseOrder: number | { id: number } } | [purchaseOrder: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

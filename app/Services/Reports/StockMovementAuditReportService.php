@@ -11,11 +11,13 @@ class StockMovementAuditReportService extends AbstractTableReportService
 {
     public function build(Request $request): TableReport
     {
+        $validated = $this->validateReportFilters($request, ['date_from', 'date_to', 'performed_by']);
+
         $type = $request->string('type')->trim()->toString();
         $search = $request->string('search')->trim()->toString();
-        $dateFrom = $request->string('date_from')->trim()->toString();
-        $dateTo = $request->string('date_to')->trim()->toString();
-        $performedBy = $request->string('performed_by')->trim()->toString();
+        $dateFrom = $validated['date_from'] ?? null;
+        $dateTo = $validated['date_to'] ?? null;
+        $performedBy = $validated['performed_by'] ?? null;
 
         $query = StockMovement::query()
             ->with([
@@ -27,9 +29,9 @@ class StockMovementAuditReportService extends AbstractTableReportService
                 'accountablePosition.department:id,name',
             ])
             ->when($type !== '', fn ($builder) => $builder->where('movement_type', $type))
-            ->when($dateFrom !== '', fn ($builder) => $builder->whereDate('performed_at', '>=', $dateFrom))
-            ->when($dateTo !== '', fn ($builder) => $builder->whereDate('performed_at', '<=', $dateTo))
-            ->when($performedBy !== '', fn ($builder) => $builder->where('performed_by', $performedBy))
+            ->when($dateFrom !== null, fn ($builder) => $builder->whereDate('performed_at', '>=', $dateFrom))
+            ->when($dateTo !== null, fn ($builder) => $builder->whereDate('performed_at', '<=', $dateTo))
+            ->when($performedBy !== null, fn ($builder) => $builder->where('performed_by', $performedBy))
             ->when($search !== '', function ($builder) use ($search) {
                 $builder->where(function ($builder) use ($search) {
                     $builder->whereHas('product', function ($builder) use ($search) {
@@ -48,7 +50,8 @@ class StockMovementAuditReportService extends AbstractTableReportService
                         ->orWhereLike('notes', "%{$search}%");
                 });
             })
-            ->orderByDesc('performed_at');
+            ->orderByDesc('performed_at')
+            ->orderByDesc('id');
 
         $rows = (function () use ($query) {
             foreach ($query->lazy(200) as $movement) {
@@ -83,7 +86,7 @@ class StockMovementAuditReportService extends AbstractTableReportService
                 'Search' => $search,
                 'Date from' => $dateFrom,
                 'Date to' => $dateTo,
-                'Performed by' => $performedBy,
+                'Performed by' => $performedBy !== null ? (string) $performedBy : null,
             ]),
             columns: [
                 'performed_at' => 'Performed at',

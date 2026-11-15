@@ -34,7 +34,7 @@ class BatchReceiveStockRequest extends FormRequest
             'lines.*.received_at' => ['nullable', 'date'],
             'lines.*.expires_at' => ['nullable', 'date'],
             'lines.*.tag_codes' => ['nullable', 'array'],
-            'lines.*.tag_codes.*' => ['string', 'distinct'],
+            'lines.*.tag_codes.*' => ['string', 'max:64', 'distinct', Rule::unique('assets', 'tag_code')],
             'lines.*.serial_numbers' => ['nullable', 'array', 'list'],
             'lines.*.serial_numbers.*' => ['nullable', 'string', 'max:120', 'distinct', Rule::unique('assets', 'serial_number')],
             'lines.*.notes' => ['nullable', 'string'],
@@ -47,6 +47,8 @@ class BatchReceiveStockRequest extends FormRequest
     public function validatedLines(): array
     {
         $lines = [];
+        $seenTagCodes = [];
+        $seenSerialNumbers = [];
         /** @var array<int, array<string, mixed>> $inputLines */
         $inputLines = $this->validated()['lines'];
 
@@ -79,13 +81,52 @@ class BatchReceiveStockRequest extends FormRequest
                     'tag_codes' => null,
                 ];
             } else {
-                /** @var array<int, string>|null $tagCodes */
-                $tagCodes = $line['tag_codes'] ?? null;
+                /** @var array<int, string>|null $rawTagCodes */
+                $rawTagCodes = $line['tag_codes'] ?? null;
 
-                if (empty($tagCodes)) {
+                if (empty($rawTagCodes)) {
                     throw ValidationException::withMessages([
                         "lines.{$index}.tag_codes" => 'At least one asset tag code is required for asset products.',
                     ]);
+                }
+
+                $tagCodes = [];
+                foreach (array_values($rawTagCodes) as $tagIndex => $rawTagCode) {
+                    $tagCode = trim((string) $rawTagCode);
+
+                    if ($tagCode === '') {
+                        throw ValidationException::withMessages([
+                            "lines.{$index}.tag_codes.{$tagIndex}" => __('Asset tag codes cannot be blank.'),
+                        ]);
+                    }
+
+                    if (isset($seenTagCodes[$tagCode])) {
+                        throw ValidationException::withMessages([
+                            "lines.{$index}.tag_codes.{$tagIndex}" => __('Duplicate asset tag code :tag in the submitted batch.', ['tag' => $tagCode]),
+                        ]);
+                    }
+
+                    $seenTagCodes[$tagCode] = true;
+                    $tagCodes[] = $tagCode;
+                }
+
+                /** @var array<int, string|null> $rawSerialNumbers */
+                $rawSerialNumbers = $line['serial_numbers'] ?? [];
+                $serialNumbers = [];
+                foreach (array_values($rawSerialNumbers) as $serialIndex => $rawSerial) {
+                    $serial = is_string($rawSerial) && trim($rawSerial) !== '' ? trim($rawSerial) : null;
+
+                    if ($serial !== null) {
+                        if (isset($seenSerialNumbers[$serial])) {
+                            throw ValidationException::withMessages([
+                                "lines.{$index}.serial_numbers.{$serialIndex}" => __('Duplicate serial number :serial in the submitted batch.', ['serial' => $serial]),
+                            ]);
+                        }
+
+                        $seenSerialNumbers[$serial] = true;
+                    }
+
+                    $serialNumbers[] = $serial;
                 }
 
                 $lines[] = [
@@ -96,7 +137,7 @@ class BatchReceiveStockRequest extends FormRequest
                     'expires_at' => null,
                     'notes' => $line['notes'] ?? null,
                     'tag_codes' => $tagCodes,
-                    'serial_numbers' => $line['serial_numbers'] ?? [],
+                    'serial_numbers' => $serialNumbers,
                 ];
             }
         }

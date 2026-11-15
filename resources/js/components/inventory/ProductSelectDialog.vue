@@ -293,7 +293,12 @@ onBeforeUnmount(() => {
                         <label
                             class="flex h-9.5 cursor-pointer items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 text-xs font-medium transition hover:bg-muted/50"
                         >
-                            <Checkbox v-model:checked="onlyInStock" />
+                            <Checkbox
+                                :model-value="onlyInStock"
+                                @update:model-value="
+                                    onlyInStock = $event === true
+                                "
+                            />
                             <span>In-stock only</span>
                         </label>
 

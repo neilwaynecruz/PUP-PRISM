@@ -35,7 +35,7 @@ class ReceiveStockRequest extends FormRequest
             'expires_at' => ['nullable', 'date'],
             'qty' => ['nullable', 'integer', 'min:1'],
             'tag_codes' => ['nullable', 'array', 'min:1'],
-            'tag_codes.*' => ['string', 'max:64', 'distinct'],
+            'tag_codes.*' => ['string', 'max:64', 'distinct', Rule::unique('assets', 'tag_code')],
             'serial_numbers' => ['nullable', 'array', 'list'],
             'serial_numbers.*' => ['nullable', 'string', 'max:120', 'distinct', Rule::unique('assets', 'serial_number')],
             'purchase_order_id' => ['nullable', 'integer', Rule::exists('purchase_orders', 'id')],

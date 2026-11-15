@@ -2,18 +2,25 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\GuardsE2eExecution;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Command;
 
 class E2eVerifyEmailCommand extends Command
 {
+    use GuardsE2eExecution;
+
     protected $signature = 'e2e:verify-email {email : The email address of the user to verify}';
 
     protected $description = 'Verify a user\'s email address for E2E testing';
 
     public function handle(): int
     {
+        if (! $this->ensureSafeE2eExecution()) {
+            return Command::FAILURE;
+        }
+
         $email = $this->argument('email');
 
         $user = User::query()->where('email', $email)->first();

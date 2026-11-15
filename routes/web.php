@@ -131,6 +131,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::middleware('role:Admin|Supply Head|Property Custodian')->group(function () {
             Route::get('assets', [AssetController::class, 'index'])->name('assets.index');
             Route::get('assets/{asset}', [AssetController::class, 'show'])->whereNumber('asset')->name('assets.show');
+            Route::post('assets/{asset}/return', [AssetController::class, 'returnToStock'])
+                ->whereNumber('asset')
+                ->name('assets.return');
 
             Route::post('maintenance', [AssetMaintenanceController::class, 'store'])->name('maintenance.store');
             Route::put('maintenance/{assetMaintenance}/status', [AssetMaintenanceController::class, 'transition'])

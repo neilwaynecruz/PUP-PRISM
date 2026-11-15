@@ -196,7 +196,7 @@ class UserManagementController extends Controller
         User $managedUser,
         AccessLifecycleService $accessLifecycleService,
     ): RedirectResponse {
-        $this->authorize('deactivate', $managedUser);
+        $this->authorize('viewAny', User::class);
 
         if (! $request->user() instanceof User) {
             abort(403);
@@ -210,6 +210,8 @@ class UserManagementController extends Controller
 
             return back();
         }
+
+        $this->authorize('deactivate', $managedUser);
 
         if (! $managedUser->is_active) {
             Inertia::flash('toast', [

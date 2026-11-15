@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 #[Fillable([
     'name',
@@ -24,6 +25,14 @@ class Supplier extends Model
 {
     /** @use HasFactory<SupplierFactory> */
     use HasFactory;
+
+    public const OPTIONS_CACHE_KEY = 'inventory.suppliers.options';
+
+    protected static function booted(): void
+    {
+        static::saved(fn () => Cache::forget(self::OPTIONS_CACHE_KEY));
+        static::deleted(fn () => Cache::forget(self::OPTIONS_CACHE_KEY));
+    }
 
     /**
      * @return array<string, string>

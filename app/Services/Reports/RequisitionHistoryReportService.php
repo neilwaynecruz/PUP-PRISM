@@ -11,9 +11,11 @@ class RequisitionHistoryReportService extends AbstractTableReportService
 {
     public function build(Request $request): TableReport
     {
+        $validated = $this->validateReportFilters($request, ['date_from', 'date_to']);
+
         $status = $request->string('status')->trim()->toString();
-        $dateFrom = $request->string('date_from')->trim()->toString();
-        $dateTo = $request->string('date_to')->trim()->toString();
+        $dateFrom = $validated['date_from'] ?? null;
+        $dateTo = $validated['date_to'] ?? null;
 
         $query = Requisition::query()
             ->with([
@@ -29,9 +31,10 @@ class RequisitionHistoryReportService extends AbstractTableReportService
                 'lines.product:id,sku,name',
             ])
             ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when($dateFrom !== '', fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
-            ->when($dateTo !== '', fn ($query) => $query->whereDate('created_at', '<=', $dateTo))
-            ->orderByDesc('created_at');
+            ->when($dateFrom !== null, fn ($query) => $query->whereDate('created_at', '>=', $dateFrom))
+            ->when($dateTo !== null, fn ($query) => $query->whereDate('created_at', '<=', $dateTo))
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         $rows = (function () use ($query) {
             foreach ($query->lazy(100) as $requisition) {
@@ -54,8 +57,8 @@ class RequisitionHistoryReportService extends AbstractTableReportService
             filenameBase: 'requisition-history-report',
             filters: $this->normalizeFilters([
                 'Status' => $status !== '' ? $status : 'All',
-                'Date from' => $dateFrom !== '' ? $dateFrom : null,
-                'Date to' => $dateTo !== '' ? $dateTo : null,
+                'Date from' => $dateFrom,
+                'Date to' => $dateTo,
             ]),
             columns: [
                 'requisition_id' => 'Requisition ID',

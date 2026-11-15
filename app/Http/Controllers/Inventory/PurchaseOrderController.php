@@ -192,7 +192,35 @@ class PurchaseOrderController extends Controller
     {
         $this->authorize('send', $purchaseOrder);
 
-        if ($purchaseOrder->status !== PurchaseOrderStatus::Draft) {
+        /** @var PurchaseOrder|null $sentPo */
+        $sentPo = DB::transaction(function () use ($request, $purchaseOrder): ?PurchaseOrder {
+            /** @var PurchaseOrder $lockedPo */
+            $lockedPo = PurchaseOrder::query()->whereKey($purchaseOrder->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedPo->status !== PurchaseOrderStatus::Draft) {
+                return null;
+            }
+
+            $lockedPo->forceFill([
+                'status' => PurchaseOrderStatus::Sent,
+                'sent_at' => now(),
+                'approved_by' => $request->user()?->id,
+                'notes' => $this->mergeNotes(
+                    $lockedPo->notes,
+                    $request->string('notes')->trim()->toString(),
+                ),
+            ])->save();
+
+            AuditLogService::logUpdated($lockedPo, [
+                'status' => PurchaseOrderStatus::Draft->value,
+                'sent_at' => null,
+                'approved_by' => null,
+            ]);
+
+            return $lockedPo->load('supplier');
+        });
+
+        if (! $sentPo instanceof PurchaseOrder) {
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => __('Only draft purchase orders can be sent.'),
@@ -201,28 +229,10 @@ class PurchaseOrderController extends Controller
             return back();
         }
 
-        $purchaseOrder->forceFill([
-            'status' => PurchaseOrderStatus::Sent,
-            'sent_at' => now(),
-            'approved_by' => $request->user()?->id,
-            'notes' => $this->mergeNotes(
-                $purchaseOrder->notes,
-                $request->string('notes')->trim()->toString(),
-            ),
-        ])->save();
-
-        $purchaseOrder->load('supplier');
-
-        if (filled($purchaseOrder->supplier?->email)) {
-            Notification::route('mail', (string) $purchaseOrder->supplier?->email)
-                ->notify(new PurchaseOrderSentNotification($purchaseOrder));
+        if (filled($sentPo->supplier?->email)) {
+            Notification::route('mail', (string) $sentPo->supplier?->email)
+                ->notify(new PurchaseOrderSentNotification($sentPo));
         }
-
-        AuditLogService::logUpdated($purchaseOrder, [
-            'status' => PurchaseOrderStatus::Draft->value,
-            'sent_at' => null,
-            'approved_by' => null,
-        ]);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -281,30 +291,54 @@ class PurchaseOrderController extends Controller
     {
         $this->authorize('cancel', $purchaseOrder);
 
-        if ($purchaseOrder->status === PurchaseOrderStatus::Received) {
-            Inertia::flash('toast', [
-                'type' => 'error',
-                'message' => __('Received purchase orders cannot be cancelled.'),
-            ]);
+        /** @var array{status: string, message: string} $outcome */
+        $outcome = DB::transaction(function () use ($request, $purchaseOrder): array {
+            /** @var PurchaseOrder $lockedPo */
+            $lockedPo = PurchaseOrder::query()->whereKey($purchaseOrder->id)->lockForUpdate()->firstOrFail();
 
-            return back();
-        }
+            if ($lockedPo->status === PurchaseOrderStatus::Cancelled) {
+                return [
+                    'status' => 'warning',
+                    'message' => __('This purchase order is already cancelled.'),
+                ];
+            }
 
-        $oldValues = $purchaseOrder->only(['status', 'notes']);
+            $hasReceivedLines = $lockedPo->lines()
+                ->lockForUpdate()
+                ->get(['id', 'qty_received'])
+                ->contains(fn (PurchaseOrderLine $line): bool => (int) $line->qty_received > 0);
 
-        $purchaseOrder->forceFill([
-            'status' => PurchaseOrderStatus::Cancelled,
-            'notes' => $this->mergeNotes(
-                $purchaseOrder->notes,
-                'Cancellation reason: '.$request->string('reason')->trim()->toString(),
-            ),
-        ])->save();
+            if (
+                in_array($lockedPo->status, [PurchaseOrderStatus::Received, PurchaseOrderStatus::Partial], true)
+                || $hasReceivedLines
+            ) {
+                return [
+                    'status' => 'error',
+                    'message' => __('Purchase orders with received stock cannot be cancelled.'),
+                ];
+            }
 
-        AuditLogService::logUpdated($purchaseOrder, $oldValues);
+            $oldValues = $lockedPo->only(['status', 'notes']);
+
+            $lockedPo->forceFill([
+                'status' => PurchaseOrderStatus::Cancelled,
+                'notes' => $this->mergeNotes(
+                    $lockedPo->notes,
+                    'Cancellation reason: '.$request->string('reason')->trim()->toString(),
+                ),
+            ])->save();
+
+            AuditLogService::logUpdated($lockedPo, $oldValues);
+
+            return [
+                'status' => 'success',
+                'message' => __('Purchase order cancelled.'),
+            ];
+        });
 
         Inertia::flash('toast', [
-            'type' => 'success',
-            'message' => __('Purchase order cancelled.'),
+            'type' => $outcome['status'],
+            'message' => $outcome['message'],
         ]);
 
         return back();

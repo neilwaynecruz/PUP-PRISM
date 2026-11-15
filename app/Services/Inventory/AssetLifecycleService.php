@@ -7,14 +7,11 @@ use App\Enums\AssetConditionStatus;
 use App\Enums\AssetLifecycleEventType;
 use App\Enums\AssetLifecycleStatus;
 use App\Enums\AssetStatus;
-use App\Enums\AssetTransferStatus;
-use App\Enums\MaintenanceStatus;
+use App\Enums\StockMovementReasonCode;
 use App\Models\Asset;
 use App\Models\AssetLifecycleEvent;
-use App\Models\AssetMaintenance;
-use App\Models\AssetTransfer;
-use App\Models\Booking;
-use App\Models\HandoverLog;
+use App\Models\Location;
+use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\AuditLogService;
 use Carbon\CarbonImmutable;
@@ -22,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 
 class AssetLifecycleService
 {
+    public function __construct(private readonly AssetIntegrityService $integrity) {}
+
     /** @param array<string, mixed> $payload */
     public function propose(User $user, array $payload): AssetLifecycleEvent
     {
@@ -82,10 +81,11 @@ class AssetLifecycleService
             }
 
             if (in_array($event->event_type, [AssetLifecycleEventType::Retirement, AssetLifecycleEventType::Disposal], true)) {
-                $this->ensureNoOperationalConflicts($asset);
+                $this->integrity->ensureNoOperationalConflicts($asset, requireUnassigned: true);
             }
-            if ($event->event_type === AssetLifecycleEventType::ConditionChange) {
-                $this->ensureNoOpenMaintenance($asset);
+            if ($event->event_type === AssetLifecycleEventType::ConditionChange
+                && $this->integrity->hasInProgressMaintenance($asset, lock: true)) {
+                throw new \RuntimeException('Complete or cancel the active in-progress maintenance record before changing this asset condition.');
             }
 
             $nextStatus = $asset->status;
@@ -129,37 +129,79 @@ class AssetLifecycleService
         });
     }
 
-    private function ensureNoOperationalConflicts(Asset $asset): void
-    {
-        if ($asset->position_id !== null) {
-            throw new \RuntimeException('Complete the asset handover or return before retirement or disposal.');
-        }
-        if (Booking::query()->blocking()->where('asset_id', $asset->id)->where('end_at', '>', now())->lockForUpdate()->exists()) {
-            throw new \RuntimeException('This asset has an approved booking that must be resolved first.');
-        }
-        if (HandoverLog::query()->where('asset_id', $asset->id)->pending()->lockForUpdate()->exists()) {
-            throw new \RuntimeException('This asset has a handover waiting for verification.');
-        }
-        if (AssetTransfer::query()->where('asset_id', $asset->id)->where('status', AssetTransferStatus::Pending->value)->lockForUpdate()->exists()) {
-            throw new \RuntimeException('This asset has a pending location transfer.');
-        }
-        if (AssetMaintenance::query()->where('asset_id', $asset->id)->whereIn('status', [
-            MaintenanceStatus::Reported->value,
-            MaintenanceStatus::Scheduled->value,
-            MaintenanceStatus::InProgress->value,
-        ])->lockForUpdate()->exists()) {
-            throw new \RuntimeException('Complete or cancel the open maintenance record first.');
-        }
-    }
+    /**
+     * Check a custodian-assigned / checked-out asset back into stock atomically.
+     *
+     * @param  array{location_id?: int|null, condition_status?: string|null, notes?: string|null}  $payload
+     */
+    public function returnToStock(
+        User $user,
+        Asset $asset,
+        array $payload = [],
+        ?string $ipAddress = null,
+    ): Asset {
+        return DB::transaction(function () use ($user, $asset, $payload, $ipAddress): Asset {
+            /** @var Asset $lockedAsset */
+            $lockedAsset = Asset::query()->whereKey($asset->id)->lockForUpdate()->firstOrFail();
 
-    private function ensureNoOpenMaintenance(Asset $asset): void
-    {
-        if (AssetMaintenance::query()->where('asset_id', $asset->id)->whereIn('status', [
-            MaintenanceStatus::Reported->value,
-            MaintenanceStatus::Scheduled->value,
-            MaintenanceStatus::InProgress->value,
-        ])->lockForUpdate()->exists()) {
-            throw new \RuntimeException('Complete or cancel the open maintenance record before changing this asset condition.');
-        }
+            $this->integrity->ensureCanReturnToStock($lockedAsset);
+
+            $targetLocationId = $lockedAsset->current_location_id;
+
+            if (! empty($payload['location_id'])) {
+                /** @var Location $location */
+                $location = Location::query()
+                    ->whereKey((int) $payload['location_id'])
+                    ->where('is_active', true)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+                $targetLocationId = $location->id;
+            }
+
+            $nextCondition = ! empty($payload['condition_status'])
+                ? AssetConditionStatus::from((string) $payload['condition_status'])
+                : ($lockedAsset->condition_status ?? AssetConditionStatus::Serviceable);
+
+            $nextStatus = $nextCondition === AssetConditionStatus::Serviceable
+                ? AssetStatus::Available
+                : AssetStatus::Unserviceable;
+
+            $previousPositionId = $lockedAsset->position_id;
+            $oldValues = $lockedAsset->only(['position_id', 'current_location_id', 'condition_status', 'status']);
+
+            $lockedAsset->update([
+                'position_id' => null,
+                'current_location_id' => $targetLocationId,
+                'condition_status' => $nextCondition,
+                'status' => $nextStatus,
+            ]);
+
+            $notes = trim((string) ($payload['notes'] ?? ''));
+
+            StockMovement::create([
+                'movement_type' => 'return',
+                'reason_code' => StockMovementReasonCode::ReturnToStock->value,
+                'product_id' => $lockedAsset->product_id,
+                'stock_lot_id' => null,
+                'asset_id' => $lockedAsset->id,
+                'requisition_id' => null,
+                'qty_delta' => 1,
+                'qty_before' => 0,
+                'qty_after' => 1,
+                'performed_by' => $user->id,
+                'accountable_position_id' => $previousPositionId,
+                'ip_address' => $ipAddress,
+                'performed_at' => CarbonImmutable::now(),
+                'notes' => $notes !== '' ? $notes : "Asset {$lockedAsset->tag_code} returned to stock.",
+            ]);
+
+            AuditLogService::logUpdated(
+                $lockedAsset,
+                $oldValues,
+                "Asset {$lockedAsset->tag_code} checked back in to stock.",
+            );
+
+            return $lockedAsset->fresh() ?? $lockedAsset;
+        });
     }
 }

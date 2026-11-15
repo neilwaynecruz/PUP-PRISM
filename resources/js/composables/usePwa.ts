@@ -124,6 +124,10 @@ export function usePwa() {
         canInstall.value = false;
     }
 
+    function dismissUpdate(): void {
+        updateAvailable.value = false;
+    }
+
     function applyUpdate(): void {
         const waitingWorker = serviceWorkerRegistration?.waiting;
 
@@ -145,6 +149,7 @@ export function usePwa() {
         applyUpdate,
         canInstall: readonly(canInstall),
         dismissInstall,
+        dismissUpdate,
         installApplication,
         isOnline: readonly(isOnline),
         registrationFailed: readonly(registrationFailed),

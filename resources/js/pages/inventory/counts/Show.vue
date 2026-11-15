@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { Head, Link, router, setLayoutProps, usePage } from '@inertiajs/vue3';
 import {
     ArrowLeft,
     CheckCircle2,
@@ -7,7 +7,7 @@ import {
     Send,
     XCircle,
 } from 'lucide-vue-next';
-import { computed, reactive, ref } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
 import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
@@ -89,36 +89,52 @@ const props = defineProps<{
 
 defineOptions({
     name: 'InventoryCountShowPage',
-    layout: {
-        breadcrumbs: [
-            { title: 'Physical counts', href: index() },
-            {
-                title: 'Count details',
-                href: show(
-                    Number(window.location.pathname.split('/').pop()) || 1,
-                ),
-            },
-        ],
-    },
 });
 
-const countValues = reactive<Record<number, string>>(
-    Object.fromEntries(
-        props.session.lines.map((line) => [
-            line.id,
-            line.counted_qty === null ? '' : String(line.counted_qty),
-        ]),
-    ),
+watch(
+    () => [props.session.id, props.session.reference_no] as const,
+    ([id, referenceNo]) => {
+        setLayoutProps({
+            breadcrumbs: [
+                { title: 'Physical counts', href: index() },
+                { title: referenceNo || 'Count details', href: show(id) },
+            ],
+        });
+    },
+    { immediate: true },
 );
-const countNotes = reactive<Record<number, string>>(
-    Object.fromEntries(
-        props.session.lines.map((line) => [line.id, line.count_notes ?? '']),
-    ),
-);
-const reviewNotes = reactive<Record<number, string>>(
-    Object.fromEntries(
-        props.session.lines.map((line) => [line.id, line.review_notes ?? '']),
-    ),
+
+const countValues = reactive<Record<number, string>>({});
+const countNotes = reactive<Record<number, string>>({});
+const reviewNotes = reactive<Record<number, string>>({});
+
+function syncCountInputs(lines: CountLine[]): void {
+    const activeIds = new Set(lines.map((line) => line.id));
+
+    for (const key of Object.keys(countValues)) {
+        const id = Number(key);
+
+        if (!activeIds.has(id)) {
+            delete countValues[id];
+            delete countNotes[id];
+            delete reviewNotes[id];
+        }
+    }
+
+    for (const line of lines) {
+        countValues[line.id] =
+            line.counted_qty === null ? '' : String(line.counted_qty);
+        countNotes[line.id] = line.count_notes ?? '';
+        reviewNotes[line.id] = line.review_notes ?? '';
+    }
+}
+
+watch(
+    () => props.session.lines,
+    (lines) => {
+        syncCountInputs(lines);
+    },
+    { immediate: true },
 );
 const busyLine = ref<number | null>(null);
 const busyAction = ref('');
@@ -190,6 +206,14 @@ function label(value: string): string {
 function formatDate(value: string): string {
     return new Intl.DateTimeFormat('en-PH', {
         dateStyle: 'medium',
+        timeZone: 'Asia/Manila',
+    }).format(new Date(value));
+}
+
+function formatDateTime(value: string): string {
+    return new Intl.DateTimeFormat('en-PH', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
         timeZone: 'Asia/Manila',
     }).format(new Date(value));
 }
@@ -324,7 +348,7 @@ const visibleLines = computed(() => {
             <div class="rounded-xl border border-border/70 bg-card p-4">
                 <p class="text-xs text-muted-foreground">Snapshot saved</p>
                 <p class="mt-1 font-semibold">
-                    {{ new Date(session.snapshot_at).toLocaleString() }}
+                    {{ formatDateTime(session.snapshot_at) }}
                 </p>
             </div>
         </section>
@@ -547,6 +571,7 @@ const visibleLines = computed(() => {
                         </label>
                         <div class="flex flex-wrap items-end gap-2">
                             <Button
+                                type="button"
                                 size="sm"
                                 :disabled="busyLine === line.id"
                                 @click="reviewLine(line, 'approved')"
@@ -556,6 +581,7 @@ const visibleLines = computed(() => {
                                 />Approve</Button
                             >
                             <Button
+                                type="button"
                                 size="sm"
                                 variant="outline"
                                 :disabled="busyLine === line.id"
@@ -566,6 +592,7 @@ const visibleLines = computed(() => {
                                 />Request Recount</Button
                             >
                             <Button
+                                type="button"
                                 size="sm"
                                 variant="destructive"
                                 :disabled="busyLine === line.id"

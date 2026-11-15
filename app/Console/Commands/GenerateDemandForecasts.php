@@ -103,12 +103,11 @@ class GenerateDemandForecasts extends Command
 
             $atRiskProductIds[] = $result->productId;
 
-            $alert = InventoryAlert::query()->updateOrCreate(
+            $alert = InventoryAlert::upsertUnresolved(
                 [
                     'type' => 'forecast_stockout',
                     'product_id' => $result->productId,
                     'stock_lot_id' => null,
-                    'resolved_at' => null,
                 ],
                 [
                     'message' => sprintf(

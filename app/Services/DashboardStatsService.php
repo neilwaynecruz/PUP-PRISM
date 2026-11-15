@@ -20,6 +20,7 @@ use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 class DashboardStatsService
@@ -82,6 +83,7 @@ class DashboardStatsService
             'recentlyDeleted' => $this->recentlyDeleted(),
             'kpiSummary' => $this->kpiSummary($from, $to),
             'nearExpiryLots' => $this->nearExpiryLots(),
+            'expiredLots' => $this->expiredLots(),
         ];
     }
 
@@ -212,19 +214,26 @@ class DashboardStatsService
     }
 
     /**
-     * @return list<array{id: int, sku: string, name: string, category: string|null, on_hand_qty: int|null, reorder_threshold: int}>
+     * @return Builder<Product>
      */
-    private function lowStockProducts(): array
+    private function lowStockQuery(): Builder
     {
         return Product::query()
             ->where('type', ProductType::Consumable)
             ->where('is_active', true)
-            ->whereHas('stock')
+            ->whereHas('stock', fn ($q) => $q->whereColumn('product_stocks.on_hand_qty', '<=', 'products.reorder_threshold'));
+    }
+
+    /**
+     * @return list<array{id: int, sku: string, name: string, category: string|null, on_hand_qty: int|null, reorder_threshold: int}>
+     */
+    private function lowStockProducts(): array
+    {
+        return $this->lowStockQuery()
             ->with(['stock:id,product_id,on_hand_qty', 'category:id,name'])
-            ->whereHas('stock', fn ($q) => $q->whereColumn('product_stocks.on_hand_qty', '<=', 'products.reorder_threshold'))
             ->orderBy('name')
             ->limit(30)
-            ->get(['id', 'sku', 'name', 'reorder_threshold'])
+            ->get(['id', 'sku', 'name', 'category_id', 'reorder_threshold'])
             ->map(fn (Product $p) => [
                 'id' => $p->id,
                 'sku' => $p->sku,
@@ -373,7 +382,7 @@ class DashboardStatsService
         return Supplier::query()
             ->with([
                 'purchaseOrders' => fn ($query) => $query
-                    ->select(['id', 'supplier_id', 'status', 'created_at', 'received_at']),
+                    ->select(['id', 'supplier_id', 'status', 'sent_at', 'created_at', 'received_at']),
             ])
             ->orderBy('name')
             ->get()
@@ -389,15 +398,13 @@ class DashboardStatsService
                     ])
                     ->count(),
                 'avg_lead_time_days' => $supplier->purchaseOrders
-                    ->filter(fn (PurchaseOrder $purchaseOrder) => $purchaseOrder->received_at !== null)
+                    ->filter(fn (PurchaseOrder $purchaseOrder) => $purchaseOrder->received_at !== null && ($purchaseOrder->sent_at !== null || $purchaseOrder->created_at !== null))
                     ->pipe(function ($purchaseOrders): ?float {
                         $durations = $purchaseOrders->map(function (PurchaseOrder $purchaseOrder): float {
-                            /** @var CarbonImmutable $createdAt */
-                            $createdAt = CarbonImmutable::parse($purchaseOrder->created_at);
-                            /** @var CarbonImmutable $receivedAt */
-                            $receivedAt = CarbonImmutable::parse($purchaseOrder->received_at);
+                            $startedAt = CarbonImmutable::parse((string) ($purchaseOrder->sent_at ?? $purchaseOrder->created_at));
+                            $receivedAt = CarbonImmutable::parse((string) $purchaseOrder->received_at);
 
-                            return (float) $createdAt->diffInDays($receivedAt);
+                            return (float) max(0, $startedAt->diffInDays($receivedAt, false));
                         });
 
                         if ($durations->isEmpty()) {
@@ -448,6 +455,7 @@ class DashboardStatsService
                 'type' => 'product',
                 'name' => $product->name,
                 'deleted_at' => $this->formatDeletedAt($product->deleted_at),
+                '_sort_ts' => $product->deleted_at !== null ? CarbonImmutable::parse((string) $product->deleted_at)->getTimestamp() : 0,
                 'deleted_by' => $product->deletedBy?->name ?? 'Unknown',
                 'restore_url' => route('inventory.products.restore', $product->id),
             ]);
@@ -462,6 +470,7 @@ class DashboardStatsService
                 'type' => 'booking',
                 'name' => 'Booking: '.($booking->asset?->tag_code ?? 'Unknown'),
                 'deleted_at' => $this->formatDeletedAt($booking->deleted_at),
+                '_sort_ts' => $booking->deleted_at !== null ? CarbonImmutable::parse((string) $booking->deleted_at)->getTimestamp() : 0,
                 'deleted_by' => $booking->deletedBy?->name ?? 'Unknown',
                 'restore_url' => route('inventory.bookings.restore', $booking->id),
             ]);
@@ -476,6 +485,7 @@ class DashboardStatsService
                 'type' => 'requisition',
                 'name' => 'Requisition #'.$requisition->id,
                 'deleted_at' => $this->formatDeletedAt($requisition->deleted_at),
+                '_sort_ts' => $requisition->deleted_at !== null ? CarbonImmutable::parse((string) $requisition->deleted_at)->getTimestamp() : 0,
                 'deleted_by' => $requisition->deletedBy?->name ?? 'Unknown',
                 'restore_url' => route('inventory.requisitions.restore', $requisition->id),
             ]);
@@ -483,8 +493,13 @@ class DashboardStatsService
         return $products
             ->merge($bookings)
             ->merge($requisitions)
-            ->sortByDesc('deleted_at')
+            ->sortByDesc('_sort_ts')
             ->take(5)
+            ->map(function (array $item): array {
+                unset($item['_sort_ts']);
+
+                return $item;
+            })
             ->values()
             ->toArray();
     }
@@ -523,7 +538,7 @@ class DashboardStatsService
             ->count();
 
         $assignedAssets = $positionId
-            ? Asset::query()->where('position_id', $positionId)->where('status', AssetStatus::Available)->count()
+            ? Asset::query()->where('position_id', $positionId)->where('status', AssetStatus::CheckedOut)->count()
             : 0;
 
         $pendingHandovers = HandoverLog::query()
@@ -567,6 +582,7 @@ class DashboardStatsService
      * @return array{
      *     issued_today_count: int,
      *     near_expiry_batch_count: int,
+     *     expired_batch_count: int,
      *     low_stock_count: int,
      *     pending_requisitions_count: int,
      *     pending_bookings_count: int,
@@ -586,7 +602,14 @@ class DashboardStatsService
         $nearExpiryBatchCount = StockLot::query()
             ->where('qty_remaining', '>', 0)
             ->whereNotNull('expires_at')
-            ->whereDate('expires_at', '<=', $today->addDays(30))
+            ->whereDate('expires_at', '>=', $today->toDateString())
+            ->whereDate('expires_at', '<=', $today->addDays(30)->toDateString())
+            ->count();
+
+        $expiredBatchCount = StockLot::query()
+            ->where('qty_remaining', '>', 0)
+            ->whereNotNull('expires_at')
+            ->whereDate('expires_at', '<', $today->toDateString())
             ->count();
 
         $pendingRequisitions = (int) (Requisition::query()
@@ -608,7 +631,8 @@ class DashboardStatsService
         return [
             'issued_today_count' => $issuedTodayCount,
             'near_expiry_batch_count' => $nearExpiryBatchCount,
-            'low_stock_count' => count($this->lowStockProducts()),
+            'expired_batch_count' => $expiredBatchCount,
+            'low_stock_count' => $this->lowStockQuery()->count(),
             'pending_requisitions_count' => $pendingRequisitions,
             'pending_bookings_count' => $pendingBookings,
             'active_alerts_count' => InventoryAlert::query()->whereNull('resolved_at')->count(),
@@ -621,13 +645,40 @@ class DashboardStatsService
      */
     private function nearExpiryLots(): array
     {
-        $threshold = CarbonImmutable::now()->addDays(30);
+        $today = CarbonImmutable::now();
+        $threshold = $today->addDays(30);
 
         return StockLot::query()
             ->with('product:id,sku,name')
             ->where('qty_remaining', '>', 0)
             ->whereNotNull('expires_at')
-            ->whereDate('expires_at', '<=', $threshold)
+            ->whereDate('expires_at', '>=', $today->toDateString())
+            ->whereDate('expires_at', '<=', $threshold->toDateString())
+            ->orderBy('expires_at')
+            ->limit(10)
+            ->get(['id', 'product_id', 'qty_remaining', 'expires_at'])
+            ->map(fn (StockLot $lot) => [
+                'id' => $lot->id,
+                'product_name' => $lot->product?->name ?? 'Unknown',
+                'sku' => $lot->product?->sku ?? 'N/A',
+                'qty_remaining' => $lot->qty_remaining,
+                'expires_at' => CarbonImmutable::parse((string) $lot->expires_at)->toDateString(),
+            ])
+            ->all();
+    }
+
+    /**
+     * @return list<array{id: int, product_name: string, sku: string, qty_remaining: int, expires_at: string}>
+     */
+    private function expiredLots(): array
+    {
+        $today = CarbonImmutable::now()->toDateString();
+
+        return StockLot::query()
+            ->with('product:id,sku,name')
+            ->where('qty_remaining', '>', 0)
+            ->whereNotNull('expires_at')
+            ->whereDate('expires_at', '<', $today)
             ->orderBy('expires_at')
             ->limit(10)
             ->get(['id', 'product_id', 'qty_remaining', 'expires_at'])

@@ -511,23 +511,34 @@ class ProductController extends Controller
 
     public function bulkRestore(Request $request): RedirectResponse
     {
-        $ids = $request->input('ids', []);
+        $this->authorize('trash', Product::class);
 
-        if (empty($ids)) {
-            return back();
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:products,id'],
+        ]);
+
+        $products = Product::query()
+            ->onlyTrashed()
+            ->whereIn('id', $validated['ids'])
+            ->orderBy('id')
+            ->get();
+
+        foreach ($products as $product) {
+            $this->authorize('restore', $product);
         }
 
-        $restored = 0;
-        foreach ($ids as $id) {
-            /** @var Product|null $product */
-            $product = Product::query()->withTrashed()->find($id);
-            if ($product && $product->trashed()) {
-                $this->authorize('restore', $product);
+        $restored = DB::transaction(function () use ($products): int {
+            $count = 0;
+
+            foreach ($products as $product) {
                 $product->restore();
                 AuditLogService::logRestored($product);
-                $restored++;
+                $count++;
             }
-        }
+
+            return $count;
+        });
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -543,28 +554,36 @@ class ProductController extends Controller
 
     public function bulkForceDelete(Request $request): RedirectResponse
     {
-        $ids = $request->input('ids', []);
+        $this->authorize('trash', Product::class);
 
-        if (empty($ids)) {
-            return back();
+        $validated = $request->validate([
+            'ids' => ['required', 'array', 'min:1'],
+            'ids.*' => ['integer', 'distinct', 'exists:products,id'],
+        ]);
+
+        $products = Product::query()
+            ->onlyTrashed()
+            ->whereIn('id', $validated['ids'])
+            ->orderBy('id')
+            ->get();
+
+        foreach ($products as $product) {
+            $this->authorize('forceDelete', $product);
         }
 
         $deleted = 0;
         $errors = 0;
 
-        foreach ($ids as $id) {
-            /** @var Product|null $product */
-            $product = Product::query()->withTrashed()->find($id);
-            if ($product && $product->trashed()) {
-                try {
-                    $this->authorize('forceDelete', $product);
+        foreach ($products as $product) {
+            try {
+                DB::transaction(function () use ($product): void {
                     AuditLogService::logForceDeleted($product);
                     $product->forceDelete();
-                    $deleted++;
-                } catch (QueryException $e) {
-                    report($e);
-                    $errors++;
-                }
+                });
+                $deleted++;
+            } catch (QueryException $e) {
+                report($e);
+                $errors++;
             }
         }
 
@@ -587,9 +606,15 @@ class ProductController extends Controller
 
     public function bulkActivate(Request $request): RedirectResponse
     {
+        abort_unless(
+            $request->user()?->hasAnyRole(['Admin', 'Supply Head']),
+            403,
+            __('You are not authorized to activate products.'),
+        );
+
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct'],
+            'ids.*' => ['integer', 'distinct', 'exists:products,id'],
         ]);
 
         $products = Product::query()
@@ -634,9 +659,15 @@ class ProductController extends Controller
 
     public function bulkDeactivate(Request $request): RedirectResponse
     {
+        abort_unless(
+            $request->user()?->hasAnyRole(['Admin', 'Supply Head']),
+            403,
+            __('You are not authorized to deactivate products.'),
+        );
+
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct'],
+            'ids.*' => ['integer', 'distinct', 'exists:products,id'],
         ]);
 
         $products = Product::query()
@@ -681,9 +712,15 @@ class ProductController extends Controller
 
     public function bulkChangeCategory(Request $request): RedirectResponse
     {
+        abort_unless(
+            $request->user()?->hasAnyRole(['Admin', 'Supply Head']),
+            403,
+            __('You are not authorized to update product categories.'),
+        );
+
         $validated = $request->validate([
             'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct'],
+            'ids.*' => ['integer', 'distinct', 'exists:products,id'],
             'category_id' => ['required', 'integer', 'exists:categories,id'],
         ]);
 
@@ -804,7 +841,7 @@ class ProductController extends Controller
     private function supplierOptions(): array
     {
         return $this->rememberOptionList(
-            'inventory.suppliers.options',
+            Supplier::OPTIONS_CACHE_KEY,
             fn () => Supplier::query()
                 ->where('is_active', true)
                 ->orderBy('name')

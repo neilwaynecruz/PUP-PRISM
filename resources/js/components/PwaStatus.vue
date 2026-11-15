@@ -7,6 +7,7 @@ const {
     applyUpdate,
     canInstall,
     dismissInstall,
+    dismissUpdate,
     installApplication,
     isOnline,
     updateAvailable,
@@ -50,10 +51,24 @@ const {
                 <p class="mt-1 text-sm leading-5 text-muted-foreground">
                     Refresh now to use the latest version.
                 </p>
-                <Button class="mt-3" size="sm" @click="applyUpdate">
+                <Button
+                    type="button"
+                    class="mt-3"
+                    size="sm"
+                    @click="applyUpdate"
+                >
                     Refresh PRISM
                 </Button>
             </div>
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Dismiss update notification"
+                @click="dismissUpdate"
+            >
+                <X class="h-4 w-4" aria-hidden="true" />
+            </Button>
         </section>
 
         <section
@@ -71,11 +86,17 @@ const {
                     Add PRISM to this device for quicker access. An internet
                     connection is still required for inventory changes.
                 </p>
-                <Button class="mt-3" size="sm" @click="installApplication">
+                <Button
+                    type="button"
+                    class="mt-3"
+                    size="sm"
+                    @click="installApplication"
+                >
                     Install app
                 </Button>
             </div>
             <Button
+                type="button"
                 variant="ghost"
                 size="icon"
                 aria-label="Dismiss install suggestion"

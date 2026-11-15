@@ -23,6 +23,7 @@ import Heading from '@/components/Heading.vue';
 import ForecastWidget from '@/components/inventory/ForecastWidget.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {
     index as forecastingIndex,
     show as forecastingShow,
@@ -54,6 +55,7 @@ type PaginationLink = { url: string | null; label: string; active: boolean };
 type Paginated<T> = {
     data: T[];
     links: PaginationLink[];
+    total?: number;
 };
 
 type MethodOption = {
@@ -188,6 +190,10 @@ let refreshTimer: number | undefined;
 watch([search, urgency, method, minConfidence], () => {
     window.clearTimeout(refreshTimer);
     refreshTimer = window.setTimeout(() => {
+        if (!shouldApplyDebouncedVisit('/inventory/forecasting')) {
+            return;
+        }
+
         router.get(
             forecastingIndex().url,
             {
@@ -437,7 +443,7 @@ const filteredExpiringLots = computed(() => {
                             : 'bg-muted text-muted-foreground'
                     "
                 >
-                    {{ products.data.length }}
+                    {{ products.total ?? products.data.length }}
                 </span>
             </button>
 
@@ -987,26 +993,33 @@ const filteredExpiringLots = computed(() => {
                 <!-- Pagination -->
                 <div
                     v-if="products.links.length > 3"
-                    class="flex flex-wrap gap-2 border-t border-border/50 px-5 py-4"
+                    class="flex flex-wrap items-center gap-2 border-t border-border/50 px-5 py-4"
                 >
-                    <Button
+                    <template
                         v-for="link in products.links"
                         :key="`${link.label}-${link.url}`"
-                        variant="ghost"
-                        size="sm"
-                        :disabled="!link.url"
-                        as-child
                     >
-                        <Link
+                        <Button
                             v-if="link.url"
-                            :href="link.url"
-                            preserve-scroll
-                            preserve-state
+                            variant="ghost"
+                            size="sm"
+                            as-child
                         >
-                            <span v-html="link.label" />
-                        </Link>
-                        <span v-else v-html="link.label" />
-                    </Button>
+                            <Link
+                                :href="link.url"
+                                preserve-scroll
+                                preserve-state
+                            >
+                                <span v-html="link.label" />
+                            </Link>
+                        </Button>
+                        <span
+                            v-else
+                            aria-disabled="true"
+                            class="pointer-events-none inline-flex min-h-8 items-center rounded-md px-3 text-xs font-medium text-muted-foreground/50 select-none"
+                            v-html="link.label"
+                        />
+                    </template>
                 </div>
             </section>
         </div>

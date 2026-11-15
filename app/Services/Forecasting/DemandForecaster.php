@@ -38,7 +38,12 @@ class DemandForecaster
 
         $dailyData = $this->collector->getDailyConsumption($product, $profile->lookback_days, $asOf);
         $resolvedMethod = $this->resolveMethod($profile, $dailyData);
-        $predictions = $this->forecastSeries($resolvedMethod, $profile, $dailyData);
+        $nonZeroHistoryDays = count(array_filter($dailyData, fn (array $point) => $point['qty'] > 0));
+        $hasSufficientHistory = count($dailyData) >= min(14, $profile->lookback_days) && $nonZeroHistoryDays >= 3;
+
+        $predictions = $hasSufficientHistory
+            ? $this->forecastSeries($resolvedMethod, $profile, $dailyData)
+            : [];
         $predictedDailyConsumption = $predictions === []
             ? 0.0
             : round(array_sum(array_column($predictions, 'predicted_qty')) / count($predictions), 2);
@@ -70,13 +75,11 @@ class DemandForecaster
         $predictedStockoutDate = $predictedDaysUntilStockout === null
             ? null
             : $asOf->startOfDay()->addDays($predictedDaysUntilStockout);
-        $confidenceScore = $this->calculateConfidenceScore($dailyData, $profile->lookback_days);
-        $nonZeroHistoryDays = count(array_filter($dailyData, fn (array $point) => $point['qty'] > 0));
-        $hasSufficientHistory = count($dailyData) >= min(14, $profile->lookback_days) && $nonZeroHistoryDays >= 3;
-
-        if (! $hasSufficientHistory && $confidenceScore !== null) {
-            $confidenceScore = min($confidenceScore, 35.0);
-        }
+        $confidenceScore = $hasSufficientHistory
+            ? $this->calculateConfidenceScore($dailyData, $profile->lookback_days)
+            : ($nonZeroHistoryDays > 0
+                ? min((float) ($this->calculateConfidenceScore($dailyData, $profile->lookback_days) ?? 18.0), 35.0)
+                : null);
 
         return new ForecastResult(
             productId: $product->id,

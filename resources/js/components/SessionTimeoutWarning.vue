@@ -23,11 +23,26 @@ const minutesRemaining = ref<number | null>(null);
 
 let checkTimer: ReturnType<typeof setInterval> | null = null;
 let lastActivity = Date.now();
+let lastStorageWriteAt = 0;
 let wasExpired = false;
+
+function persistActivityTimestamp(now: number): void {
+    if (now - lastStorageWriteAt < 5000) {
+        return;
+    }
+
+    lastStorageWriteAt = now;
+
+    try {
+        localStorage.setItem(activityStorageKey, String(now));
+    } catch {
+        // Ignore storage errors in restricted browsing contexts.
+    }
+}
 
 function updateActivity(): void {
     lastActivity = Date.now();
-    localStorage.setItem(activityStorageKey, String(lastActivity));
+    persistActivityTimestamp(lastActivity);
 }
 
 function syncActivityFromStorage(event?: StorageEvent): void {
@@ -35,15 +50,23 @@ function syncActivityFromStorage(event?: StorageEvent): void {
         return;
     }
 
-    const rawValue = localStorage.getItem(activityStorageKey);
-    const nextActivity = rawValue ? Number(rawValue) : NaN;
+    try {
+        const rawValue = localStorage.getItem(activityStorageKey);
+        const nextActivity = rawValue ? Number(rawValue) : NaN;
 
-    if (!Number.isNaN(nextActivity) && nextActivity > lastActivity) {
-        lastActivity = nextActivity;
+        if (!Number.isNaN(nextActivity) && nextActivity > lastActivity) {
+            lastActivity = nextActivity;
+        }
+    } catch {
+        // Ignore storage errors in restricted browsing contexts.
     }
 }
 
 function checkSession(): void {
+    if (!session.value?.lifetimeMinutes) {
+        return;
+    }
+
     const inactiveMinutes = (Date.now() - lastActivity) / 1000 / 60;
     const minutesUntilExpiry = session.value.lifetimeMinutes - inactiveMinutes;
 
@@ -69,7 +92,7 @@ function checkSession(): void {
 }
 
 async function keepAlive(): Promise<void> {
-    if (isRefreshing.value) {
+    if (isRefreshing.value || !session.value) {
         return;
     }
 
@@ -83,14 +106,21 @@ async function keepAlive(): Promise<void> {
             },
         });
 
-        if (!response.ok) {
-            throw new Error('Session refresh failed.');
+        if (response.status === 401 || response.status === 419) {
+            window.location.href = session.value.loginUrl;
+
+            return;
         }
 
+        if (!response.ok) {
+            return;
+        }
+
+        lastStorageWriteAt = 0;
         updateActivity();
         showWarning.value = false;
     } catch {
-        window.location.href = session.value.loginUrl;
+        // Preserve active session context across transient network or offline drops.
     } finally {
         isRefreshing.value = false;
     }
@@ -99,7 +129,7 @@ async function keepAlive(): Promise<void> {
 onMounted(() => {
     syncActivityFromStorage();
     activityEvents.forEach((event) =>
-        document.addEventListener(event, updateActivity),
+        document.addEventListener(event, updateActivity, { passive: true }),
     );
     window.addEventListener('storage', syncActivityFromStorage);
 

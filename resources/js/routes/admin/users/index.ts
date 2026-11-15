@@ -492,7 +492,7 @@ deactivate.patch = (args: { managedUser: number | { id: number } } | [managedUse
     deactivate.form = deactivateForm
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::reactivate
- * @see app/Http/Controllers/Admin/UserManagementController.php:275
+ * @see app/Http/Controllers/Admin/UserManagementController.php:277
  * @route '/admin/users/{managedUser}/reactivate'
  */
 export const reactivate = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -507,7 +507,7 @@ reactivate.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::reactivate
- * @see app/Http/Controllers/Admin/UserManagementController.php:275
+ * @see app/Http/Controllers/Admin/UserManagementController.php:277
  * @route '/admin/users/{managedUser}/reactivate'
  */
 reactivate.url = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -540,7 +540,7 @@ reactivate.url = (args: { managedUser: number | { id: number } } | [managedUser:
 
 /**
 * @see \App\Http\Controllers\Admin\UserManagementController::reactivate
- * @see app/Http/Controllers/Admin/UserManagementController.php:275
+ * @see app/Http/Controllers/Admin/UserManagementController.php:277
  * @route '/admin/users/{managedUser}/reactivate'
  */
 reactivate.patch = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -550,7 +550,7 @@ reactivate.patch = (args: { managedUser: number | { id: number } } | [managedUse
 
     /**
 * @see \App\Http\Controllers\Admin\UserManagementController::reactivate
- * @see app/Http/Controllers/Admin/UserManagementController.php:275
+ * @see app/Http/Controllers/Admin/UserManagementController.php:277
  * @route '/admin/users/{managedUser}/reactivate'
  */
     const reactivateForm = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -565,7 +565,7 @@ reactivate.patch = (args: { managedUser: number | { id: number } } | [managedUse
 
             /**
 * @see \App\Http\Controllers\Admin\UserManagementController::reactivate
- * @see app/Http/Controllers/Admin/UserManagementController.php:275
+ * @see app/Http/Controllers/Admin/UserManagementController.php:277
  * @route '/admin/users/{managedUser}/reactivate'
  */
         reactivateForm.patch = (args: { managedUser: number | { id: number } } | [managedUser: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

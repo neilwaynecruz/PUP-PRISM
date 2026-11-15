@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Console\Commands\Concerns\GuardsE2eExecution;
 use App\Models\Asset;
 use App\Models\HandoverLog;
 use App\Models\User;
@@ -10,6 +11,8 @@ use Illuminate\Console\Command;
 
 class E2eCreateHandoverCommand extends Command
 {
+    use GuardsE2eExecution;
+
     protected $signature = 'e2e:create-handover
                             {asset_tag_code : Tag code of the asset to hand over}
                             {from_user_id : ID of the user initiating the handover}
@@ -21,6 +24,10 @@ class E2eCreateHandoverCommand extends Command
 
     public function handle(): int
     {
+        if (! $this->ensureSafeE2eExecution()) {
+            return Command::FAILURE;
+        }
+
         $assetTagCode = $this->argument('asset_tag_code');
         $fromUserId = (int) $this->argument('from_user_id');
         $toUserId = (int) $this->argument('to_user_id');

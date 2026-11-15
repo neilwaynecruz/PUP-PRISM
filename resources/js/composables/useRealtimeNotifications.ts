@@ -185,6 +185,26 @@ export function useRealtimeNotifications() {
             return 'products';
         }
 
+        if (currentUrl.startsWith('/inventory/assets')) {
+            return 'assets';
+        }
+
+        if (currentUrl.startsWith('/inventory/purchase-orders')) {
+            return 'purchase-orders';
+        }
+
+        if (currentUrl.startsWith('/inventory/counts')) {
+            return 'counts';
+        }
+
+        if (currentUrl.startsWith('/inventory/forecasting')) {
+            return 'forecasting';
+        }
+
+        if (currentUrl.startsWith('/inventory/suppliers')) {
+            return 'suppliers';
+        }
+
         if (currentUrl.startsWith('/inventory/handover')) {
             return 'handover';
         }
@@ -225,7 +245,16 @@ export function useRealtimeNotifications() {
             case 'requisition':
                 return ['dashboard', 'requisitions'];
             case 'inventory':
-                return ['dashboard', 'products', 'receiving', 'movements'];
+                return [
+                    'dashboard',
+                    'products',
+                    'receiving',
+                    'movements',
+                    'assets',
+                    'counts',
+                    'purchase-orders',
+                    'forecasting',
+                ];
             case 'handover':
                 return ['dashboard', 'handover'];
             default:
@@ -329,7 +358,15 @@ export function useRealtimeNotifications() {
         );
     }
 
+    function unregisterRealtimeChannels(): void {
+        while (cleanups.length > 0) {
+            cleanups.pop()?.();
+        }
+    }
+
     function registerRealtimeChannels(): void {
+        unregisterRealtimeChannels();
+
         const user = auth.value?.user;
 
         if (!user || !echoIsConfigured()) {
@@ -373,6 +410,21 @@ export function useRealtimeNotifications() {
             });
         }
     }
+
+    watch(
+        () =>
+            [
+                auth.value?.user?.id ?? null,
+                (auth.value?.roles ?? []).join(','),
+            ] as const,
+        ([nextUserId], [prevUserId]) => {
+            if (!isClient || nextUserId === prevUserId) {
+                return;
+            }
+
+            registerRealtimeChannels();
+        },
+    );
 
     onMounted(() => {
         if (!isClient) {

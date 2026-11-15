@@ -193,7 +193,9 @@ function confidenceTier(score: number | null): {
                     <div
                         class="inline-flex items-center gap-2 rounded-full border border-primary/25 bg-primary/10 px-3 py-1 text-xs font-semibold tracking-wider text-primary uppercase"
                     >
-                        <Radar class="animate-spin-slow size-3.5" />
+                        <Radar
+                            class="size-3.5 animate-spin-slow motion-reduce:animate-none"
+                        />
                         <span>Predictive Intelligence</span>
                         <span
                             class="inline-block size-1.5 rounded-full bg-emerald-500"

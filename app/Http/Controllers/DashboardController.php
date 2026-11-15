@@ -64,6 +64,7 @@ class DashboardController extends Controller
             'unserviceableAssets' => $stats['unserviceableAssets'] ?? [],
             'kpiSummary' => $stats['kpiSummary'] ?? [],
             'nearExpiryLots' => $stats['nearExpiryLots'] ?? [],
+            'expiredLots' => $stats['expiredLots'] ?? [],
             'custodianSummary' => $stats['custodianSummary'] ?? null,
             'assetStatusCounts' => [
                 'labels' => [AssetStatus::Unserviceable->value, AssetStatus::Condemned->value],

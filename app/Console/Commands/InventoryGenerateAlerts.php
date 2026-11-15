@@ -14,7 +14,7 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 
 #[Signature('app:inventory-generate-alerts')]
-#[Description('Generate low stock and expiring lot inventory alerts')]
+#[Description('Generate low stock, near-expiry, and expired lot inventory alerts')]
 class InventoryGenerateAlerts extends Command
 {
     /**
@@ -23,6 +23,7 @@ class InventoryGenerateAlerts extends Command
     public function handle(NotificationService $notificationService): int
     {
         $now = CarbonImmutable::now();
+        $todayDate = $now->toDateString();
 
         $lowStockProducts = Product::query()
             ->where('type', ProductType::Consumable)
@@ -39,12 +40,11 @@ class InventoryGenerateAlerts extends Command
             $onHand = $product->stock?->on_hand_qty ?? 0;
             $activeLowStockProductIds[] = $product->id;
 
-            $alert = InventoryAlert::query()->updateOrCreate(
+            $alert = InventoryAlert::upsertUnresolved(
                 [
                     'type' => 'low_stock',
                     'product_id' => $product->id,
                     'stock_lot_id' => null,
-                    'resolved_at' => null,
                 ],
                 [
                     'message' => "Low stock: {$product->name} ({$product->sku}) has {$onHand} on hand (threshold {$product->reorder_threshold}).",
@@ -70,6 +70,7 @@ class InventoryGenerateAlerts extends Command
         $expiringLots = StockLot::query()
             ->where('qty_remaining', '>', 0)
             ->whereNotNull('expires_at')
+            ->whereDate('expires_at', '>=', $todayDate)
             ->whereDate('expires_at', '<=', $now->addDays(7)->toDateString())
             ->with(['product:id,sku,name'])
             ->get();
@@ -81,12 +82,11 @@ class InventoryGenerateAlerts extends Command
             $expiresAt = CarbonImmutable::parse((string) $lot->expires_at)->startOfDay();
             $daysLeft = (int) $now->startOfDay()->diffInDays($expiresAt, false);
 
-            $alert = InventoryAlert::query()->updateOrCreate(
+            $alert = InventoryAlert::upsertUnresolved(
                 [
                     'type' => 'expiring',
                     'product_id' => $lot->product_id,
                     'stock_lot_id' => $lot->id,
-                    'resolved_at' => null,
                 ],
                 [
                     'message' => "Expiring soon: {$lot->product->name} ({$lot->product->sku}) lot #{$lot->id} expires {$lot->expires_at}.",
@@ -108,6 +108,41 @@ class InventoryGenerateAlerts extends Command
         }
 
         $staleExpiringAlerts->update(['resolved_at' => $now]);
+
+        $expiredLots = StockLot::query()
+            ->where('qty_remaining', '>', 0)
+            ->whereNotNull('expires_at')
+            ->whereDate('expires_at', '<', $todayDate)
+            ->with(['product:id,sku,name'])
+            ->get();
+
+        $activeExpiredLotIds = [];
+
+        foreach ($expiredLots as $lot) {
+            $activeExpiredLotIds[] = $lot->id;
+
+            InventoryAlert::upsertUnresolved(
+                [
+                    'type' => 'expired',
+                    'product_id' => $lot->product_id,
+                    'stock_lot_id' => $lot->id,
+                ],
+                [
+                    'message' => "Expired lot: {$lot->product->name} ({$lot->product->sku}) lot #{$lot->id} expired {$lot->expires_at}.",
+                    'detected_at' => $now,
+                ],
+            );
+        }
+
+        $staleExpiredAlerts = InventoryAlert::query()
+            ->where('type', 'expired')
+            ->whereNull('resolved_at');
+
+        if ($activeExpiredLotIds !== []) {
+            $staleExpiredAlerts->whereNotIn('stock_lot_id', $activeExpiredLotIds);
+        }
+
+        $staleExpiredAlerts->update(['resolved_at' => $now]);
 
         $this->info('Inventory alerts generated.');
 

@@ -30,8 +30,8 @@ test('forecast backtester calculates accurate error metrics across methods witho
 
     $now = CarbonImmutable::now()->setTime(23, 59, 59);
 
-    // Seed 40 consecutive days of known issuance (2 units per day)
-    foreach (range(0, 40) as $offset) {
+    // Seed 70 consecutive days of known issuance (2 units per day) to cover >= 56 training days + evaluation window
+    foreach (range(0, 69) as $offset) {
         StockMovement::factory()->create([
             'product_id' => $product->id,
             'movement_type' => 'issue',
@@ -43,7 +43,7 @@ test('forecast backtester calculates accurate error metrics across methods witho
     }
 
     $backtester = app(ForecastBacktester::class);
-    $result = $backtester->evaluate($product, evaluationDays: 7, totalLookbackDays: 30, asOf: $now);
+    $result = $backtester->evaluate($product, evaluationDays: 7, totalLookbackDays: 63, asOf: $now);
 
     expect($result['has_sufficient_data'])->toBeTrue();
     expect($result['evaluation_days'])->toBe(7);

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Loader2, RotateCcw, X } from 'lucide-vue-next';
-import { computed, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { Button } from '@/components/ui/button';
 
 interface Props {
@@ -27,6 +27,7 @@ const progressPercentage = computed(() => {
 });
 
 const startCountdown = (): void => {
+    stopCountdown();
     remainingTime.value = props.timeout;
 
     countdownTimer = window.setInterval(() => {
@@ -81,6 +82,10 @@ const dismiss = (): void => {
 onMounted(() => {
     startCountdown();
 });
+
+onBeforeUnmount(() => {
+    stopCountdown();
+});
 </script>
 
 <template>
@@ -131,6 +136,7 @@ onMounted(() => {
 
             <div class="flex items-center gap-2">
                 <Button
+                    type="button"
                     variant="secondary"
                     size="sm"
                     :disabled="isUndoing"
@@ -140,12 +146,14 @@ onMounted(() => {
                 </Button>
 
                 <Button
+                    type="button"
                     variant="ghost"
                     size="sm"
                     class="h-8 w-8 p-0"
+                    aria-label="Dismiss undo notification"
                     @click="dismiss"
                 >
-                    <X class="h-4 w-4" />
+                    <X class="h-4 w-4" aria-hidden="true" />
                 </Button>
             </div>
         </div>

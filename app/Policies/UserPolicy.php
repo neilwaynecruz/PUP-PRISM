@@ -28,7 +28,7 @@ class UserPolicy
 
     public function deactivate(User $user, User $managedUser): bool
     {
-        return $user->hasRole('Admin');
+        return $user->hasRole('Admin') && ! $user->is($managedUser);
     }
 
     public function reactivate(User $user, User $managedUser): bool
