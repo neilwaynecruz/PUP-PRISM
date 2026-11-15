@@ -56,7 +56,7 @@ class AuditLogController extends Controller
             ->whereIn('id', AuditLog::query()->whereNotNull('user_id')->select('user_id'))
             ->orderBy('name')
             ->get(['id', 'name', 'email'])
-            ->map(fn (User $user): array => [
+            ->map(fn ($user): array => [
                 'id' => (int) $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
@@ -83,17 +83,20 @@ class AuditLogController extends Controller
     {
         $direction = $filters['sort'] === 'oldest' ? 'asc' : 'desc';
 
-        return AuditLog::query()
+        /** @var Builder<AuditLog> $query */
+        $query = AuditLog::query();
+
+        $query
             ->when($filters['search'] !== '', function (Builder $query) use ($filters): void {
                 $search = $filters['search'];
 
                 $query->where(function (Builder $nested) use ($search): void {
-                    $nested->whereLike('description', "%{$search}%")
-                        ->orWhereLike('action', "%{$search}%")
-                        ->orWhereLike('ip_address', "%{$search}%")
+                    $nested->where('description', 'like', "%{$search}%")
+                        ->orWhere('action', 'like', "%{$search}%")
+                        ->orWhere('ip_address', 'like', "%{$search}%")
                         ->orWhereHas('user', function (Builder $userQuery) use ($search): void {
-                            $userQuery->whereLike('name', "%{$search}%")
-                                ->orWhereLike('email', "%{$search}%");
+                            $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
                         });
 
                     if (ctype_digit($search)) {
@@ -108,6 +111,8 @@ class AuditLogController extends Controller
             ->when($filters['date_to'] !== '', fn (Builder $query) => $query->whereDate('created_at', '<=', $filters['date_to']))
             ->orderBy('created_at', $direction)
             ->orderBy('id', $direction);
+
+        return $query;
     }
 
     /**
@@ -142,7 +147,7 @@ class AuditLogController extends Controller
             ->where('action', 'delete')
             ->where('created_at', '>=', Carbon::now()->subDay())
             ->get(['created_at'])
-            ->contains(fn (AuditLog $log) => $log->created_at !== null
+            ->contains(fn ($log) => $log->created_at !== null
                 && ($log->created_at->hour >= 22 || $log->created_at->hour < 6));
 
         if ($afterHours) {

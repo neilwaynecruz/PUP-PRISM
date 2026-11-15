@@ -175,7 +175,7 @@ download.head = (args: { attachment: number | { id: number } } | [attachment: nu
     download.form = downloadForm
 /**
 * @see \App\Http\Controllers\Inventory\AttachmentController::destroy
- * @see app/Http/Controllers/Inventory/AttachmentController.php:47
+ * @see app/Http/Controllers/Inventory/AttachmentController.php:53
  * @route '/inventory/attachments/{attachment}'
  */
 export const destroy = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -190,7 +190,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\AttachmentController::destroy
- * @see app/Http/Controllers/Inventory/AttachmentController.php:47
+ * @see app/Http/Controllers/Inventory/AttachmentController.php:53
  * @route '/inventory/attachments/{attachment}'
  */
 destroy.url = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -223,7 +223,7 @@ destroy.url = (args: { attachment: number | { id: number } } | [attachment: numb
 
 /**
 * @see \App\Http\Controllers\Inventory\AttachmentController::destroy
- * @see app/Http/Controllers/Inventory/AttachmentController.php:47
+ * @see app/Http/Controllers/Inventory/AttachmentController.php:53
  * @route '/inventory/attachments/{attachment}'
  */
 destroy.delete = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -233,7 +233,7 @@ destroy.delete = (args: { attachment: number | { id: number } } | [attachment: n
 
     /**
 * @see \App\Http\Controllers\Inventory\AttachmentController::destroy
- * @see app/Http/Controllers/Inventory/AttachmentController.php:47
+ * @see app/Http/Controllers/Inventory/AttachmentController.php:53
  * @route '/inventory/attachments/{attachment}'
  */
     const destroyForm = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -248,7 +248,7 @@ destroy.delete = (args: { attachment: number | { id: number } } | [attachment: n
 
             /**
 * @see \App\Http\Controllers\Inventory\AttachmentController::destroy
- * @see app/Http/Controllers/Inventory/AttachmentController.php:47
+ * @see app/Http/Controllers/Inventory/AttachmentController.php:53
  * @route '/inventory/attachments/{attachment}'
  */
         destroyForm.delete = (args: { attachment: number | { id: number } } | [attachment: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

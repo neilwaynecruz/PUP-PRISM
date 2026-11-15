@@ -37,8 +37,14 @@ class AttachmentController extends Controller
         $this->authorize('view', $attachment);
         abort_unless(Storage::disk($attachment->disk)->exists($attachment->path), 404);
 
-        return Storage::disk($attachment->disk)->download(
-            $attachment->path,
+        return response()->streamDownload(
+            function () use ($attachment): void {
+                $stream = Storage::disk($attachment->disk)->readStream($attachment->path);
+
+                abort_if($stream === false, 404);
+                fpassthru($stream);
+                fclose($stream);
+            },
             $attachment->original_name,
             ['Content-Type' => $attachment->mime_type],
         );

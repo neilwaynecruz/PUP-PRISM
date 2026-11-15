@@ -650,6 +650,7 @@ class BookingController extends Controller
         foreach ($bookings as $booking) {
             try {
                 DB::transaction(function () use ($booking): void {
+                    /** @var Booking $booking */
                     AuditLogService::logForceDeleted($booking);
                     $booking->forceDelete();
                 });
