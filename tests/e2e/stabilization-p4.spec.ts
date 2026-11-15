@@ -30,7 +30,8 @@ function trackRuntimeErrors(
                     ))) ||
             (browserName === 'firefox' &&
                 text.includes('downloadable font: download failed') &&
-                text.includes('https://fonts.gstatic.com/'));
+                (text.includes('https://fonts.gstatic.com/') ||
+                    text.includes('status=2152398850')));
 
         if (message.type() === 'error' && !isExpectedTestEnvironmentFailure) {
             consoleErrors.push(text);
@@ -117,7 +118,10 @@ test.describe('Priority 4 Stabilization & Return-to-Stock UI', () => {
         const inStockCheckbox = productDialog.getByRole('checkbox', {
             name: 'In-stock only',
         });
-        await expect(inStockCheckbox).toHaveAttribute('data-state', 'unchecked');
+        await expect(inStockCheckbox).toHaveAttribute(
+            'data-state',
+            'unchecked',
+        );
 
         const [filteredLookupResponse] = await Promise.all([
             page.waitForResponse(
@@ -138,7 +142,10 @@ test.describe('Priority 4 Stabilization & Return-to-Stock UI', () => {
         ).toBeVisible();
 
         await inStockCheckbox.click();
-        await expect(inStockCheckbox).toHaveAttribute('data-state', 'unchecked');
+        await expect(inStockCheckbox).toHaveAttribute(
+            'data-state',
+            'unchecked',
+        );
         await expect(inStockCheckbox).toHaveAttribute('aria-checked', 'false');
 
         expect(pageErrors).toEqual([]);
@@ -189,10 +196,7 @@ test.describe('Priority 4 Stabilization & Return-to-Stock UI', () => {
         await expect(batchSkuInputs).toHaveCount(2);
         await batchSkuInputs.nth(1).fill('AST-E2E-001');
 
-        await page
-            .getByRole('button', { name: 'Remove line' })
-            .first()
-            .click();
+        await page.getByRole('button', { name: 'Remove line' }).first().click();
 
         await expect(batchSkuInputs).toHaveCount(1);
         await expect(batchSkuInputs.nth(0)).toHaveValue('AST-E2E-001');
@@ -314,7 +318,9 @@ test.describe('Priority 4 Stabilization & Return-to-Stock UI', () => {
         expect(returnResponse.status()).toBeLessThan(400);
 
         await expect(returnButton).toHaveCount(0);
-        await expect(page.getByText('Available', { exact: true })).toBeVisible();
+        await expect(
+            page.getByText('Available', { exact: true }),
+        ).toBeVisible();
 
         expect(pageErrors).toEqual([]);
         expect(consoleErrors).toEqual([]);

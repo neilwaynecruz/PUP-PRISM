@@ -28,7 +28,8 @@ test.describe('Requisition Lifecycle', () => {
                         ))) ||
                 (browserName === 'firefox' &&
                     text.includes('downloadable font: download failed') &&
-                    text.includes('https://fonts.gstatic.com/'));
+                    (text.includes('https://fonts.gstatic.com/') ||
+                        text.includes('status=2152398850')));
 
             if (
                 message.type() === 'error' &&

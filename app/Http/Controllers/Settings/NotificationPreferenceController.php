@@ -11,6 +11,7 @@ use App\Services\NotificationPreferenceDefaults;
 use App\Support\NotificationPreferenceData;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -56,29 +57,39 @@ class NotificationPreferenceController extends Controller
 
         abort_unless($user instanceof User, 403);
 
-        foreach ($request->validated('preferences') as $preference) {
-            $notificationPreference = NotificationPreference::query()->firstOrNew([
-                'user_id' => $user->id,
-                'event_type' => $preference['event_type'],
-            ]);
+        $validatedPreferences = $request->validated('preferences');
 
-            $this->authorize('update', $notificationPreference);
+        DB::transaction(function () use ($user, $validatedPreferences): void {
+            $storedPreferences = NotificationPreference::query()
+                ->where('user_id', $user->id)
+                ->get()
+                ->keyBy('event_type');
 
-            $notificationPreference->fill([
-                'mail_enabled' => $preference['mail_enabled'],
-                'database_enabled' => $preference['database_enabled'],
-                'broadcast_enabled' => $preference['broadcast_enabled'],
-                'digest_frequency' => $preference['digest_frequency'],
-            ])->save();
-        }
+            foreach ($validatedPreferences as $preference) {
+                $notificationPreference = $storedPreferences->get($preference['event_type'])
+                    ?? new NotificationPreference([
+                        'user_id' => $user->id,
+                        'event_type' => $preference['event_type'],
+                    ]);
 
-        AuditLogService::logCustom(
-            'notification_preferences_update',
-            __('Notification preferences updated.'),
-            $user,
-            null,
-            ['preference_count' => count($request->validated('preferences'))],
-        );
+                $this->authorize('update', $notificationPreference);
+
+                $notificationPreference->fill([
+                    'mail_enabled' => $preference['mail_enabled'],
+                    'database_enabled' => $preference['database_enabled'],
+                    'broadcast_enabled' => $preference['broadcast_enabled'],
+                    'digest_frequency' => $preference['digest_frequency'],
+                ])->save();
+            }
+
+            AuditLogService::logCustom(
+                'notification_preferences_update',
+                __('Notification preferences updated.'),
+                $user,
+                null,
+                ['preference_count' => count($validatedPreferences)],
+            );
+        });
 
         Inertia::flash('toast', [
             'type' => 'success',

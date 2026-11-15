@@ -151,3 +151,46 @@ test('non-admins cannot export audit logs', function () {
         ->get(route('inventory.audit-logs.export', absolute: false))
         ->assertForbidden();
 });
+
+test('audit log search matches description, action, ip address, and actor case-insensitively', function () {
+    $admin = User::factory()->withTwoFactor()->create([
+        'name' => 'Elena Marquez',
+        'email' => 'elena.marquez@example.test',
+    ]);
+    $admin->assignRole('Admin');
+
+    $other = User::factory()->create([
+        'name' => 'Miguel Santos',
+        'email' => 'miguel.santos@example.test',
+    ]);
+
+    AuditLog::query()->create([
+        'user_id' => $admin->id,
+        'action' => 'PurchaseOrderApproved',
+        'model_type' => 'PurchaseOrder',
+        'model_id' => 15,
+        'description' => 'Approved LaserJet Toner Batch',
+        'ip_address' => '10.24.8.5',
+    ]);
+    AuditLog::query()->create([
+        'user_id' => $other->id,
+        'action' => 'update',
+        'model_type' => 'Product',
+        'model_id' => 16,
+        'description' => 'Updated Chalk Inventory',
+        'ip_address' => '192.168.1.9',
+    ]);
+
+    foreach (['laserjet', 'purchaseorderapproved', 'elena.marquez', '10.24.8.5'] as $term) {
+        actingAs($admin)
+            ->get(route('inventory.audit-logs.index', ['search' => $term], absolute: false))
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('logs.data', fn ($rows) => collect($rows)->contains(
+                    fn ($row): bool => $row['description'] === 'Approved LaserJet Toner Batch',
+                ))
+                ->where('logs.data', fn ($rows) => ! collect($rows)->contains(
+                    fn ($row): bool => $row['description'] === 'Updated Chalk Inventory',
+                )));
+    }
+});

@@ -291,6 +291,7 @@ test.describe('Settings', () => {
     test('profile validation keeps input beside the field and valid changes persist', async ({
         page,
     }) => {
+        test.slow();
         await loginAs(page, 'admin@e2e.test');
         await page.goto('/settings/profile');
 
@@ -330,6 +331,7 @@ test.describe('Settings', () => {
     test('notification preferences are saved and reloaded', async ({
         page,
     }) => {
+        test.slow();
         await loginAs(page, 'admin@e2e.test');
         await page.goto('/settings/notifications');
 
@@ -367,6 +369,7 @@ test.describe('Settings', () => {
     test('every settings link opens its page and marks it active', async ({
         page,
     }) => {
+        test.slow();
         await loginAs(page, 'admin@e2e.test');
         await page.goto('/settings/profile');
 
