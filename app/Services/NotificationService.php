@@ -152,21 +152,51 @@ class NotificationService
         int $predictedDaysUntilStockout,
         int $recommendedReorderQty,
     ): void {
+        $this->procurementRecommendationsBatch([
+            [
+                'product' => $product,
+                'days_until_stockout' => $predictedDaysUntilStockout,
+                'recommended_reorder_qty' => $recommendedReorderQty,
+            ],
+        ]);
+    }
+
+    /**
+     * Send forecast stockout recommendations for a batch of products without repeated recipient or preference queries.
+     *
+     * @param  array<int, array{product: Product, days_until_stockout: int, recommended_reorder_qty: int}>  $items
+     */
+    public function procurementRecommendationsBatch(array $items): void
+    {
+        if ($items === []) {
+            return;
+        }
+
         $recipients = $this->usersWithRoles(['Admin', 'Supply Head']);
 
         if ($recipients->isEmpty()) {
             return;
         }
 
-        $this->notifyUsers(
-            $recipients,
-            new ProcurementRecommendationNotification(
-                $product,
-                $predictedDaysUntilStockout,
-                $recommendedReorderQty,
-            ),
-            NotificationEventType::ProcurementRecommendation->value,
-        );
+        $eventType = NotificationEventType::ProcurementRecommendation->value;
+        $eligibleRecipients = $recipients
+            ->filter(fn (User $user): bool => $this->shouldDeliverToUser($user, $eventType))
+            ->values();
+
+        if ($eligibleRecipients->isEmpty()) {
+            return;
+        }
+
+        foreach ($items as $item) {
+            NotificationFacade::send(
+                $eligibleRecipients,
+                new ProcurementRecommendationNotification(
+                    $item['product'],
+                    $item['days_until_stockout'],
+                    $item['recommended_reorder_qty'],
+                ),
+            );
+        }
     }
 
     /**
@@ -208,6 +238,7 @@ class NotificationService
         return User::query()
             ->where('is_active', true)
             ->whereHas('roles', fn ($query) => $query->whereIn('name', $roleList))
+            ->with(['roles', 'notificationPreferences'])
             ->get();
     }
 

@@ -3,11 +3,17 @@
 namespace App\Providers;
 
 use App\Models\Booking;
+use App\Models\ForecastProfile;
+use App\Models\Product;
+use App\Models\ProductStock;
 use App\Models\PurchaseOrder;
 use App\Models\Requisition;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Observers\BookingObserver;
+use App\Observers\ForecastProfileObserver;
+use App\Observers\ProductObserver;
+use App\Observers\ProductStockObserver;
 use App\Observers\PurchaseOrderObserver;
 use App\Observers\RequisitionObserver;
 use App\Observers\StockMovementObserver;
@@ -45,6 +51,9 @@ class AppServiceProvider extends ServiceProvider
         }
 
         Booking::observe(BookingObserver::class);
+        ForecastProfile::observe(ForecastProfileObserver::class);
+        Product::observe(ProductObserver::class);
+        ProductStock::observe(ProductStockObserver::class);
         PurchaseOrder::observe(PurchaseOrderObserver::class);
         Requisition::observe(RequisitionObserver::class);
         StockMovement::observe(StockMovementObserver::class);

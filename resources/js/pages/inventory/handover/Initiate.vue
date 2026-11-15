@@ -13,13 +13,22 @@ import {
     X,
     XCircle,
 } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import {
+    computed,
+    defineAsyncComponent,
+    onBeforeUnmount,
+    ref,
+    watch,
+} from 'vue';
 import HandoverController from '@/actions/App/Http/Controllers/Inventory/HandoverController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
-import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
+
+const QrScannerDialog = defineAsyncComponent(
+    () => import('@/components/inventory/QrScannerDialog.vue'),
+);
 import {
     Dialog,
     DialogClose,

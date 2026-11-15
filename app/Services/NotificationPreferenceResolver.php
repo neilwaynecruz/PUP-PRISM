@@ -14,10 +14,7 @@ class NotificationPreferenceResolver
 
     public function resolve(User $user, string $eventType): NotificationPreferenceData
     {
-        $stored = NotificationPreference::query()
-            ->where('user_id', $user->id)
-            ->where('event_type', $eventType)
-            ->first();
+        $stored = $this->findStoredPreference($user, $eventType);
 
         if ($stored instanceof NotificationPreference) {
             return NotificationPreferenceData::fromModel($stored);
@@ -33,18 +30,16 @@ class NotificationPreferenceResolver
      */
     public function instantChannels(User $user, string $eventType): array
     {
-        if (! $this->defaults->userReceivesEvent($user, $eventType)) {
-            $stored = NotificationPreference::query()
-                ->where('user_id', $user->id)
-                ->where('event_type', $eventType)
-                ->exists();
+        $stored = $this->findStoredPreference($user, $eventType);
 
-            if (! $stored) {
-                return [];
-            }
+        if (! $stored instanceof NotificationPreference && ! $this->defaults->userReceivesEvent($user, $eventType)) {
+            return [];
         }
 
-        $preference = $this->resolve($user, $eventType);
+        $preference = $stored instanceof NotificationPreference
+            ? NotificationPreferenceData::fromModel($stored)
+            : $this->defaults->forUserEvent($user, $eventType);
+
         $channels = [];
 
         if ($preference->mailEnabled && $preference->digestFrequency === 'instant') {
@@ -67,5 +62,20 @@ class NotificationPreferenceResolver
         $preference = $this->resolve($user, $eventType);
 
         return $preference->mailEnabled && $preference->digestFrequency === 'daily';
+    }
+
+    private function findStoredPreference(User $user, string $eventType): ?NotificationPreference
+    {
+        if ($user->relationLoaded('notificationPreferences')) {
+            /** @var NotificationPreference|null $pref */
+            $pref = $user->notificationPreferences->firstWhere('event_type', $eventType);
+
+            return $pref;
+        }
+
+        return NotificationPreference::query()
+            ->where('user_id', $user->id)
+            ->where('event_type', $eventType)
+            ->first();
     }
 }

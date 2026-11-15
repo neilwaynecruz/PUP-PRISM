@@ -5,6 +5,7 @@ namespace App\Services\Forecasting;
 use App\Models\Product;
 use App\Models\StockMovement;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 class ConsumptionDataCollector
 {
@@ -21,81 +22,146 @@ class ConsumptionDataCollector
         int $lookbackDays = 90,
         ?CarbonImmutable $asOf = null,
     ): array {
+        $batch = $this->getDailyConsumptionBatch([$product], $lookbackDays, $asOf);
+
+        return $batch[$product->id] ?? [];
+    }
+
+    /**
+     * Collect daily issue consumption for multiple products in two batched queries.
+     *
+     * @param  iterable<Product>  $products
+     * @param  int|array<int, int>  $lookbackDays
+     * @return array<int, list<array{date: string, qty: int}>>
+     */
+    public function getDailyConsumptionBatch(
+        iterable $products,
+        int|array $lookbackDays = 90,
+        ?CarbonImmutable $asOf = null,
+    ): array {
+        $productList = [];
+
+        foreach ($products as $product) {
+            $productList[$product->id] = $product;
+        }
+
+        if ($productList === []) {
+            return [];
+        }
+
         $timezone = (string) config('app.timezone', 'UTC');
         $asOfLocal = ($asOf ?? CarbonImmutable::now($timezone))->timezone($timezone)->endOfDay();
-        $lookbackDays = max(1, $lookbackDays);
-        $requestedStart = $asOfLocal->subDays($lookbackDays - 1)->startOfDay();
+        $productIds = array_keys($productList);
 
-        $earliestMovementRaw = StockMovement::query()
-            ->where('product_id', $product->id)
+        $earliestMovements = StockMovement::query()
+            ->whereIn('product_id', $productIds)
             ->where('performed_at', '<=', $asOfLocal->toDateTimeString())
-            ->min('performed_at');
+            ->select('product_id', DB::raw('MIN(performed_at) as earliest_performed_at'))
+            ->groupBy('product_id')
+            ->pluck('earliest_performed_at', 'product_id');
 
-        $earliestMovementAt = $earliestMovementRaw !== null
-            ? CarbonImmutable::parse((string) $earliestMovementRaw, $timezone)->timezone($timezone)
-            : null;
+        /** @var array<int, CarbonImmutable> $windowStarts */
+        $windowStarts = [];
+        $globalWindowStart = null;
 
-        $productCreatedAt = $product->created_at !== null
-            ? CarbonImmutable::parse((string) $product->created_at, $timezone)->timezone($timezone)
-            : null;
+        foreach ($productList as $productId => $product) {
+            $productLookback = max(1, is_array($lookbackDays) ? (int) ($lookbackDays[$productId] ?? 90) : $lookbackDays);
+            $requestedStart = $asOfLocal->subDays($productLookback - 1)->startOfDay();
 
-        $observationCandidates = array_values(array_filter([
-            $earliestMovementAt,
-            $productCreatedAt,
-        ]));
+            $earliestRaw = $earliestMovements->get($productId);
+            $earliestMovementAt = $earliestRaw !== null
+                ? CarbonImmutable::parse((string) $earliestRaw, $timezone)->timezone($timezone)
+                : null;
 
-        if ($observationCandidates === []) {
-            return [];
+            $productCreatedAt = $product->created_at !== null
+                ? CarbonImmutable::parse((string) $product->created_at, $timezone)->timezone($timezone)
+                : null;
+
+            $observationCandidates = array_values(array_filter([
+                $earliestMovementAt,
+                $productCreatedAt,
+            ]));
+
+            if ($observationCandidates === []) {
+                continue;
+            }
+
+            usort(
+                $observationCandidates,
+                static fn (CarbonImmutable $a, CarbonImmutable $b): int => $a->getTimestamp() <=> $b->getTimestamp(),
+            );
+
+            $observationStart = $observationCandidates[0]->startOfDay();
+            $windowStart = $requestedStart->greaterThan($observationStart)
+                ? $requestedStart
+                : $observationStart;
+
+            if ($windowStart->greaterThan($asOfLocal)) {
+                continue;
+            }
+
+            $windowStarts[$productId] = $windowStart;
+
+            if ($globalWindowStart === null || $windowStart->lessThan($globalWindowStart)) {
+                $globalWindowStart = $windowStart;
+            }
         }
 
-        usort(
-            $observationCandidates,
-            static fn (CarbonImmutable $a, CarbonImmutable $b): int => $a->getTimestamp() <=> $b->getTimestamp(),
-        );
+        /** @var array<int, array<string, int>> $dailyTotalsByProduct */
+        $dailyTotalsByProduct = [];
 
-        $observationStart = $observationCandidates[0]->startOfDay();
-        $windowStart = $requestedStart->greaterThan($observationStart)
-            ? $requestedStart
-            : $observationStart;
+        if ($globalWindowStart !== null) {
+            $aggregatedRows = StockMovement::query()
+                ->whereIn('product_id', array_keys($windowStarts))
+                ->where('movement_type', 'issue')
+                ->whereBetween('performed_at', [
+                    $globalWindowStart->toDateTimeString(),
+                    $asOfLocal->toDateTimeString(),
+                ])
+                ->select(
+                    'product_id',
+                    DB::raw('DATE(performed_at) as movement_date'),
+                    DB::raw('SUM(ABS(qty_delta)) as total_qty'),
+                )
+                ->groupBy('product_id', DB::raw('DATE(performed_at)'))
+                ->toBase()
+                ->get();
 
-        if ($windowStart->greaterThan($asOfLocal)) {
-            return [];
+            foreach ($aggregatedRows as $row) {
+                $pid = (int) $row->product_id;
+                $dateKey = (string) $row->movement_date;
+                $dailyTotalsByProduct[$pid][$dateKey] = (int) $row->total_qty;
+            }
         }
 
-        $dailyTotals = [];
-        $movements = StockMovement::query()
-            ->where('product_id', $product->id)
-            ->where('movement_type', 'issue')
-            ->whereBetween('performed_at', [
-                $windowStart->toDateTimeString(),
-                $asOfLocal->toDateTimeString(),
-            ])
-            ->toBase()
-            ->get(['performed_at', 'qty_delta']);
-
-        foreach ($movements as $movement) {
-            $dateKey = CarbonImmutable::parse((string) $movement->performed_at, $timezone)
-                ->timezone($timezone)
-                ->toDateString();
-
-            $dailyTotals[$dateKey] = ($dailyTotals[$dateKey] ?? 0) + abs((int) $movement->qty_delta);
-        }
-
-        $dailyConsumption = [];
-        $cursor = $windowStart;
+        $results = [];
         $endDay = $asOfLocal->startOfDay();
 
-        while ($cursor <= $endDay) {
-            $dateKey = $cursor->toDateString();
+        foreach ($productList as $productId => $product) {
+            if (! isset($windowStarts[$productId])) {
+                $results[$productId] = [];
 
-            $dailyConsumption[] = [
-                'date' => $dateKey,
-                'qty' => (int) ($dailyTotals[$dateKey] ?? 0),
-            ];
+                continue;
+            }
 
-            $cursor = $cursor->addDay();
+            $productDailyTotals = $dailyTotalsByProduct[$productId] ?? [];
+            $series = [];
+            $cursor = $windowStarts[$productId];
+
+            while ($cursor <= $endDay) {
+                $dateKey = $cursor->toDateString();
+
+                $series[] = [
+                    'date' => $dateKey,
+                    'qty' => (int) ($productDailyTotals[$dateKey] ?? 0),
+                ];
+
+                $cursor = $cursor->addDay();
+            }
+
+            $results[$productId] = $series;
         }
 
-        return $dailyConsumption;
+        return $results;
     }
 }

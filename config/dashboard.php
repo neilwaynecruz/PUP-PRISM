@@ -17,4 +17,6 @@ return [
         'ttl' => (int) env('DASHBOARD_CACHE_TTL', 90),
     ],
 
+    'max_range_days' => (int) env('DASHBOARD_MAX_RANGE_DAYS', 366),
+
 ];

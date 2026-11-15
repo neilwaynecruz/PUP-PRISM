@@ -51,11 +51,11 @@ class AbcAnalyzer
         $since = $asOf->subDays($lookbackDays)->startOfDay();
 
         // 1. Gather total issued quantity for each consumable product in the lookback period
-        /** @var Collection<int, int> $consumptionByProduct */
+        /** @var Collection<int, int|float|string> $consumptionByProduct */
         $consumptionByProduct = StockMovement::query()
             ->where('movement_type', 'issue')
             ->whereBetween('performed_at', [$since, $asOf])
-            ->select('product_id', DB::raw('CAST(SUM(ABS(qty_delta)) AS INTEGER) as total_issued'))
+            ->select('product_id', DB::raw('SUM(ABS(qty_delta)) as total_issued'))
             ->groupBy('product_id')
             ->pluck('total_issued', 'product_id');
 
@@ -63,7 +63,6 @@ class AbcAnalyzer
         $products = Product::query()
             ->where('type', ProductType::Consumable)
             ->where('is_active', true)
-            ->with('stock:id,product_id,on_hand_qty')
             ->get(['id', 'sku', 'name', 'unit_price']);
 
         // 3. Map products with annual consumption and value
@@ -160,9 +159,17 @@ class AbcAnalyzer
     {
         $analysis = $this->analyze($asOf);
 
+        return $this->extractClassificationFromAnalysis($analysis, $product->id);
+    }
+
+    /**
+     * @param  array{items: list<array<string, mixed>>}  $analysis
+     */
+    public function extractClassificationFromAnalysis(array $analysis, int $productId): string
+    {
         foreach ($analysis['items'] as $item) {
-            if ($item['product_id'] === $product->id) {
-                return $item['classification'];
+            if (($item['product_id'] ?? null) === $productId) {
+                return (string) ($item['classification'] ?? 'C');
             }
         }
 

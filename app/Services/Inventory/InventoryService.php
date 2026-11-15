@@ -30,6 +30,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
+/**
+ * @phpstan-type LockedStockMap Collection<int, ProductStock>
+ */
 class InventoryService
 {
     public function __construct(
@@ -153,6 +156,23 @@ class InventoryService
                     ->get()
                     ->keyBy('id');
 
+                $consumableIds = $lockedProducts
+                    ->filter(fn (Product $product): bool => $product->type === ProductType::Consumable)
+                    ->pluck('id')
+                    ->sort()
+                    ->values()
+                    ->all();
+
+                /** @var Collection<int, ProductStock> $lockedStocks */
+                $lockedStocks = $consumableIds !== []
+                    ? ProductStock::query()
+                        ->whereIn('product_id', $consumableIds)
+                        ->orderBy('product_id')
+                        ->lockForUpdate()
+                        ->get()
+                        ->keyBy('product_id')
+                    : collect();
+
                 $events = [];
 
                 // 4. Validate and process each line
@@ -171,7 +191,7 @@ class InventoryService
                     }
 
                     $remainingQty = $line->remainingQty();
-                    $receivedQuantity = $this->resolveReceivedQuantity($line, $linePayload);
+                    $receivedQuantity = $this->resolveReceivedQuantity($line, $linePayload, $product);
 
                     if ($receivedQuantity <= 0) {
                         throw new \RuntimeException("Received quantity must be greater than zero for product {$product->sku}.");
@@ -200,6 +220,8 @@ class InventoryService
                             'notes' => $linePayload['notes'] ?? "Received against {$lockedPo->po_number}.",
                         ],
                         ipAddress: $ipAddress,
+                        productLocked: true,
+                        lockedStocksByProductId: $lockedStocks,
                     );
 
                     $line->forceFill([
@@ -219,7 +241,7 @@ class InventoryService
 
                 AuditLogService::logUpdated($lockedPo, $oldValues);
 
-                return [$lockedPo->fresh(['lines.product', 'supplier']) ?? $lockedPo, $events];
+                return [$lockedPo->load(['lines.product', 'supplier']), $events];
             });
 
             [$updatedPo, $realtimeEvents] = $transactionResult;
@@ -345,13 +367,15 @@ class InventoryService
                 ->values()
                 ->all();
 
-            if ($consumableIds !== []) {
-                ProductStock::query()
+            /** @var Collection<int, ProductStock> $lockedStocks */
+            $lockedStocks = $consumableIds !== []
+                ? ProductStock::query()
                     ->whereIn('product_id', $consumableIds)
                     ->orderBy('product_id')
                     ->lockForUpdate()
-                    ->get();
-            }
+                    ->get()
+                    ->keyBy('product_id')
+                : collect();
 
             $changes = [];
 
@@ -365,6 +389,8 @@ class InventoryService
                     product: $product,
                     payload: $line,
                     ipAddress: $ipAddress,
+                    productLocked: true,
+                    lockedStocksByProductId: $lockedStocks,
                 );
             }
 
@@ -386,8 +412,8 @@ class InventoryService
         bool $markAsBackordered = false,
         ?string $notes = null,
         ?string $ipAddress = null,
-    ): void {
-        /** @var array{stock_changes: array<int, array{product: Product, on_hand_qty: int, delta: int, requisition_id: int}>, low_stock_alerts: array<int, array{product: Product, on_hand_qty: int}>} $result */
+    ): Requisition {
+        /** @var array{requisition: Requisition, stock_changes: array<int, array{product: Product, on_hand_qty: int, delta: int, requisition_id: int}>, low_stock_alerts: array<int, array{product: Product, on_hand_qty: int}>} $result */
         $result = DB::transaction(function () use ($user, $requisition, $linePayloads, $markAsBackordered, $notes, $ipAddress): array {
             $requisition = Requisition::query()->whereKey($requisition->id)->lockForUpdate()->firstOrFail();
             $stockChanges = [];
@@ -482,6 +508,27 @@ class InventoryService
                     ->keyBy('product_id')
                 : collect();
 
+            /** @var array<int, int> $committedByOthersByProduct */
+            $committedByOthersByProduct = $activeProductIds !== []
+                ? RequisitionLine::query()
+                    ->join('requisitions', 'requisitions.id', '=', 'requisition_lines.requisition_id')
+                    ->whereIn('requisition_lines.product_id', $activeProductIds)
+                    ->where('requisition_lines.requisition_id', '!=', $requisition->id)
+                    ->whereNull('requisitions.deleted_at')
+                    ->whereIn('requisitions.status', [
+                        RequisitionStatus::Approved->value,
+                        RequisitionStatus::PartiallyIssued->value,
+                    ])
+                    ->select(
+                        'requisition_lines.product_id',
+                        DB::raw('COALESCE(SUM(CASE WHEN requisition_lines.qty_requested > requisition_lines.qty_issued THEN requisition_lines.qty_requested - requisition_lines.qty_issued ELSE 0 END), 0) as committed_qty'),
+                    )
+                    ->groupBy('requisition_lines.product_id')
+                    ->pluck('committed_qty', 'requisition_lines.product_id')
+                    ->map(static fn (mixed $value): int => (int) $value)
+                    ->all()
+                : [];
+
             $issuedAnyQuantity = false;
 
             foreach ($lines as $line) {
@@ -503,17 +550,7 @@ class InventoryService
                     throw (new ModelNotFoundException)->setModel(ProductStock::class);
                 }
 
-                $committedByOthers = (int) RequisitionLine::query()
-                    ->join('requisitions', 'requisitions.id', '=', 'requisition_lines.requisition_id')
-                    ->where('requisition_lines.product_id', $product->id)
-                    ->where('requisition_lines.requisition_id', '!=', $requisition->id)
-                    ->whereNull('requisitions.deleted_at')
-                    ->whereIn('requisitions.status', [
-                        RequisitionStatus::Approved->value,
-                        RequisitionStatus::PartiallyIssued->value,
-                    ])
-                    ->selectRaw('COALESCE(SUM(CASE WHEN requisition_lines.qty_requested > requisition_lines.qty_issued THEN requisition_lines.qty_requested - requisition_lines.qty_issued ELSE 0 END), 0) as committed_qty')
-                    ->value('committed_qty');
+                $committedByOthers = (int) ($committedByOthersByProduct[$product->id] ?? 0);
 
                 $availableOnHand = (int) $stock->on_hand_qty - $committedByOthers;
 
@@ -651,6 +688,7 @@ class InventoryService
             ]);
 
             return [
+                'requisition' => $requisition,
                 'stock_changes' => $stockChanges,
                 'low_stock_alerts' => $lowStockAlerts,
             ];
@@ -671,6 +709,8 @@ class InventoryService
                 $lowStockAlert['on_hand_qty'],
             );
         }
+
+        return $result['requisition'];
     }
 
     public function adjustConsumableStock(
@@ -802,7 +842,7 @@ class InventoryService
             ]);
 
             return [
-                'product' => $product->fresh() ?? $product,
+                'product' => $product,
                 'on_hand_qty' => null,
                 'delta' => 0,
                 'movement' => $movement,
@@ -873,7 +913,7 @@ class InventoryService
         ]);
 
         return [
-            'product' => $product->fresh() ?? $product,
+            'product' => $product,
             'on_hand_qty' => $qtyAfter,
             'delta' => $qtyDelta,
             'movement' => $movement,
@@ -889,13 +929,16 @@ class InventoryService
     }
 
     /**
-     * @return array{product: Product, on_hand_qty: int, delta: int}
+     * @param  LockedStockMap|null  $lockedStocksByProductId
+     * @return array{product: Product, on_hand_qty: int|null, delta: int}
      */
     private function performReceipt(
         User $user,
         Product $product,
         array $payload,
         ?string $ipAddress = null,
+        bool $productLocked = false,
+        ?Collection $lockedStocksByProductId = null,
     ): array {
         if ($product->type === ProductType::Consumable) {
             return $this->performConsumableReceipt(
@@ -907,6 +950,8 @@ class InventoryService
                 expiresAt: $payload['expires_at'] ?? null,
                 notes: $payload['notes'] ?? null,
                 ipAddress: $ipAddress,
+                productLocked: $productLocked,
+                lockedStocksByProductId: $lockedStocksByProductId,
             );
         }
 
@@ -921,10 +966,12 @@ class InventoryService
             receivedAt: $payload['received_at'] ?? null,
             notes: $payload['notes'] ?? null,
             ipAddress: $ipAddress,
+            productLocked: $productLocked,
         );
     }
 
     /**
+     * @param  LockedStockMap|null  $lockedStocksByProductId
      * @return array{product: Product, on_hand_qty: int, delta: int}
      */
     private function performConsumableReceipt(
@@ -936,8 +983,12 @@ class InventoryService
         ?CarbonImmutable $expiresAt = null,
         ?string $notes = null,
         ?string $ipAddress = null,
+        bool $productLocked = false,
+        ?Collection $lockedStocksByProductId = null,
     ): array {
-        $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+        if (! $productLocked) {
+            $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+        }
 
         $lot = StockLot::create([
             'product_id' => $product->id,
@@ -948,11 +999,20 @@ class InventoryService
             'qty_remaining' => $qty,
         ]);
 
-        $stock = ProductStock::query()->firstOrCreate(
-            ['product_id' => $product->id],
-            ['on_hand_qty' => 0],
-        );
-        $stock = ProductStock::query()->whereKey($stock->id)->lockForUpdate()->firstOrFail();
+        /** @var ProductStock|null $stock */
+        $stock = $lockedStocksByProductId?->get($product->id);
+
+        if (! $stock) {
+            $stock = ProductStock::query()->firstOrCreate(
+                ['product_id' => $product->id],
+                ['on_hand_qty' => 0],
+            );
+            $stock = ProductStock::query()->whereKey($stock->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedStocksByProductId !== null) {
+                $lockedStocksByProductId->put($product->id, $stock);
+            }
+        }
 
         $qtyBefore = (int) $stock->on_hand_qty;
         $stock->increment('on_hand_qty', $qty);
@@ -975,7 +1035,7 @@ class InventoryService
         ]);
 
         return [
-            'product' => $product->fresh() ?? $product,
+            'product' => $product,
             'on_hand_qty' => $qtyAfter,
             'delta' => $qty,
         ];
@@ -994,8 +1054,11 @@ class InventoryService
         ?CarbonImmutable $receivedAt = null,
         ?string $notes = null,
         ?string $ipAddress = null,
+        bool $productLocked = false,
     ): array {
-        $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+        if (! $productLocked) {
+            $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+        }
 
         if ($serialNumbers !== [] && count($serialNumbers) !== count($tagCodes)) {
             throw ValidationException::withMessages([
@@ -1102,7 +1165,7 @@ class InventoryService
         }
 
         return [
-            'product' => $product->fresh() ?? $product,
+            'product' => $product,
             'on_hand_qty' => null,
             'delta' => count($normalizedTags),
         ];
@@ -1123,9 +1186,11 @@ class InventoryService
     /**
      * @param  array<string, mixed>  $payload
      */
-    private function resolveReceivedQuantity(PurchaseOrderLine $purchaseOrderLine, array $payload): int
+    private function resolveReceivedQuantity(PurchaseOrderLine $purchaseOrderLine, array $payload, ?Product $product = null): int
     {
-        if ($purchaseOrderLine->product?->type === ProductType::Consumable) {
+        $resolvedProduct = $product ?? $purchaseOrderLine->product;
+
+        if ($resolvedProduct?->type === ProductType::Consumable) {
             return (int) ($payload['qty_received'] ?? 0);
         }
 
@@ -1281,7 +1346,7 @@ class InventoryService
         }
 
         return [
-            'product' => $product->fresh() ?? $product,
+            'product' => $product,
             'on_hand_qty' => $qtyAfter,
             'delta' => $qtyDelta,
         ];

@@ -39,4 +39,26 @@ export default defineConfig({
             formVariants: true,
         }),
     ],
+    build: {
+        rolldownOptions: {
+            output: {
+                codeSplitting: {
+                    groups: [
+                        {
+                            name: 'fullcalendar',
+                            test: /node_modules[\\/]@fullcalendar/,
+                        },
+                        {
+                            name: 'chartjs',
+                            test: /node_modules[\\/]chart\.js/,
+                        },
+                        {
+                            name: 'reka-ui',
+                            test: /node_modules[\\/]reka-ui/,
+                        },
+                    ],
+                },
+            },
+        },
+    },
 });

@@ -15,15 +15,18 @@ import {
     Sparkles,
     Trash2,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import PurchaseOrderController from '@/actions/App/Http/Controllers/Inventory/PurchaseOrderController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
 import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
 import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
-import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Badge } from '@/components/ui/badge';
+
+const QrScannerDialog = defineAsyncComponent(
+    () => import('@/components/inventory/QrScannerDialog.vue'),
+);
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

@@ -7,10 +7,9 @@ import {
     Send,
     XCircle,
 } from 'lucide-vue-next';
-import { computed, reactive, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, reactive, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
-import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -22,6 +21,10 @@ import {
     submit,
 } from '@/routes/inventory/counts';
 import { review, update } from '@/routes/inventory/counts/lines';
+
+const QrScannerDialog = defineAsyncComponent(
+    () => import('@/components/inventory/QrScannerDialog.vue'),
+);
 
 type Person = { id: number; name: string };
 type CountLine = {

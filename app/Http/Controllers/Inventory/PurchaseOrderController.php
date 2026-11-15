@@ -46,6 +46,8 @@ class PurchaseOrderController extends Controller
         $purchaseOrders = PurchaseOrder::query()
             ->with(['supplier:id,name', 'requester:id,name', 'approver:id,name'])
             ->withCount('lines')
+            ->withSum('lines as ordered_qty_sum', 'qty_ordered')
+            ->withSum('lines as received_qty_sum', 'qty_received')
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($nestedQuery) use ($search) {
                     $nestedQuery
@@ -137,24 +139,43 @@ class PurchaseOrderController extends Controller
                 'notes' => $validated['notes'] ?? null,
             ]);
 
+            $productIds = collect($validated['lines'])
+                ->pluck('product_id')
+                ->map(static fn (mixed $id): int => (int) $id)
+                ->unique()
+                ->values()
+                ->all();
+            $productsById = Product::query()
+                ->whereIn('id', $productIds)
+                ->get(['id', 'unit_price'])
+                ->keyBy('id');
+
+            $now = CarbonImmutable::now()->toDateTimeString();
+            $lineRows = [];
+
             foreach ($validated['lines'] as $line) {
-                $product = Product::query()->findOrFail((int) $line['product_id']);
+                $product = $productsById->get((int) $line['product_id'])
+                    ?? Product::query()->findOrFail((int) $line['product_id']);
                 $unitPrice = round((float) ($line['unit_price'] ?? $product->unit_price ?? 0), 2);
                 $quantity = (int) $line['qty_ordered'];
 
-                PurchaseOrderLine::query()->create([
+                $lineRows[] = [
                     'purchase_order_id' => $purchaseOrder->id,
                     'product_id' => $product->id,
                     'qty_ordered' => $quantity,
                     'qty_received' => 0,
                     'unit_price' => $unitPrice,
                     'subtotal' => round($quantity * $unitPrice, 2),
-                ]);
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
             }
+
+            PurchaseOrderLine::query()->insert($lineRows);
 
             $purchaseOrder->recalculateTotals();
 
-            return $purchaseOrder->fresh(['supplier', 'requester', 'approver', 'lines.product.unitOfMeasurement']) ?? $purchaseOrder;
+            return $purchaseOrder;
         });
 
         AuditLogService::logCreated($purchaseOrder);

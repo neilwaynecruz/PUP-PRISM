@@ -1,11 +1,25 @@
-import jsQR from 'jsqr';
+import type jsQR from 'jsqr';
 import { onBeforeUnmount, ref, useTemplateRef } from 'vue';
+
+type JsQrFunction = typeof jsQR;
 
 type UseQrScannerOptions = {
     onDetected: (value: string) => void;
     continuous?: boolean;
     cooldownMs?: number;
 };
+
+const SCAN_INTERVAL_MS = 85;
+const MAX_DECODE_DIMENSION = 480;
+const ROI_RATIO = 0.78;
+
+let jsQrPromise: Promise<JsQrFunction> | null = null;
+
+function loadJsQr(): Promise<JsQrFunction> {
+    jsQrPromise ??= import('jsqr').then((module) => module.default);
+
+    return jsQrPromise;
+}
 
 export function useQrScanner(options: UseQrScannerOptions) {
     const videoRef = useTemplateRef<HTMLVideoElement>('videoRef');
@@ -21,6 +35,10 @@ export function useQrScanner(options: UseQrScannerOptions) {
     let stream: MediaStream | null = null;
     let frameRequestId: number | null = null;
     let lastDetectionAt = 0;
+    let lastFrameDecodedAt = 0;
+    let decodeIteration = 0;
+    let isDecoding = false;
+    let jsQrDecoder: JsQrFunction | null = null;
     let cameraSession = 0;
 
     const hasCameraSupport =
@@ -63,6 +81,9 @@ export function useQrScanner(options: UseQrScannerOptions) {
 
     function stop(): void {
         cameraSession += 1;
+        isDecoding = false;
+        lastFrameDecodedAt = 0;
+        decodeIteration = 0;
 
         if (frameRequestId !== null) {
             window.cancelAnimationFrame(frameRequestId);
@@ -98,8 +119,24 @@ export function useQrScanner(options: UseQrScannerOptions) {
         );
     }
 
-    function scanFrame(): void {
-        if (!videoRef.value || !canvasRef.value || !isRunning.value) {
+    function scanFrame(timestamp: number = performance.now()): void {
+        if (
+            !videoRef.value ||
+            !canvasRef.value ||
+            !isRunning.value ||
+            !jsQrDecoder
+        ) {
+            return;
+        }
+
+        if (
+            (typeof document !== 'undefined' && document.hidden) ||
+            isDecoding ||
+            (lastFrameDecodedAt > 0 &&
+                timestamp - lastFrameDecodedAt < SCAN_INTERVAL_MS)
+        ) {
+            frameRequestId = window.requestAnimationFrame(scanFrame);
+
             return;
         }
 
@@ -115,58 +152,115 @@ export function useQrScanner(options: UseQrScannerOptions) {
             return;
         }
 
-        if (video.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) {
+        if (
+            video.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA ||
+            video.videoWidth <= 0 ||
+            video.videoHeight <= 0
+        ) {
             frameRequestId = window.requestAnimationFrame(scanFrame);
 
             return;
         }
 
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        isDecoding = true;
+        lastFrameDecodedAt = timestamp;
+        decodeIteration += 1;
 
-        const frame = context.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(frame.data, frame.width, frame.height, {
-            inversionAttempts: 'attemptBoth',
-        });
+        try {
+            const useFullFrame = decodeIteration % 4 === 0;
+            const vw = video.videoWidth;
+            const vh = video.videoHeight;
 
-        if (code?.data) {
-            const nextValue = code.data.trim();
+            let sx = 0;
+            let sy = 0;
+            let sw = vw;
+            let sh = vh;
 
-            if (!nextValue) {
-                frameRequestId = window.requestAnimationFrame(scanFrame);
+            if (!useFullFrame) {
+                const cropSize = Math.max(
+                    1,
+                    Math.round(Math.min(vw, vh) * ROI_RATIO),
+                );
+                sx = Math.floor((vw - cropSize) / 2);
+                sy = Math.floor((vh - cropSize) / 2);
+                sw = cropSize;
+                sh = cropSize;
+            }
+
+            const scale = Math.min(1, MAX_DECODE_DIMENSION / Math.max(sw, sh));
+            const targetWidth = Math.max(1, Math.round(sw * scale));
+            const targetHeight = Math.max(1, Math.round(sh * scale));
+
+            if (canvas.width !== targetWidth) {
+                canvas.width = targetWidth;
+            }
+
+            if (canvas.height !== targetHeight) {
+                canvas.height = targetHeight;
+            }
+
+            context.drawImage(
+                video,
+                sx,
+                sy,
+                sw,
+                sh,
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+            );
+
+            const frame = context.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+            );
+            const code = jsQrDecoder(frame.data, frame.width, frame.height, {
+                inversionAttempts: useFullFrame ? 'attemptBoth' : 'dontInvert',
+            });
+
+            if (code?.data) {
+                const nextValue = code.data.trim();
+
+                if (!nextValue) {
+                    frameRequestId = window.requestAnimationFrame(scanFrame);
+
+                    return;
+                }
+
+                if (shouldIgnoreDetection(nextValue)) {
+                    status.value =
+                        'This code was already captured. Move to another label or wait before scanning it again.';
+                    frameRequestId = window.requestAnimationFrame(scanFrame);
+
+                    return;
+                }
+
+                lastDetectedValue.value = nextValue;
+                lastDetectionAt = Date.now();
+                totalDetections.value += 1;
+                triggerScanFeedback();
+                options.onDetected(nextValue);
+
+                if (options.continuous) {
+                    status.value = `Captured ${nextValue}. Keep scanning…`;
+                    frameRequestId = window.requestAnimationFrame(scanFrame);
+
+                    return;
+                }
+
+                status.value = 'QR code detected.';
+                stop();
 
                 return;
             }
 
-            if (shouldIgnoreDetection(nextValue)) {
-                status.value =
-                    'This code was already captured. Move to another label or wait before scanning it again.';
-                frameRequestId = window.requestAnimationFrame(scanFrame);
-
-                return;
-            }
-
-            lastDetectedValue.value = nextValue;
-            lastDetectionAt = Date.now();
-            totalDetections.value += 1;
-            triggerScanFeedback();
-            options.onDetected(nextValue);
-
-            if (options.continuous) {
-                status.value = `Captured ${nextValue}. Keep scanning…`;
-                frameRequestId = window.requestAnimationFrame(scanFrame);
-
-                return;
-            }
-
-            status.value = 'QR code detected.';
-            stop();
-
-            return;
+            frameRequestId = window.requestAnimationFrame(scanFrame);
+        } finally {
+            isDecoding = false;
         }
-
-        frameRequestId = window.requestAnimationFrame(scanFrame);
     }
 
     async function start(): Promise<void> {
@@ -197,12 +291,15 @@ export function useQrScanner(options: UseQrScannerOptions) {
         status.value = 'Requesting camera access…';
 
         try {
-            const requestedStream = await navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: { ideal: 'environment' },
-                },
-                audio: false,
-            });
+            const [decoder, requestedStream] = await Promise.all([
+                loadJsQr(),
+                navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { ideal: 'environment' },
+                    },
+                    audio: false,
+                }),
+            ]);
 
             if (session !== cameraSession) {
                 requestedStream.getTracks().forEach((track) => track.stop());
@@ -210,6 +307,7 @@ export function useQrScanner(options: UseQrScannerOptions) {
                 return;
             }
 
+            jsQrDecoder = decoder;
             stream = requestedStream;
 
             if (!videoRef.value) {

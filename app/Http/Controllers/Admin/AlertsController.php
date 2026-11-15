@@ -99,28 +99,68 @@ class AlertsController extends Controller
             'alerts' => $alerts,
             'types' => $types,
             'operators' => $operators,
-            'summary' => [
-                'active' => InventoryAlert::query()->active()->count(),
-                'unacknowledged' => InventoryAlert::query()->active()->whereNull('acknowledged_at')->count(),
-                'acknowledged' => InventoryAlert::query()->active()->whereNotNull('acknowledged_at')->count(),
-                'assigned_to_me' => InventoryAlert::query()
-                    ->active()
-                    ->where('assigned_to', $request->user()?->id)
-                    ->count(),
-                'resolved_this_week' => InventoryAlert::query()
-                    ->resolved()
-                    ->where('resolved_at', '>=', CarbonImmutable::now()->subDays(7))
-                    ->count(),
-                'active_by_type' => InventoryAlert::query()
-                    ->active()
-                    ->selectRaw('type, count(*) as aggregate')
-                    ->groupBy('type')
-                    ->pluck('aggregate', 'type')
-                    ->map(fn ($count): int => (int) $count)
-                    ->all(),
-            ],
+            'summary' => $this->buildSummary($request->user()?->id),
             'currentUserId' => $request->user()?->id,
         ]);
+    }
+
+    /**
+     * @return array{
+     *     active: int,
+     *     unacknowledged: int,
+     *     acknowledged: int,
+     *     assigned_to_me: int,
+     *     resolved_this_week: int,
+     *     active_by_type: array<string, int>
+     * }
+     */
+    private function buildSummary(?int $currentUserId): array
+    {
+        $weekStart = CarbonImmutable::now()->subDays(7);
+
+        $rows = InventoryAlert::query()
+            ->select('type')
+            ->selectRaw('SUM(CASE WHEN resolved_at IS NULL THEN 1 ELSE 0 END) as active_count')
+            ->selectRaw('SUM(CASE WHEN resolved_at IS NULL AND acknowledged_at IS NULL THEN 1 ELSE 0 END) as unacknowledged_count')
+            ->selectRaw('SUM(CASE WHEN resolved_at IS NULL AND acknowledged_at IS NOT NULL THEN 1 ELSE 0 END) as acknowledged_count')
+            ->selectRaw(
+                $currentUserId !== null
+                    ? 'SUM(CASE WHEN resolved_at IS NULL AND assigned_to = ? THEN 1 ELSE 0 END) as assigned_to_me_count'
+                    : '0 as assigned_to_me_count',
+                $currentUserId !== null ? [$currentUserId] : []
+            )
+            ->selectRaw('SUM(CASE WHEN resolved_at IS NOT NULL AND resolved_at >= ? THEN 1 ELSE 0 END) as resolved_this_week_count', [$weekStart])
+            ->groupBy('type')
+            ->get();
+
+        $active = 0;
+        $unacknowledged = 0;
+        $acknowledged = 0;
+        $assignedToMe = 0;
+        $resolvedThisWeek = 0;
+        $activeByType = [];
+
+        foreach ($rows as $row) {
+            $typeActive = (int) $row->active_count;
+            $active += $typeActive;
+            $unacknowledged += (int) $row->unacknowledged_count;
+            $acknowledged += (int) $row->acknowledged_count;
+            $assignedToMe += (int) $row->assigned_to_me_count;
+            $resolvedThisWeek += (int) $row->resolved_this_week_count;
+
+            if ($typeActive > 0) {
+                $activeByType[(string) $row->type] = $typeActive;
+            }
+        }
+
+        return [
+            'active' => $active,
+            'unacknowledged' => $unacknowledged,
+            'acknowledged' => $acknowledged,
+            'assigned_to_me' => $assignedToMe,
+            'resolved_this_week' => $resolvedThisWeek,
+            'active_by_type' => $activeByType,
+        ];
     }
 
     public function acknowledge(Request $request, InventoryAlert $alert): RedirectResponse

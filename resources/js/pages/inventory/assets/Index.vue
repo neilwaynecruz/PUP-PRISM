@@ -10,16 +10,26 @@ import {
     SlidersHorizontal,
     Tag,
 } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, ref, shallowRef, watch } from 'vue';
+import {
+    computed,
+    defineAsyncComponent,
+    onBeforeUnmount,
+    ref,
+    shallowRef,
+    watch,
+} from 'vue';
 import type { Component } from 'vue';
 import AdminCodeBadge from '@/components/admin/AdminCodeBadge.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
-import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { index, show } from '@/routes/inventory/assets';
+
+const QrScannerDialog = defineAsyncComponent(
+    () => import('@/components/inventory/QrScannerDialog.vue'),
+);
 
 type Location = { id: number; code: string; name: string };
 type Asset = {

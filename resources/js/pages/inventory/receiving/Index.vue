@@ -17,7 +17,13 @@ import {
     Trash2,
     Truck,
 } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, ref, watch } from 'vue';
+import {
+    computed,
+    defineAsyncComponent,
+    onBeforeUnmount,
+    ref,
+    watch,
+} from 'vue';
 import PurchaseOrderController from '@/actions/App/Http/Controllers/Inventory/PurchaseOrderController';
 import ReceivingController from '@/actions/App/Http/Controllers/Inventory/ReceivingController';
 import Heading from '@/components/Heading.vue';
@@ -25,8 +31,11 @@ import InputError from '@/components/InputError.vue';
 import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
 import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
 import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
-import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import ReceivingSerialFields from '@/components/inventory/ReceivingSerialFields.vue';
+
+const QrScannerDialog = defineAsyncComponent(
+    () => import('@/components/inventory/QrScannerDialog.vue'),
+);
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

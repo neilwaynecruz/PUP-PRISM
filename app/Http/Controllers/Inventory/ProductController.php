@@ -19,6 +19,7 @@ use App\Models\UnitOfMeasurement;
 use App\Services\AuditLogService;
 use App\Services\Forecasting\DemandForecaster;
 use App\Services\Forecasting\ForecastPresenter;
+use App\Services\Optimization\InventoryOptimizationCache;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -529,16 +530,43 @@ class ProductController extends Controller
         }
 
         $restored = DB::transaction(function () use ($products): int {
-            $count = 0;
-
-            foreach ($products as $product) {
-                $product->restore();
-                AuditLogService::logRestored($product);
-                $count++;
+            if ($products->isEmpty()) {
+                return 0;
             }
 
-            return $count;
+            $ids = $products->modelKeys();
+            $now = now();
+
+            Product::query()
+                ->onlyTrashed()
+                ->whereIn('id', $ids)
+                ->update([
+                    'deleted_at' => null,
+                    'updated_at' => $now,
+                ]);
+
+            $auditEntries = [];
+
+            foreach ($products as $product) {
+                $product->deleted_at = null;
+                $label = $product->name ?: $product->sku ?: ($product->id ? "#{$product->id}" : '');
+                $auditEntries[] = [
+                    'action' => 'restore',
+                    'description' => trim("Product {$label} restored."),
+                    'model' => $product,
+                    'old_values' => null,
+                    'new_values' => $product->toArray(),
+                ];
+            }
+
+            AuditLogService::logBatch($auditEntries);
+
+            return count($ids);
         });
+
+        if ($restored > 0) {
+            app(InventoryOptimizationCache::class)->invalidate();
+        }
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -621,23 +649,12 @@ class ProductController extends Controller
             ->whereIn('id', $validated['ids'])
             ->get();
 
-        $updated = 0;
-        $skipped = 0;
-
-        foreach ($products as $product) {
-            $this->authorize('update', $product);
-
-            if ($product->is_active) {
-                $skipped++;
-
-                continue;
-            }
-
-            $oldValues = $product->toArray();
-            $product->update(['is_active' => true]);
-            AuditLogService::logUpdated($product, $oldValues, "Product {$product->sku} activated.");
-            $updated++;
-        }
+        [$updated, $skipped] = $this->applyBulkProductAttributeUpdate(
+            $products,
+            ['is_active' => true],
+            static fn (Product $product): bool => (bool) $product->is_active,
+            static fn (Product $product): string => "Product {$product->sku} activated.",
+        );
 
         $message = trans_choice(
             '{1} :count product activated.|[0,*] :count products activated.',
@@ -674,23 +691,12 @@ class ProductController extends Controller
             ->whereIn('id', $validated['ids'])
             ->get();
 
-        $updated = 0;
-        $skipped = 0;
-
-        foreach ($products as $product) {
-            $this->authorize('update', $product);
-
-            if (! $product->is_active) {
-                $skipped++;
-
-                continue;
-            }
-
-            $oldValues = $product->toArray();
-            $product->update(['is_active' => false]);
-            AuditLogService::logUpdated($product, $oldValues, "Product {$product->sku} deactivated.");
-            $updated++;
-        }
+        [$updated, $skipped] = $this->applyBulkProductAttributeUpdate(
+            $products,
+            ['is_active' => false],
+            static fn (Product $product): bool => ! $product->is_active,
+            static fn (Product $product): string => "Product {$product->sku} deactivated.",
+        );
 
         $message = trans_choice(
             '{1} :count product deactivated.|[0,*] :count products deactivated.',
@@ -728,25 +734,15 @@ class ProductController extends Controller
             ->whereIn('id', $validated['ids'])
             ->get();
 
-        $updated = 0;
-        $skipped = 0;
         $categoryId = (int) $validated['category_id'];
         $categoryName = Category::query()->whereKey($categoryId)->value('name') ?? __('Selected category');
 
-        foreach ($products as $product) {
-            $this->authorize('update', $product);
-
-            if ((int) $product->category_id === $categoryId) {
-                $skipped++;
-
-                continue;
-            }
-
-            $oldValues = $product->toArray();
-            $product->update(['category_id' => $categoryId]);
-            AuditLogService::logUpdated($product, $oldValues, "Product {$product->sku} moved to category {$categoryName}.");
-            $updated++;
-        }
+        [$updated, $skipped] = $this->applyBulkProductAttributeUpdate(
+            $products,
+            ['category_id' => $categoryId],
+            static fn (Product $product): bool => (int) $product->category_id === $categoryId,
+            static fn (Product $product): string => "Product {$product->sku} moved to category {$categoryName}.",
+        );
 
         $message = trans_choice(
             '{1} :count product moved to :category.|[0,*] :count products moved to :category.',
@@ -764,6 +760,64 @@ class ProductController extends Controller
         ]);
 
         return back();
+    }
+
+    /**
+     * Authorize, batch-update, audit, and invalidate caches for a homogeneous product bulk action.
+     *
+     * @param  Collection<int, Product>  $products
+     * @param  array<string, mixed>  $attributes
+     * @param  callable(Product): bool  $shouldSkip
+     * @param  callable(Product): string  $descriptionResolver
+     * @return array{0: int, 1: int}
+     */
+    private function applyBulkProductAttributeUpdate(
+        Collection $products,
+        array $attributes,
+        callable $shouldSkip,
+        callable $descriptionResolver,
+    ): array {
+        $targetIds = [];
+        $auditEntries = [];
+        $skipped = 0;
+
+        foreach ($products as $product) {
+            $this->authorize('update', $product);
+
+            if ($shouldSkip($product)) {
+                $skipped++;
+
+                continue;
+            }
+
+            $oldValues = $product->toArray();
+            $product->forceFill($attributes);
+            $targetIds[] = $product->id;
+            $auditEntries[] = [
+                'action' => 'update',
+                'description' => $descriptionResolver($product),
+                'model' => $product,
+                'old_values' => $oldValues,
+                'new_values' => $product->toArray(),
+            ];
+        }
+
+        if ($targetIds !== []) {
+            DB::transaction(function () use ($targetIds, $attributes, $auditEntries): void {
+                Product::query()
+                    ->whereIn('id', $targetIds)
+                    ->update([
+                        ...$attributes,
+                        'updated_at' => now(),
+                    ]);
+
+                AuditLogService::logBatch($auditEntries);
+            });
+
+            app(InventoryOptimizationCache::class)->invalidate();
+        }
+
+        return [count($targetIds), $skipped];
     }
 
     /**

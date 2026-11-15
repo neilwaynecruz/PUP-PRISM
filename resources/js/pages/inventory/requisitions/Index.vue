@@ -10,14 +10,24 @@ import {
     Search,
     Trash2,
 } from 'lucide-vue-next';
-import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue';
+import {
+    computed,
+    defineAsyncComponent,
+    nextTick,
+    onBeforeUnmount,
+    ref,
+    watch,
+} from 'vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
 import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
-import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Badge } from '@/components/ui/badge';
+
+const QrScannerDialog = defineAsyncComponent(
+    () => import('@/components/inventory/QrScannerDialog.vue'),
+);
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {

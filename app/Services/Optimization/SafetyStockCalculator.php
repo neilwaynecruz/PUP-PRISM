@@ -45,14 +45,103 @@ class SafetyStockCalculator
         $asOf ??= CarbonImmutable::now()->endOfDay();
 
         $dailyData = $this->collector->getDailyConsumption($product, $lookbackDays, $asOf);
+
+        return $this->calculateFromDailyData($product, $dailyData, $serviceLevelZ, $lookbackDays);
+    }
+
+    /**
+     * Calculate safety stock metrics for multiple products using batched consumption queries.
+     *
+     * @param  iterable<Product>  $products
+     * @return array<int, array{
+     *     mean_daily_demand: float,
+     *     demand_std_dev: float,
+     *     lead_time_days: int,
+     *     service_level_z: float,
+     *     safety_stock: int,
+     *     reorder_point: int,
+     *     lookback_days: int,
+     *     data_points_count: int,
+     *     non_zero_days_count: int,
+     * }>
+     */
+    public function calculateBatch(
+        iterable $products,
+        float $serviceLevelZ = 1.65,
+        int $lookbackDays = 90,
+        ?CarbonImmutable $asOf = null,
+    ): array {
+        $productList = [];
+
+        foreach ($products as $product) {
+            $productList[$product->id] = $product;
+        }
+
+        if ($productList === []) {
+            return [];
+        }
+
+        $asOf ??= CarbonImmutable::now()->endOfDay();
+        $missingProfileIds = [];
+
+        foreach ($productList as $productId => $product) {
+            if (! $product->relationLoaded('forecastProfile')) {
+                $missingProfileIds[] = $productId;
+            }
+        }
+
+        $loadedProfiles = $missingProfileIds !== []
+            ? ForecastProfile::query()->whereIn('product_id', $missingProfileIds)->get()->keyBy('product_id')
+            : collect();
+
+        foreach ($missingProfileIds as $missingId) {
+            $productList[$missingId]->setRelation('forecastProfile', $loadedProfiles->get($missingId));
+        }
+
+        $dailyDataByProduct = $this->collector->getDailyConsumptionBatch($productList, $lookbackDays, $asOf);
+        $results = [];
+
+        foreach ($productList as $productId => $product) {
+            $results[$productId] = $this->calculateFromDailyData(
+                $product,
+                $dailyDataByProduct[$productId] ?? [],
+                $serviceLevelZ,
+                $lookbackDays,
+            );
+        }
+
+        return $results;
+    }
+
+    /**
+     * @param  list<array{date: string, qty: int}>  $dailyData
+     * @return array{
+     *     mean_daily_demand: float,
+     *     demand_std_dev: float,
+     *     lead_time_days: int,
+     *     service_level_z: float,
+     *     safety_stock: int,
+     *     reorder_point: int,
+     *     lookback_days: int,
+     *     data_points_count: int,
+     *     non_zero_days_count: int,
+     * }
+     */
+    public function calculateFromDailyData(
+        Product $product,
+        array $dailyData,
+        float $serviceLevelZ = 1.65,
+        int $lookbackDays = 90,
+    ): array {
         $demands = array_map('floatval', array_column($dailyData, 'qty'));
         $n = count($demands);
 
-        $nonZeroDays = count(array_filter($demands, fn (float $qty) => $qty > 0));
+        $nonZeroDays = count(array_filter($demands, fn (float $qty): bool => $qty > 0));
         $mean = $n > 0 ? array_sum($demands) / $n : 0.0;
 
         // Sample variance & standard deviation
         $variance = 0.0;
+
         if ($n > 1) {
             foreach ($demands as $d) {
                 $variance += ($d - $mean) ** 2;

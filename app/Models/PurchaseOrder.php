@@ -80,13 +80,19 @@ class PurchaseOrder extends Model
 
     public function progressPercent(): float
     {
-        $ordered = max(0, (int) $this->lines->sum('qty_ordered'));
+        if (! $this->relationLoaded('lines') && array_key_exists('ordered_qty_sum', $this->attributes)) {
+            $ordered = max(0, (int) ($this->attributes['ordered_qty_sum'] ?? 0));
+            $received = max(0, (int) ($this->attributes['received_qty_sum'] ?? 0));
+        } else {
+            $ordered = max(0, (int) $this->lines->sum('qty_ordered'));
+            $received = (int) $this->lines->sum('qty_received');
+        }
 
         if ($ordered === 0) {
             return 0;
         }
 
-        return round(min(100, ($this->lines->sum('qty_received') / $ordered) * 100), 2);
+        return round(min(100, ($received / $ordered) * 100), 2);
     }
 
     public function recalculateTotals(): void
@@ -102,8 +108,13 @@ class PurchaseOrder extends Model
 
     public function refreshReceiptStatus(): void
     {
-        $ordered = (int) $this->lines()->sum('qty_ordered');
-        $received = (int) $this->lines()->sum('qty_received');
+        $totals = $this->lines()
+            ->selectRaw('COALESCE(SUM(qty_ordered), 0) as ordered, COALESCE(SUM(qty_received), 0) as received')
+            ->toBase()
+            ->first();
+
+        $ordered = (int) ($totals->ordered ?? 0);
+        $received = (int) ($totals->received ?? 0);
 
         if ($ordered === 0 || $this->status === PurchaseOrderStatus::Cancelled) {
             return;

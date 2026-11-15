@@ -15,14 +15,24 @@ import {
     Search,
     SlidersHorizontal,
 } from 'lucide-vue-next';
-import { computed, onBeforeUnmount, reactive, ref, watch } from 'vue';
+import {
+    computed,
+    defineAsyncComponent,
+    onBeforeUnmount,
+    reactive,
+    ref,
+    watch,
+} from 'vue';
 import StockMovementController from '@/actions/App/Http/Controllers/Inventory/StockMovementController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
 import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
-import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Badge } from '@/components/ui/badge';
+
+const QrScannerDialog = defineAsyncComponent(
+    () => import('@/components/inventory/QrScannerDialog.vue'),
+);
 import { Button } from '@/components/ui/button';
 import {
     Dialog,

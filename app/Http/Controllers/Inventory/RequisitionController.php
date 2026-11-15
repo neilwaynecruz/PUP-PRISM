@@ -19,6 +19,7 @@ use App\Models\RequisitionTemplate;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\DashboardStatsCache;
 use App\Services\Inventory\InventoryService;
 use App\Services\Inventory\RequisitionTemplateService;
 use App\Services\NotificationService;
@@ -379,7 +380,7 @@ class RequisitionController extends Controller
         }
 
         try {
-            $inventory->issueRequisition(
+            $requisition = $inventory->issueRequisition(
                 user: $request->user(),
                 linePayloads: $request->issueLines(),
                 markAsBackordered: $request->shouldMarkAsBackordered(),
@@ -393,7 +394,6 @@ class RequisitionController extends Controller
             ]);
         }
 
-        $requisition->refresh();
         AuditLogService::logCustom(
             'issue',
             "Requisition #{$requisition->id} issued.",
@@ -442,7 +442,10 @@ class RequisitionController extends Controller
                 ->values();
 
             $approved = [];
+            $approvedIds = [];
+            $auditEntries = [];
             $skipped = 0;
+            $approvedAt = CarbonImmutable::now();
 
             foreach ($requisitions as $requisition) {
                 if (! $request->user()->can('approve', $requisition)) {
@@ -451,19 +454,43 @@ class RequisitionController extends Controller
                     continue;
                 }
 
-                $requisition->update([
+                $requisition->forceFill([
                     'status' => RequisitionStatus::Approved,
                     'approver_id' => $request->user()->id,
                     'approver_position_id' => $request->user()->position_id,
                     'approved_ip_address' => $request->ip(),
-                    'approved_at' => CarbonImmutable::now(),
+                    'approved_at' => $approvedAt,
                 ]);
-                AuditLogService::logCustom('approve', "Requisition #{$requisition->id} approved.", $requisition);
+                $approvedIds[] = $requisition->id;
+                $auditEntries[] = [
+                    'action' => 'approve',
+                    'description' => "Requisition #{$requisition->id} approved.",
+                    'model' => $requisition,
+                ];
                 $approved[] = $requisition;
+            }
+
+            if ($approvedIds !== []) {
+                Requisition::query()
+                    ->whereIn('id', $approvedIds)
+                    ->update([
+                        'status' => RequisitionStatus::Approved->value,
+                        'approver_id' => $request->user()->id,
+                        'approver_position_id' => $request->user()->position_id,
+                        'approved_ip_address' => $request->ip(),
+                        'approved_at' => $approvedAt,
+                        'updated_at' => $approvedAt,
+                    ]);
+
+                AuditLogService::logBatch($auditEntries);
             }
 
             return ['approved' => $approved, 'skipped' => $skipped];
         });
+
+        if ($result['approved'] !== []) {
+            app(DashboardStatsCache::class)->invalidate();
+        }
 
         foreach ($result['approved'] as $approvedRequisition) {
             $this->notifications->requisitionStatusChanged($approvedRequisition, 'approved');
@@ -522,7 +549,7 @@ class RequisitionController extends Controller
             }
 
             try {
-                $inventory->issueRequisition(
+                $issuedRequisition = $inventory->issueRequisition(
                     user: $request->user(),
                     requisition: $requisition,
                     linePayloads: null,
@@ -530,8 +557,8 @@ class RequisitionController extends Controller
                     notes: null,
                     ipAddress: $request->ip(),
                 );
-                AuditLogService::logCustom('issue', "Requisition #{$requisition->id} issued.", $requisition->fresh());
-                $this->notifications->requisitionStatusChanged($requisition, 'issued');
+                AuditLogService::logCustom('issue', "Requisition #{$requisition->id} issued.", $issuedRequisition);
+                $this->notifications->requisitionStatusChanged($issuedRequisition, 'issued');
                 $updated++;
             } catch (\RuntimeException $exception) {
                 report($exception);
@@ -719,15 +746,38 @@ class RequisitionController extends Controller
         }
 
         $restored = DB::transaction(function () use ($requisitions): int {
-            $count = 0;
-
-            foreach ($requisitions as $requisition) {
-                $requisition->restore();
-                AuditLogService::logRestored($requisition);
-                $count++;
+            if ($requisitions->isEmpty()) {
+                return 0;
             }
 
-            return $count;
+            $ids = $requisitions->modelKeys();
+            $now = CarbonImmutable::now();
+
+            Requisition::query()
+                ->onlyTrashed()
+                ->whereIn('id', $ids)
+                ->update([
+                    'deleted_at' => null,
+                    'updated_at' => $now,
+                ]);
+
+            $auditEntries = [];
+
+            foreach ($requisitions as $requisition) {
+                $requisition->deleted_at = null;
+                $label = $requisition->id ? "#{$requisition->id}" : '';
+                $auditEntries[] = [
+                    'action' => 'restore',
+                    'description' => trim("Requisition {$label} restored."),
+                    'model' => $requisition,
+                    'old_values' => null,
+                    'new_values' => $requisition->toArray(),
+                ];
+            }
+
+            AuditLogService::logBatch($auditEntries);
+
+            return count($ids);
         });
 
         Inertia::flash('toast', [
@@ -763,9 +813,35 @@ class RequisitionController extends Controller
 
         $deleted = 0;
         $skipped = 0;
+        $requisitionIds = $requisitions->modelKeys();
+
+        $movementReqIds = $requisitionIds !== []
+            ? StockMovement::query()
+                ->whereIn('requisition_id', $requisitionIds)
+                ->distinct()
+                ->pluck('requisition_id')
+                ->flip()
+            : collect();
+
+        $issuedLineReqIds = $requisitionIds !== []
+            ? RequisitionLine::query()
+                ->whereIn('requisition_id', $requisitionIds)
+                ->where('qty_issued', '>', 0)
+                ->distinct()
+                ->pluck('requisition_id')
+                ->flip()
+            : collect();
 
         foreach ($requisitions as $requisition) {
-            if ($this->hasHistoricalRequisitionActivity($requisition)) {
+            $hasHistoricalActivity = $movementReqIds->has($requisition->id)
+                || $issuedLineReqIds->has($requisition->id)
+                || in_array($requisition->status, [
+                    RequisitionStatus::Issued,
+                    RequisitionStatus::PartiallyIssued,
+                    RequisitionStatus::Backordered,
+                ], true);
+
+            if ($hasHistoricalActivity) {
                 $skipped++;
 
                 continue;

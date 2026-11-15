@@ -12,6 +12,7 @@ import FullCalendar from '@fullcalendar/vue3';
 import { Form, Head, Link, router } from '@inertiajs/vue3';
 import {
     computed,
+    defineAsyncComponent,
     nextTick,
     onBeforeUnmount,
     onMounted,
@@ -22,7 +23,6 @@ import BookingController from '@/actions/App/Http/Controllers/Inventory/BookingC
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -43,6 +43,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+
+const QrScannerDialog = defineAsyncComponent(
+    () => import('@/components/inventory/QrScannerDialog.vue'),
+);
 import { useBulkSelection } from '@/composables/useBulkSelection';
 import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {

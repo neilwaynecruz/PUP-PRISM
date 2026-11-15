@@ -53,6 +53,100 @@ class EoqCalculator
             ->whereBetween('performed_at', [$oneYearAgo, $asOf])
             ->sum(DB::raw('ABS(qty_delta)'));
 
+        return $this->calculateFromAnnualDemand($product, $annualDemand, $orderingCost, $holdingCostRate);
+    }
+
+    /**
+     * Calculate EOQ metrics for multiple products in a single aggregated query and deduplicate repeated computations.
+     *
+     * @param  iterable<Product>  $products
+     * @param  array<int, int>|null  $annualDemandByProductId
+     * @return array<int, array{
+     *     annual_demand: int,
+     *     unit_price: float,
+     *     ordering_cost: float,
+     *     holding_cost_rate: float,
+     *     holding_cost_per_unit: float,
+     *     eoq: int,
+     *     orders_per_year: float,
+     *     order_cycle_days: int,
+     *     annual_ordering_cost: float,
+     *     annual_holding_cost: float,
+     *     total_annual_inventory_cost: float,
+     * }>
+     */
+    public function calculateBatch(
+        iterable $products,
+        float $orderingCost = 500.0,
+        float $holdingCostRate = 0.20,
+        ?CarbonImmutable $asOf = null,
+        ?array $annualDemandByProductId = null,
+    ): array {
+        $productList = [];
+
+        foreach ($products as $product) {
+            $productList[$product->id] = $product;
+        }
+
+        if ($productList === []) {
+            return [];
+        }
+
+        $asOf ??= CarbonImmutable::now()->endOfDay();
+        $oneYearAgo = $asOf->subYear()->startOfDay();
+
+        if ($annualDemandByProductId === null) {
+            $annualDemandByProductId = StockMovement::query()
+                ->whereIn('product_id', array_keys($productList))
+                ->where('movement_type', 'issue')
+                ->whereBetween('performed_at', [$oneYearAgo, $asOf])
+                ->select('product_id', DB::raw('SUM(ABS(qty_delta)) as annual_demand'))
+                ->groupBy('product_id')
+                ->pluck('annual_demand', 'product_id')
+                ->map(static fn (mixed $value): int => (int) $value)
+                ->all();
+        }
+
+        $memoized = [];
+        $results = [];
+
+        foreach ($productList as $productId => $product) {
+            $annualDemand = (int) ($annualDemandByProductId[$productId] ?? 0);
+            $unitPrice = round((float) ($product->unit_price ?? 0), 2);
+            $inputKey = sprintf('%d|%.2f|%.6F|%.6F', $annualDemand, $unitPrice, $orderingCost, $holdingCostRate);
+
+            $results[$productId] = $memoized[$inputKey] ??= $this->calculateFromAnnualDemand(
+                $product,
+                $annualDemand,
+                $orderingCost,
+                $holdingCostRate,
+            );
+        }
+
+        return $results;
+    }
+
+    /**
+     * @return array{
+     *     annual_demand: int,
+     *     unit_price: float,
+     *     ordering_cost: float,
+     *     holding_cost_rate: float,
+     *     holding_cost_per_unit: float,
+     *     eoq: int,
+     *     orders_per_year: float,
+     *     order_cycle_days: int,
+     *     annual_ordering_cost: float,
+     *     annual_holding_cost: float,
+     *     total_annual_inventory_cost: float,
+     * }
+     */
+    public function calculateFromAnnualDemand(
+        Product $product,
+        int $annualDemand,
+        float $orderingCost = 500.0,
+        float $holdingCostRate = 0.20,
+    ): array {
         $unitPrice = round((float) ($product->unit_price ?? 0), 2);
         $holdingCostPerUnit = round($unitPrice * $holdingCostRate, 2);
 

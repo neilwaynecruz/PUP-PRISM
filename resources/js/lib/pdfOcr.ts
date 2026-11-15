@@ -35,19 +35,26 @@ export async function openOcrPdf(
         workerPath,
         window.location.href,
     ).href;
-    const loading = pdfjs.getDocument({
-        data,
-        enableXfa: false,
-        stopAtErrors: true,
-        useWorkerFetch: false,
-        useWasm: false,
-        useSystemFonts: true,
-        isOffscreenCanvasSupported: false,
-        isImageDecoderSupported: false,
-        disableWorkerRendering: true,
-        canvasMaxAreaInBytes: 16_000_000,
-        maxImageSize: 24_000_000,
-    });
+
+    const createLoadingTask = (disableWorkerRendering: boolean) =>
+        pdfjs.getDocument({
+            data,
+            enableXfa: false,
+            stopAtErrors: true,
+            useWorkerFetch: false,
+            useWasm: false,
+            useSystemFonts: true,
+            isOffscreenCanvasSupported:
+                !disableWorkerRendering &&
+                typeof OffscreenCanvas !== 'undefined',
+            isImageDecoderSupported: false,
+            disableWorkerRendering,
+            canvasMaxAreaInBytes: 16_000_000,
+            maxImageSize: 24_000_000,
+        });
+
+    let loading = createLoadingTask(false);
+    let fallbackActivated = false;
     let closing: Promise<void> | undefined;
     const close = (): Promise<void> => (closing ??= loading.destroy());
     const abort = (): void => {
@@ -56,7 +63,21 @@ export async function openOcrPdf(
     signal.addEventListener('abort', abort, { once: true });
 
     try {
-        const pdfDocument = await loading.promise;
+        let pdfDocument: Awaited<typeof loading.promise>;
+
+        try {
+            pdfDocument = await loading.promise;
+        } catch (primaryError) {
+            if (signal.aborted) {
+                throw primaryError;
+            }
+
+            await loading.destroy().catch(() => {});
+            fallbackActivated = true;
+            loading = createLoadingTask(true);
+            pdfDocument = await loading.promise;
+        }
+
         signal.throwIfAborted();
 
         if (pdfDocument.numPages > 20) {
@@ -64,6 +85,60 @@ export async function openOcrPdf(
                 'This PDF is too large for on-device OCR: use a PDF with at most 20 pages, or export the needed page as an image.',
             );
         }
+
+        const renderPageWithDocument = async (
+            doc: typeof pdfDocument,
+            pageNumber: number,
+            renderSignal: AbortSignal,
+        ): Promise<HTMLCanvasElement> => {
+            const page = await doc.getPage(pageNumber);
+            renderSignal.throwIfAborted();
+            const original = page.getViewport({ scale: 1 });
+
+            if (
+                !Number.isFinite(original.width + original.height) ||
+                original.width <= 0 ||
+                original.height <= 0
+            ) {
+                throw new Error(
+                    'This PDF page could not be rendered. Use a photo or manual entry.',
+                );
+            }
+
+            const scale = Math.min(
+                2,
+                2000 / Math.max(original.width, original.height),
+            );
+            const viewport = page.getViewport({ scale });
+            const output = window.document.createElement('canvas');
+            output.width = Math.max(1, Math.floor(viewport.width));
+            output.height = Math.max(1, Math.floor(viewport.height));
+            const render = page.render({
+                canvas: output,
+                viewport,
+                annotationMode: pdfjs.AnnotationMode.DISABLE,
+                background: 'white',
+            });
+            const cancelRender = (): void => render.cancel();
+            renderSignal.addEventListener('abort', cancelRender, {
+                once: true,
+            });
+
+            try {
+                await render.promise;
+                renderSignal.throwIfAborted();
+
+                return output;
+            } catch (error) {
+                output.width = 0;
+                output.height = 0;
+
+                throw error;
+            } finally {
+                renderSignal.removeEventListener('abort', cancelRender);
+                page.cleanup();
+            }
+        };
 
         return {
             pageCount: pdfDocument.numPages,
@@ -82,52 +157,36 @@ export async function openOcrPdf(
                     );
                 }
 
-                const page = await pdfDocument.getPage(pageNumber);
-                renderSignal.throwIfAborted();
-                const original = page.getViewport({ scale: 1 });
-
-                if (
-                    !Number.isFinite(original.width + original.height) ||
-                    original.width <= 0 ||
-                    original.height <= 0
-                ) {
-                    throw new Error(
-                        'This PDF page could not be rendered. Use a photo or manual entry.',
-                    );
-                }
-
-                const scale = Math.min(
-                    2,
-                    2000 / Math.max(original.width, original.height),
-                );
-                const viewport = page.getViewport({ scale });
-                const output = window.document.createElement('canvas');
-                output.width = Math.max(1, Math.floor(viewport.width));
-                output.height = Math.max(1, Math.floor(viewport.height));
-                const render = page.render({
-                    canvas: output,
-                    viewport,
-                    annotationMode: pdfjs.AnnotationMode.DISABLE,
-                    background: 'white',
-                });
-                const cancelRender = (): void => render.cancel();
-                renderSignal.addEventListener('abort', cancelRender, {
-                    once: true,
-                });
-
                 try {
-                    await render.promise;
+                    return await renderPageWithDocument(
+                        pdfDocument,
+                        pageNumber,
+                        renderSignal,
+                    );
+                } catch (error) {
+                    if (
+                        fallbackActivated ||
+                        closing ||
+                        renderSignal.aborted ||
+                        (error instanceof Error &&
+                            error.message.startsWith(
+                                'This PDF page could not be rendered',
+                            ))
+                    ) {
+                        throw error;
+                    }
+
+                    fallbackActivated = true;
+                    await loading.destroy().catch(() => {});
+                    loading = createLoadingTask(true);
+                    pdfDocument = await loading.promise;
                     renderSignal.throwIfAborted();
 
-                    return output;
-                } catch (error) {
-                    output.width = 0;
-                    output.height = 0;
-
-                    throw error;
-                } finally {
-                    renderSignal.removeEventListener('abort', cancelRender);
-                    page.cleanup();
+                    return await renderPageWithDocument(
+                        pdfDocument,
+                        pageNumber,
+                        renderSignal,
+                    );
                 }
             },
         };

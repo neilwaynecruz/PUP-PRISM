@@ -5,6 +5,7 @@ namespace App\Services\Optimization;
 use App\Enums\ProductType;
 use App\Models\Product;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 
 class InventoryOptimizationService
 {
@@ -12,6 +13,7 @@ class InventoryOptimizationService
         private readonly AbcAnalyzer $abcAnalyzer,
         private readonly SafetyStockCalculator $safetyStockCalculator,
         private readonly EoqCalculator $eoqCalculator,
+        private readonly InventoryOptimizationCache $cache,
     ) {}
 
     /**
@@ -46,7 +48,13 @@ class InventoryOptimizationService
      */
     public function getAbcAnalysis(?CarbonImmutable $asOf = null): array
     {
-        return $this->abcAnalyzer->analyze($asOf);
+        $effectiveAsOf = $asOf ?? CarbonImmutable::now()->endOfDay();
+
+        return $this->cache->rememberAbc(
+            $effectiveAsOf->format('Y-m-d_H:i:s'),
+            365,
+            fn (): array => $this->abcAnalyzer->analyze($effectiveAsOf),
+        );
     }
 
     /**
@@ -87,29 +95,69 @@ class InventoryOptimizationService
      */
     public function getProductOptimization(Product $product, ?CarbonImmutable $asOf = null): array
     {
-        $asOf ??= CarbonImmutable::now()->endOfDay();
+        $effectiveAsOf = $asOf ?? CarbonImmutable::now()->endOfDay();
 
-        $product->loadMissing(['stock:id,product_id,on_hand_qty', 'forecastProfile']);
+        return $this->cache->rememberProductOptimization(
+            $product->id,
+            $effectiveAsOf->format('Y-m-d_H:i:s'),
+            1.65,
+            500.0,
+            0.20,
+            function () use ($product, $effectiveAsOf): array {
+                $product->loadMissing(['stock:id,product_id,on_hand_qty', 'forecastProfile']);
 
-        $classification = $this->abcAnalyzer->classifyProduct($product, $asOf);
-        $safetyStock = $this->safetyStockCalculator->calculate($product, asOf: $asOf);
-        $eoq = $this->eoqCalculator->calculate($product, asOf: $asOf);
+                $abcAnalysis = $this->getAbcAnalysis($effectiveAsOf);
+                $classification = $this->abcAnalyzer->extractClassificationFromAnalysis($abcAnalysis, $product->id);
+                $safetyStock = $this->safetyStockCalculator->calculate($product, asOf: $effectiveAsOf);
+                $eoq = $this->eoqCalculator->calculate($product, asOf: $effectiveAsOf);
 
-        // Suggested batch order size: EOQ if available and positive, else fallback to safety stock + lead demand
-        $batchSize = $eoq['eoq'] > 0
-            ? $eoq['eoq']
-            : max(1, $safetyStock['reorder_point']);
+                return $this->assembleProductOptimization($product, $classification, $safetyStock, $eoq);
+            },
+        );
+    }
 
-        return [
-            'product_id' => $product->id,
-            'sku' => $product->sku,
-            'name' => $product->name,
-            'on_hand_qty' => (int) ($product->stock?->on_hand_qty ?? 0),
-            'abc_classification' => $classification,
-            'safety_stock' => $safetyStock,
-            'eoq' => $eoq,
-            'recommended_batch_order_qty' => $batchSize,
-        ];
+    /**
+     * Get complete optimization profiles for a collection of products using batched DB queries.
+     *
+     * @param  Collection<int, Product>  $products
+     * @param  array{items: list<array<string, mixed>>}|null  $precomputedAbc
+     * @return array<int, array<string, mixed>>
+     */
+    public function getBatchProductOptimizations(
+        Collection $products,
+        ?CarbonImmutable $asOf = null,
+        ?array $precomputedAbc = null,
+    ): array {
+        if ($products->isEmpty()) {
+            return [];
+        }
+
+        $effectiveAsOf = $asOf ?? CarbonImmutable::now()->endOfDay();
+        $products->loadMissing(['stock:id,product_id,on_hand_qty', 'forecastProfile']);
+
+        $abcAnalysis = $precomputedAbc ?? $this->getAbcAnalysis($effectiveAsOf);
+        $abcClassByProductId = [];
+
+        foreach ($abcAnalysis['items'] as $item) {
+            if (isset($item['product_id'])) {
+                $abcClassByProductId[(int) $item['product_id']] = (string) ($item['classification'] ?? 'C');
+            }
+        }
+
+        $safetyStockByProductId = $this->safetyStockCalculator->calculateBatch($products, asOf: $effectiveAsOf);
+        $eoqByProductId = $this->eoqCalculator->calculateBatch($products, asOf: $effectiveAsOf);
+
+        $results = [];
+
+        foreach ($products as $product) {
+            $classification = $abcClassByProductId[$product->id] ?? 'C';
+            $safetyStock = $safetyStockByProductId[$product->id] ?? $this->safetyStockCalculator->calculateFromDailyData($product, []);
+            $eoq = $eoqByProductId[$product->id] ?? $this->eoqCalculator->calculateFromAnnualDemand($product, 0);
+
+            $results[$product->id] = $this->assembleProductOptimization($product, $classification, $safetyStock, $eoq);
+        }
+
+        return $results;
     }
 
     /**
@@ -119,7 +167,7 @@ class InventoryOptimizationService
      */
     public function getOptimizationSummary(?CarbonImmutable $asOf = null): array
     {
-        $abc = $this->abcAnalyzer->analyze($asOf);
+        $abc = $this->getAbcAnalysis($asOf);
 
         $consumablesCount = Product::query()
             ->where('type', ProductType::Consumable)
@@ -130,6 +178,43 @@ class InventoryOptimizationService
             'total_active_consumables' => $consumablesCount,
             'total_consumption_value' => $abc['summary']['total_annual_value'],
             'abc_summary' => $abc['summary'],
+        ];
+    }
+
+    /**
+     * @param  array<string, mixed>  $safetyStock
+     * @param  array<string, mixed>  $eoq
+     * @return array{
+     *     product_id: int,
+     *     sku: string,
+     *     name: string,
+     *     on_hand_qty: int,
+     *     abc_classification: string,
+     *     safety_stock: array<string, mixed>,
+     *     eoq: array<string, mixed>,
+     *     recommended_batch_order_qty: int,
+     * }
+     */
+    private function assembleProductOptimization(
+        Product $product,
+        string $classification,
+        array $safetyStock,
+        array $eoq,
+    ): array {
+        // Suggested batch order size: EOQ if available and positive, else fallback to safety stock + lead demand
+        $batchSize = $eoq['eoq'] > 0
+            ? $eoq['eoq']
+            : max(1, (int) $safetyStock['reorder_point']);
+
+        return [
+            'product_id' => $product->id,
+            'sku' => $product->sku,
+            'name' => $product->name,
+            'on_hand_qty' => (int) ($product->stock?->on_hand_qty ?? 0),
+            'abc_classification' => $classification,
+            'safety_stock' => $safetyStock,
+            'eoq' => $eoq,
+            'recommended_batch_order_qty' => $batchSize,
         ];
     }
 }

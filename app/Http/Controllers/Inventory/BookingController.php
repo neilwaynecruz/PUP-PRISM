@@ -16,6 +16,7 @@ use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\DashboardStatsCache;
 use App\Services\Inventory\AssetIntegrityService;
 use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
@@ -388,25 +389,51 @@ class BookingController extends Controller
             }
 
             $rejected = [];
+            $rejectedIds = [];
+            $auditEntries = [];
             $skipped = 0;
+            $now = CarbonImmutable::now();
 
             foreach ($bookings as $booking) {
                 if ($booking->status === BookingStatus::Requested) {
-                    $booking->update([
+                    $booking->forceFill([
                         'status' => BookingStatus::Rejected,
                         'approver_id' => $request->user()->id,
                         'approver_position_id' => $request->user()->position_id,
                         'approved_ip_address' => $request->ip(),
                     ]);
-                    AuditLogService::logCustom('reject', "Booking #{$booking->id} rejected.", $booking);
+                    $rejectedIds[] = $booking->id;
+                    $auditEntries[] = [
+                        'action' => 'reject',
+                        'description' => "Booking #{$booking->id} rejected.",
+                        'model' => $booking,
+                    ];
                     $rejected[] = $booking;
                 } else {
                     $skipped++;
                 }
             }
 
+            if ($rejectedIds !== []) {
+                Booking::query()
+                    ->whereIn('id', $rejectedIds)
+                    ->update([
+                        'status' => BookingStatus::Rejected->value,
+                        'approver_id' => $request->user()->id,
+                        'approver_position_id' => $request->user()->position_id,
+                        'approved_ip_address' => $request->ip(),
+                        'updated_at' => $now,
+                    ]);
+
+                AuditLogService::logBatch($auditEntries);
+            }
+
             return ['rejected' => $rejected, 'skipped' => $skipped];
         });
+
+        if ($result['rejected'] !== []) {
+            app(DashboardStatsCache::class)->invalidate();
+        }
 
         foreach ($result['rejected'] as $rejectedBooking) {
             $this->notifications->bookingStatusChanged($rejectedBooking, 'rejected');
@@ -552,15 +579,38 @@ class BookingController extends Controller
         }
 
         $restored = DB::transaction(function () use ($bookings): int {
-            $count = 0;
-
-            foreach ($bookings as $booking) {
-                $booking->restore();
-                AuditLogService::logRestored($booking);
-                $count++;
+            if ($bookings->isEmpty()) {
+                return 0;
             }
 
-            return $count;
+            $ids = $bookings->modelKeys();
+            $now = CarbonImmutable::now();
+
+            Booking::query()
+                ->onlyTrashed()
+                ->whereIn('id', $ids)
+                ->update([
+                    'deleted_at' => null,
+                    'updated_at' => $now,
+                ]);
+
+            $auditEntries = [];
+
+            foreach ($bookings as $booking) {
+                $booking->deleted_at = null;
+                $label = $booking->id ? "#{$booking->id}" : '';
+                $auditEntries[] = [
+                    'action' => 'restore',
+                    'description' => trim("Booking {$label} restored."),
+                    'model' => $booking,
+                    'old_values' => null,
+                    'new_values' => $booking->toArray(),
+                ];
+            }
+
+            AuditLogService::logBatch($auditEntries);
+
+            return count($ids);
         });
 
         Inertia::flash('toast', [

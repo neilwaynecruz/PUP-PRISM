@@ -1,19 +1,65 @@
+import type { Worker as TesseractWorker } from 'tesseract.js';
 import workerPath from 'tesseract.js/dist/worker.min.js?url';
 import corePath from 'tesseract.js-core/tesseract-core-lstm.wasm.js?url';
 
-export async function readAssetLabel(
-    image: HTMLCanvasElement,
-    signal: AbortSignal,
-    onProgress: (message: string) => void,
-    layout: 'label' | 'document' = 'label',
-): Promise<string> {
-    if (typeof Worker === 'undefined' || typeof WebAssembly === 'undefined') {
-        throw new Error(
-            'Text recognition is unavailable in this browser. Use manual asset search.',
-        );
+const WORKER_IDLE_TIMEOUT_MS = 60_000;
+
+let sharedWorker: TesseractWorker | null = null;
+let sharedWorkerGeneration = 0;
+let idleTimer: ReturnType<typeof setTimeout> | null = null;
+let ocrQueue: Promise<void> = Promise.resolve();
+let activeProgressHandler: ((message: string) => void) | null = null;
+let activeErrorRejector: ((reason: unknown) => void) | null = null;
+let unloadListenerRegistered = false;
+
+function clearIdleTimer(): void {
+    if (idleTimer !== null) {
+        clearTimeout(idleTimer);
+        idleTimer = null;
+    }
+}
+
+async function terminateSharedWorker(): Promise<void> {
+    sharedWorkerGeneration += 1;
+    clearIdleTimer();
+
+    const workerToStop = sharedWorker;
+    sharedWorker = null;
+
+    if (workerToStop !== null) {
+        await workerToStop.terminate().catch(() => {});
+    }
+}
+
+function scheduleIdleTerminate(): void {
+    clearIdleTimer();
+    idleTimer = setTimeout(() => {
+        void terminateSharedWorker();
+    }, WORKER_IDLE_TIMEOUT_MS);
+}
+
+function registerUnloadCleanup(): void {
+    if (unloadListenerRegistered || typeof window === 'undefined') {
+        return;
     }
 
-    const { createWorker, OEM, PSM } = await import('tesseract.js');
+    unloadListenerRegistered = true;
+    window.addEventListener('beforeunload', () => {
+        void terminateSharedWorker();
+    });
+}
+
+async function getOrCreateWorker(
+    signal: AbortSignal,
+    rejectCurrent: (reason: unknown) => void,
+): Promise<TesseractWorker> {
+    clearIdleTimer();
+
+    if (sharedWorker !== null) {
+        return sharedWorker;
+    }
+
+    const { createWorker, OEM } = await import('tesseract.js');
     signal.throwIfAborted();
 
     const model = await fetch(
@@ -30,34 +76,44 @@ export async function readAssetLabel(
         );
     }
 
-    let rejectWorker: (reason: unknown) => void = () => {};
+    const generation = ++sharedWorkerGeneration;
+    registerUnloadCleanup();
+
     const workerFailure = new Promise<never>((_, reject) => {
-        rejectWorker = reject;
+        activeErrorRejector = reject;
     });
-    const cancel = () => rejectWorker(signal.reason);
+
+    const cancel = (): void => {
+        void terminateSharedWorker();
+        rejectCurrent(signal.reason);
+    };
     signal.addEventListener('abort', cancel, { once: true });
+
     const pendingWorker = createWorker('eng', OEM.LSTM_ONLY, {
         workerPath: new URL(workerPath, window.location.href).href,
         corePath: new URL(corePath, window.location.href).href,
         langPath: new URL('/ocr', window.location.origin).href,
         workerBlobURL: false,
         gzip: false,
-        cacheMethod: 'none',
-        errorHandler: (reason: unknown) => rejectWorker(reason),
+        cacheMethod: 'write',
+        errorHandler: (reason: unknown) => activeErrorRejector?.(reason),
         logger: ({ status, progress }) => {
-            if (!signal.aborted) {
-                const stage =
-                    status === 'recognizing text'
-                        ? 'Reading printed text'
-                        : 'Preparing text recognition';
-                onProgress(`${stage}: ${Math.round(progress * 100)}%`);
+            if (activeProgressHandler === null) {
+                return;
             }
+
+            const stage =
+                status === 'recognizing text'
+                    ? 'Reading printed text'
+                    : 'Preparing text recognition';
+            activeProgressHandler(`${stage}: ${Math.round(progress * 100)}%`);
         },
     });
+
     void pendingWorker
         .then((ready) => {
-            if (signal.aborted) {
-                void ready.terminate();
+            if (signal.aborted || generation !== sharedWorkerGeneration) {
+                void ready.terminate().catch(() => {});
             }
         })
         .catch(() => {});
@@ -66,24 +122,105 @@ export async function readAssetLabel(
         const worker = await Promise.race([pendingWorker, workerFailure]);
         signal.throwIfAborted();
 
+        if (generation !== sharedWorkerGeneration) {
+            await worker.terminate().catch(() => {});
+
+            throw signal.reason;
+        }
+
+        sharedWorker = worker;
+
+        return worker;
+    } catch (error) {
+        await terminateSharedWorker();
+
+        throw error;
+    } finally {
+        signal.removeEventListener('abort', cancel);
+    }
+}
+
+export function readAssetLabel(
+    image: HTMLCanvasElement,
+    signal: AbortSignal,
+    onProgress: (message: string) => void,
+    layout: 'label' | 'document' = 'label',
+): Promise<string> {
+    if (typeof Worker === 'undefined' || typeof WebAssembly === 'undefined') {
+        return Promise.reject(
+            new Error(
+                'Text recognition is unavailable in this browser. Use manual asset search.',
+            ),
+        );
+    }
+
+    signal.throwIfAborted();
+
+    const run = async (): Promise<string> => {
+        signal.throwIfAborted();
+
+        const { PSM } = await import('tesseract.js');
+        signal.throwIfAborted();
+
+        let rejectRun: (reason: unknown) => void = () => {};
+        const runFailure = new Promise<never>((_, reject) => {
+            rejectRun = reject;
+        });
+
+        activeProgressHandler = (message: string) => {
+            if (!signal.aborted) {
+                onProgress(message);
+            }
+        };
+        activeErrorRejector = rejectRun;
+
+        const cancelActiveRun = (): void => {
+            void terminateSharedWorker();
+            rejectRun(signal.reason);
+        };
+        signal.addEventListener('abort', cancelActiveRun, { once: true });
+
         try {
+            const worker = await getOrCreateWorker(signal, rejectRun);
+            signal.throwIfAborted();
+
             await worker.setParameters({
                 tessedit_pageseg_mode:
                     layout === 'document' ? PSM.AUTO : PSM.SPARSE_TEXT,
             });
+            signal.throwIfAborted();
+
             const result = await Promise.race([
                 worker.recognize(image),
-                workerFailure,
+                runFailure,
             ]);
             signal.throwIfAborted();
 
             return result.data.text.trim();
+        } catch (error) {
+            if (signal.aborted) {
+                await terminateSharedWorker();
+            }
+
+            throw error;
         } finally {
-            await worker.terminate();
+            signal.removeEventListener('abort', cancelActiveRun);
+            activeProgressHandler = null;
+            activeErrorRejector = null;
+
+            if (sharedWorker !== null) {
+                scheduleIdleTerminate();
+            }
         }
-    } finally {
-        signal.removeEventListener('abort', cancel);
-    }
+    };
+
+    const queued = ocrQueue.then(run, run);
+    ocrQueue = queued.then(
+        () => undefined,
+        () => undefined,
+    );
+
+    return queued;
 }
 
 export async function prepareLabelImage(

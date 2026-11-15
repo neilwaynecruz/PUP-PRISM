@@ -339,6 +339,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('reports/optimization/{format}', [InventoryReportController::class, 'optimization'])
                 ->whereIn('format', ['csv', 'pdf'])
                 ->name('reports.optimization');
+
+            Route::get('reports/generated/{user}/{file}', [InventoryReportController::class, 'downloadGenerated'])
+                ->whereNumber('user')
+                ->middleware('signed:relative')
+                ->name('reports.generated.download');
         });
 
         Route::middleware('role:Admin|Supply Head')->group(function () {

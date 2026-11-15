@@ -285,16 +285,21 @@ class DashboardStatsService
      */
     private function movementTrends(string $type, CarbonImmutable $from, CarbonImmutable $to): array
     {
+        $maxRangeDays = max(1, (int) config('dashboard.max_range_days', 366));
+        $effectiveFrom = $from->diffInDays($to) > $maxRangeDays
+            ? $to->subDays($maxRangeDays)->startOfDay()
+            : $from;
+
         $rows = StockMovement::query()
             ->where('movement_type', $type)
-            ->whereBetween('performed_at', [$from, $to])
+            ->whereBetween('performed_at', [$effectiveFrom, $to])
             ->select(DB::raw('DATE(performed_at) as date'), DB::raw('CAST(COUNT(*) AS INTEGER) as count'))
             ->groupBy(DB::raw('DATE(performed_at)'))
             ->orderBy('date')
             ->get();
 
         $dates = [];
-        $current = $from->copy();
+        $current = $effectiveFrom->copy();
 
         while ($current <= $to) {
             $dates[$current->toDateString()] = 0;
@@ -379,44 +384,46 @@ class DashboardStatsService
      */
     public function supplierPerformance(): array
     {
+        $driver = DB::connection()->getDriverName();
+        $openStatuses = [
+            PurchaseOrderStatus::Draft->value,
+            PurchaseOrderStatus::Sent->value,
+            PurchaseOrderStatus::Partial->value,
+        ];
+        $startedExpr = 'COALESCE(purchase_orders.sent_at, purchase_orders.created_at)';
+        $leadTimeExpr = match ($driver) {
+            'pgsql' => "CASE WHEN purchase_orders.received_at IS NOT NULL AND {$startedExpr} IS NOT NULL THEN GREATEST(0.0, EXTRACT(EPOCH FROM (purchase_orders.received_at - {$startedExpr})) / 86400.0) END",
+            'sqlite' => "CASE WHEN purchase_orders.received_at IS NOT NULL AND {$startedExpr} IS NOT NULL THEN MAX(0.0, julianday(purchase_orders.received_at) - julianday({$startedExpr})) END",
+            default => "CASE WHEN purchase_orders.received_at IS NOT NULL AND {$startedExpr} IS NOT NULL THEN GREATEST(0.0, TIMESTAMPDIFF(MICROSECOND, {$startedExpr}, purchase_orders.received_at) / 86400000000.0) END",
+        };
+
         return Supplier::query()
-            ->with([
-                'purchaseOrders' => fn ($query) => $query
-                    ->select(['id', 'supplier_id', 'status', 'sent_at', 'created_at', 'received_at']),
+            ->leftJoin('purchase_orders', function ($join): void {
+                $join->on('purchase_orders.supplier_id', '=', 'suppliers.id')
+                    ->whereNull('purchase_orders.deleted_at');
+            })
+            ->select([
+                'suppliers.id',
+                'suppliers.name',
             ])
-            ->orderBy('name')
+            ->selectRaw('COUNT(purchase_orders.id) as total_pos')
+            ->selectRaw('SUM(CASE WHEN purchase_orders.status IN (?, ?, ?) THEN 1 ELSE 0 END) as open_pos', $openStatuses)
+            ->selectRaw("AVG({$leadTimeExpr}) as avg_lead_time_days")
+            ->groupBy('suppliers.id', 'suppliers.name')
+            ->orderByDesc('total_pos')
+            ->orderBy('suppliers.name')
+            ->orderBy('suppliers.id')
+            ->limit(10)
             ->get()
-            ->map(fn (Supplier $supplier) => [
+            ->map(static fn (Supplier $supplier): array => [
                 'id' => (int) $supplier->id,
                 'name' => $supplier->name,
-                'total_pos' => $supplier->purchaseOrders->count(),
-                'open_pos' => $supplier->purchaseOrders
-                    ->whereIn('status', [
-                        PurchaseOrderStatus::Draft,
-                        PurchaseOrderStatus::Sent,
-                        PurchaseOrderStatus::Partial,
-                    ])
-                    ->count(),
-                'avg_lead_time_days' => $supplier->purchaseOrders
-                    ->filter(fn (PurchaseOrder $purchaseOrder) => $purchaseOrder->received_at !== null && ($purchaseOrder->sent_at !== null || $purchaseOrder->created_at !== null))
-                    ->pipe(function ($purchaseOrders): ?float {
-                        $durations = $purchaseOrders->map(function (PurchaseOrder $purchaseOrder): float {
-                            $startedAt = CarbonImmutable::parse((string) ($purchaseOrder->sent_at ?? $purchaseOrder->created_at));
-                            $receivedAt = CarbonImmutable::parse((string) $purchaseOrder->received_at);
-
-                            return (float) max(0, $startedAt->diffInDays($receivedAt, false));
-                        });
-
-                        if ($durations->isEmpty()) {
-                            return null;
-                        }
-
-                        return round((float) $durations->avg(), 2);
-                    }),
+                'total_pos' => (int) $supplier->total_pos,
+                'open_pos' => (int) $supplier->open_pos,
+                'avg_lead_time_days' => $supplier->avg_lead_time_days !== null
+                    ? round((float) $supplier->avg_lead_time_days, 2)
+                    : null,
             ])
-            ->sortByDesc('total_pos')
-            ->take(10)
-            ->values()
             ->all();
     }
 

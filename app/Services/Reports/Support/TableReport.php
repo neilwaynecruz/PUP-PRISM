@@ -2,8 +2,8 @@
 
 namespace App\Services\Reports\Support;
 
+use App\Exceptions\PdfRowLimitExceededException;
 use Carbon\CarbonImmutable;
-use Traversable;
 
 final readonly class TableReport
 {
@@ -26,16 +26,33 @@ final readonly class TableReport
     /**
      * @return array<int, array<string, scalar|null>>
      */
-    public function rowsForPdf(): array
+    public function rowsForPdf(?int $maxRows = null, bool $enforceLimit = true): array
     {
+        $limit = $enforceLimit
+            ? max(1, $maxRows ?? (int) config('reports.max_pdf_rows', 1500))
+            : null;
+
         if (is_array($this->rows)) {
-            return $this->rows;
+            if ($limit !== null && count($this->rows) > $limit) {
+                throw new PdfRowLimitExceededException($this->title, $limit);
+            }
+
+            return array_values($this->rows);
         }
 
-        if ($this->rows instanceof Traversable) {
-            return iterator_to_array($this->rows, false);
+        $collected = [];
+        $count = 0;
+
+        foreach ($this->rows as $row) {
+            $count++;
+
+            if ($limit !== null && $count > $limit) {
+                throw new PdfRowLimitExceededException($this->title, $limit);
+            }
+
+            $collected[] = $row;
         }
 
-        return [...$this->rows];
+        return $collected;
     }
 }

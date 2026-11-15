@@ -18,13 +18,16 @@ import {
     UserCheck,
     XCircle,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import PurchaseOrderController from '@/actions/App/Http/Controllers/Inventory/PurchaseOrderController';
 import SupplierController from '@/actions/App/Http/Controllers/Inventory/SupplierController';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Badge } from '@/components/ui/badge';
+
+const QrScannerDialog = defineAsyncComponent(
+    () => import('@/components/inventory/QrScannerDialog.vue'),
+);
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

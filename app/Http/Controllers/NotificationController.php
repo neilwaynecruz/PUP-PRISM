@@ -61,17 +61,17 @@ class NotificationController extends Controller
             ->withQueryString()
             ->through(fn (DatabaseNotification $notification): array => $this->presentNotification($notification));
 
-        $categories = $user->notifications()
-            ->select('data')
-            ->get()
-            ->map(function (DatabaseNotification $notification): ?string {
-                $data = is_array($notification->data) ? $notification->data : [];
+        $categoryExpression = $this->jsonStringExpression('category');
 
-                return is_string($data['category'] ?? null) ? $data['category'] : null;
-            })
-            ->filter()
-            ->unique()
-            ->sort()
+        $categories = $user->notifications()
+            ->reorder()
+            ->selectRaw("{$categoryExpression} as category")
+            ->whereRaw("{$categoryExpression} IS NOT NULL")
+            ->whereRaw("{$categoryExpression} <> ''")
+            ->distinct()
+            ->orderByRaw("{$categoryExpression} asc")
+            ->pluck('category')
+            ->filter(static fn (mixed $category): bool => is_string($category) && $category !== '')
             ->values()
             ->all();
 
@@ -120,6 +120,15 @@ class NotificationController extends Controller
         }
 
         return "data->{$key}";
+    }
+
+    private function jsonStringExpression(string $key): string
+    {
+        return match (DB::connection()->getDriverName()) {
+            'pgsql' => "(data::jsonb ->> '{$key}')",
+            'sqlite' => "json_extract(data, '$.{$key}')",
+            default => "CASE WHEN JSON_EXTRACT(data, '$.{$key}') IS NULL OR JSON_TYPE(JSON_EXTRACT(data, '$.{$key}')) = 'NULL' THEN NULL ELSE JSON_UNQUOTE(JSON_EXTRACT(data, '$.{$key}')) END",
+        };
     }
 
     private function isValidDate(string $value): bool

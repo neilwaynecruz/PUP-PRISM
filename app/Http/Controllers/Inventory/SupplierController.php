@@ -86,6 +86,8 @@ class SupplierController extends Controller
             ->where('supplier_id', $supplier->id)
             ->with(['supplier:id,name', 'requester:id,name', 'approver:id,name'])
             ->withCount('lines')
+            ->withSum('lines as ordered_qty_sum', 'qty_ordered')
+            ->withSum('lines as received_qty_sum', 'qty_received')
             ->latest()
             ->limit(10)
             ->get()

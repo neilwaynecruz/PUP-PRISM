@@ -10,15 +10,18 @@ import {
     ScanLine,
     User,
 } from 'lucide-vue-next';
-import { computed, ref } from 'vue';
+import { computed, defineAsyncComponent, ref } from 'vue';
 import AdminCodeBadge from '@/components/admin/AdminCodeBadge.vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
-import QrScannerDialog from '@/components/inventory/QrScannerDialog.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { index, show, store } from '@/routes/inventory/counts';
+
+const QrScannerDialog = defineAsyncComponent(
+    () => import('@/components/inventory/QrScannerDialog.vue'),
+);
 
 type Person = { id: number; name: string; email: string };
 type Location = { id: number; code: string; name: string };

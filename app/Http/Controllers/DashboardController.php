@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Enums\AssetStatus;
 use App\Models\User;
 use App\Services\DashboardStatsService;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Validator as ValidationValidator;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -25,10 +27,39 @@ class DashboardController extends Controller
         $canViewForecasting = $user->hasAnyRole(['Admin', 'Supply Head']);
         $canViewProcurement = $user->hasAnyRole(['Admin', 'Supply Head']);
 
-        $validated = Validator::make($request->all(), [
+        $maxRangeDays = max(1, (int) config('dashboard.max_range_days', 366));
+        $validator = Validator::make($request->all(), [
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date', 'after_or_equal:from'],
-        ])->validate();
+        ]);
+
+        $validator->after(function (ValidationValidator $validator) use ($request, $maxRangeDays): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $fromInput = $request->input('from');
+            $toInput = $request->input('to');
+
+            if ($fromInput === null && $toInput === null) {
+                return;
+            }
+
+            $from = is_string($fromInput) && $fromInput !== ''
+                ? CarbonImmutable::parse($fromInput)->startOfDay()
+                : CarbonImmutable::now()->startOfMonth();
+            $to = is_string($toInput) && $toInput !== ''
+                ? CarbonImmutable::parse($toInput)->endOfDay()
+                : CarbonImmutable::now()->endOfDay();
+
+            if ($from->diffInDays($to) > $maxRangeDays) {
+                $validator->errors()->add('to', __('The dashboard date range cannot exceed :days days.', [
+                    'days' => $maxRangeDays,
+                ]));
+            }
+        });
+
+        $validated = $validator->validate();
 
         $range = ['from' => $validated['from'] ?? null, 'to' => $validated['to'] ?? null];
         $emptyForecastSummary = [

@@ -30,8 +30,22 @@ class InventoryOptimizationReportService extends AbstractTableReportService
             ->orderBy('name')
             ->get();
 
-        $rows = $products
-            ->map(function (Product $product) use ($abcByProductId, $today): array {
+        $filteredProducts = $classFilter !== ''
+            ? $products->filter(function (Product $product) use ($abcByProductId, $classFilter): bool {
+                $abcItem = $abcByProductId->get($product->id);
+
+                return ($abcItem['classification'] ?? 'C') === $classFilter;
+            })->values()
+            : $products;
+
+        $optimizations = $this->optimizationService->getBatchProductOptimizations(
+            $filteredProducts,
+            $today,
+            $abcAnalysis,
+        );
+
+        $rows = $filteredProducts
+            ->map(function (Product $product) use ($abcByProductId, $optimizations): array {
                 $abcItem = $abcByProductId->get($product->id);
                 $classification = $abcItem['classification'] ?? 'C';
                 $annualConsumption = $abcItem['annual_consumption'] ?? 0;
@@ -39,7 +53,7 @@ class InventoryOptimizationReportService extends AbstractTableReportService
                 $unitPrice = round((float) ($product->unit_price ?? 0), 2);
                 $currentStock = (int) ($product->stock?->on_hand_qty ?? 0);
 
-                $profile = $this->optimizationService->getProductOptimization($product, $today);
+                $profile = $optimizations[$product->id];
 
                 return [
                     'sku' => $product->sku,
@@ -53,9 +67,6 @@ class InventoryOptimizationReportService extends AbstractTableReportService
                     'reorder_point' => $profile['safety_stock']['reorder_point'],
                     'eoq' => $profile['eoq']['eoq'],
                 ];
-            })
-            ->when($classFilter !== '', function ($collection) use ($classFilter) {
-                return $collection->filter(fn (array $item) => $item['abc_class'] === $classFilter);
             })
             ->values()
             ->all();

@@ -6,24 +6,56 @@ use App\Models\ForecastSnapshot;
 use App\Services\Reports\Support\TableReport;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ForecastSummaryReportService extends AbstractTableReportService
 {
     public function build(Request $request): TableReport
     {
-        $snapshots = ForecastSnapshot::query()
+        $rankedSnapshots = ForecastSnapshot::query()
+            ->select([
+                'id',
+                'product_id',
+                'forecast_date',
+                'generated_at',
+                'current_on_hand_qty',
+                'reorder_point_qty',
+                'predicted_daily_consumption',
+                'predicted_days_until_stockout',
+                'recommended_reorder_qty',
+                'confidence_score',
+                DB::raw('ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY forecast_date DESC, generated_at DESC, id DESC) as row_num'),
+            ]);
+
+        $latestSnapshots = ForecastSnapshot::query()
+            ->fromSub($rankedSnapshots, 'forecast_snapshots')
+            ->select([
+                'id',
+                'product_id',
+                'forecast_date',
+                'generated_at',
+                'current_on_hand_qty',
+                'reorder_point_qty',
+                'predicted_daily_consumption',
+                'predicted_days_until_stockout',
+                'recommended_reorder_qty',
+                'confidence_score',
+            ])
             ->with('product:id,sku,name')
-            ->orderByDesc('forecast_date')
-            ->orderByDesc('generated_at')
+            ->where('row_num', 1)
+            ->orderByRaw('CASE WHEN predicted_days_until_stockout IS NULL THEN 1 ELSE 0 END ASC')
+            ->orderBy('predicted_days_until_stockout')
+            ->orderBy('id')
             ->get();
 
-        $latestForecastDate = $snapshots->first()?->forecast_date;
-
-        $latestSnapshots = $snapshots->unique('product_id');
+        $latestForecastDate = $latestSnapshots->max(
+            static fn (ForecastSnapshot $snapshot): ?string => $snapshot->forecast_date !== null
+                ? CarbonImmutable::parse((string) $snapshot->forecast_date)->toDateString()
+                : null
+        );
 
         $rows = $latestSnapshots
-            ->sortBy(fn (ForecastSnapshot $snapshot) => $snapshot->predicted_days_until_stockout ?? PHP_INT_MAX)
-            ->map(fn (ForecastSnapshot $snapshot) => [
+            ->map(static fn (ForecastSnapshot $snapshot): array => [
                 'forecast_date' => CarbonImmutable::parse((string) $snapshot->forecast_date)->toDateString(),
                 'sku' => $snapshot->product?->sku ?? '',
                 'product_name' => $snapshot->product?->name ?? '',
