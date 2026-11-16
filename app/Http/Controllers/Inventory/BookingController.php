@@ -9,22 +9,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\BookingApproveRequest;
 use App\Http\Requests\Inventory\BookingIndexRequest;
 use App\Http\Requests\Inventory\BookingStoreRequest;
+use App\Http\Requests\Inventory\BulkTrashActionRequest;
 use App\Http\Resources\AssetResource;
 use App\Http\Resources\BookingCollection;
 use App\Http\Resources\BookingResource;
 use App\Models\Asset;
 use App\Models\Booking;
 use App\Models\User;
-use App\Services\AuditLogService;
-use App\Services\DashboardStatsCache;
-use App\Services\Inventory\AssetIntegrityService;
-use App\Services\NotificationService;
-use Carbon\CarbonImmutable;
-use Illuminate\Database\QueryException;
+use App\Services\Inventory\BookingWorkflowService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -33,8 +28,7 @@ use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 class BookingController extends Controller
 {
     public function __construct(
-        private readonly NotificationService $notifications,
-        private readonly AssetIntegrityService $assetIntegrity,
+        private readonly BookingWorkflowService $workflow,
     ) {}
 
     public function index(BookingIndexRequest $request): Response
@@ -61,7 +55,11 @@ class BookingController extends Controller
             })
             ->orderBy('tag_code')
             ->limit(25)
-            ->get(['id', 'product_id', 'position_id', 'tag_code', 'status']);
+            ->get([
+                'id', 'product_id', 'position_id', 'tag_code', 'serial_number',
+                'status', 'lifecycle_status', 'condition_status', 'acquisition_date',
+                'acquisition_cost', 'warranty_expires_at', 'installed_at', 'maintenance_interval_days',
+            ]);
 
         $bookingPayload = [
             'asset:id,product_id,position_id,tag_code',
@@ -74,8 +72,8 @@ class BookingController extends Controller
             'approverPosition.department:id,name',
         ];
 
-        $calendarWindowStart = CarbonImmutable::now()->subDays(30);
-        $calendarWindowEnd = CarbonImmutable::now()->addMonths(6);
+        $calendarWindowStart = now()->toImmutable()->subDays(30);
+        $calendarWindowEnd = now()->toImmutable()->addMonths(6);
         $canViewAllBookings = $currentUser instanceof User
             && $currentUser->hasAnyRole(['Admin', 'Property Custodian']);
 
@@ -159,7 +157,7 @@ class BookingController extends Controller
     {
         $currentUser = Auth::user();
 
-        $booking = Booking::query()->withTrashed()
+        $bookingRecord = Booking::withTrashed()
             ->with([
                 'asset:id,product_id,position_id,tag_code',
                 'asset.product:id,name',
@@ -173,25 +171,25 @@ class BookingController extends Controller
             ])
             ->find($booking);
 
-        if (! $booking) {
+        if (! $bookingRecord instanceof Booking) {
             Inertia::flash('toast', ['type' => 'error', 'message' => __('Booking not found or has been permanently deleted.')]);
 
             return Inertia::location(route('inventory.bookings.index'));
         }
 
-        $this->authorize('view', $booking);
+        $this->authorize('view', $bookingRecord);
 
         return Inertia::render('inventory/bookings/Show', [
-            'booking' => (new BookingResource($booking))->resolve($request),
+            'booking' => (new BookingResource($bookingRecord))->resolve($request),
             'can' => [
-                'approve' => $booking->exists && ! $booking->trashed() && $currentUser instanceof User
-                    ? $currentUser->can('approve', $booking)
+                'approve' => $bookingRecord->exists && ! $bookingRecord->trashed() && $currentUser instanceof User
+                    ? $currentUser->can('approve', $bookingRecord)
                     : false,
-                'reject' => $booking->exists && ! $booking->trashed() && $currentUser instanceof User
-                    ? $currentUser->can('reject', $booking)
+                'reject' => $bookingRecord->exists && ! $bookingRecord->trashed() && $currentUser instanceof User
+                    ? $currentUser->can('reject', $bookingRecord)
                     : false,
             ],
-            'isDeleted' => $booking->trashed(),
+            'isDeleted' => $bookingRecord->trashed(),
         ]);
     }
 
@@ -199,19 +197,25 @@ class BookingController extends Controller
     {
         $this->authorize('create', Booking::class);
 
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 403);
+
         $validated = $request->validated();
 
         try {
-            $booking = $this->createBooking($request, $validated);
+            $this->workflow->createBooking(
+                actor: $actor,
+                assetId: (int) $validated['asset_id'],
+                startAt: $request->startAt(),
+                endAt: $request->endAt(),
+                purpose: $validated['purpose'] ?? null,
+                ipAddress: $request->ip(),
+            );
         } catch (ValidationException $exception) {
             return back()
                 ->withErrors($exception->errors())
                 ->withInput();
         }
-
-        AuditLogService::logCreated($booking, "Booking created for asset #{$validated['asset_id']}.");
-
-        $this->notifications->bookingSubmitted($booking);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking request submitted.')]);
 
@@ -224,9 +228,12 @@ class BookingController extends Controller
 
         $this->authorize($action === 'reject' ? 'reject' : 'approve', $booking);
 
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 403);
+
         if ($action === 'approve') {
             try {
-                $this->approveBooking($booking, $request);
+                $this->workflow->approveBooking($booking, $actor, $request->ip());
             } catch (ValidationException $exception) {
                 Inertia::flash('toast', [
                     'type' => 'error',
@@ -236,33 +243,10 @@ class BookingController extends Controller
 
                 return back()->withErrors($exception->errors());
             }
-
-            $freshBooking = $booking->fresh() ?? $booking;
-            AuditLogService::logCustom('approve', "Booking #{$booking->id} approved.", $freshBooking);
-            $this->notifications->bookingStatusChanged($freshBooking, 'approved');
         } else {
-            /** @var Booking|null $rejectedBooking */
-            $rejectedBooking = DB::transaction(function () use ($request, $booking): ?Booking {
-                /** @var Booking $lockedBooking */
-                $lockedBooking = Booking::query()->whereKey($booking->id)->lockForUpdate()->firstOrFail();
+            $rejected = $this->workflow->rejectBooking($booking, $actor, $request->ip());
 
-                if ($lockedBooking->status !== BookingStatus::Requested) {
-                    return null;
-                }
-
-                $lockedBooking->update([
-                    'status' => BookingStatus::Rejected,
-                    'approver_id' => $request->user()->id,
-                    'approver_position_id' => $request->user()->position_id,
-                    'approved_ip_address' => $request->ip(),
-                ]);
-
-                AuditLogService::logCustom('reject', "Booking #{$lockedBooking->id} rejected.", $lockedBooking);
-
-                return $lockedBooking;
-            });
-
-            if (! $rejectedBooking instanceof Booking) {
+            if (! $rejected instanceof Booking) {
                 Inertia::flash('toast', [
                     'type' => 'warning',
                     'message' => __('This booking has already been processed.'),
@@ -270,8 +254,6 @@ class BookingController extends Controller
 
                 return back();
             }
-
-            $this->notifications->bookingStatusChanged($rejectedBooking, 'rejected');
         }
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking updated.')]);
@@ -281,8 +263,10 @@ class BookingController extends Controller
 
     public function bulkApprove(Request $request): RedirectResponse
     {
+        $actor = $request->user();
+
         abort_unless(
-            $request->user()?->hasAnyRole(['Admin', 'Property Custodian']),
+            $actor instanceof User && $actor->hasAnyRole(['Admin', 'Property Custodian']),
             403,
             __('You are not authorized to approve bookings.'),
         );
@@ -292,54 +276,15 @@ class BookingController extends Controller
             'ids.*' => ['integer', 'distinct', 'exists:bookings,id'],
         ]);
 
-        /** @var array{approved: array<int, Booking>, conflicts: int, skipped: int} $result */
-        $result = DB::transaction(function () use ($request, $validated): array {
-            $bookings = Booking::query()
-                ->whereIn('id', $validated['ids'])
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get()
-                ->sortBy('start_at')
-                ->values();
+        $outcome = $this->workflow->bulkApprove(
+            ids: array_values(array_map('intval', $validated['ids'])),
+            actor: $actor,
+            ipAddress: $request->ip(),
+        );
 
-            foreach ($bookings as $booking) {
-                $this->authorize('approve', $booking);
-            }
-
-            $approved = [];
-            $conflicts = 0;
-            $skipped = 0;
-
-            foreach ($bookings as $booking) {
-                if ($booking->status !== BookingStatus::Requested) {
-                    $skipped++;
-
-                    continue;
-                }
-
-                try {
-                    DB::transaction(function () use ($booking, $request): void {
-                        $this->approveBooking($booking, $request);
-                    });
-
-                    $freshBooking = $booking->fresh() ?? $booking;
-                    AuditLogService::logCustom('approve', "Booking #{$booking->id} approved.", $freshBooking);
-                    $approved[] = $freshBooking;
-                } catch (ValidationException) {
-                    $conflicts++;
-                }
-            }
-
-            return ['approved' => $approved, 'conflicts' => $conflicts, 'skipped' => $skipped];
-        });
-
-        foreach ($result['approved'] as $approvedBooking) {
-            $this->notifications->bookingStatusChanged($approvedBooking, 'approved');
-        }
-
-        $updated = count($result['approved']);
-        $conflicts = $result['conflicts'];
-        $skipped = $result['skipped'];
+        $updated = $outcome['approved'];
+        $conflicts = $outcome['conflicts'];
+        $skipped = $outcome['skipped'];
 
         $message = trans_choice(
             '{1} :count booking approved.|[0,*] :count bookings approved.',
@@ -365,8 +310,10 @@ class BookingController extends Controller
 
     public function bulkReject(Request $request): RedirectResponse
     {
+        $actor = $request->user();
+
         abort_unless(
-            $request->user()?->hasAnyRole(['Admin', 'Property Custodian']),
+            $actor instanceof User && $actor->hasAnyRole(['Admin', 'Property Custodian']),
             403,
             __('You are not authorized to reject bookings.'),
         );
@@ -376,71 +323,14 @@ class BookingController extends Controller
             'ids.*' => ['integer', 'distinct', 'exists:bookings,id'],
         ]);
 
-        /** @var array{rejected: array<int, Booking>, skipped: int} $result */
-        $result = DB::transaction(function () use ($request, $validated): array {
-            $bookings = Booking::query()
-                ->whereIn('id', $validated['ids'])
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get();
+        $outcome = $this->workflow->bulkReject(
+            ids: array_values(array_map('intval', $validated['ids'])),
+            actor: $actor,
+            ipAddress: $request->ip(),
+        );
 
-            foreach ($bookings as $booking) {
-                $this->authorize('reject', $booking);
-            }
-
-            $rejected = [];
-            $rejectedIds = [];
-            $auditEntries = [];
-            $skipped = 0;
-            $now = CarbonImmutable::now();
-
-            foreach ($bookings as $booking) {
-                if ($booking->status === BookingStatus::Requested) {
-                    $booking->forceFill([
-                        'status' => BookingStatus::Rejected,
-                        'approver_id' => $request->user()->id,
-                        'approver_position_id' => $request->user()->position_id,
-                        'approved_ip_address' => $request->ip(),
-                    ]);
-                    $rejectedIds[] = $booking->id;
-                    $auditEntries[] = [
-                        'action' => 'reject',
-                        'description' => "Booking #{$booking->id} rejected.",
-                        'model' => $booking,
-                    ];
-                    $rejected[] = $booking;
-                } else {
-                    $skipped++;
-                }
-            }
-
-            if ($rejectedIds !== []) {
-                Booking::query()
-                    ->whereIn('id', $rejectedIds)
-                    ->update([
-                        'status' => BookingStatus::Rejected->value,
-                        'approver_id' => $request->user()->id,
-                        'approver_position_id' => $request->user()->position_id,
-                        'approved_ip_address' => $request->ip(),
-                        'updated_at' => $now,
-                    ]);
-
-                AuditLogService::logBatch($auditEntries);
-            }
-
-            return ['rejected' => $rejected, 'skipped' => $skipped];
-        });
-
-        if ($result['rejected'] !== []) {
-            app(DashboardStatsCache::class)->invalidate();
-        }
-
-        foreach ($result['rejected'] as $rejectedBooking) {
-            $this->notifications->bookingStatusChanged($rejectedBooking, 'rejected');
-        }
-
-        $updated = count($result['rejected']);
-        $skipped = $result['skipped'];
+        $updated = $outcome['rejected'];
+        $skipped = $outcome['skipped'];
 
         $message = trans_choice(
             '{1} :count booking rejected.|[0,*] :count bookings rejected.',
@@ -464,12 +354,14 @@ class BookingController extends Controller
     {
         $this->authorize('delete', $booking);
 
-        $booking->deleted_by = $request->user()?->id;
-        $booking->deletion_reason = $request->string('deletion_reason')->trim()->toString() ?: null;
-        $booking->save();
-        $booking->delete();
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 403);
 
-        AuditLogService::logDeleted($booking);
+        $this->workflow->softDelete(
+            booking: $booking,
+            actor: $actor,
+            deletionReason: $request->string('deletion_reason')->trim()->toString() ?: null,
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking moved to trash.')]);
 
@@ -485,8 +377,7 @@ class BookingController extends Controller
         $dateTo = $request->string('date_to')->trim()->toString();
         $deletedBy = $request->integer('deleted_by');
 
-        $bookings = Booking::query()
-            ->onlyTrashed()
+        $bookings = Booking::onlyTrashed()
             ->with([
                 'asset:id,product_id,position_id,tag_code',
                 'asset.product:id,name',
@@ -507,8 +398,7 @@ class BookingController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        $deleters = Booking::query()
-            ->onlyTrashed()
+        $deleters = Booking::onlyTrashed()
             ->whereNotNull('deleted_by')
             ->distinct()
             ->join('users', 'bookings.deleted_by', '=', 'users.id')
@@ -530,14 +420,12 @@ class BookingController extends Controller
 
     public function restore(int $booking): RedirectResponse
     {
-        /** @var Booking $booking */
-        $booking = Booking::query()->withTrashed()->findOrFail($booking);
+        /** @var Booking $bookingRecord */
+        $bookingRecord = Booking::withTrashed()->findOrFail($booking);
 
-        $this->authorize('restore', $booking);
+        $this->authorize('restore', $bookingRecord);
 
-        $booking->restore();
-
-        AuditLogService::logRestored($booking);
+        $this->workflow->restore($bookingRecord);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking restored.')]);
 
@@ -546,72 +434,26 @@ class BookingController extends Controller
 
     public function forceDelete(int $booking): RedirectResponse
     {
-        /** @var Booking $booking */
-        $booking = Booking::query()->withTrashed()->findOrFail($booking);
+        /** @var Booking $bookingRecord */
+        $bookingRecord = Booking::withTrashed()->findOrFail($booking);
 
-        $this->authorize('forceDelete', $booking);
+        $this->authorize('forceDelete', $bookingRecord);
 
-        AuditLogService::logForceDeleted($booking);
-        $booking->forceDelete();
+        $this->workflow->forceDelete($bookingRecord);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Booking permanently deleted.')]);
 
         return back();
     }
 
-    public function bulkRestore(Request $request): RedirectResponse
+    public function bulkRestore(BulkTrashActionRequest $request): RedirectResponse
     {
         $this->authorize('trash', Booking::class);
 
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct', 'exists:bookings,id'],
-        ]);
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 403);
 
-        $bookings = Booking::query()
-            ->onlyTrashed()
-            ->whereIn('id', $validated['ids'])
-            ->orderBy('id')
-            ->get();
-
-        foreach ($bookings as $booking) {
-            $this->authorize('restore', $booking);
-        }
-
-        $restored = DB::transaction(function () use ($bookings): int {
-            if ($bookings->isEmpty()) {
-                return 0;
-            }
-
-            $ids = $bookings->modelKeys();
-            $now = CarbonImmutable::now();
-
-            Booking::query()
-                ->onlyTrashed()
-                ->whereIn('id', $ids)
-                ->update([
-                    'deleted_at' => null,
-                    'updated_at' => $now,
-                ]);
-
-            $auditEntries = [];
-
-            foreach ($bookings as $booking) {
-                $booking->deleted_at = null;
-                $label = $booking->id ? "#{$booking->id}" : '';
-                $auditEntries[] = [
-                    'action' => 'restore',
-                    'description' => trim("Booking {$label} restored."),
-                    'model' => $booking,
-                    'old_values' => null,
-                    'new_values' => $booking->toArray(),
-                ];
-            }
-
-            AuditLogService::logBatch($auditEntries);
-
-            return count($ids);
-        });
+        $restored = $this->workflow->bulkRestore($request->ids(), $actor);
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -625,41 +467,16 @@ class BookingController extends Controller
         return back();
     }
 
-    public function bulkForceDelete(Request $request): RedirectResponse
+    public function bulkForceDelete(BulkTrashActionRequest $request): RedirectResponse
     {
         $this->authorize('trash', Booking::class);
 
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct', 'exists:bookings,id'],
-        ]);
+        $actor = $request->user();
+        abort_unless($actor instanceof User, 403);
 
-        $bookings = Booking::query()
-            ->onlyTrashed()
-            ->whereIn('id', $validated['ids'])
-            ->orderBy('id')
-            ->get();
-
-        foreach ($bookings as $booking) {
-            $this->authorize('forceDelete', $booking);
-        }
-
-        $deleted = 0;
-        $errors = 0;
-
-        foreach ($bookings as $booking) {
-            try {
-                DB::transaction(function () use ($booking): void {
-                    /** @var Booking $booking */
-                    AuditLogService::logForceDeleted($booking);
-                    $booking->forceDelete();
-                });
-                $deleted++;
-            } catch (QueryException $e) {
-                report($e);
-                $errors++;
-            }
-        }
+        $outcome = $this->workflow->bulkForceDelete($request->ids(), $actor);
+        $deleted = $outcome['deleted'];
+        $errors = $outcome['skipped'];
 
         $message = trans_choice(
             '{1} :count booking permanently deleted.|[0,*] :count bookings permanently deleted.',
@@ -677,85 +494,5 @@ class BookingController extends Controller
         ]);
 
         return back();
-    }
-
-    /**
-     * @param  array{asset_id: int, start_at: string, end_at: string, purpose?: string|null}  $validated
-     */
-    private function createBooking(BookingStoreRequest $request, array $validated): Booking
-    {
-        $startAt = $request->startAt();
-        $endAt = $request->endAt();
-
-        return DB::transaction(function () use ($request, $validated, $startAt, $endAt): Booking {
-            $asset = Asset::query()
-                ->whereKey($validated['asset_id'])
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $this->assetIntegrity->ensureBookable(
-                asset: $asset,
-                startAt: $startAt,
-                endAt: $endAt,
-            );
-
-            return Booking::create([
-                'asset_id' => $validated['asset_id'],
-                'requester_id' => $request->user()->id,
-                'requester_position_id' => $request->user()->position_id,
-                'approver_id' => null,
-                'approver_position_id' => null,
-                'requested_ip_address' => $request->ip(),
-                'approved_ip_address' => null,
-                'start_at' => $startAt,
-                'end_at' => $endAt,
-                'status' => BookingStatus::Requested,
-                'purpose' => $validated['purpose'] ?? null,
-            ]);
-        });
-    }
-
-    private function approveBooking(Booking $booking, Request $request): void
-    {
-        DB::transaction(function () use ($booking, $request): void {
-            /** @var Booking $lockedBooking */
-            $lockedBooking = Booking::query()
-                ->whereKey($booking->id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            if ($lockedBooking->status !== BookingStatus::Requested) {
-                throw ValidationException::withMessages([
-                    'action' => __('Only pending booking requests can be approved.'),
-                ]);
-            }
-
-            if ($lockedBooking->end_at !== null && $lockedBooking->end_at->isPast()) {
-                throw ValidationException::withMessages([
-                    'start_at' => __('This request can no longer be approved because its schedule has already ended.'),
-                ]);
-            }
-
-            $asset = Asset::query()
-                ->whereKey($lockedBooking->asset_id)
-                ->lockForUpdate()
-                ->firstOrFail();
-
-            $this->assetIntegrity->ensureBookable(
-                asset: $asset,
-                startAt: $lockedBooking->start_at,
-                endAt: $lockedBooking->end_at,
-                ignoreBookingId: $lockedBooking->id,
-            );
-
-            $lockedBooking->update([
-                'status' => BookingStatus::Approved,
-                'approver_id' => $request->user()->id,
-                'approver_position_id' => $request->user()->position_id,
-                'approved_ip_address' => $request->ip(),
-            ]);
-
-            $booking->refresh();
-        });
     }
 }

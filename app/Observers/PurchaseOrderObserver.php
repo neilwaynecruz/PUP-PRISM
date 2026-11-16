@@ -11,7 +11,7 @@ class PurchaseOrderObserver
         private readonly DashboardStatsCache $dashboardStatsCache,
     ) {}
 
-    public function saved(PurchaseOrder $purchaseOrder): void
+    public function saved(PurchaseOrder $_purchaseOrder): void
     {
         $this->dashboardStatsCache->invalidate();
     }

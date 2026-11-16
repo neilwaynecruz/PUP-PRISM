@@ -32,7 +32,7 @@ class HandoverVerificationNotification extends Notification implements ShouldQue
     /**
      * Get the mail representation of the notification.
      */
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $_notifiable): MailMessage
     {
         /** @var string $url */
         $url = route('inventory.handover.verify', [
@@ -53,7 +53,7 @@ class HandoverVerificationNotification extends Notification implements ShouldQue
      *
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toArray(object $_notifiable): array
     {
         return [
             'event_type' => $this->notificationEventType(),

@@ -67,7 +67,7 @@ class InventoryAlert extends Model
         }
 
         if ($this->type === 'low_stock' && $this->relationLoaded('product') && $this->product?->relationLoaded('stock')) {
-            return ((int) ($this->product->stock?->on_hand_qty ?? 0)) <= 0 ? 'critical' : 'high';
+            return ((int) ($this->product->stock->on_hand_qty ?? 0)) <= 0 ? 'critical' : 'high';
         }
 
         return 'medium';

@@ -18,7 +18,7 @@ class PurchaseOrderPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, PurchaseOrder $purchaseOrder): bool
+    public function view(User $user, PurchaseOrder $_purchaseOrder): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
@@ -34,22 +34,22 @@ class PurchaseOrderPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, PurchaseOrder $purchaseOrder): bool
+    public function update(User $user, PurchaseOrder $_purchaseOrder): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
 
-    public function send(User $user, PurchaseOrder $purchaseOrder): bool
+    public function send(User $user, PurchaseOrder $_purchaseOrder): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
 
-    public function receive(User $user, PurchaseOrder $purchaseOrder): bool
+    public function receive(User $user, PurchaseOrder $_purchaseOrder): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
 
-    public function cancel(User $user, PurchaseOrder $purchaseOrder): bool
+    public function cancel(User $user, PurchaseOrder $_purchaseOrder): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }

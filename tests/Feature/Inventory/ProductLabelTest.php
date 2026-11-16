@@ -94,8 +94,8 @@ test('authorized users can search products via lookup endpoint', function () {
     $user = User::factory()->withTwoFactor()->create();
     $user->assignRole('Supply Head');
 
-    $p1 = Product::factory()->consumable()->create(['sku' => 'SKU-SEARCH-BALLPEN', 'name' => 'Black Ballpen 0.5mm']);
-    $p2 = Product::factory()->consumable()->create(['sku' => 'SKU-SEARCH-PAPER', 'name' => 'A4 Bond Paper 80gsm']);
+    Product::factory()->consumable()->create(['sku' => 'SKU-SEARCH-BALLPEN', 'name' => 'Black Ballpen 0.5mm']);
+    Product::factory()->consumable()->create(['sku' => 'SKU-SEARCH-PAPER', 'name' => 'A4 Bond Paper 80gsm']);
 
     // Lookup by partial query
     $response = $this->actingAs($user)

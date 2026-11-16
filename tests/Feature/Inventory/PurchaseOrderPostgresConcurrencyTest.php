@@ -1,14 +1,14 @@
 <?php
 
-use App\Services\Procurement\PurchaseOrderNumberGenerator;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Assert;
 
 test('postgresql concurrent transactions allocate distinct consecutive purchase order numbers without collision', function () {
     try {
         $pdo1 = DB::connection('pgsql_testing')->getPdo();
     } catch (Throwable $e) {
-        $this->markTestSkipped('PostgreSQL testing connection unavailable: '.$e->getMessage());
+        Assert::markTestSkipped('PostgreSQL testing connection unavailable: '.$e->getMessage());
     }
 
     // Connect second independent PDO instance to test database
@@ -23,9 +23,6 @@ test('postgresql concurrent transactions allocate distinct consecutive purchase 
 
     // Clean up sequence table for test prefix
     $pdo1->exec("DELETE FROM purchase_order_sequences WHERE date_prefix = '{$prefix}'");
-
-    // Initialize row if not present
-    $generator = new PurchaseOrderNumberGenerator;
 
     // Concurrently allocate numbers:
     // Connection 1 begins transaction, ensures row and acquires lock

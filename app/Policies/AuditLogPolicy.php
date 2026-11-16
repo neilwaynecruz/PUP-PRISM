@@ -12,7 +12,7 @@ class AuditLogPolicy
         return $user->hasRole('Admin');
     }
 
-    public function view(User $user, AuditLog $auditLog): bool
+    public function view(User $user, AuditLog $_auditLog): bool
     {
         return $user->hasRole('Admin');
     }

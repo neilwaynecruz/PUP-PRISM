@@ -9,6 +9,7 @@ use App\Models\PurchaseOrderLine;
 use App\Models\Supplier;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +21,12 @@ class UatProcurementSeeder extends Seeder
         if (app()->isProduction()) {
             throw new \RuntimeException('Operational seed data cannot be seeded in production.');
         }
+
+        Model::unguarded(fn () => $this->seedProcurement());
+    }
+
+    private function seedProcurement(): void
+    {
 
         $this->call(SupplierSeeder::class);
 

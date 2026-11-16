@@ -18,7 +18,7 @@ class SupplierPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Supplier $supplier): bool
+    public function view(User $user, Supplier $_supplier): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
@@ -34,7 +34,7 @@ class SupplierPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Supplier $supplier): bool
+    public function update(User $user, Supplier $_supplier): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
@@ -42,7 +42,7 @@ class SupplierPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Supplier $supplier): bool
+    public function delete(User $user, Supplier $_supplier): bool
     {
         return $user->hasRole('Admin');
     }

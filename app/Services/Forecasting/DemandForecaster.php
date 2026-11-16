@@ -32,6 +32,8 @@ class DemandForecaster
         ?ForecastProfile $profile = null,
         ?CarbonImmutable $asOf = null,
     ): ForecastResult {
+        $product->loadMissing(['stock', 'forecastProfile']);
+
         $asOf ??= CarbonImmutable::now()->endOfDay();
         $profile ??= $product->relationLoaded('forecastProfile') && $product->forecastProfile
             ? $product->forecastProfile
@@ -158,7 +160,7 @@ class DemandForecaster
         $predictedDailyConsumption = $predictions === []
             ? 0.0
             : round(array_sum(array_column($predictions, 'predicted_qty')) / count($predictions), 2);
-        $currentOnHandQty = max(0, (int) ($product->stock?->on_hand_qty ?? 0));
+        $currentOnHandQty = max(0, (int) ($product->stock->on_hand_qty ?? 0));
         $reorderPointQty = (int) ceil($predictedDailyConsumption * ($profile->lead_time_days + $profile->safety_stock_days));
 
         $effectiveAvailableQty = max(0, $currentOnHandQty - $committedQty);
@@ -204,7 +206,7 @@ class DemandForecaster
 
     private function defaultProfileFor(Product $product): ForecastProfile
     {
-        return ForecastProfile::make([
+        return new ForecastProfile([
             'product_id' => $product->id,
             'method' => 'exponential_smoothing',
             'lookback_days' => 90,

@@ -28,10 +28,10 @@ class AssetConditionReportService extends AbstractTableReportService
                 yield [
                     'tag_code' => $asset->tag_code,
                     'serial_number' => $asset->serial_number ?? '',
-                    'product_sku' => $asset->product?->sku ?? '',
-                    'product_name' => $asset->product?->name ?? '',
+                    'product_sku' => $asset->product->sku ?? '',
+                    'product_name' => $asset->product->name ?? '',
                     'status' => $asset->status->value,
-                    'condition' => $asset->condition_status?->value ?? '',
+                    'condition' => $asset->condition_status->value ?? '',
                     'location' => $asset->currentLocation ? "{$asset->currentLocation->code} - {$asset->currentLocation->name}" : '',
                     'accountable_position' => $this->formatPosition(
                         $asset->position?->title,

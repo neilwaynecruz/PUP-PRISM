@@ -2,9 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Requisition;
 use App\Models\RequisitionLine;
 use Illuminate\Http\Request;
 
+/** @mixin Requisition */
 class RequisitionResource extends InertiaJsonResource
 {
     /**

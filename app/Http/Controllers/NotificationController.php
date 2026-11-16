@@ -141,7 +141,8 @@ class NotificationController extends Controller
      */
     private function presentNotification(DatabaseNotification $notification): array
     {
-        $data = is_array($notification->data) ? $notification->data : [];
+        $data = $notification->getAttribute('data');
+        $data = is_array($data) ? $data : [];
 
         return [
             'id' => $notification->id,

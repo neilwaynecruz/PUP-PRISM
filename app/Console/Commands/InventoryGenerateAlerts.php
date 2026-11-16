@@ -37,7 +37,7 @@ class InventoryGenerateAlerts extends Command
         $activeLowStockProductIds = [];
 
         foreach ($lowStockProducts as $product) {
-            $onHand = $product->stock?->on_hand_qty ?? 0;
+            $onHand = $product->stock->on_hand_qty ?? 0;
             $activeLowStockProductIds[] = $product->id;
 
             $alert = InventoryAlert::upsertUnresolved(

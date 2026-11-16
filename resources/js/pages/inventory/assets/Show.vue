@@ -388,89 +388,145 @@ function formatCurrency(value: number | string | null): string {
 
     return `₱${numeric.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+type AssetConfirmAction = {
+    actionKey: string;
+    title: string;
+    description: string;
+    confirmLabel: string;
+    destructive: boolean;
+    onConfirm: () => void;
+};
+
+const confirmActionDialog = ref<{
+    open: boolean;
+    actionKey: string;
+    title: string;
+    description: string;
+    confirmLabel: string;
+    destructive: boolean;
+    onConfirm: (() => void) | null;
+}>({
+    open: false,
+    actionKey: '',
+    title: '',
+    description: '',
+    confirmLabel: 'Confirm',
+    destructive: false,
+    onConfirm: null,
+});
+
+function openAssetConfirmDialog(config: AssetConfirmAction): void {
+    if (
+        config.actionKey !== '' &&
+        pendingActions.value.includes(config.actionKey)
+    ) {
+        return;
+    }
+
+    confirmActionDialog.value = {
+        open: true,
+        ...config,
+    };
+}
+
+function executeAssetConfirmedAction(): void {
+    const callback = confirmActionDialog.value.onConfirm;
+    confirmActionDialog.value.open = false;
+    confirmActionDialog.value.onConfirm = null;
+    callback?.();
+}
+
 function transitionMaintenanceStatus(
     record: Maintenance,
     status: string,
 ): void {
     const actionKey = `maintenance-${record.id}`;
 
-    if (
-        pendingActions.value.includes(actionKey) ||
-        !window.confirm(`Change this maintenance record to ${label(status)}?`)
-    ) {
-        return;
-    }
-
-    pendingActions.value.push(actionKey);
-    router.put(
-        transitionMaintenance(record.id).url,
-        { status, ...maintenanceDetails[record.id] },
-        {
-            preserveScroll: true,
-            onFinish: () => {
-                pendingActions.value = pendingActions.value.filter(
-                    (key) => key !== actionKey,
-                );
-            },
+    openAssetConfirmDialog({
+        actionKey,
+        title: `Mark Maintenance as ${label(status)}`,
+        description: `Change this maintenance record to ${label(status)}?`,
+        confirmLabel: `Confirm ${label(status)}`,
+        destructive: status === 'cancelled',
+        onConfirm: () => {
+            pendingActions.value.push(actionKey);
+            router.put(
+                transitionMaintenance(record.id).url,
+                { status, ...maintenanceDetails[record.id] },
+                {
+                    preserveScroll: true,
+                    onFinish: () => {
+                        pendingActions.value = pendingActions.value.filter(
+                            (key) => key !== actionKey,
+                        );
+                    },
+                },
+            );
         },
-    );
+    });
 }
 function reviewTransfer(record: Transfer, action: 'approve' | 'reject'): void {
     const actionKey = `transfer-${record.id}`;
 
-    if (
-        pendingActions.value.includes(actionKey) ||
-        !window.confirm(
+    openAssetConfirmDialog({
+        actionKey,
+        title:
+            action === 'approve'
+                ? 'Approve Asset Transfer'
+                : 'Reject Asset Transfer',
+        description:
             action === 'approve'
                 ? 'Approve this asset location transfer?'
                 : 'Reject this asset location transfer?',
-        )
-    ) {
-        return;
-    }
-
-    pendingActions.value.push(actionKey);
-    router.post(
-        (action === 'approve'
-            ? approveTransfer(record.id)
-            : rejectTransfer(record.id)
-        ).url,
-        {},
-        {
-            preserveScroll: true,
-            onFinish: () => {
-                pendingActions.value = pendingActions.value.filter(
-                    (key) => key !== actionKey,
-                );
-            },
+        confirmLabel:
+            action === 'approve' ? 'Confirm Approval' : 'Confirm Rejection',
+        destructive: action === 'reject',
+        onConfirm: () => {
+            pendingActions.value.push(actionKey);
+            router.post(
+                (action === 'approve'
+                    ? approveTransfer(record.id)
+                    : rejectTransfer(record.id)
+                ).url,
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => {
+                        pendingActions.value = pendingActions.value.filter(
+                            (key) => key !== actionKey,
+                        );
+                    },
+                },
+            );
         },
-    );
+    });
 }
 function cancelPendingTransfer(record: Transfer): void {
     const actionKey = `transfer-${record.id}`;
 
-    if (
-        pendingActions.value.includes(actionKey) ||
-        !window.confirm(
+    openAssetConfirmDialog({
+        actionKey,
+        title: 'Cancel Pending Transfer',
+        description:
             'Cancel this pending transfer? The asset location will not change.',
-        )
-    ) {
-        return;
-    }
-
-    pendingActions.value.push(actionKey);
-    router.post(
-        cancelTransfer(record.id).url,
-        {},
-        {
-            preserveScroll: true,
-            onFinish: () => {
-                pendingActions.value = pendingActions.value.filter(
-                    (key) => key !== actionKey,
-                );
-            },
+        confirmLabel: 'Confirm Cancellation',
+        destructive: true,
+        onConfirm: () => {
+            pendingActions.value.push(actionKey);
+            router.post(
+                cancelTransfer(record.id).url,
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => {
+                        pendingActions.value = pendingActions.value.filter(
+                            (key) => key !== actionKey,
+                        );
+                    },
+                },
+            );
         },
-    );
+    });
 }
 function reviewLifecycle(
     record: LifecycleEvent,
@@ -478,44 +534,52 @@ function reviewLifecycle(
 ): void {
     const actionKey = `lifecycle-${record.id}`;
 
-    if (
-        pendingActions.value.includes(actionKey) ||
-        !window.confirm(
+    openAssetConfirmDialog({
+        actionKey,
+        title:
+            action === 'approve'
+                ? 'Approve Lifecycle Change'
+                : 'Reject Lifecycle Change',
+        description:
             action === 'approve'
                 ? 'Approve this lifecycle change?'
                 : 'Reject this lifecycle change?',
-        )
-    ) {
-        return;
-    }
-
-    pendingActions.value.push(actionKey);
-    router.post(
-        (action === 'approve'
-            ? approveLifecycle(record.id)
-            : rejectLifecycle(record.id)
-        ).url,
-        {},
-        {
-            preserveScroll: true,
-            onFinish: () => {
-                pendingActions.value = pendingActions.value.filter(
-                    (key) => key !== actionKey,
-                );
-            },
+        confirmLabel:
+            action === 'approve' ? 'Confirm Approval' : 'Confirm Rejection',
+        destructive: action === 'reject',
+        onConfirm: () => {
+            pendingActions.value.push(actionKey);
+            router.post(
+                (action === 'approve'
+                    ? approveLifecycle(record.id)
+                    : rejectLifecycle(record.id)
+                ).url,
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => {
+                        pendingActions.value = pendingActions.value.filter(
+                            (key) => key !== actionKey,
+                        );
+                    },
+                },
+            );
         },
-    );
+    });
 }
 function removeAttachment(record: Attachment): void {
-    if (
-        window.confirm(
-            `Remove “${record.title}” from active use? The retained file will remain protected.`,
-        )
-    ) {
-        router.delete(destroyAttachment(record.id).url, {
-            preserveScroll: true,
-        });
-    }
+    openAssetConfirmDialog({
+        actionKey: `attachment-${record.id}`,
+        title: 'Remove Supporting Document',
+        description: `Remove “${record.title}” from active use? The retained file will remain protected.`,
+        confirmLabel: 'Confirm Removal',
+        destructive: true,
+        onConfirm: () => {
+            router.delete(destroyAttachment(record.id).url, {
+                preserveScroll: true,
+            });
+        },
+    });
 }
 </script>
 
@@ -1642,5 +1706,37 @@ function removeAttachment(record: Attachment): void {
                 No supporting documents have been uploaded for this asset.
             </p>
         </section>
+
+        <Dialog v-model:open="confirmActionDialog.open">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{{ confirmActionDialog.title }}</DialogTitle>
+                    <DialogDescription>{{
+                        confirmActionDialog.description
+                    }}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="confirmActionDialog.open = false"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        data-testid="confirm-asset-action-button"
+                        :variant="
+                            confirmActionDialog.destructive
+                                ? 'destructive'
+                                : 'default'
+                        "
+                        @click="executeAssetConfirmedAction"
+                    >
+                        {{ confirmActionDialog.confirmLabel }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

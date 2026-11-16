@@ -27,6 +27,7 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
 
     const items = ref<OptimisticItem[]>([]);
     const pendingActions = ref<Map<string, PendingAction>>(new Map());
+    const failedActions = ref<Map<string, PendingAction>>(new Map());
     const processingIds = ref<Set<string | number>>(new Set());
     const errorMap = ref<Map<string, Error>>(new Map());
 
@@ -144,6 +145,7 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
             action.optimisticData?.id ?? action.originalData?.id ?? id,
         );
         pendingActions.value.delete(id);
+        failedActions.value.delete(id);
         errorMap.value.delete(id);
 
         // Update with server data if provided (for creates/updates)
@@ -209,6 +211,7 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
             errorMap.value.set(id, error);
         }
 
+        failedActions.value.set(id, action);
         pendingActions.value.delete(id);
     };
 
@@ -217,14 +220,20 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
      */
     const retry = async (
         id: string,
-        actionFn: () => Promise<OptimisticItem>,
+        actionFn: () => Promise<OptimisticItem | void>,
     ): Promise<boolean> => {
-        const action = pendingActions.value.get(id);
+        const action =
+            failedActions.value.get(id) ?? pendingActions.value.get(id);
 
         if (!action) {
             return false;
         }
 
+        failedActions.value.delete(id);
+        pendingActions.value.set(id, action);
+        const itemId =
+            action.optimisticData?.id ?? action.originalData?.id ?? id;
+        processingIds.value.add(itemId);
         clearError(id);
 
         // Re-apply optimistic state
@@ -263,7 +272,7 @@ export function useOptimisticState(options: OptimisticOptions = {}) {
 
         try {
             const result = await actionFn();
-            confirmSuccess(id, result);
+            confirmSuccess(id, result ?? undefined);
 
             return true;
         } catch (error) {

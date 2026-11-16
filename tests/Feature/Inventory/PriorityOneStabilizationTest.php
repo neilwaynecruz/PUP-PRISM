@@ -61,7 +61,7 @@ function createPriorityOneUser(string $role = 'Property Custodian'): User
 
 test('postgresql purchase order numbering does not abort transaction when sequence row already exists', function () {
     try {
-        $pdo = DB::connection('pgsql_testing')->getPdo();
+        DB::connection('pgsql_testing')->getPdo();
     } catch (Throwable $exception) {
         Assert::markTestSkipped('PostgreSQL testing connection unavailable: '.$exception->getMessage());
     }

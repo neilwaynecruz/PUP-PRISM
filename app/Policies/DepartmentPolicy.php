@@ -12,7 +12,7 @@ class DepartmentPolicy
         return $user->hasRole('Admin');
     }
 
-    public function view(User $user, Department $department): bool
+    public function view(User $user, Department $_department): bool
     {
         return $user->hasRole('Admin');
     }
@@ -22,17 +22,17 @@ class DepartmentPolicy
         return $user->hasRole('Admin');
     }
 
-    public function update(User $user, Department $department): bool
+    public function update(User $user, Department $_department): bool
     {
         return $user->hasRole('Admin');
     }
 
-    public function delete(User $user, Department $department): bool
+    public function delete(User $user, Department $_department): bool
     {
         return $user->hasRole('Admin');
     }
 
-    public function deactivate(User $user, Department $department): bool
+    public function deactivate(User $user, Department $_department): bool
     {
         return $user->hasRole('Admin');
     }

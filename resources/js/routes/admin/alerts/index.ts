@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::index
- * @see app/Http/Controllers/Admin/AlertsController.php:19
+ * @see app/Http/Controllers/Admin/AlertsController.php:20
  * @route '/admin/alerts'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::index
- * @see app/Http/Controllers/Admin/AlertsController.php:19
+ * @see app/Http/Controllers/Admin/AlertsController.php:20
  * @route '/admin/alerts'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::index
- * @see app/Http/Controllers/Admin/AlertsController.php:19
+ * @see app/Http/Controllers/Admin/AlertsController.php:20
  * @route '/admin/alerts'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::index
- * @see app/Http/Controllers/Admin/AlertsController.php:19
+ * @see app/Http/Controllers/Admin/AlertsController.php:20
  * @route '/admin/alerts'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Admin\AlertsController::index
- * @see app/Http/Controllers/Admin/AlertsController.php:19
+ * @see app/Http/Controllers/Admin/AlertsController.php:20
  * @route '/admin/alerts'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Admin\AlertsController::index
- * @see app/Http/Controllers/Admin/AlertsController.php:19
+ * @see app/Http/Controllers/Admin/AlertsController.php:20
  * @route '/admin/alerts'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Admin\AlertsController::index
- * @see app/Http/Controllers/Admin/AlertsController.php:19
+ * @see app/Http/Controllers/Admin/AlertsController.php:20
  * @route '/admin/alerts'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::acknowledge
- * @see app/Http/Controllers/Admin/AlertsController.php:166
+ * @see app/Http/Controllers/Admin/AlertsController.php:167
  * @route '/admin/alerts/{alert}/acknowledge'
  */
 export const acknowledge = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -94,7 +94,7 @@ acknowledge.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::acknowledge
- * @see app/Http/Controllers/Admin/AlertsController.php:166
+ * @see app/Http/Controllers/Admin/AlertsController.php:167
  * @route '/admin/alerts/{alert}/acknowledge'
  */
 acknowledge.url = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -127,7 +127,7 @@ acknowledge.url = (args: { alert: number | { id: number } } | [alert: number | {
 
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::acknowledge
- * @see app/Http/Controllers/Admin/AlertsController.php:166
+ * @see app/Http/Controllers/Admin/AlertsController.php:167
  * @route '/admin/alerts/{alert}/acknowledge'
  */
 acknowledge.patch = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -137,7 +137,7 @@ acknowledge.patch = (args: { alert: number | { id: number } } | [alert: number |
 
     /**
 * @see \App\Http\Controllers\Admin\AlertsController::acknowledge
- * @see app/Http/Controllers/Admin/AlertsController.php:166
+ * @see app/Http/Controllers/Admin/AlertsController.php:167
  * @route '/admin/alerts/{alert}/acknowledge'
  */
     const acknowledgeForm = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -152,7 +152,7 @@ acknowledge.patch = (args: { alert: number | { id: number } } | [alert: number |
 
             /**
 * @see \App\Http\Controllers\Admin\AlertsController::acknowledge
- * @see app/Http/Controllers/Admin/AlertsController.php:166
+ * @see app/Http/Controllers/Admin/AlertsController.php:167
  * @route '/admin/alerts/{alert}/acknowledge'
  */
         acknowledgeForm.patch = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -168,7 +168,7 @@ acknowledge.patch = (args: { alert: number | { id: number } } | [alert: number |
     acknowledge.form = acknowledgeForm
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::assign
- * @see app/Http/Controllers/Admin/AlertsController.php:197
+ * @see app/Http/Controllers/Admin/AlertsController.php:199
  * @route '/admin/alerts/{alert}/assign'
  */
 export const assign = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -183,7 +183,7 @@ assign.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::assign
- * @see app/Http/Controllers/Admin/AlertsController.php:197
+ * @see app/Http/Controllers/Admin/AlertsController.php:199
  * @route '/admin/alerts/{alert}/assign'
  */
 assign.url = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -216,7 +216,7 @@ assign.url = (args: { alert: number | { id: number } } | [alert: number | { id: 
 
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::assign
- * @see app/Http/Controllers/Admin/AlertsController.php:197
+ * @see app/Http/Controllers/Admin/AlertsController.php:199
  * @route '/admin/alerts/{alert}/assign'
  */
 assign.patch = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -226,7 +226,7 @@ assign.patch = (args: { alert: number | { id: number } } | [alert: number | { id
 
     /**
 * @see \App\Http\Controllers\Admin\AlertsController::assign
- * @see app/Http/Controllers/Admin/AlertsController.php:197
+ * @see app/Http/Controllers/Admin/AlertsController.php:199
  * @route '/admin/alerts/{alert}/assign'
  */
     const assignForm = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -241,7 +241,7 @@ assign.patch = (args: { alert: number | { id: number } } | [alert: number | { id
 
             /**
 * @see \App\Http\Controllers\Admin\AlertsController::assign
- * @see app/Http/Controllers/Admin/AlertsController.php:197
+ * @see app/Http/Controllers/Admin/AlertsController.php:199
  * @route '/admin/alerts/{alert}/assign'
  */
         assignForm.patch = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -257,7 +257,7 @@ assign.patch = (args: { alert: number | { id: number } } | [alert: number | { id
     assign.form = assignForm
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::resolve
- * @see app/Http/Controllers/Admin/AlertsController.php:230
+ * @see app/Http/Controllers/Admin/AlertsController.php:232
  * @route '/admin/alerts/{alert}/resolve'
  */
 export const resolve = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -272,7 +272,7 @@ resolve.definition = {
 
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::resolve
- * @see app/Http/Controllers/Admin/AlertsController.php:230
+ * @see app/Http/Controllers/Admin/AlertsController.php:232
  * @route '/admin/alerts/{alert}/resolve'
  */
 resolve.url = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -305,7 +305,7 @@ resolve.url = (args: { alert: number | { id: number } } | [alert: number | { id:
 
 /**
 * @see \App\Http\Controllers\Admin\AlertsController::resolve
- * @see app/Http/Controllers/Admin/AlertsController.php:230
+ * @see app/Http/Controllers/Admin/AlertsController.php:232
  * @route '/admin/alerts/{alert}/resolve'
  */
 resolve.patch = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'patch'> => ({
@@ -315,7 +315,7 @@ resolve.patch = (args: { alert: number | { id: number } } | [alert: number | { i
 
     /**
 * @see \App\Http\Controllers\Admin\AlertsController::resolve
- * @see app/Http/Controllers/Admin/AlertsController.php:230
+ * @see app/Http/Controllers/Admin/AlertsController.php:232
  * @route '/admin/alerts/{alert}/resolve'
  */
     const resolveForm = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -330,7 +330,7 @@ resolve.patch = (args: { alert: number | { id: number } } | [alert: number | { i
 
             /**
 * @see \App\Http\Controllers\Admin\AlertsController::resolve
- * @see app/Http/Controllers/Admin/AlertsController.php:230
+ * @see app/Http/Controllers/Admin/AlertsController.php:232
  * @route '/admin/alerts/{alert}/resolve'
  */
         resolveForm.patch = (args: { alert: number | { id: number } } | [alert: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

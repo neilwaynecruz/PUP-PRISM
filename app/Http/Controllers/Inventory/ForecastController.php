@@ -97,8 +97,8 @@ class ForecastController extends Controller
                     'id' => $lot->id,
                     'reference_no' => $lot->reference_no ?? "LOT-{$lot->id}",
                     'product_id' => $lot->product_id,
-                    'sku' => $lot->product?->sku ?? 'N/A',
-                    'product_name' => $lot->product?->name ?? 'Unknown',
+                    'sku' => $lot->product->sku ?? 'N/A',
+                    'product_name' => $lot->product->name ?? 'Unknown',
                     'qty_remaining' => $lot->qty_remaining,
                     'received_at' => CarbonImmutable::parse((string) $lot->received_at)->toDateString(),
                     'expires_at' => $expiresAt->toDateString(),
@@ -149,16 +149,14 @@ class ForecastController extends Controller
                 'id' => $product->id,
                 'sku' => $product->sku,
                 'name' => $product->name,
-                'on_hand_qty' => $product->stock?->on_hand_qty ?? 0,
+                'on_hand_qty' => $product->stock->on_hand_qty ?? 0,
                 'reorder_threshold' => $product->reorder_threshold,
             ],
             'forecast' => $forecast,
             'profile' => $profile,
             'optimization' => $optimization,
             'backtest' => $backtest,
-            'confidenceExplanation' => $forecast !== null
-                ? $this->presenter->confidenceExplanation($forecast)
-                : __('No forecast is available for this product yet.'),
+            'confidenceExplanation' => $this->presenter->confidenceExplanation($forecast),
             'methodOptions' => $this->presenter->methodOptions(),
         ]);
     }
@@ -191,7 +189,7 @@ class ForecastController extends Controller
             'id' => $product->id,
             'sku' => $product->sku,
             'name' => $product->name,
-            'on_hand_qty' => $product->stock?->on_hand_qty ?? 0,
+            'on_hand_qty' => $product->stock->on_hand_qty ?? 0,
             'profile_method' => $product->forecastProfile?->method,
             'snapshot' => $snapshot instanceof ForecastSnapshot
                 ? [
@@ -211,9 +209,9 @@ class ForecastController extends Controller
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array<string, mixed>
      */
-    private function resolveForecast(Product $product): ?array
+    private function resolveForecast(Product $product): array
     {
         $latestSnapshot = ForecastSnapshot::query()
             ->where('product_id', $product->id)

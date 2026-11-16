@@ -7,7 +7,7 @@ use App\Models\User;
 
 class NotificationPreferencePolicy
 {
-    public function viewAny(User $user): bool
+    public function viewAny(User $_user): bool
     {
         return true;
     }

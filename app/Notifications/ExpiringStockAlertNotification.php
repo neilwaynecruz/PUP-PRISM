@@ -31,11 +31,11 @@ class ExpiringStockAlertNotification extends Notification implements ShouldQueue
         return NotificationEventType::ExpiringStock->value;
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $_notifiable): MailMessage
     {
         $product = $this->lot->product;
-        $productName = $product?->name ?? 'Unknown product';
-        $sku = $product?->sku ?? 'N/A';
+        $productName = $product->name ?? 'Unknown product';
+        $sku = $product->sku ?? 'N/A';
         $ref = $this->lot->reference_no ?? "Lot #{$this->lot->id}";
         $url = route('inventory.forecasting.show', $this->lot->product_id, absolute: false);
 
@@ -62,10 +62,10 @@ class ExpiringStockAlertNotification extends Notification implements ShouldQueue
     /**
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toArray(object $_notifiable): array
     {
         $product = $this->lot->product;
-        $sku = $product?->sku ?? 'N/A';
+        $sku = $product->sku ?? 'N/A';
         $ref = $this->lot->reference_no ?? "Lot #{$this->lot->id}";
         $url = route('inventory.forecasting.show', $this->lot->product_id, absolute: false);
 

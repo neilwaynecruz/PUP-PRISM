@@ -25,10 +25,45 @@ if (
 const appName = import.meta.env.VITE_APP_NAME || 'PUP PRISM';
 
 if (typeof window !== 'undefined') {
-    router.on('networkError', () => {
+    let lastNetworkToastAt = 0;
+
+    router.on('networkError', (event) => {
+        event.preventDefault();
+
+        const now = Date.now();
+
+        if (now - lastNetworkToastAt < 4000) {
+            return;
+        }
+
+        lastNetworkToastAt = now;
+
+        const isOffline =
+            typeof navigator !== 'undefined' && navigator.onLine === false;
+
+        if (isOffline) {
+            toast.warning(
+                'You are currently offline. Viewing cached data where available; changes cannot be submitted until your connection returns.',
+            );
+
+            return;
+        }
+
         toast.error(
-            'Unable to reach the server. Check your connection and try again.',
+            'Unable to reach the server. Please check your connection and try again.',
         );
+    });
+
+    router.on('httpException', (event) => {
+        const status = event.detail?.response?.status;
+
+        if (status === 419) {
+            event.preventDefault();
+            toast.warning(
+                'Your session has expired. Refreshing your security token—please try your action again.',
+            );
+            router.reload({ only: ['auth', 'flash'] });
+        }
     });
 }
 

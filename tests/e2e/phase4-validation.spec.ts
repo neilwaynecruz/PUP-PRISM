@@ -45,13 +45,19 @@ async function loginAsAdmin(
     await loginAs(page, 'admin@e2e.test', 'password', { redirectTo });
 }
 
+async function confirmModalAction(page: Page): Promise<void> {
+    const dialog = page.getByRole('dialog').last();
+    await expect(dialog).toBeVisible();
+    await dialog.getByRole('button', { name: /^Confirm/ }).click();
+    await expect(dialog).toBeHidden();
+}
+
 test.describe.serial('Phase 4 inventory and asset validation', () => {
     test('physical count can be recorded, submitted, approved, and completed', async ({
         page,
     }) => {
         test.setTimeout(120_000);
         const browserErrors = monitorBrowserErrors(page);
-        page.on('dialog', (dialog) => dialog.accept());
 
         await loginAsAdmin(page);
         await page.goto('/inventory/counts');
@@ -93,16 +99,19 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
         await expect(line.locator('dd').nth(2)).toHaveText(snapshot!);
 
         await page.getByRole('button', { name: 'Submit for Review' }).click();
+        await confirmModalAction(page);
         await expect(
             page.getByLabel('Count session summary').getByText('Submitted'),
         ).toBeVisible();
         await page
             .getByRole('button', { name: 'Post Approved Differences' })
             .click();
+        await confirmModalAction(page);
         await expect(
             page.getByLabel('Count session summary').getByText('Approved'),
         ).toBeVisible();
         await page.getByRole('button', { name: 'Complete Session' }).click();
+        await confirmModalAction(page);
         await expect(
             page.getByLabel('Count session summary').getByText('Completed'),
         ).toBeVisible();
@@ -115,7 +124,6 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
     }) => {
         test.setTimeout(240_000);
         const browserErrors = monitorBrowserErrors(page);
-        page.on('dialog', (dialog) => dialog.accept());
 
         await loginAsAdmin(page);
         await page.goto('/admin/locations');
@@ -154,12 +162,14 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
             .first();
         await expect(maintenance).toContainText('Reported');
         await maintenance.getByRole('button', { name: 'Schedule' }).click();
+        await confirmModalAction(page);
         maintenance = page
             .locator('article')
             .filter({ hasText: issue })
             .first();
         await expect(maintenance).toContainText('Scheduled');
         await maintenance.getByRole('button', { name: 'Start Work' }).click();
+        await confirmModalAction(page);
         maintenance = page
             .locator('article')
             .filter({ hasText: issue })
@@ -173,6 +183,7 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
         await maintenance
             .getByRole('button', { name: 'Mark Completed' })
             .click();
+        await confirmModalAction(page);
         maintenance = page
             .locator('article')
             .filter({ hasText: issue })
@@ -232,6 +243,7 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
             .filter({ hasText: locationName })
             .first();
         await transfer.getByRole('button', { name: 'Approve' }).click();
+        await confirmModalAction(page);
         await expect(
             page.getByLabel('Asset summary').getByText(locationName),
         ).toBeVisible();
@@ -269,6 +281,7 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
             })
             .first();
         await retirement.getByRole('button', { name: 'Approve' }).click();
+        await confirmModalAction(page);
         await expect(
             page.getByLabel('Asset summary').getByText('Retired'),
         ).toBeVisible();
@@ -308,6 +321,7 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
             })
             .first();
         await disposal.getByRole('button', { name: 'Approve' }).click();
+        await confirmModalAction(page);
         await expect(
             page.getByLabel('Asset summary').getByText('Disposed'),
         ).toBeVisible();

@@ -18,7 +18,7 @@ class ProductStockObserver
         }
     }
 
-    public function deleted(ProductStock $stock): void
+    public function deleted(ProductStock $_stock): void
     {
         $this->inventoryOptimizationCache->invalidate();
     }

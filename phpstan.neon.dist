@@ -1,0 +1,14 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    paths:
+        - app/
+        - database/factories/
+        - database/seeders/
+
+    # Level 5 balances strict type checking with practical Laravel inference
+    level: 5
+    parseModelCastsMethod: true
+
+    tmpDir: storage/framework/cache/phpstan

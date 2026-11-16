@@ -23,6 +23,8 @@ const props = withDefaults(
         closeOnScan?: boolean;
         triggerTestId?: string;
         buttonSize?: 'default' | 'sm' | 'lg' | 'icon';
+        open?: boolean;
+        hideTrigger?: boolean;
     }>(),
     {
         buttonLabel: 'Scan QR Code',
@@ -33,14 +35,24 @@ const props = withDefaults(
         closeOnScan: undefined,
         triggerTestId: undefined,
         buttonSize: 'default',
+        open: undefined,
+        hideTrigger: false,
     },
 );
 
 const emit = defineEmits<{
     scanned: [value: string];
+    'update:open': [value: boolean];
 }>();
 
-const isOpen = ref(false);
+const internalOpen = ref(false);
+const isOpen = computed({
+    get: () => props.open ?? internalOpen.value,
+    set: (value: boolean) => {
+        internalOpen.value = value;
+        emit('update:open', value);
+    },
+});
 const sessionScanCount = ref(0);
 const closesAfterScan = computed(() => props.closeOnScan ?? !props.continuous);
 
@@ -57,7 +69,7 @@ const {
     totalDetections,
     videoRef,
 } = useQrScanner({
-    continuous: props.continuous,
+    continuous: () => props.continuous,
     cooldownMs: 1600,
     onDetected: (value) => {
         emit('scanned', value);
@@ -84,7 +96,7 @@ watch(isOpen, async (open) => {
 
 <template>
     <Dialog :open="isOpen" @update:open="isOpen = $event">
-        <DialogTrigger as-child>
+        <DialogTrigger v-if="!props.hideTrigger" as-child>
             <Button
                 type="button"
                 variant="outline"

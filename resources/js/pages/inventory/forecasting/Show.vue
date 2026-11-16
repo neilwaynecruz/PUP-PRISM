@@ -624,7 +624,7 @@ function abcBadgeClass(classification: string | undefined): string {
                         <select
                             id="method"
                             v-model="form.method"
-                            class="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                            class="h-10 rounded-md border border-input bg-background px-3 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                         >
                             <option
                                 v-for="option in methodOptions"

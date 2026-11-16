@@ -51,7 +51,7 @@ class InventoryOptimizationReportService extends AbstractTableReportService
                 $annualConsumption = $abcItem['annual_consumption'] ?? 0;
                 $annualValue = $abcItem['annual_value'] ?? 0.0;
                 $unitPrice = round((float) ($product->unit_price ?? 0), 2);
-                $currentStock = (int) ($product->stock?->on_hand_qty ?? 0);
+                $currentStock = (int) ($product->stock->on_hand_qty ?? 0);
 
                 $profile = $optimizations[$product->id];
 

@@ -23,6 +23,9 @@ import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
 import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
+import RequisitionBulkActionDialog from '@/components/inventory/requisitions/RequisitionBulkActionDialog.vue';
+import RequisitionDeleteDialog from '@/components/inventory/requisitions/RequisitionDeleteDialog.vue';
+import ToastUndo from '@/components/ToastUndo.vue';
 import { Badge } from '@/components/ui/badge';
 
 const QrScannerDialog = defineAsyncComponent(
@@ -48,14 +51,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { useBulkSelection } from '@/composables/useBulkSelection';
+import { getGlobalUndoManager } from '@/composables/useUndoManager';
 import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { lookup as productLookupRoute } from '@/routes/inventory/products';
 import {
@@ -71,6 +68,7 @@ import {
     index as requisitionsIndex,
     show as requisitionsShow,
     store as requisitionsStore,
+    trash as requisitionsTrash,
 } from '@/routes/inventory/requisitions';
 
 type ReqRow = {
@@ -779,18 +777,27 @@ function openDeleteDialog(requisition: ReqRow): void {
     deleteDialogOpen.value = true;
 }
 
+const undoManager = getGlobalUndoManager();
+
 function confirmDelete(): void {
     if (!selectedRequisition.value || !canConfirmDelete.value) {
         return;
     }
 
-    router.delete(requisitionsDestroy(selectedRequisition.value.id).url, {
-        data: { deletion_reason: getDeletionReason() },
+    const deletedId = selectedRequisition.value.id;
+    const deletionReason = getDeletionReason();
+
+    router.delete(requisitionsDestroy(deletedId).url, {
+        data: { deletion_reason: deletionReason },
         onSuccess: () => {
             deleteDialogOpen.value = false;
             selectedRequisition.value = null;
             deleteReason.value = '';
             deleteReasonCustom.value = '';
+            undoManager.registerDelete('requisition', deletedId, {
+                label: `Requisition #${deletedId}`,
+                deletionReason,
+            });
         },
     });
 }
@@ -1160,7 +1167,7 @@ function confirmBulkAction(): void {
                     <a :href="exportUrls.pdf">Download PDF</a>
                 </Button>
                 <Button variant="outline" size="sm" class="rounded-lg" as-child>
-                    <Link href="/inventory/requisitions/trash">Trash</Link>
+                    <Link :href="requisitionsTrash.url()">Trash</Link>
                 </Button>
             </div>
         </div>
@@ -2357,153 +2364,26 @@ function confirmBulkAction(): void {
             </DialogContent>
         </Dialog>
 
-        <Dialog v-model:open="deleteDialogOpen">
-            <DialogContent>
-                <DialogHeader class="space-y-3">
-                    <DialogTitle>Move requisition to trash?</DialogTitle>
-                    <DialogDescription>
-                        This will move requisition
-                        <strong>#{{ selectedRequisition?.id }}</strong> to the
-                        trash. You can restore it later if needed.
-                    </DialogDescription>
-                </DialogHeader>
-                <div class="grid gap-4 py-4">
-                    <div class="grid gap-2">
-                        <Label for="delete-reason"
-                            >Reason for deletion
-                            <span class="text-rose-500">*</span></Label
-                        >
-                        <Select v-model="deleteReason">
-                            <SelectTrigger id="delete-reason">
-                                <SelectValue placeholder="Select a reason…" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="reason in deletionReasons"
-                                    :key="reason.value"
-                                    :value="reason.value"
-                                >
-                                    {{ reason.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div v-if="isOtherReason" class="grid gap-2">
-                        <Label for="delete-reason-custom"
-                            >Please specify
-                            <span class="text-rose-500">*</span></Label
-                        >
-                        <textarea
-                            id="delete-reason-custom"
-                            v-model="deleteReasonCustom"
-                            placeholder="Enter your reason…"
-                            rows="3"
-                            class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                        ></textarea>
-                    </div>
-                </div>
-                <DialogFooter class="gap-2">
-                    <DialogClose as-child>
-                        <Button variant="secondary">Cancel</Button>
-                    </DialogClose>
-                    <Button
-                        variant="destructive"
-                        :disabled="!canConfirmDelete"
-                        @click="confirmDelete"
-                        >Move to Trash</Button
-                    >
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <RequisitionDeleteDialog
+            v-model:open="deleteDialogOpen"
+            v-model:reason="deleteReason"
+            v-model:custom-reason="deleteReasonCustom"
+            :requisition-id="selectedRequisition?.id ?? null"
+            :deletion-reasons="deletionReasons"
+            :is-other-reason="isOtherReason"
+            :can-confirm-delete="canConfirmDelete"
+            @confirm="confirmDelete"
+        />
 
-        <Dialog v-model:open="bulkActionDialogOpen">
-            <DialogContent class="sm:max-w-md">
-                <DialogHeader class="space-y-3">
-                    <DialogTitle>
-                        {{
-                            pendingBulkAction === 'approve'
-                                ? `Approve ${selectedApprovableRows.length} requisition(s)?`
-                                : `Issue ${selectedIssuableRows.length} requisition(s)?`
-                        }}
-                    </DialogTitle>
-                    <DialogDescription>
-                        <template v-if="pendingBulkAction === 'approve'">
-                            This will approve
-                            <strong
-                                >{{ selectedApprovableRows.length }} submitted
-                                requisition(s)</strong
-                            >
-                            and transition them to Approved status for inventory
-                            fulfillment.
-                            <span
-                                v-if="
-                                    selectedIds.size >
-                                    selectedApprovableRows.length
-                                "
-                                class="mt-2 block text-xs text-muted-foreground"
-                            >
-                                Note:
-                                {{
-                                    selectedIds.size -
-                                    selectedApprovableRows.length
-                                }}
-                                selected requisition(s) are not in submitted
-                                status and will be excluded.
-                            </span>
-                        </template>
-                        <template v-else>
-                            This will issue inventory for
-                            <strong
-                                >{{ selectedIssuableRows.length }} approved
-                                requisition(s)</strong
-                            >
-                            based on available stock.
-                            <span
-                                v-if="
-                                    selectedIds.size >
-                                    selectedIssuableRows.length
-                                "
-                                class="mt-2 block text-xs text-muted-foreground"
-                            >
-                                Note:
-                                {{
-                                    selectedIds.size -
-                                    selectedIssuableRows.length
-                                }}
-                                selected requisition(s) cannot be issued and
-                                will be excluded.
-                            </span>
-                        </template>
-                    </DialogDescription>
-                </DialogHeader>
-                <DialogFooter class="gap-2">
-                    <DialogClose as-child>
-                        <Button
-                            variant="secondary"
-                            :disabled="bulkActionProcessing"
-                            >Cancel</Button
-                        >
-                    </DialogClose>
-                    <Button
-                        :disabled="
-                            bulkActionProcessing ||
-                            (pendingBulkAction === 'approve'
-                                ? selectedApprovableRows.length === 0
-                                : selectedIssuableRows.length === 0)
-                        "
-                        @click="confirmBulkAction"
-                    >
-                        {{
-                            bulkActionProcessing
-                                ? 'Processing…'
-                                : pendingBulkAction === 'approve'
-                                  ? `Approve Requisitions (${selectedApprovableRows.length})`
-                                  : `Issue Requisitions (${selectedIssuableRows.length})`
-                        }}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <RequisitionBulkActionDialog
+            v-model:open="bulkActionDialogOpen"
+            :pending-bulk-action="pendingBulkAction"
+            :selected-count="selectedIds.size"
+            :approvable-count="selectedApprovableRows.length"
+            :issuable-count="selectedIssuableRows.length"
+            :processing="bulkActionProcessing"
+            @confirm="confirmBulkAction"
+        />
 
         <ProductSelectDialog
             v-model:open="catalogDialogOpen"
@@ -2515,5 +2395,23 @@ function confirmBulkAction(): void {
             "
             @select="onProductSelectedFromCatalog"
         />
+
+        <div
+            v-if="undoManager.pendingActions.value.length > 0"
+            class="fixed right-4 bottom-4 z-50 flex max-w-sm flex-col gap-2"
+        >
+            <ToastUndo
+                v-for="action in undoManager.pendingActions.value"
+                :id="action.id"
+                :key="action.id"
+                :resource-type="action.resourceType"
+                :resource-id="action.resourceId"
+                :resource-name="
+                    String(action.data.label ?? `#${action.resourceId}`)
+                "
+                :on-undo="undoManager.undo"
+                :on-dismiss="undoManager.cancel"
+            />
+        </div>
     </div>
 </template>

@@ -2,9 +2,11 @@
 
 namespace App\Http\Resources;
 
+use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderLine;
 use Illuminate\Http\Request;
 
+/** @mixin PurchaseOrder */
 class PurchaseOrderResource extends InertiaJsonResource
 {
     /**
@@ -16,8 +18,8 @@ class PurchaseOrderResource extends InertiaJsonResource
             'id' => (int) $this->id,
             'supplier_id' => (int) $this->supplier_id,
             'po_number' => $this->po_number,
-            'status' => $this->status?->value,
-            'status_label' => $this->status?->label(),
+            'status' => $this->status->value,
+            'status_label' => $this->status->label(),
             'subtotal' => round((float) $this->subtotal, 2),
             'tax' => round((float) $this->tax, 2),
             'total_amount' => round((float) $this->total_amount, 2),
@@ -47,7 +49,7 @@ class PurchaseOrderResource extends InertiaJsonResource
                             'id' => (int) $line->product->id,
                             'sku' => $line->product->sku,
                             'name' => $line->product->name,
-                            'type' => $line->product->type?->value,
+                            'type' => $line->product->type->value,
                             'variant' => $line->product->variant,
                             'unit' => $line->product->relationLoaded('unitOfMeasurement')
                                 ? $line->product->unitOfMeasurement?->abbreviation
@@ -57,7 +59,7 @@ class PurchaseOrderResource extends InertiaJsonResource
                                 ? $line->product->category?->name
                                 : null,
                             'on_hand_qty' => $line->product->relationLoaded('stock')
-                                ? (int) ($line->product->stock?->on_hand_qty ?? 0)
+                                ? (int) ($line->product->stock->on_hand_qty ?? 0)
                                 : null,
                         ]
                         : null,

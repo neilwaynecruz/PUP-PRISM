@@ -68,26 +68,31 @@ class Asset extends Model
         return $this->belongsTo(Position::class);
     }
 
+    /** @return BelongsTo<Location, $this> */
     public function currentLocation(): BelongsTo
     {
         return $this->belongsTo(Location::class, 'current_location_id');
     }
 
+    /** @return HasMany<AssetMaintenance, $this> */
     public function maintenances(): HasMany
     {
         return $this->hasMany(AssetMaintenance::class);
     }
 
+    /** @return HasMany<AssetTransfer, $this> */
     public function transfers(): HasMany
     {
         return $this->hasMany(AssetTransfer::class);
     }
 
+    /** @return HasMany<AssetLifecycleEvent, $this> */
     public function lifecycleEvents(): HasMany
     {
         return $this->hasMany(AssetLifecycleEvent::class);
     }
 
+    /** @return MorphMany<Attachment, $this> */
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');

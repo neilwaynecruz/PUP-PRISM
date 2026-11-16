@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\ResolveInventoryAlertRequest;
 use App\Models\InventoryAlert;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\InventoryRealtimeService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -141,12 +142,12 @@ class AlertsController extends Controller
         $activeByType = [];
 
         foreach ($rows as $row) {
-            $typeActive = (int) $row->active_count;
+            $typeActive = (int) $row->getAttribute('active_count');
             $active += $typeActive;
-            $unacknowledged += (int) $row->unacknowledged_count;
-            $acknowledged += (int) $row->acknowledged_count;
-            $assignedToMe += (int) $row->assigned_to_me_count;
-            $resolvedThisWeek += (int) $row->resolved_this_week_count;
+            $unacknowledged += (int) $row->getAttribute('unacknowledged_count');
+            $acknowledged += (int) $row->getAttribute('acknowledged_count');
+            $assignedToMe += (int) $row->getAttribute('assigned_to_me_count');
+            $resolvedThisWeek += (int) $row->getAttribute('resolved_this_week_count');
 
             if ($typeActive > 0) {
                 $activeByType[(string) $row->type] = $typeActive;
@@ -188,6 +189,7 @@ class AlertsController extends Controller
             $before,
             $this->auditState($alert->fresh(['assignedTo:id,name']) ?? $alert),
         );
+        app(InventoryRealtimeService::class)->alertUpdated($alert, 'acknowledged');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Alert acknowledged.')]);
 
@@ -246,6 +248,7 @@ class AlertsController extends Controller
             $before,
             $this->auditState($alert),
         );
+        app(InventoryRealtimeService::class)->alertUpdated($alert, 'resolved');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Alert resolved.')]);
 
@@ -261,7 +264,7 @@ class AlertsController extends Controller
             'id' => $alert->id,
             'type' => $alert->type,
             'message' => $alert->message,
-            'detected_at' => $alert->detected_at?->toIso8601String(),
+            'detected_at' => $alert->detected_at->toIso8601String(),
             'acknowledged_at' => $alert->acknowledged_at?->toIso8601String(),
             'resolved_at' => $alert->resolved_at?->toIso8601String(),
             'resolution_notes' => $alert->resolution_notes,

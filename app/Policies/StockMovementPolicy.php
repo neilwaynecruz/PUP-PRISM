@@ -12,7 +12,7 @@ class StockMovementPolicy
         return $user->hasRole('Admin');
     }
 
-    public function view(User $user, StockMovement $stockMovement): bool
+    public function view(User $user, StockMovement $_stockMovement): bool
     {
         return $user->hasRole('Admin');
     }

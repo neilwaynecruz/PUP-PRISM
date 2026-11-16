@@ -27,7 +27,9 @@ trait SeedsConsumableLedger
      */
     protected function seedConsumableLedger(Product $product, array $events): void
     {
-        $expectedFinalQty = (int) ($product->stock?->on_hand_qty ?? 0);
+        $product->loadMissing('stock');
+
+        $expectedFinalQty = (int) ($product->stock->on_hand_qty ?? 0);
         $lots = $product->lots()
             ->orderByRaw('CASE WHEN expires_at IS NULL THEN 1 ELSE 0 END')
             ->orderBy('expires_at')

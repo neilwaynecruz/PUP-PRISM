@@ -80,7 +80,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::store
- * @see app/Http/Controllers/Inventory/HandoverController.php:94
+ * @see app/Http/Controllers/Inventory/HandoverController.php:96
  * @route '/inventory/handover'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -95,7 +95,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::store
- * @see app/Http/Controllers/Inventory/HandoverController.php:94
+ * @see app/Http/Controllers/Inventory/HandoverController.php:96
  * @route '/inventory/handover'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -104,7 +104,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::store
- * @see app/Http/Controllers/Inventory/HandoverController.php:94
+ * @see app/Http/Controllers/Inventory/HandoverController.php:96
  * @route '/inventory/handover'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -114,7 +114,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\HandoverController::store
- * @see app/Http/Controllers/Inventory/HandoverController.php:94
+ * @see app/Http/Controllers/Inventory/HandoverController.php:96
  * @route '/inventory/handover'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -124,7 +124,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\HandoverController::store
- * @see app/Http/Controllers/Inventory/HandoverController.php:94
+ * @see app/Http/Controllers/Inventory/HandoverController.php:96
  * @route '/inventory/handover'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -135,7 +135,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::cancel
- * @see app/Http/Controllers/Inventory/HandoverController.php:158
+ * @see app/Http/Controllers/Inventory/HandoverController.php:166
  * @route '/inventory/handover/{handoverLog}/cancel'
  */
 export const cancel = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -150,7 +150,7 @@ cancel.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::cancel
- * @see app/Http/Controllers/Inventory/HandoverController.php:158
+ * @see app/Http/Controllers/Inventory/HandoverController.php:166
  * @route '/inventory/handover/{handoverLog}/cancel'
  */
 cancel.url = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -183,7 +183,7 @@ cancel.url = (args: { handoverLog: number | { id: number } } | [handoverLog: num
 
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::cancel
- * @see app/Http/Controllers/Inventory/HandoverController.php:158
+ * @see app/Http/Controllers/Inventory/HandoverController.php:166
  * @route '/inventory/handover/{handoverLog}/cancel'
  */
 cancel.post = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -193,7 +193,7 @@ cancel.post = (args: { handoverLog: number | { id: number } } | [handoverLog: nu
 
     /**
 * @see \App\Http\Controllers\Inventory\HandoverController::cancel
- * @see app/Http/Controllers/Inventory/HandoverController.php:158
+ * @see app/Http/Controllers/Inventory/HandoverController.php:166
  * @route '/inventory/handover/{handoverLog}/cancel'
  */
     const cancelForm = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -203,7 +203,7 @@ cancel.post = (args: { handoverLog: number | { id: number } } | [handoverLog: nu
 
             /**
 * @see \App\Http\Controllers\Inventory\HandoverController::cancel
- * @see app/Http/Controllers/Inventory/HandoverController.php:158
+ * @see app/Http/Controllers/Inventory/HandoverController.php:166
  * @route '/inventory/handover/{handoverLog}/cancel'
  */
         cancelForm.post = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -214,7 +214,7 @@ cancel.post = (args: { handoverLog: number | { id: number } } | [handoverLog: nu
     cancel.form = cancelForm
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::resend
- * @see app/Http/Controllers/Inventory/HandoverController.php:199
+ * @see app/Http/Controllers/Inventory/HandoverController.php:209
  * @route '/inventory/handover/{handoverLog}/resend'
  */
 export const resend = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -229,7 +229,7 @@ resend.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::resend
- * @see app/Http/Controllers/Inventory/HandoverController.php:199
+ * @see app/Http/Controllers/Inventory/HandoverController.php:209
  * @route '/inventory/handover/{handoverLog}/resend'
  */
 resend.url = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -262,7 +262,7 @@ resend.url = (args: { handoverLog: number | { id: number } } | [handoverLog: num
 
 /**
 * @see \App\Http\Controllers\Inventory\HandoverController::resend
- * @see app/Http/Controllers/Inventory/HandoverController.php:199
+ * @see app/Http/Controllers/Inventory/HandoverController.php:209
  * @route '/inventory/handover/{handoverLog}/resend'
  */
 resend.post = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -272,7 +272,7 @@ resend.post = (args: { handoverLog: number | { id: number } } | [handoverLog: nu
 
     /**
 * @see \App\Http\Controllers\Inventory\HandoverController::resend
- * @see app/Http/Controllers/Inventory/HandoverController.php:199
+ * @see app/Http/Controllers/Inventory/HandoverController.php:209
  * @route '/inventory/handover/{handoverLog}/resend'
  */
     const resendForm = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -282,7 +282,7 @@ resend.post = (args: { handoverLog: number | { id: number } } | [handoverLog: nu
 
             /**
 * @see \App\Http\Controllers\Inventory\HandoverController::resend
- * @see app/Http/Controllers/Inventory/HandoverController.php:199
+ * @see app/Http/Controllers/Inventory/HandoverController.php:209
  * @route '/inventory/handover/{handoverLog}/resend'
  */
         resendForm.post = (args: { handoverLog: number | { id: number } } | [handoverLog: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

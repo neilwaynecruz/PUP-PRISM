@@ -1,5 +1,17 @@
 import { router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import {
+    destroy as destroyBooking,
+    restore as restoreBooking,
+} from '@/routes/inventory/bookings';
+import {
+    destroy as destroyProduct,
+    restore as restoreProduct,
+} from '@/routes/inventory/products';
+import {
+    destroy as destroyRequisition,
+    restore as restoreRequisition,
+} from '@/routes/inventory/requisitions';
 
 interface UndoableAction {
     id: string;
@@ -156,6 +168,28 @@ export function useUndoManager(options: UndoOptions = {}) {
         }
     };
 
+    const restoreUrlFor = (action: UndoableAction): string => {
+        switch (action.resourceType) {
+            case 'product':
+                return restoreProduct.url(action.resourceId);
+            case 'booking':
+                return restoreBooking.url(action.resourceId);
+            case 'requisition':
+                return restoreRequisition.url(action.resourceId);
+        }
+    };
+
+    const deleteUrlFor = (action: UndoableAction): string => {
+        switch (action.resourceType) {
+            case 'product':
+                return destroyProduct.url(action.resourceId);
+            case 'booking':
+                return destroyBooking.url(action.resourceId);
+            case 'requisition':
+                return destroyRequisition.url(action.resourceId);
+        }
+    };
+
     /**
      * Undo a delete (restore the item)
      */
@@ -163,10 +197,8 @@ export function useUndoManager(options: UndoOptions = {}) {
         action: UndoableAction,
     ): Promise<boolean> => {
         return new Promise((resolve) => {
-            const restoreUrl = `/inventory/${action.resourceType}s/${action.resourceId}/restore`;
-
             router.put(
-                restoreUrl,
+                restoreUrlFor(action),
                 {},
                 {
                     preserveScroll: true,
@@ -188,9 +220,16 @@ export function useUndoManager(options: UndoOptions = {}) {
         action: UndoableAction,
     ): Promise<boolean> => {
         return new Promise((resolve) => {
-            const deleteUrl = `/inventory/${action.resourceType}s/${action.resourceId}`;
+            const reason =
+                typeof action.data.deletionReason === 'string' &&
+                action.data.deletionReason.trim() !== ''
+                    ? action.data.deletionReason
+                    : 'Re-deleted via undo action';
 
-            router.delete(deleteUrl, {
+            router.delete(deleteUrlFor(action), {
+                data: {
+                    deletion_reason: reason,
+                },
                 preserveScroll: true,
                 onSuccess: () => {
                     resolve(true);

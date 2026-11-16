@@ -21,12 +21,12 @@ class ProductObserver
         }
     }
 
-    public function deleted(Product $product): void
+    public function deleted(Product $_product): void
     {
         $this->inventoryOptimizationCache->invalidate();
     }
 
-    public function restored(Product $product): void
+    public function restored(Product $_product): void
     {
         $this->inventoryOptimizationCache->invalidate();
     }

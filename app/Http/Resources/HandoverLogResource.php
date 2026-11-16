@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Models\HandoverLog;
 use Illuminate\Http\Request;
 
+/** @mixin HandoverLog */
 class HandoverLogResource extends InertiaJsonResource
 {
     /**
@@ -30,7 +32,7 @@ class HandoverLogResource extends InertiaJsonResource
             'initiated_by' => $this->relationLoaded('initiatedBy') ? $this->initiatedBy?->name : null,
             'from_position' => $this->positionSummary('fromPosition'),
             'to_position' => $this->positionSummary('toPosition'),
-            'initiated_at' => $this->initiated_at?->toIso8601String(),
+            'initiated_at' => $this->initiated_at->toIso8601String(),
             'last_sent_at' => $this->last_sent_at?->toIso8601String(),
             'verified_at' => $this->verified_at?->toIso8601String(),
             'cancelled_at' => $this->cancelled_at?->toIso8601String(),

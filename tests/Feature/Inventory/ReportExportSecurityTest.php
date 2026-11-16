@@ -1,9 +1,13 @@
 <?php
 
+use App\Http\Controllers\Inventory\InventoryReportController;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\Reports\CsvTableExporter;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
@@ -11,6 +15,19 @@ beforeEach(function () {
     Role::findOrCreate('Supply Head');
     Role::findOrCreate('Property Custodian');
     $this->withoutVite();
+});
+
+test('generated reports reject disks that cannot provide streamed downloads', function () {
+    $admin = User::factory()->withTwoFactor()->create();
+    $request = Request::create('/reports/generated');
+    $request->setUserResolver(fn () => $admin);
+    $disk = Mockery::mock(Filesystem::class);
+
+    config()->set('reports.queued_pdf_disk', 'contract-only');
+    Storage::shouldReceive('disk')->once()->with('contract-only')->andReturn($disk);
+
+    expect(fn () => app(InventoryReportController::class)->downloadGenerated($request, $admin->id, 'report.pdf'))
+        ->toThrow(LogicException::class, 'The generated report disk must support streamed downloads.');
 });
 
 test('csv exporter neutralizes formula injection triggers', function () {

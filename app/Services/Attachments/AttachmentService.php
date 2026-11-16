@@ -22,7 +22,6 @@ use Illuminate\Support\Str;
 
 class AttachmentService
 {
-    /** @var array<string, class-string<Model>> */
     private const ATTACHABLE_TYPES = [
         'asset' => Asset::class,
         'maintenance' => AssetMaintenance::class,
@@ -31,7 +30,7 @@ class AttachmentService
         'count-session' => InventoryCountSession::class,
     ];
 
-    public function resolveAttachable(string $type, int $id): Model
+    public function resolveAttachable(string $type, int $id): Asset|AssetMaintenance|AssetTransfer|AssetLifecycleEvent|InventoryCountSession
     {
         $modelClass = self::ATTACHABLE_TYPES[$type] ?? null;
         if ($modelClass === null) {
@@ -69,7 +68,7 @@ class AttachmentService
     }
 
     /** @param array<string, mixed> $payload */
-    public function store(User $user, Model $attachable, UploadedFile $file, array $payload): Attachment
+    public function store(User $user, Asset|AssetMaintenance|AssetTransfer|AssetLifecycleEvent|InventoryCountSession $attachable, UploadedFile $file, array $payload): Attachment
     {
         $checksum = hash_file('sha256', $file->getRealPath());
         if ($checksum === false) {

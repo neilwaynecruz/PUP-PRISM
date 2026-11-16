@@ -65,7 +65,6 @@ defineOptions({
     name: 'BookingShowPage',
     layout: {
         breadcrumbs: [
-            { title: 'Inventory', href: '/inventory' },
             { title: 'Bookings', href: bookingsIndex() },
             { title: 'Detail' },
         ],

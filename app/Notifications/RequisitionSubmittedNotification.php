@@ -29,9 +29,9 @@ class RequisitionSubmittedNotification extends Notification implements ShouldQue
         return NotificationEventType::RequisitionSubmitted->value;
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $_notifiable): MailMessage
     {
-        $requesterName = $this->requisition->requester?->name ?? 'A user';
+        $requesterName = $this->requisition->requester->name ?? 'A user';
         $url = route('inventory.requisitions.show', $this->requisition, absolute: false);
 
         return (new MailMessage)
@@ -45,9 +45,9 @@ class RequisitionSubmittedNotification extends Notification implements ShouldQue
     /**
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toArray(object $_notifiable): array
     {
-        $requesterName = $this->requisition->requester?->name ?? 'A user';
+        $requesterName = $this->requisition->requester->name ?? 'A user';
         $url = route('inventory.requisitions.show', $this->requisition, absolute: false);
 
         return [

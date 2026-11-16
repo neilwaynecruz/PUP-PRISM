@@ -18,7 +18,7 @@ class ProductPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Product $product): bool
+    public function view(User $user, Product $_product): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head', 'Property Custodian']);
     }
@@ -34,7 +34,7 @@ class ProductPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Product $product): bool
+    public function update(User $user, Product $_product): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
@@ -42,7 +42,7 @@ class ProductPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Product $product): bool
+    public function delete(User $user, Product $_product): bool
     {
         return $user->hasRole('Admin');
     }
@@ -52,12 +52,12 @@ class ProductPolicy
         return $user->hasRole('Admin');
     }
 
-    public function restore(User $user, Product $product): bool
+    public function restore(User $user, Product $_product): bool
     {
         return $user->hasRole('Admin');
     }
 
-    public function forceDelete(User $user, Product $product): bool
+    public function forceDelete(User $user, Product $_product): bool
     {
         return $user->hasRole('Admin');
     }

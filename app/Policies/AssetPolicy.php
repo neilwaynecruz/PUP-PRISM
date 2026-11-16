@@ -12,12 +12,12 @@ class AssetPolicy
         return $user->hasAnyRole(['Admin', 'Supply Head', 'Property Custodian']);
     }
 
-    public function view(User $user, Asset $asset): bool
+    public function view(User $user, Asset $_asset): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head', 'Property Custodian']);
     }
 
-    public function returnToStock(User $user, Asset $asset): bool
+    public function returnToStock(User $user, Asset $_asset): bool
     {
         return $user->hasAnyRole(['Admin', 'Property Custodian']);
     }

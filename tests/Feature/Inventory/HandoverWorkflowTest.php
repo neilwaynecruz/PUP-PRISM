@@ -211,7 +211,7 @@ test('cancellation requires a reason and only applies to pending handovers', fun
         ->post(route('inventory.handover.cancel', $handover, absolute: false), ['cancellation_reason' => ''])
         ->assertSessionHasErrors('cancellation_reason');
 
-    $handover->update(['verified_at' => now()]);
+    $handover->forceFill(['verified_at' => now()])->save();
 
     $this->actingAs($custodian)
         ->post(route('inventory.handover.cancel', $handover, absolute: false), ['cancellation_reason' => 'Too late.'])
@@ -273,7 +273,7 @@ test('handover history can be filtered by status', function () {
     $custodian = workflowCustodian();
     $recipient = User::factory()->assignedPosition(Position::factory()->create())->create();
     pendingHandoverFor(workflowAsset(tag: 'TAG-H1'), $recipient, $custodian);
-    pendingHandoverFor(workflowAsset(tag: 'TAG-H2'), $recipient, $custodian)->update(['cancelled_at' => now()]);
+    pendingHandoverFor(workflowAsset(tag: 'TAG-H2'), $recipient, $custodian)->forceFill(['cancelled_at' => now()])->save();
 
     $this->actingAs($custodian)
         ->get(route('inventory.handover.index', ['history_status' => 'cancelled'], absolute: false))

@@ -232,7 +232,7 @@ test('supply head can export stock expiration report as csv', function () {
     $supplyHead = reportExportUser('Supply Head');
     $product = Product::factory()->consumable()->create(['sku' => 'EXP-CSV-001', 'name' => 'Expiring Item']);
 
-    $lot = StockLot::factory()->create([
+    StockLot::factory()->create([
         'product_id' => $product->id,
         'reference_no' => 'LOT-EXP-CSV',
         'qty_remaining' => 12,

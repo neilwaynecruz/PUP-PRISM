@@ -82,7 +82,7 @@ class RequisitionTemplateService
 
                         return [
                             'sku' => $sku,
-                            'name' => $product?->name ?? ($line['name'] ?? null),
+                            'name' => $product->name ?? ($line['name'] ?? null),
                             'qty_requested' => (int) ($line['qty_requested'] ?? 0),
                             'availability' => [
                                 'available' => $available,

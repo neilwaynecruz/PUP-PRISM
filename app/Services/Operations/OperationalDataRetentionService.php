@@ -98,9 +98,11 @@ class OperationalDataRetentionService
     }
 
     /**
-     * @param  Builder<Model>  $query
+     * @template TModel of Model
+     *
+     * @param  Builder<TModel>  $query
      */
-    private function deleteInChunks($query, bool $dryRun): int
+    private function deleteInChunks(Builder $query, bool $dryRun): int
     {
         $chunkSize = max(100, (int) config('retention.chunk_size', 1000));
 

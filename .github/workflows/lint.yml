@@ -47,6 +47,9 @@ jobs:
       - name: Check PHP Code Style (Pint)
         run: composer lint:check
 
+      - name: Run PHPStan Static Analysis
+        run: composer phpstan
+
       - name: Check Frontend Formatting (Prettier)
         run: npm run format:check
 

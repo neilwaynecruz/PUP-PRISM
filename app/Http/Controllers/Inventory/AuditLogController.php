@@ -10,8 +10,9 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\AuditLog\AuditLogPresenter;
 use App\Services\AuditLogService;
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Collection;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -26,11 +27,13 @@ class AuditLogController extends Controller
     {
         $filters = $request->filters();
 
-        $logs = $this->filteredQuery($filters)
+        /** @var LengthAwarePaginator<int, AuditLog> $paginator */
+        $paginator = $this->filteredQuery($filters)
             ->with('user:id,name,email')
             ->paginate(50)
-            ->withQueryString()
-            ->through(fn (AuditLog $log) => $this->presenter->present($log));
+            ->withQueryString();
+
+        $logs = $paginator->through(fn (AuditLog $log): array => $this->presenter->present($log));
 
         $actions = AuditLog::query()
             ->distinct()
@@ -121,7 +124,7 @@ class AuditLogController extends Controller
     private function detectRiskAlerts(): array
     {
         $alerts = [];
-        $oneHourAgo = Carbon::now()->subHour();
+        $oneHourAgo = now()->subHour();
 
         // Mass deletion alert (5+ deletes in 1 hour)
         $massDeletions = AuditLog::query()
@@ -145,9 +148,9 @@ class AuditLogController extends Controller
         // After-hours deletions (10pm - 6am)
         $afterHours = AuditLog::query()
             ->where('action', 'delete')
-            ->where('created_at', '>=', Carbon::now()->subDay())
+            ->where('created_at', '>=', now()->subDay())
             ->get(['created_at'])
-            ->contains(fn ($log) => $log->created_at !== null
+            ->contains(fn ($log): bool => $log->created_at !== null
                 && ($log->created_at->hour >= 22 || $log->created_at->hour < 6));
 
         if ($afterHours) {
@@ -161,12 +164,12 @@ class AuditLogController extends Controller
         // Delete-then-restore pattern (potential data integrity issue)
         $deleteRestorePairs = AuditLog::query()
             ->whereIn('action', ['delete', 'restore'])
-            ->where('created_at', '>=', Carbon::now()->subDay())
+            ->where('created_at', '>=', now()->subDay())
             ->whereNotNull('user_id')
             ->orderBy('created_at')
             ->get(['user_id', 'model_type', 'model_id', 'action', 'created_at'])
-            ->groupBy(fn (AuditLog $log) => "{$log->user_id}|{$log->model_type}|{$log->model_id}")
-            ->contains(function ($entries) {
+            ->groupBy(fn ($log): string => "{$log->user_id}|{$log->model_type}|{$log->model_id}")
+            ->contains(function (Collection $entries): bool {
                 $lastDeleteAt = null;
 
                 foreach ($entries as $entry) {
@@ -218,16 +221,22 @@ class AuditLogController extends Controller
         return response()->streamDownload(function () use ($query): void {
             $output = fopen('php://output', 'w');
 
+            if ($output === false) {
+                return;
+            }
+
             fputcsv($output, [
                 'Date', 'User', 'Email', 'Action', 'Action Code', 'Record Type', 'Record ID',
                 'Description', 'Changes', 'IP Address',
             ]);
 
             foreach ($query->lazy(500) as $log) {
+                $actor = $log->user;
+
                 fputcsv($output, array_map($this->csvSafe(...), [
                     $log->created_at?->format('Y-m-d H:i:s') ?? '',
-                    $log->user?->name ?? 'System',
-                    $log->user?->email ?? '',
+                    $actor !== null ? $actor->name : 'System',
+                    $actor !== null ? $actor->email : '',
                     AuditLogPresenter::actionLabel($log->action),
                     $log->action,
                     AuditLogPresenter::modelLabel($log->model_type),

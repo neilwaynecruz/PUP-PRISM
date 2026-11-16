@@ -67,12 +67,12 @@ class BookingPolicy
         return $user->hasAnyRole(['Admin', 'Property Custodian']);
     }
 
-    public function restore(User $user, Booking $booking): bool
+    public function restore(User $user, Booking $_booking): bool
     {
         return $user->hasAnyRole(['Admin', 'Property Custodian']);
     }
 
-    public function forceDelete(User $user, Booking $booking): bool
+    public function forceDelete(User $user, Booking $_booking): bool
     {
         return $user->hasAnyRole(['Admin', 'Property Custodian']);
     }

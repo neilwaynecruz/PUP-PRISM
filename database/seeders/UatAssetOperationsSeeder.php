@@ -27,6 +27,7 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
 
@@ -37,6 +38,12 @@ class UatAssetOperationsSeeder extends Seeder
         if (app()->isProduction()) {
             throw new \RuntimeException('Operational seed data cannot be seeded in production.');
         }
+
+        Model::unguarded(fn () => $this->seedAssetOperations());
+    }
+
+    private function seedAssetOperations(): void
+    {
 
         $timeline = CarbonImmutable::today()->setTime(13, 0);
         /** @var array<string, Department> $departments */

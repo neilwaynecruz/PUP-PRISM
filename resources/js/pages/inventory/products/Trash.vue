@@ -36,6 +36,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useBulkSelection } from '@/composables/useBulkSelection';
+import {
+    bulkForceDelete,
+    bulkRestore,
+    forceDelete,
+    index as productsIndex,
+    restore,
+    trash as productsTrash,
+} from '@/routes/inventory/products';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
 
@@ -91,7 +99,7 @@ const hasActiveFilters = computed(() => {
 
 function applyFilters(): void {
     router.get(
-        '/inventory/products/trash',
+        productsTrash.url(),
         {
             search: search.value || null,
             date_from: dateFrom.value || null,
@@ -170,7 +178,7 @@ function confirmRestore(): void {
 
     isProcessing.value = true;
     router.put(
-        `/inventory/products/${selectedProduct.value.id}/restore`,
+        restore.url(selectedProduct.value.id),
         {},
         {
             onSuccess: () => {
@@ -190,7 +198,7 @@ function confirmForceDelete(): void {
     }
 
     isProcessing.value = true;
-    router.delete(`/inventory/products/${selectedProduct.value.id}/force`, {
+    router.delete(forceDelete.url(selectedProduct.value.id), {
         onSuccess: () => {
             forceDeleteDialogOpen.value = false;
             selectedProduct.value = null;
@@ -208,7 +216,7 @@ function confirmBulkRestore(): void {
 
     isProcessing.value = true;
     router.post(
-        '/inventory/products/bulk-restore',
+        bulkRestore.url(),
         {
             ids: Array.from(selectedIds.value),
         },
@@ -231,7 +239,7 @@ function confirmBulkForceDelete(): void {
 
     isProcessing.value = true;
     router.post(
-        '/inventory/products/bulk-force-delete',
+        bulkForceDelete.url(),
         {
             ids: Array.from(selectedIds.value),
         },
@@ -270,7 +278,7 @@ function confirmBulkForceDelete(): void {
                 as-child
                 class="h-9 gap-1.5 rounded-lg text-xs"
             >
-                <Link href="/inventory/products">
+                <Link :href="productsIndex.url()">
                     <ArrowLeft class="h-3.5 w-3.5" />
                     <span>Back to products</span>
                 </Link>
@@ -468,7 +476,7 @@ function confirmBulkForceDelete(): void {
                                 : 'Back to Products'
                         "
                         :action-href="
-                            hasActiveFilters ? undefined : '/inventory/products'
+                            hasActiveFilters ? undefined : productsIndex.url()
                         "
                         @action="hasActiveFilters ? resetFilters() : undefined"
                     />
@@ -638,7 +646,7 @@ function confirmBulkForceDelete(): void {
                                     :action-href="
                                         hasActiveFilters
                                             ? undefined
-                                            : '/inventory/products'
+                                            : productsIndex.url()
                                     "
                                     @action="
                                         hasActiveFilters

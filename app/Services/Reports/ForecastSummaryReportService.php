@@ -49,16 +49,14 @@ class ForecastSummaryReportService extends AbstractTableReportService
             ->get();
 
         $latestForecastDate = $latestSnapshots->max(
-            static fn (ForecastSnapshot $snapshot): ?string => $snapshot->forecast_date !== null
-                ? CarbonImmutable::parse((string) $snapshot->forecast_date)->toDateString()
-                : null
+            static fn (ForecastSnapshot $snapshot): string => $snapshot->forecast_date->toDateString()
         );
 
         $rows = $latestSnapshots
             ->map(static fn (ForecastSnapshot $snapshot): array => [
                 'forecast_date' => CarbonImmutable::parse((string) $snapshot->forecast_date)->toDateString(),
-                'sku' => $snapshot->product?->sku ?? '',
-                'product_name' => $snapshot->product?->name ?? '',
+                'sku' => $snapshot->product->sku ?? '',
+                'product_name' => $snapshot->product->name ?? '',
                 'current_on_hand_qty' => $snapshot->current_on_hand_qty,
                 'reorder_point_qty' => $snapshot->reorder_point_qty,
                 'predicted_daily_consumption' => round($snapshot->predicted_daily_consumption, 2),

@@ -14,10 +14,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 #[Fillable([
-    'asset_id', 'event_type', 'status', 'from_lifecycle_status', 'to_lifecycle_status',
-    'from_condition_status', 'to_condition_status', 'reason', 'method',
-    'supporting_reference', 'proposed_for', 'occurred_at', 'initiated_by',
-    'approved_by', 'approved_at', 'notes',
+    'asset_id',
+    'event_type',
+    'reason',
+    'method',
+    'supporting_reference',
+    'proposed_for',
+    'notes',
 ])]
 class AssetLifecycleEvent extends Model
 {
@@ -39,21 +42,25 @@ class AssetLifecycleEvent extends Model
         ];
     }
 
+    /** @return BelongsTo<Asset, $this> */
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function initiator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'initiated_by');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+    /** @return MorphMany<Attachment, $this> */
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');

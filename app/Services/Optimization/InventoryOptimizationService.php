@@ -5,7 +5,7 @@ namespace App\Services\Optimization;
 use App\Enums\ProductType;
 use App\Models\Product;
 use Carbon\CarbonImmutable;
-use Illuminate\Support\Collection;
+use Illuminate\Database\Eloquent\Collection;
 
 class InventoryOptimizationService
 {
@@ -210,7 +210,7 @@ class InventoryOptimizationService
             'product_id' => $product->id,
             'sku' => $product->sku,
             'name' => $product->name,
-            'on_hand_qty' => (int) ($product->stock?->on_hand_qty ?? 0),
+            'on_hand_qty' => (int) ($product->stock->on_hand_qty ?? 0),
             'abc_classification' => $classification,
             'safety_stock' => $safetyStock,
             'eoq' => $eoq,

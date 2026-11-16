@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::index
- * @see app/Http/Controllers/Inventory/SupplierController.php:23
+ * @see app/Http/Controllers/Inventory/SupplierController.php:24
  * @route '/inventory/suppliers'
  */
 export const index = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ index.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::index
- * @see app/Http/Controllers/Inventory/SupplierController.php:23
+ * @see app/Http/Controllers/Inventory/SupplierController.php:24
  * @route '/inventory/suppliers'
  */
 index.url = (options?: RouteQueryOptions) => {
@@ -25,7 +25,7 @@ index.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::index
- * @see app/Http/Controllers/Inventory/SupplierController.php:23
+ * @see app/Http/Controllers/Inventory/SupplierController.php:24
  * @route '/inventory/suppliers'
  */
 index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ index.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::index
- * @see app/Http/Controllers/Inventory/SupplierController.php:23
+ * @see app/Http/Controllers/Inventory/SupplierController.php:24
  * @route '/inventory/suppliers'
  */
 index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -44,7 +44,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\SupplierController::index
- * @see app/Http/Controllers/Inventory/SupplierController.php:23
+ * @see app/Http/Controllers/Inventory/SupplierController.php:24
  * @route '/inventory/suppliers'
  */
     const indexForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -54,7 +54,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::index
- * @see app/Http/Controllers/Inventory/SupplierController.php:23
+ * @see app/Http/Controllers/Inventory/SupplierController.php:24
  * @route '/inventory/suppliers'
  */
         indexForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -63,7 +63,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::index
- * @see app/Http/Controllers/Inventory/SupplierController.php:23
+ * @see app/Http/Controllers/Inventory/SupplierController.php:24
  * @route '/inventory/suppliers'
  */
         indexForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -79,7 +79,7 @@ index.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     index.form = indexForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::create
- * @see app/Http/Controllers/Inventory/SupplierController.php:58
+ * @see app/Http/Controllers/Inventory/SupplierController.php:59
  * @route '/inventory/suppliers/create'
  */
 export const create = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -94,7 +94,7 @@ create.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::create
- * @see app/Http/Controllers/Inventory/SupplierController.php:58
+ * @see app/Http/Controllers/Inventory/SupplierController.php:59
  * @route '/inventory/suppliers/create'
  */
 create.url = (options?: RouteQueryOptions) => {
@@ -103,7 +103,7 @@ create.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::create
- * @see app/Http/Controllers/Inventory/SupplierController.php:58
+ * @see app/Http/Controllers/Inventory/SupplierController.php:59
  * @route '/inventory/suppliers/create'
  */
 create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -112,7 +112,7 @@ create.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::create
- * @see app/Http/Controllers/Inventory/SupplierController.php:58
+ * @see app/Http/Controllers/Inventory/SupplierController.php:59
  * @route '/inventory/suppliers/create'
  */
 create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -122,7 +122,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\SupplierController::create
- * @see app/Http/Controllers/Inventory/SupplierController.php:58
+ * @see app/Http/Controllers/Inventory/SupplierController.php:59
  * @route '/inventory/suppliers/create'
  */
     const createForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -132,7 +132,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::create
- * @see app/Http/Controllers/Inventory/SupplierController.php:58
+ * @see app/Http/Controllers/Inventory/SupplierController.php:59
  * @route '/inventory/suppliers/create'
  */
         createForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -141,7 +141,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::create
- * @see app/Http/Controllers/Inventory/SupplierController.php:58
+ * @see app/Http/Controllers/Inventory/SupplierController.php:59
  * @route '/inventory/suppliers/create'
  */
         createForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -157,7 +157,7 @@ create.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
     create.form = createForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::store
- * @see app/Http/Controllers/Inventory/SupplierController.php:65
+ * @see app/Http/Controllers/Inventory/SupplierController.php:66
  * @route '/inventory/suppliers'
  */
 export const store = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -172,7 +172,7 @@ store.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::store
- * @see app/Http/Controllers/Inventory/SupplierController.php:65
+ * @see app/Http/Controllers/Inventory/SupplierController.php:66
  * @route '/inventory/suppliers'
  */
 store.url = (options?: RouteQueryOptions) => {
@@ -181,7 +181,7 @@ store.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::store
- * @see app/Http/Controllers/Inventory/SupplierController.php:65
+ * @see app/Http/Controllers/Inventory/SupplierController.php:66
  * @route '/inventory/suppliers'
  */
 store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
@@ -191,7 +191,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\SupplierController::store
- * @see app/Http/Controllers/Inventory/SupplierController.php:65
+ * @see app/Http/Controllers/Inventory/SupplierController.php:66
  * @route '/inventory/suppliers'
  */
     const storeForm = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -201,7 +201,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::store
- * @see app/Http/Controllers/Inventory/SupplierController.php:65
+ * @see app/Http/Controllers/Inventory/SupplierController.php:66
  * @route '/inventory/suppliers'
  */
         storeForm.post = (options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -212,7 +212,7 @@ store.post = (options?: RouteQueryOptions): RouteDefinition<'post'> => ({
     store.form = storeForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::show
- * @see app/Http/Controllers/Inventory/SupplierController.php:79
+ * @see app/Http/Controllers/Inventory/SupplierController.php:81
  * @route '/inventory/suppliers/{supplier}'
  */
 export const show = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -227,7 +227,7 @@ show.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::show
- * @see app/Http/Controllers/Inventory/SupplierController.php:79
+ * @see app/Http/Controllers/Inventory/SupplierController.php:81
  * @route '/inventory/suppliers/{supplier}'
  */
 show.url = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -260,7 +260,7 @@ show.url = (args: { supplier: number | { id: number } } | [supplier: number | { 
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::show
- * @see app/Http/Controllers/Inventory/SupplierController.php:79
+ * @see app/Http/Controllers/Inventory/SupplierController.php:81
  * @route '/inventory/suppliers/{supplier}'
  */
 show.get = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -269,7 +269,7 @@ show.get = (args: { supplier: number | { id: number } } | [supplier: number | { 
 })
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::show
- * @see app/Http/Controllers/Inventory/SupplierController.php:79
+ * @see app/Http/Controllers/Inventory/SupplierController.php:81
  * @route '/inventory/suppliers/{supplier}'
  */
 show.head = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -279,7 +279,7 @@ show.head = (args: { supplier: number | { id: number } } | [supplier: number | {
 
     /**
 * @see \App\Http\Controllers\Inventory\SupplierController::show
- * @see app/Http/Controllers/Inventory/SupplierController.php:79
+ * @see app/Http/Controllers/Inventory/SupplierController.php:81
  * @route '/inventory/suppliers/{supplier}'
  */
     const showForm = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -289,7 +289,7 @@ show.head = (args: { supplier: number | { id: number } } | [supplier: number | {
 
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::show
- * @see app/Http/Controllers/Inventory/SupplierController.php:79
+ * @see app/Http/Controllers/Inventory/SupplierController.php:81
  * @route '/inventory/suppliers/{supplier}'
  */
         showForm.get = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -298,7 +298,7 @@ show.head = (args: { supplier: number | { id: number } } | [supplier: number | {
         })
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::show
- * @see app/Http/Controllers/Inventory/SupplierController.php:79
+ * @see app/Http/Controllers/Inventory/SupplierController.php:81
  * @route '/inventory/suppliers/{supplier}'
  */
         showForm.head = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -314,7 +314,7 @@ show.head = (args: { supplier: number | { id: number } } | [supplier: number | {
     show.form = showForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::edit
- * @see app/Http/Controllers/Inventory/SupplierController.php:126
+ * @see app/Http/Controllers/Inventory/SupplierController.php:128
  * @route '/inventory/suppliers/{supplier}/edit'
  */
 export const edit = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -329,7 +329,7 @@ edit.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::edit
- * @see app/Http/Controllers/Inventory/SupplierController.php:126
+ * @see app/Http/Controllers/Inventory/SupplierController.php:128
  * @route '/inventory/suppliers/{supplier}/edit'
  */
 edit.url = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -362,7 +362,7 @@ edit.url = (args: { supplier: number | { id: number } } | [supplier: number | { 
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::edit
- * @see app/Http/Controllers/Inventory/SupplierController.php:126
+ * @see app/Http/Controllers/Inventory/SupplierController.php:128
  * @route '/inventory/suppliers/{supplier}/edit'
  */
 edit.get = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -371,7 +371,7 @@ edit.get = (args: { supplier: number | { id: number } } | [supplier: number | { 
 })
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::edit
- * @see app/Http/Controllers/Inventory/SupplierController.php:126
+ * @see app/Http/Controllers/Inventory/SupplierController.php:128
  * @route '/inventory/suppliers/{supplier}/edit'
  */
 edit.head = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -381,7 +381,7 @@ edit.head = (args: { supplier: number | { id: number } } | [supplier: number | {
 
     /**
 * @see \App\Http\Controllers\Inventory\SupplierController::edit
- * @see app/Http/Controllers/Inventory/SupplierController.php:126
+ * @see app/Http/Controllers/Inventory/SupplierController.php:128
  * @route '/inventory/suppliers/{supplier}/edit'
  */
     const editForm = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -391,7 +391,7 @@ edit.head = (args: { supplier: number | { id: number } } | [supplier: number | {
 
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::edit
- * @see app/Http/Controllers/Inventory/SupplierController.php:126
+ * @see app/Http/Controllers/Inventory/SupplierController.php:128
  * @route '/inventory/suppliers/{supplier}/edit'
  */
         editForm.get = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -400,7 +400,7 @@ edit.head = (args: { supplier: number | { id: number } } | [supplier: number | {
         })
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::edit
- * @see app/Http/Controllers/Inventory/SupplierController.php:126
+ * @see app/Http/Controllers/Inventory/SupplierController.php:128
  * @route '/inventory/suppliers/{supplier}/edit'
  */
         editForm.head = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -416,7 +416,7 @@ edit.head = (args: { supplier: number | { id: number } } | [supplier: number | {
     edit.form = editForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::update
- * @see app/Http/Controllers/Inventory/SupplierController.php:138
+ * @see app/Http/Controllers/Inventory/SupplierController.php:140
  * @route '/inventory/suppliers/{supplier}'
  */
 export const update = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -431,7 +431,7 @@ update.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::update
- * @see app/Http/Controllers/Inventory/SupplierController.php:138
+ * @see app/Http/Controllers/Inventory/SupplierController.php:140
  * @route '/inventory/suppliers/{supplier}'
  */
 update.url = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -464,7 +464,7 @@ update.url = (args: { supplier: number | { id: number } } | [supplier: number | 
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::update
- * @see app/Http/Controllers/Inventory/SupplierController.php:138
+ * @see app/Http/Controllers/Inventory/SupplierController.php:140
  * @route '/inventory/suppliers/{supplier}'
  */
 update.put = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -474,7 +474,7 @@ update.put = (args: { supplier: number | { id: number } } | [supplier: number | 
 
     /**
 * @see \App\Http\Controllers\Inventory\SupplierController::update
- * @see app/Http/Controllers/Inventory/SupplierController.php:138
+ * @see app/Http/Controllers/Inventory/SupplierController.php:140
  * @route '/inventory/suppliers/{supplier}'
  */
     const updateForm = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -489,7 +489,7 @@ update.put = (args: { supplier: number | { id: number } } | [supplier: number | 
 
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::update
- * @see app/Http/Controllers/Inventory/SupplierController.php:138
+ * @see app/Http/Controllers/Inventory/SupplierController.php:140
  * @route '/inventory/suppliers/{supplier}'
  */
         updateForm.put = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -505,7 +505,7 @@ update.put = (args: { supplier: number | { id: number } } | [supplier: number | 
     update.form = updateForm
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::destroy
- * @see app/Http/Controllers/Inventory/SupplierController.php:153
+ * @see app/Http/Controllers/Inventory/SupplierController.php:156
  * @route '/inventory/suppliers/{supplier}'
  */
 export const destroy = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -520,7 +520,7 @@ destroy.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::destroy
- * @see app/Http/Controllers/Inventory/SupplierController.php:153
+ * @see app/Http/Controllers/Inventory/SupplierController.php:156
  * @route '/inventory/suppliers/{supplier}'
  */
 destroy.url = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -553,7 +553,7 @@ destroy.url = (args: { supplier: number | { id: number } } | [supplier: number |
 
 /**
 * @see \App\Http\Controllers\Inventory\SupplierController::destroy
- * @see app/Http/Controllers/Inventory/SupplierController.php:153
+ * @see app/Http/Controllers/Inventory/SupplierController.php:156
  * @route '/inventory/suppliers/{supplier}'
  */
 destroy.delete = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'delete'> => ({
@@ -563,7 +563,7 @@ destroy.delete = (args: { supplier: number | { id: number } } | [supplier: numbe
 
     /**
 * @see \App\Http\Controllers\Inventory\SupplierController::destroy
- * @see app/Http/Controllers/Inventory/SupplierController.php:153
+ * @see app/Http/Controllers/Inventory/SupplierController.php:156
  * @route '/inventory/suppliers/{supplier}'
  */
     const destroyForm = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -578,7 +578,7 @@ destroy.delete = (args: { supplier: number | { id: number } } | [supplier: numbe
 
             /**
 * @see \App\Http\Controllers\Inventory\SupplierController::destroy
- * @see app/Http/Controllers/Inventory/SupplierController.php:153
+ * @see app/Http/Controllers/Inventory/SupplierController.php:156
  * @route '/inventory/suppliers/{supplier}'
  */
         destroyForm.delete = (args: { supplier: number | { id: number } } | [supplier: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

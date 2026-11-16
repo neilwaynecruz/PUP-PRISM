@@ -2,7 +2,6 @@
 
 namespace App\Concerns;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Validation\Rules\Password;
 
 trait PasswordValidationRules
@@ -10,7 +9,7 @@ trait PasswordValidationRules
     /**
      * Get the validation rules used to validate passwords.
      *
-     * @return array<int, ValidationRule|array<mixed>|string>
+     * @return list<string|Password>
      */
     protected function passwordRules(): array
     {
@@ -20,7 +19,7 @@ trait PasswordValidationRules
     /**
      * Get the validation rules used to validate the current password.
      *
-     * @return array<int, ValidationRule|array<mixed>|string>
+     * @return list<string>
      */
     protected function currentPasswordRules(): array
     {

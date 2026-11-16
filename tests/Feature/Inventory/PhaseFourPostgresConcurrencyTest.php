@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\DB;
 use PgSql\Connection;
 use PgSql\Result;
+use PHPUnit\Framework\Assert;
 
 /** @return array{0: PDO, 1: Connection} */
 function phaseFourPostgresConnections(): array
@@ -58,13 +59,13 @@ function phaseFourAwaitRow(Connection $connection): array
 
 test('postgresql row locks serialize concurrent count adjustment approvals', function () {
     if (! function_exists('pg_send_query')) {
-        $this->markTestSkipped('The PostgreSQL extension with asynchronous query support is unavailable.');
+        Assert::markTestSkipped('The PostgreSQL extension with asynchronous query support is unavailable.');
     }
 
     try {
         [$pdo, $asyncConnection] = phaseFourPostgresConnections();
     } catch (Throwable $exception) {
-        $this->markTestSkipped('PostgreSQL testing connection unavailable: '.$exception->getMessage());
+        Assert::markTestSkipped('PostgreSQL testing connection unavailable: '.$exception->getMessage());
     }
 
     $suffix = bin2hex(random_bytes(6));
@@ -124,13 +125,13 @@ test('postgresql row locks serialize concurrent count adjustment approvals', fun
 
 test('postgresql row locks serialize simultaneous asset transfer approvals', function () {
     if (! function_exists('pg_send_query')) {
-        $this->markTestSkipped('The PostgreSQL extension with asynchronous query support is unavailable.');
+        Assert::markTestSkipped('The PostgreSQL extension with asynchronous query support is unavailable.');
     }
 
     try {
         [$pdo, $asyncConnection] = phaseFourPostgresConnections();
     } catch (Throwable $exception) {
-        $this->markTestSkipped('PostgreSQL testing connection unavailable: '.$exception->getMessage());
+        Assert::markTestSkipped('PostgreSQL testing connection unavailable: '.$exception->getMessage());
     }
 
     $suffix = bin2hex(random_bytes(6));

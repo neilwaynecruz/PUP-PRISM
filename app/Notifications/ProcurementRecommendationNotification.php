@@ -31,7 +31,7 @@ class ProcurementRecommendationNotification extends Notification implements Shou
         return NotificationEventType::ProcurementRecommendation->value;
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $_notifiable): MailMessage
     {
         $url = route('inventory.forecasting.show', $this->product, absolute: false);
 
@@ -52,7 +52,7 @@ class ProcurementRecommendationNotification extends Notification implements Shou
     /**
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toArray(object $_notifiable): array
     {
         $url = route('inventory.forecasting.show', $this->product, absolute: false);
 

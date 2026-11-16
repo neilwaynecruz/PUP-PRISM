@@ -480,7 +480,7 @@ function statusClass(value: string): string {
                         v-model="form.remarks"
                         rows="3"
                         placeholder="Optional instructions for the counting team"
-                        class="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                        class="w-full min-w-0 rounded-md border border-input bg-transparent px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 md:text-sm dark:bg-input/30"
                     />
                 </label>
                 <div class="flex justify-end">

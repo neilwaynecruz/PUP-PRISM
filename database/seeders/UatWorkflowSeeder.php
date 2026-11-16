@@ -16,6 +16,7 @@ use App\Models\StockMovement;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Database\Seeders\Concerns\SeedsConsumableLedger;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 
 class UatWorkflowSeeder extends Seeder
@@ -28,17 +29,23 @@ class UatWorkflowSeeder extends Seeder
             throw new \RuntimeException('Operational seed data cannot be seeded in production.');
         }
 
+        Model::unguarded(fn () => $this->seedWorkflows());
+    }
+
+    private function seedWorkflows(): void
+    {
+
         $timeline = CarbonImmutable::today()->setTime(11, 0);
         /** @var array<string, User> $users */
         $users = User::query()->get()->keyBy('email')->all();
         /** @var array<string, Asset> $assets */
         $assets = Asset::query()->get()->keyBy('tag_code')->all();
         /** @var array<string, Product> $products */
-        $products = Product::withTrashed()->get()->keyBy('sku')->all();
+        $products = Product::withTrashed()->with('stock')->get()->keyBy('sku')->all();
 
         $tomorrowMorning = $timeline->addDay()->setTime(9, 0);
 
-        $approvedBooking = Booking::query()->updateOrCreate(
+        Booking::query()->updateOrCreate(
             ['purpose' => 'Director briefing and equipment walkthrough'],
             [
                 'asset_id' => $assets['AST-DIR-0001']->id,

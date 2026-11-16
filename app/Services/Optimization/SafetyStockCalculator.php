@@ -156,7 +156,7 @@ class SafetyStockCalculator
             ? $product->forecastProfile
             : $product->forecastProfile()->first();
 
-        $leadTime = max(1, (int) ($profile?->lead_time_days ?? 14));
+        $leadTime = max(1, (int) ($profile->lead_time_days ?? 14));
 
         // Scientific safety stock = Z * sigma_d * sqrt(L)
         $safetyStock = (int) ceil($serviceLevelZ * $stdDev * sqrt($leadTime));

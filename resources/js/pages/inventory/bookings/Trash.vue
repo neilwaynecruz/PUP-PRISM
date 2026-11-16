@@ -27,6 +27,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useBulkSelection } from '@/composables/useBulkSelection';
+import {
+    bulkForceDelete,
+    bulkRestore,
+    forceDelete,
+    index as bookingsIndex,
+    restore,
+    trash as bookingsTrash,
+} from '@/routes/inventory/bookings';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
 
@@ -71,7 +79,7 @@ const hasActiveFilters = computed(() => {
 
 function applyFilters(): void {
     router.get(
-        '/inventory/bookings/trash',
+        bookingsTrash.url(),
         {
             search: search.value || null,
             date_from: dateFrom.value || null,
@@ -146,7 +154,7 @@ function confirmRestore(): void {
     }
 
     router.put(
-        `/inventory/bookings/${selectedBooking.value.id}/restore`,
+        restore.url(selectedBooking.value.id),
         {},
         {
             onSuccess: () => {
@@ -162,7 +170,7 @@ function confirmForceDelete(): void {
         return;
     }
 
-    router.delete(`/inventory/bookings/${selectedBooking.value.id}/force`, {
+    router.delete(forceDelete.url(selectedBooking.value.id), {
         onSuccess: () => {
             forceDeleteDialogOpen.value = false;
             selectedBooking.value = null;
@@ -172,7 +180,7 @@ function confirmForceDelete(): void {
 
 function confirmBulkRestore(): void {
     router.post(
-        '/inventory/bookings/bulk-restore',
+        bulkRestore.url(),
         {
             ids: Array.from(selectedIds.value),
         },
@@ -187,7 +195,7 @@ function confirmBulkRestore(): void {
 
 function confirmBulkForceDelete(): void {
     router.post(
-        '/inventory/bookings/bulk-force-delete',
+        bulkForceDelete.url(),
         {
             ids: Array.from(selectedIds.value),
         },
@@ -281,7 +289,7 @@ function confirmBulkForceDelete(): void {
                 as-child
                 class="min-h-11 rounded-lg sm:min-h-8"
             >
-                <Link href="/inventory/bookings">Back to bookings</Link>
+                <Link :href="bookingsIndex.url()">Back to bookings</Link>
             </Button>
         </div>
 
@@ -413,7 +421,7 @@ function confirmBulkForceDelete(): void {
                     title="Trash is empty"
                     description="Deleted bookings will appear here. You have 30 days to restore them before they are permanently removed."
                     action-label="Back to Bookings"
-                    action-href="/inventory/bookings"
+                    :action-href="bookingsIndex.url()"
                 />
             </div>
 
@@ -455,7 +463,7 @@ function confirmBulkForceDelete(): void {
                                     title="Trash is empty"
                                     description="Deleted bookings will appear here. You have 30 days to restore them before they are permanently removed."
                                     action-label="Back to Bookings"
-                                    action-href="/inventory/bookings"
+                                    :action-href="bookingsIndex.url()"
                                 />
                             </td>
                         </tr>

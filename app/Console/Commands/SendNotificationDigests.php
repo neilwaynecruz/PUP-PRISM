@@ -63,15 +63,11 @@ class SendNotificationDigests extends Command
         $eligibleUsers = [];
 
         foreach ($users as $user) {
-            if (! $user instanceof User) {
-                continue;
-            }
-
             /** @var array<string, true> $userEventTypes */
             $userEventTypes = [];
 
             foreach ($user->notificationPreferences as $preference) {
-                if (is_string($preference->event_type) && $preference->event_type !== '') {
+                if ($preference->event_type !== '') {
                     $userEventTypes[$preference->event_type] = true;
                     $allChunkEventTypes[$preference->event_type] = true;
                 }
@@ -118,7 +114,8 @@ class SendNotificationDigests extends Command
 
             $userNotifications = $candidates
                 ->filter(static function (DatabaseNotification $notification) use ($allowedEventTypes): bool {
-                    $data = is_array($notification->data) ? $notification->data : [];
+                    $data = $notification->getAttribute('data');
+                    $data = is_array($data) ? $data : [];
                     $eventType = $data['event_type'] ?? null;
 
                     return is_string($eventType) && isset($allowedEventTypes[$eventType]);

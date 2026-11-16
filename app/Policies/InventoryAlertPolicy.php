@@ -12,7 +12,7 @@ class InventoryAlertPolicy
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
 
-    public function view(User $user, InventoryAlert $inventoryAlert): bool
+    public function view(User $user, InventoryAlert $_inventoryAlert): bool
     {
         return $this->viewAny($user);
     }

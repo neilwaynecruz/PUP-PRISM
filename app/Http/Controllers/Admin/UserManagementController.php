@@ -274,7 +274,7 @@ class UserManagementController extends Controller
         return to_route('admin.users.index');
     }
 
-    public function reactivate(Request $request, User $managedUser): RedirectResponse
+    public function reactivate(User $managedUser): RedirectResponse
     {
         $this->authorize('reactivate', $managedUser);
 

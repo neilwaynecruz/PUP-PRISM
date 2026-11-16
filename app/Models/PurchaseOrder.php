@@ -11,18 +11,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property PurchaseOrderStatus $status
+ */
 #[Fillable([
     'supplier_id',
-    'po_number',
-    'status',
-    'subtotal',
     'tax',
-    'total_amount',
     'requested_by',
-    'approved_by',
     'expected_delivery_at',
-    'sent_at',
-    'received_at',
     'notes',
 ])]
 class PurchaseOrder extends Model

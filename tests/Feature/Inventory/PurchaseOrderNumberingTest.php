@@ -10,10 +10,13 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Spatie\Permission\Models\Role;
 
+use function Pest\Laravel\actingAs;
+use function Pest\Laravel\withoutVite;
+
 beforeEach(function () {
     Role::findOrCreate('Admin');
     Role::findOrCreate('Supply Head');
-    $this->withoutVite();
+    withoutVite();
 });
 
 function createPoUser(string $role): User
@@ -82,7 +85,7 @@ test('database enforces unique constraint on po_number', function () {
     $supplier = Supplier::factory()->create();
     $user = createPoUser('Supply Head');
 
-    PurchaseOrder::create([
+    PurchaseOrder::unguarded(fn () => PurchaseOrder::create([
         'supplier_id' => $supplier->id,
         'requested_by' => $user->id,
         'po_number' => 'PO-20261018-9999',
@@ -90,10 +93,10 @@ test('database enforces unique constraint on po_number', function () {
         'subtotal' => 100,
         'tax' => 0,
         'total_amount' => 100,
-    ]);
+    ]));
 
     expect(function () use ($supplier, $user) {
-        PurchaseOrder::create([
+        PurchaseOrder::unguarded(fn () => PurchaseOrder::create([
             'supplier_id' => $supplier->id,
             'requested_by' => $user->id,
             'po_number' => 'PO-20261018-9999', // duplicate
@@ -101,7 +104,7 @@ test('database enforces unique constraint on po_number', function () {
             'subtotal' => 200,
             'tax' => 0,
             'total_amount' => 200,
-        ]);
+        ]));
     })->toThrow(QueryException::class);
 });
 
@@ -115,7 +118,7 @@ test('store endpoint uses atomic generator and increments sequence', function ()
 
     $csrfToken = 'csrf-po-test-token';
 
-    $response = $this->actingAs($user)
+    $response = actingAs($user)
         ->withSession(['_token' => $csrfToken])
         ->post(route('inventory.purchase-orders.store', absolute: false), [
             '_token' => $csrfToken,

@@ -27,6 +27,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useBulkSelection } from '@/composables/useBulkSelection';
+import {
+    bulkForceDelete,
+    bulkRestore,
+    forceDelete,
+    index as requisitionsIndex,
+    restore,
+    trash as requisitionsTrash,
+} from '@/routes/inventory/requisitions';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
 
@@ -69,7 +77,7 @@ const hasActiveFilters = computed(() => {
 
 function applyFilters(): void {
     router.get(
-        '/inventory/requisitions/trash',
+        requisitionsTrash.url(),
         {
             search: search.value || null,
             date_from: dateFrom.value || null,
@@ -144,7 +152,7 @@ function confirmRestore(): void {
     }
 
     router.put(
-        `/inventory/requisitions/${selectedRequisition.value.id}/restore`,
+        restore.url(selectedRequisition.value.id),
         {},
         {
             onSuccess: () => {
@@ -160,20 +168,17 @@ function confirmForceDelete(): void {
         return;
     }
 
-    router.delete(
-        `/inventory/requisitions/${selectedRequisition.value.id}/force`,
-        {
-            onSuccess: () => {
-                forceDeleteDialogOpen.value = false;
-                selectedRequisition.value = null;
-            },
+    router.delete(forceDelete.url(selectedRequisition.value.id), {
+        onSuccess: () => {
+            forceDeleteDialogOpen.value = false;
+            selectedRequisition.value = null;
         },
-    );
+    });
 }
 
 function confirmBulkRestore(): void {
     router.post(
-        '/inventory/requisitions/bulk-restore',
+        bulkRestore.url(),
         {
             ids: Array.from(selectedIds.value),
         },
@@ -188,7 +193,7 @@ function confirmBulkRestore(): void {
 
 function confirmBulkForceDelete(): void {
     router.post(
-        '/inventory/requisitions/bulk-force-delete',
+        bulkForceDelete.url(),
         {
             ids: Array.from(selectedIds.value),
         },
@@ -283,7 +288,9 @@ function confirmBulkForceDelete(): void {
                 as-child
                 class="min-h-11 rounded-lg sm:min-h-8"
             >
-                <Link href="/inventory/requisitions">Back to requisitions</Link>
+                <Link :href="requisitionsIndex.url()"
+                    >Back to requisitions</Link
+                >
             </Button>
         </div>
 
@@ -414,7 +421,7 @@ function confirmBulkForceDelete(): void {
                     title="Trash is empty"
                     description="Deleted requisitions will appear here. You have 30 days to restore them before they are permanently removed."
                     action-label="Back to Requisitions"
-                    action-href="/inventory/requisitions"
+                    :action-href="requisitionsIndex.url()"
                 />
             </div>
 
@@ -455,7 +462,7 @@ function confirmBulkForceDelete(): void {
                                     title="Trash is empty"
                                     description="Deleted requisitions will appear here. You have 30 days to restore them before they are permanently removed."
                                     action-label="Back to Requisitions"
-                                    action-href="/inventory/requisitions"
+                                    :action-href="requisitionsIndex.url()"
                                 />
                             </td>
                         </tr>

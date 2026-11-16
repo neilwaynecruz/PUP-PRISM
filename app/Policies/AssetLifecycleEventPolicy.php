@@ -18,7 +18,7 @@ class AssetLifecycleEventPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, AssetLifecycleEvent $assetLifecycleEvent): bool
+    public function view(User $user, AssetLifecycleEvent $_assetLifecycleEvent): bool
     {
         return $this->viewAny($user);
     }
@@ -42,7 +42,7 @@ class AssetLifecycleEventPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, AssetLifecycleEvent $assetLifecycleEvent): bool
+    public function delete(User $_user, AssetLifecycleEvent $_assetLifecycleEvent): bool
     {
         return false;
     }
@@ -50,7 +50,7 @@ class AssetLifecycleEventPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, AssetLifecycleEvent $assetLifecycleEvent): bool
+    public function restore(User $_user, AssetLifecycleEvent $_assetLifecycleEvent): bool
     {
         return false;
     }
@@ -58,7 +58,7 @@ class AssetLifecycleEventPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, AssetLifecycleEvent $assetLifecycleEvent): bool
+    public function forceDelete(User $_user, AssetLifecycleEvent $_assetLifecycleEvent): bool
     {
         return false;
     }

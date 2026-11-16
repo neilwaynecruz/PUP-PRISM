@@ -12,25 +12,16 @@ use App\Http\Resources\PurchaseOrderCollection;
 use App\Http\Resources\PurchaseOrderResource;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
-use App\Models\PurchaseOrderLine;
-use App\Models\Supplier;
-use App\Notifications\PurchaseOrderSentNotification;
-use App\Services\AuditLogService;
-use App\Services\Inventory\InventoryService;
-use App\Services\Procurement\PurchaseOrderGenerator;
-use App\Services\Procurement\PurchaseOrderNumberGenerator;
-use Carbon\CarbonImmutable;
+use App\Services\Procurement\PurchaseOrderService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Notification;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class PurchaseOrderController extends Controller
 {
     public function __construct(
-        private readonly PurchaseOrderNumberGenerator $numberGenerator,
+        private readonly PurchaseOrderService $service,
     ) {}
 
     public function index(Request $request): Response
@@ -72,7 +63,7 @@ class PurchaseOrderController extends Controller
                 'date_to' => $dateTo,
             ],
             'purchaseOrders' => (new PurchaseOrderCollection($purchaseOrders))->toArray($request),
-            'suppliers' => $this->supplierOptions(),
+            'suppliers' => $this->service->supplierOptions(),
             'statuses' => collect(PurchaseOrderStatus::cases())
                 ->map(fn (PurchaseOrderStatus $statusCase) => [
                     'value' => $statusCase->value,
@@ -111,8 +102,8 @@ class PurchaseOrderController extends Controller
         }
 
         return Inertia::render('inventory/purchase-orders/Create', [
-            'suppliers' => $this->supplierOptions(onlyActive: true),
-            'products' => $this->productOptions(),
+            'suppliers' => $this->service->supplierOptions(onlyActive: true),
+            'products' => $this->service->productOptions(),
             'initialSupplierId' => $initialSupplierId,
             'initialLines' => $initialLines,
         ]);
@@ -122,63 +113,7 @@ class PurchaseOrderController extends Controller
     {
         $this->authorize('create', PurchaseOrder::class);
 
-        $validated = $request->validated();
-        $purchaseOrder = DB::transaction(function () use ($request, $validated): PurchaseOrder {
-            $purchaseOrder = PurchaseOrder::query()->create([
-                'supplier_id' => $validated['supplier_id'],
-                'po_number' => $this->numberGenerator->nextNumber(),
-                'status' => PurchaseOrderStatus::Draft,
-                'subtotal' => 0,
-                'tax' => round((float) ($validated['tax'] ?? 0), 2),
-                'total_amount' => 0,
-                'requested_by' => $request->user()?->id,
-                'approved_by' => null,
-                'expected_delivery_at' => isset($validated['expected_delivery_at'])
-                    ? CarbonImmutable::parse((string) $validated['expected_delivery_at'])
-                    : null,
-                'notes' => $validated['notes'] ?? null,
-            ]);
-
-            $productIds = collect($validated['lines'])
-                ->pluck('product_id')
-                ->map(static fn (mixed $id): int => (int) $id)
-                ->unique()
-                ->values()
-                ->all();
-            $productsById = Product::query()
-                ->whereIn('id', $productIds)
-                ->get(['id', 'unit_price'])
-                ->keyBy('id');
-
-            $now = CarbonImmutable::now()->toDateTimeString();
-            $lineRows = [];
-
-            foreach ($validated['lines'] as $line) {
-                $product = $productsById->get((int) $line['product_id'])
-                    ?? Product::query()->findOrFail((int) $line['product_id']);
-                $unitPrice = round((float) ($line['unit_price'] ?? $product->unit_price ?? 0), 2);
-                $quantity = (int) $line['qty_ordered'];
-
-                $lineRows[] = [
-                    'purchase_order_id' => $purchaseOrder->id,
-                    'product_id' => $product->id,
-                    'qty_ordered' => $quantity,
-                    'qty_received' => 0,
-                    'unit_price' => $unitPrice,
-                    'subtotal' => round($quantity * $unitPrice, 2),
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
-
-            PurchaseOrderLine::query()->insert($lineRows);
-
-            $purchaseOrder->recalculateTotals();
-
-            return $purchaseOrder;
-        });
-
-        AuditLogService::logCreated($purchaseOrder);
+        $purchaseOrder = $this->service->createDraft($request->user(), $request->validated());
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Purchase order created.')]);
 
@@ -213,33 +148,11 @@ class PurchaseOrderController extends Controller
     {
         $this->authorize('send', $purchaseOrder);
 
-        /** @var PurchaseOrder|null $sentPo */
-        $sentPo = DB::transaction(function () use ($request, $purchaseOrder): ?PurchaseOrder {
-            /** @var PurchaseOrder $lockedPo */
-            $lockedPo = PurchaseOrder::query()->whereKey($purchaseOrder->id)->lockForUpdate()->firstOrFail();
-
-            if ($lockedPo->status !== PurchaseOrderStatus::Draft) {
-                return null;
-            }
-
-            $lockedPo->forceFill([
-                'status' => PurchaseOrderStatus::Sent,
-                'sent_at' => now(),
-                'approved_by' => $request->user()?->id,
-                'notes' => $this->mergeNotes(
-                    $lockedPo->notes,
-                    $request->string('notes')->trim()->toString(),
-                ),
-            ])->save();
-
-            AuditLogService::logUpdated($lockedPo, [
-                'status' => PurchaseOrderStatus::Draft->value,
-                'sent_at' => null,
-                'approved_by' => null,
-            ]);
-
-            return $lockedPo->load('supplier');
-        });
+        $sentPo = $this->service->send(
+            purchaseOrder: $purchaseOrder,
+            actor: $request->user(),
+            notes: $request->string('notes')->trim()->toString(),
+        );
 
         if (! $sentPo instanceof PurchaseOrder) {
             Inertia::flash('toast', [
@@ -250,11 +163,6 @@ class PurchaseOrderController extends Controller
             return back();
         }
 
-        if (filled($sentPo->supplier?->email)) {
-            Notification::route('mail', (string) $sentPo->supplier?->email)
-                ->notify(new PurchaseOrderSentNotification($sentPo));
-        }
-
         Inertia::flash('toast', [
             'type' => 'success',
             'message' => __('Purchase order sent to supplier.'),
@@ -263,11 +171,8 @@ class PurchaseOrderController extends Controller
         return back();
     }
 
-    public function receive(
-        PurchaseOrderReceiveRequest $request,
-        PurchaseOrder $purchaseOrder,
-        InventoryService $inventory,
-    ): RedirectResponse {
+    public function receive(PurchaseOrderReceiveRequest $request, PurchaseOrder $purchaseOrder): RedirectResponse
+    {
         $this->authorize('receive', $purchaseOrder);
 
         if (! $purchaseOrder->canReceive()) {
@@ -279,13 +184,11 @@ class PurchaseOrderController extends Controller
             return back();
         }
 
-        $validatedLines = $request->validatedLines();
-
         try {
-            $updatedPo = $inventory->receivePurchaseOrder(
-                $request->user(),
-                $purchaseOrder,
-                $validatedLines,
+            $updatedPo = $this->service->receive(
+                purchaseOrder: $purchaseOrder,
+                actor: $request->user(),
+                validatedLines: $request->validatedLines(),
                 ipAddress: $request->ip(),
                 idempotencyKey: $request->string('idempotency_key')->trim()->toString() ?: null,
             );
@@ -312,50 +215,10 @@ class PurchaseOrderController extends Controller
     {
         $this->authorize('cancel', $purchaseOrder);
 
-        /** @var array{status: string, message: string} $outcome */
-        $outcome = DB::transaction(function () use ($request, $purchaseOrder): array {
-            /** @var PurchaseOrder $lockedPo */
-            $lockedPo = PurchaseOrder::query()->whereKey($purchaseOrder->id)->lockForUpdate()->firstOrFail();
-
-            if ($lockedPo->status === PurchaseOrderStatus::Cancelled) {
-                return [
-                    'status' => 'warning',
-                    'message' => __('This purchase order is already cancelled.'),
-                ];
-            }
-
-            $hasReceivedLines = $lockedPo->lines()
-                ->lockForUpdate()
-                ->get(['id', 'qty_received'])
-                ->contains(fn (PurchaseOrderLine $line): bool => (int) $line->qty_received > 0);
-
-            if (
-                in_array($lockedPo->status, [PurchaseOrderStatus::Received, PurchaseOrderStatus::Partial], true)
-                || $hasReceivedLines
-            ) {
-                return [
-                    'status' => 'error',
-                    'message' => __('Purchase orders with received stock cannot be cancelled.'),
-                ];
-            }
-
-            $oldValues = $lockedPo->only(['status', 'notes']);
-
-            $lockedPo->forceFill([
-                'status' => PurchaseOrderStatus::Cancelled,
-                'notes' => $this->mergeNotes(
-                    $lockedPo->notes,
-                    'Cancellation reason: '.$request->string('reason')->trim()->toString(),
-                ),
-            ])->save();
-
-            AuditLogService::logUpdated($lockedPo, $oldValues);
-
-            return [
-                'status' => 'success',
-                'message' => __('Purchase order cancelled.'),
-            ];
-        });
+        $outcome = $this->service->cancel(
+            purchaseOrder: $purchaseOrder,
+            reason: $request->string('reason')->trim()->toString(),
+        );
 
         Inertia::flash('toast', [
             'type' => $outcome['status'],
@@ -365,11 +228,11 @@ class PurchaseOrderController extends Controller
         return back();
     }
 
-    public function generate(Request $request, PurchaseOrderGenerator $generator): RedirectResponse
+    public function generate(Request $request): RedirectResponse
     {
         $this->authorize('create', PurchaseOrder::class);
 
-        $generatedPurchaseOrders = $generator->generateFromAlerts($request->user());
+        $generatedPurchaseOrders = $this->service->generateFromAlerts($request->user());
 
         if ($generatedPurchaseOrders->isEmpty()) {
             Inertia::flash('toast', [
@@ -392,11 +255,11 @@ class PurchaseOrderController extends Controller
         return to_route('inventory.purchase-orders.index');
     }
 
-    public function generateFromForecasts(Request $request, PurchaseOrderGenerator $generator): RedirectResponse
+    public function generateFromForecasts(Request $request): RedirectResponse
     {
         $this->authorize('create', PurchaseOrder::class);
 
-        $generatedPurchaseOrders = $generator->generateFromForecastAlerts($request->user());
+        $generatedPurchaseOrders = $this->service->generateFromForecasts($request->user());
 
         if ($generatedPurchaseOrders->isEmpty()) {
             Inertia::flash('toast', [
@@ -417,65 +280,5 @@ class PurchaseOrderController extends Controller
         ]);
 
         return to_route('inventory.purchase-orders.index');
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function supplierOptions(bool $onlyActive = false): array
-    {
-        return Supplier::query()
-            ->when($onlyActive, fn ($query) => $query->where('is_active', true))
-            ->orderBy('name')
-            ->get(['id', 'name', 'contact_person', 'email', 'phone', 'payment_terms', 'lead_time_days'])
-            ->map(fn (Supplier $supplier) => [
-                'id' => (int) $supplier->id,
-                'name' => $supplier->name,
-                'contact_person' => $supplier->contact_person,
-                'email' => $supplier->email,
-                'phone' => $supplier->phone,
-                'payment_terms' => $supplier->payment_terms,
-                'lead_time_days' => $supplier->lead_time_days,
-            ])
-            ->all();
-    }
-
-    /**
-     * @return array<int, array<string, mixed>>
-     */
-    private function productOptions(): array
-    {
-        return Product::query()
-            ->with(['supplier:id,name', 'category:id,name', 'stock:id,product_id,on_hand_qty'])
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get(['id', 'sku', 'name', 'type', 'category_id', 'supplier_id', 'unit_price', 'reorder_threshold'])
-            ->map(fn (Product $product) => [
-                'id' => (int) $product->id,
-                'sku' => $product->sku,
-                'name' => $product->name,
-                'type' => $product->type?->value,
-                'category' => $product->category?->name,
-                'supplier_id' => $product->supplier_id,
-                'supplier' => $product->supplier?->name,
-                'unit_price' => $product->unit_price,
-                'on_hand_qty' => (int) ($product->stock?->on_hand_qty ?? 0),
-                'reorder_threshold' => (int) ($product->reorder_threshold ?? 0),
-            ])
-            ->all();
-    }
-
-    private function mergeNotes(?string $existingNotes, ?string $nextNote): ?string
-    {
-        $segments = array_values(array_filter([
-            $existingNotes ? trim($existingNotes) : null,
-            $nextNote ? trim($nextNote) : null,
-        ]));
-
-        if ($segments === []) {
-            return null;
-        }
-
-        return implode("\n\n", $segments);
     }
 }

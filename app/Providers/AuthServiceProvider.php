@@ -3,11 +3,18 @@
 namespace App\Providers;
 
 use App\Models\Asset;
+use App\Models\AssetLifecycleEvent;
+use App\Models\AssetMaintenance;
+use App\Models\AssetTransfer;
+use App\Models\Attachment;
 use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\Category;
 use App\Models\Department;
+use App\Models\HandoverLog;
 use App\Models\InventoryAlert;
+use App\Models\InventoryCountSession;
+use App\Models\Location;
 use App\Models\NotificationPreference;
 use App\Models\Origin;
 use App\Models\Position;
@@ -18,12 +25,19 @@ use App\Models\RequisitionTemplate;
 use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Policies\AssetLifecycleEventPolicy;
+use App\Policies\AssetMaintenancePolicy;
 use App\Policies\AssetPolicy;
+use App\Policies\AssetTransferPolicy;
+use App\Policies\AttachmentPolicy;
 use App\Policies\AuditLogPolicy;
 use App\Policies\BookingPolicy;
 use App\Policies\CategoryPolicy;
 use App\Policies\DepartmentPolicy;
+use App\Policies\HandoverLogPolicy;
 use App\Policies\InventoryAlertPolicy;
+use App\Policies\InventoryCountSessionPolicy;
+use App\Policies\LocationPolicy;
 use App\Policies\NotificationPreferencePolicy;
 use App\Policies\OriginPolicy;
 use App\Policies\PositionPolicy;
@@ -68,5 +82,12 @@ class AuthServiceProvider extends ServiceProvider
         Gate::policy(Position::class, PositionPolicy::class);
         Gate::policy(Category::class, CategoryPolicy::class);
         Gate::policy(Origin::class, OriginPolicy::class);
+        Gate::policy(AssetLifecycleEvent::class, AssetLifecycleEventPolicy::class);
+        Gate::policy(AssetMaintenance::class, AssetMaintenancePolicy::class);
+        Gate::policy(AssetTransfer::class, AssetTransferPolicy::class);
+        Gate::policy(Attachment::class, AttachmentPolicy::class);
+        Gate::policy(HandoverLog::class, HandoverLogPolicy::class);
+        Gate::policy(InventoryCountSession::class, InventoryCountSessionPolicy::class);
+        Gate::policy(Location::class, LocationPolicy::class);
     }
 }

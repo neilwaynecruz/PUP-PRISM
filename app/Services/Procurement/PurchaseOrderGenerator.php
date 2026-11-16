@@ -26,7 +26,6 @@ class PurchaseOrderGenerator
     {
         $productsTable = (new Product)->getTable();
 
-        /** @var Collection<int|string, Collection<int, Product>> $products */
         $products = Product::query()
             ->where('type', ProductType::Consumable)
             ->where('is_active', true)
@@ -78,7 +77,6 @@ class PurchaseOrderGenerator
             return new Collection;
         }
 
-        /** @var Collection<int|string, Collection<int, Product>> $products */
         $products = Product::query()
             ->whereIn('id', $forecastProductIds)
             ->where('type', ProductType::Consumable)
@@ -180,7 +178,7 @@ class PurchaseOrderGenerator
             $unitPrice = round((float) ($product->unit_price ?? 0), 2);
             $lineSubtotal = round($unitPrice * $recommendedQty, 2);
             $expectedDeliveryAt ??= now()->addDays(
-                max(1, (int) ($product->lead_time_days ?? $product->supplier?->lead_time_days ?? 7)),
+                max(1, (int) ($product->lead_time_days ?? $product->supplier->lead_time_days ?? 7)),
             );
 
             $lines[] = [
@@ -198,7 +196,8 @@ class PurchaseOrderGenerator
             return null;
         }
 
-        $purchaseOrder = PurchaseOrder::create([
+        $purchaseOrder = new PurchaseOrder;
+        $purchaseOrder->forceFill([
             'supplier_id' => $firstProduct->supplier_id,
             'po_number' => $this->numberGenerator->nextNumber(),
             'status' => PurchaseOrderStatus::Draft,
@@ -209,7 +208,7 @@ class PurchaseOrderGenerator
             'approved_by' => null,
             'expected_delivery_at' => $expectedDeliveryAt,
             'notes' => $notes,
-        ]);
+        ])->save();
 
         foreach ($lines as $line) {
             $purchaseOrder->lines()->create($line);
@@ -222,7 +221,7 @@ class PurchaseOrderGenerator
 
     private function resolveRecommendedQuantity(Product $product): int
     {
-        $onHand = (int) ($product->stock?->on_hand_qty ?? 0);
+        $onHand = (int) ($product->stock->on_hand_qty ?? 0);
         $fallbackQty = max(0, ((int) $product->reorder_threshold * 2) - $onHand);
 
         $snapshot = ForecastSnapshot::query()

@@ -32,10 +32,10 @@ class ReceivingController extends Controller
                 'id' => (int) $product->id,
                 'sku' => $product->sku,
                 'name' => $product->name,
-                'type' => $product->type?->value,
+                'type' => $product->type->value,
                 'category' => $product->category?->name,
                 'supplier' => $product->supplier?->name,
-                'on_hand_qty' => (int) ($product->stock?->on_hand_qty ?? 0),
+                'on_hand_qty' => (int) ($product->stock->on_hand_qty ?? 0),
                 'reorder_threshold' => (int) ($product->reorder_threshold ?? 0),
                 'unit_price' => $product->unit_price !== null ? round((float) $product->unit_price, 2) : null,
             ])
@@ -97,7 +97,7 @@ class ReceivingController extends Controller
                 $product = $purchaseOrderLine->product;
                 AuditLogService::logCustom(
                     'receive',
-                    __('Received stock against PO line for :sku.', ['sku' => $product?->sku ?? 'product']),
+                    __('Received stock against PO line for :sku.', ['sku' => $product->sku ?? 'product']),
                     $product,
                     null,
                     [

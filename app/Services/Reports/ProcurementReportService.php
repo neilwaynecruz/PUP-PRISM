@@ -2,7 +2,6 @@
 
 namespace App\Services\Reports;
 
-use App\Enums\PurchaseOrderStatus;
 use App\Models\PurchaseOrder;
 use App\Services\Reports\Support\TableReport;
 use Carbon\CarbonImmutable;
@@ -74,19 +73,17 @@ class ProcurementReportService extends AbstractTableReportService
     {
         return [
             'reference_no' => $purchaseOrder->po_number ?? (string) $purchaseOrder->id,
-            'status' => $purchaseOrder->status instanceof PurchaseOrderStatus
-                ? $purchaseOrder->status->value
-                : (string) $purchaseOrder->status,
-            'supplier' => $purchaseOrder->supplier?->name ?? '',
+            'status' => $purchaseOrder->status->value,
+            'supplier' => $purchaseOrder->supplier->name ?? '',
             'created_at' => optional($purchaseOrder->created_at)?->format('Y-m-d H:i:s T') ?? '',
             'received_at' => $purchaseOrder->received_at !== null
                 ? CarbonImmutable::parse((string) $purchaseOrder->received_at)->format('Y-m-d H:i:s T')
                 : '',
-            'category' => $line?->product?->category?->name ?? '',
-            'product_sku' => $line?->product?->sku ?? '',
-            'product_name' => $line?->product?->name ?? '',
-            'qty_ordered' => $line?->qty_ordered ?? '',
-            'qty_received' => $line?->qty_received ?? '',
+            'category' => $line?->product?->category->name ?? '',
+            'product_sku' => $line?->product->sku ?? '',
+            'product_name' => $line?->product->name ?? '',
+            'qty_ordered' => $line->qty_ordered ?? '',
+            'qty_received' => $line->qty_received ?? '',
             'unit_price' => isset($line->unit_price) ? (float) $line->unit_price : null,
             'subtotal' => isset($line->subtotal) ? (float) $line->subtotal : null,
         ];

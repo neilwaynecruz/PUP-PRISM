@@ -19,7 +19,7 @@ class RequisitionPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Requisition $requisition): bool
+    public function view(User $user, Requisition $_requisition): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head', 'Property Custodian']);
     }
@@ -96,12 +96,12 @@ class RequisitionPolicy
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
 
-    public function restore(User $user, Requisition $requisition): bool
+    public function restore(User $user, Requisition $_requisition): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }
 
-    public function forceDelete(User $user, Requisition $requisition): bool
+    public function forceDelete(User $user, Requisition $_requisition): bool
     {
         return $user->hasAnyRole(['Admin', 'Supply Head']);
     }

@@ -26,19 +26,20 @@ class DailyNotificationDigest extends Notification implements ShouldQueue
     /**
      * @return array<int, string>
      */
-    public function via(object $notifiable): array
+    public function via(object $_notifiable): array
     {
         return ['mail'];
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $_notifiable): MailMessage
     {
         $message = (new MailMessage)
             ->subject(__('Your daily notification digest'))
             ->line(__('Here is a summary of notifications from the last day:'));
 
         foreach ($this->entries as $entry) {
-            $data = is_array($entry->data) ? $entry->data : [];
+            $data = $entry->getAttribute('data');
+            $data = is_array($data) ? $data : [];
             $title = (string) ($data['title'] ?? __('Notification'));
             $body = (string) ($data['message'] ?? '');
 

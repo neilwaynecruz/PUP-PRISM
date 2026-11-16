@@ -11,6 +11,7 @@ use App\Models\Location;
 use App\Models\Position;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\InventoryRealtimeService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -37,14 +38,16 @@ class AssetTransferService
                 }
             }
 
-            $transfer = AssetTransfer::create([
-                ...$payload,
+            $transfer = new AssetTransfer;
+            $transfer->fill($payload);
+            $transfer->forceFill([
                 'from_location_id' => $asset->current_location_id,
                 'from_position_id' => $asset->position_id,
                 'status' => AssetTransferStatus::Pending,
                 'initiated_by' => $user->id,
-            ]);
+            ])->save();
             AuditLogService::logCreated($transfer, "Location transfer requested for asset {$asset->tag_code}.");
+            app(InventoryRealtimeService::class)->assetOperationUpdated($asset->id, 'transfer_requested');
 
             return $transfer;
         });
@@ -95,12 +98,13 @@ class AssetTransferService
                 'position_id' => $nextPositionId,
                 'status' => $nextStatus,
             ]);
-            $transfer->update([
+            $transfer->forceFill([
                 'status' => AssetTransferStatus::Approved,
                 'approved_by' => $approver->id,
                 'approved_at' => CarbonImmutable::now(),
-            ]);
+            ])->save();
             AuditLogService::logCustom('approve', "Asset {$asset->tag_code} transferred to {$destination->name}.", $transfer);
+            app(InventoryRealtimeService::class)->assetOperationUpdated($asset->id, 'transfer_approved');
 
             return $transfer->fresh() ?? $transfer;
         });
@@ -114,7 +118,7 @@ class AssetTransferService
                 throw new \RuntimeException('Only pending transfers can be rejected.');
             }
 
-            $transfer->update(['status' => AssetTransferStatus::Rejected, 'approved_by' => $reviewer->id, 'approved_at' => now(), 'notes' => $notes]);
+            $transfer->forceFill(['status' => AssetTransferStatus::Rejected, 'approved_by' => $reviewer->id, 'approved_at' => now(), 'notes' => $notes])->save();
             AuditLogService::logCustom('reject', 'Asset location transfer rejected.', $transfer);
 
             return $transfer->fresh() ?? $transfer;
@@ -132,12 +136,12 @@ class AssetTransferService
                 throw new \RuntimeException("You don't have permission to cancel this transfer.");
             }
 
-            $transfer->update([
+            $transfer->forceFill([
                 'status' => AssetTransferStatus::Cancelled,
                 'cancelled_by' => $user->id,
                 'cancelled_at' => CarbonImmutable::now(),
                 'notes' => $notes,
-            ]);
+            ])->save();
             AuditLogService::logCustom('cancel', 'Asset location transfer cancelled.', $transfer);
 
             return $transfer->fresh() ?? $transfer;

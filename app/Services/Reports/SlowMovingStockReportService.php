@@ -37,8 +37,8 @@ class SlowMovingStockReportService extends AbstractTableReportService
             ->map(fn (Product $product) => [
                 'sku' => $product->sku,
                 'product_name' => $product->name,
-                'category' => $product->category?->name ?? '',
-                'on_hand_qty' => $product->stock?->on_hand_qty ?? 0,
+                'category' => $product->category->name ?? '',
+                'on_hand_qty' => $product->stock->on_hand_qty ?? 0,
                 'issues_in_window' => 0,
                 'window_days' => $days,
             ])

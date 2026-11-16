@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Inventory;
 
-use App\Enums\ProductType;
 use App\Enums\RequisitionStatus;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inventory\BulkTrashActionRequest;
 use App\Http\Requests\Inventory\RequisitionApproveRequest;
 use App\Http\Requests\Inventory\RequisitionIndexRequest;
 use App\Http\Requests\Inventory\RequisitionIssueRequest;
@@ -12,26 +12,17 @@ use App\Http\Requests\Inventory\RequisitionRejectRequest;
 use App\Http\Requests\Inventory\RequisitionStoreRequest;
 use App\Http\Resources\RequisitionCollection;
 use App\Http\Resources\RequisitionResource;
-use App\Models\Product;
 use App\Models\Requisition;
-use App\Models\RequisitionLine;
 use App\Models\RequisitionTemplate;
-use App\Models\StockMovement;
 use App\Models\User;
-use App\Services\AuditLogService;
-use App\Services\DashboardStatsCache;
-use App\Services\Inventory\InventoryService;
 use App\Services\Inventory\RequisitionTemplateService;
-use App\Services\NotificationService;
+use App\Services\Inventory\RequisitionWorkflowService;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
@@ -40,7 +31,7 @@ use Throwable;
 class RequisitionController extends Controller
 {
     public function __construct(
-        private readonly NotificationService $notifications,
+        private readonly RequisitionWorkflowService $workflow,
     ) {}
 
     public function index(
@@ -188,63 +179,17 @@ class RequisitionController extends Controller
         }
 
         try {
-            $requisition = DB::transaction(function () use ($request, $validated): Requisition {
-                $requestedSkus = collect($validated['lines'])->pluck('sku')->all();
-                $productsBySku = Product::query()
-                    ->whereIn('sku', $requestedSkus)
-                    ->where('type', ProductType::Consumable)
-                    ->where('is_active', true)
-                    ->lockForUpdate()
-                    ->get(['id', 'sku'])
-                    ->keyBy('sku');
-
-                foreach ($validated['lines'] as $index => $line) {
-                    if (! $productsBySku->has($line['sku'])) {
-                        throw ValidationException::withMessages([
-                            "lines.{$index}.sku" => 'This product is no longer available for requisitions. Choose another product.',
-                        ]);
-                    }
-                }
-
-                $requisition = Requisition::create([
-                    'requester_id' => $request->user()->id,
-                    'requester_position_id' => $request->user()->position_id,
-                    'approver_id' => null,
-                    'approver_position_id' => null,
-                    'requested_ip_address' => $request->ip(),
-                    'approved_ip_address' => null,
-                    'approved_at' => null,
-                    'issued_by' => null,
-                    'issued_position_id' => null,
-                    'issued_ip_address' => null,
-                    'issued_at' => null,
-                    'status' => RequisitionStatus::Submitted,
-                    'notes' => $validated['notes'] ?? null,
-                ]);
-
-                foreach ($validated['lines'] as $line) {
-                    /** @var Product $product */
-                    $product = $productsBySku->get($line['sku']);
-
-                    RequisitionLine::create([
-                        'requisition_id' => $requisition->id,
-                        'product_id' => $product->id,
-                        'qty_requested' => (int) $line['qty_requested'],
-                        'qty_issued' => 0,
-                    ]);
-                }
-
-                AuditLogService::logCreated($requisition, "Requisition #{$requisition->id} submitted.");
-
-                return $requisition;
-            });
+            $this->workflow->submitFromSkus(
+                actor: $request->user(),
+                linesInput: $validated['lines'],
+                notes: $validated['notes'] ?? null,
+                ipAddress: $request->ip(),
+            );
         } catch (Throwable $exception) {
             Cache::forget($submissionKey);
 
             throw $exception;
         }
-
-        $this->notifications->requisitionSubmitted($requisition);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition submitted.')]);
 
@@ -259,31 +204,12 @@ class RequisitionController extends Controller
             __('You are not authorized to approve requisitions.'),
         );
 
-        /** @var array{approved: bool, requisition: Requisition} $result */
-        $result = DB::transaction(function () use ($request, $requisition): array {
-            $locked = Requisition::query()->whereKey($requisition->id)->lockForUpdate()->firstOrFail();
-
-            if ($request->user()->id === $locked->requester_id) {
-                abort(403, __('You cannot approve your own requisition.'));
-            }
-
-            if ($locked->status !== RequisitionStatus::Submitted) {
-                return ['approved' => false, 'requisition' => $locked];
-            }
-
-            $locked->update([
-                'status' => RequisitionStatus::Approved,
-                'approver_id' => $request->user()->id,
-                'approver_position_id' => $request->user()->position_id,
-                'approved_ip_address' => $request->ip(),
-                'approved_at' => CarbonImmutable::now(),
-                'notes' => $request->validated()['notes'] ?? $locked->notes,
-            ]);
-
-            AuditLogService::logCustom('approve', "Requisition #{$locked->id} approved.", $locked);
-
-            return ['approved' => true, 'requisition' => $locked];
-        });
+        $result = $this->workflow->approve(
+            requisition: $requisition,
+            actor: $request->user(),
+            notes: $request->validated()['notes'] ?? null,
+            ipAddress: $request->ip(),
+        );
 
         if (! $result['approved']) {
             Inertia::flash('toast', [
@@ -295,8 +221,6 @@ class RequisitionController extends Controller
 
             return back();
         }
-
-        $this->notifications->requisitionStatusChanged($result['requisition'], 'approved');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition approved.')]);
 
@@ -311,33 +235,11 @@ class RequisitionController extends Controller
             __('You are not authorized to reject requisitions.'),
         );
 
-        $reason = trim($request->validated()['notes']);
-
-        /** @var array{rejected: bool, requisition: Requisition} $result */
-        $result = DB::transaction(function () use ($request, $requisition, $reason): array {
-            $locked = Requisition::query()->whereKey($requisition->id)->lockForUpdate()->firstOrFail();
-
-            if ($request->user()->id === $locked->requester_id) {
-                abort(403, __('You cannot reject your own requisition.'));
-            }
-
-            if ($locked->status !== RequisitionStatus::Submitted) {
-                return ['rejected' => false, 'requisition' => $locked];
-            }
-
-            $existingNotes = trim((string) $locked->notes);
-
-            $locked->update([
-                'status' => RequisitionStatus::Rejected,
-                'notes' => $existingNotes === ''
-                    ? "Rejection reason: {$reason}"
-                    : "{$existingNotes}\n\nRejection reason: {$reason}",
-            ]);
-
-            AuditLogService::logCustom('reject', "Requisition #{$locked->id} rejected.", $locked);
-
-            return ['rejected' => true, 'requisition' => $locked];
-        });
+        $result = $this->workflow->reject(
+            requisition: $requisition,
+            actor: $request->user(),
+            reason: $request->validated()['notes'],
+        );
 
         if (! $result['rejected']) {
             Inertia::flash('toast', [
@@ -350,18 +252,13 @@ class RequisitionController extends Controller
             return back();
         }
 
-        $this->notifications->requisitionStatusChanged($result['requisition'], 'rejected');
-
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition rejected.')]);
 
         return back();
     }
 
-    public function issue(
-        RequisitionIssueRequest $request,
-        Requisition $requisition,
-        InventoryService $inventory,
-    ): RedirectResponse {
+    public function issue(RequisitionIssueRequest $request, Requisition $requisition): RedirectResponse
+    {
         abort_unless(
             $request->user()?->hasAnyRole(['Admin', 'Supply Head']),
             403,
@@ -380,11 +277,11 @@ class RequisitionController extends Controller
         }
 
         try {
-            $requisition = $inventory->issueRequisition(
-                user: $request->user(),
+            $requisition = $this->workflow->issue(
+                requisition: $requisition,
+                actor: $request->user(),
                 linePayloads: $request->issueLines(),
                 markAsBackordered: $request->shouldMarkAsBackordered(),
-                requisition: $requisition,
                 notes: $request->validated()['notes'] ?? null,
                 ipAddress: $request->ip(),
             );
@@ -393,19 +290,6 @@ class RequisitionController extends Controller
                 'lines' => $exception->getMessage(),
             ]);
         }
-
-        AuditLogService::logCustom(
-            'issue',
-            "Requisition #{$requisition->id} issued.",
-            $requisition,
-            null,
-            [
-                'status' => $requisition->status->value ?? (string) $requisition->status,
-                'issued_at' => $requisition->issued_at?->toIso8601String(),
-                'line_count' => $requisition->lines()->count(),
-            ],
-        );
-        $this->notifications->requisitionStatusChanged($requisition, 'issued');
 
         $message = match ($requisition->status) {
             RequisitionStatus::Issued => __('Requisition issued.'),
@@ -431,73 +315,14 @@ class RequisitionController extends Controller
             'ids.*' => ['integer', 'distinct', 'exists:requisitions,id'],
         ]);
 
-        /** @var array{approved: array<int, Requisition>, skipped: int} $result */
-        $result = DB::transaction(function () use ($request, $validated): array {
-            $requisitions = Requisition::query()
-                ->whereIn('id', $validated['ids'])
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get()
-                ->sortBy('created_at')
-                ->values();
+        $outcome = $this->workflow->bulkApprove(
+            ids: array_values(array_map('intval', $validated['ids'])),
+            actor: $request->user(),
+            ipAddress: $request->ip(),
+        );
 
-            $approved = [];
-            $approvedIds = [];
-            $auditEntries = [];
-            $skipped = 0;
-            $approvedAt = CarbonImmutable::now();
-
-            foreach ($requisitions as $requisition) {
-                if (! $request->user()->can('approve', $requisition)) {
-                    $skipped++;
-
-                    continue;
-                }
-
-                $requisition->forceFill([
-                    'status' => RequisitionStatus::Approved,
-                    'approver_id' => $request->user()->id,
-                    'approver_position_id' => $request->user()->position_id,
-                    'approved_ip_address' => $request->ip(),
-                    'approved_at' => $approvedAt,
-                ]);
-                $approvedIds[] = $requisition->id;
-                $auditEntries[] = [
-                    'action' => 'approve',
-                    'description' => "Requisition #{$requisition->id} approved.",
-                    'model' => $requisition,
-                ];
-                $approved[] = $requisition;
-            }
-
-            if ($approvedIds !== []) {
-                Requisition::query()
-                    ->whereIn('id', $approvedIds)
-                    ->update([
-                        'status' => RequisitionStatus::Approved->value,
-                        'approver_id' => $request->user()->id,
-                        'approver_position_id' => $request->user()->position_id,
-                        'approved_ip_address' => $request->ip(),
-                        'approved_at' => $approvedAt,
-                        'updated_at' => $approvedAt,
-                    ]);
-
-                AuditLogService::logBatch($auditEntries);
-            }
-
-            return ['approved' => $approved, 'skipped' => $skipped];
-        });
-
-        if ($result['approved'] !== []) {
-            app(DashboardStatsCache::class)->invalidate();
-        }
-
-        foreach ($result['approved'] as $approvedRequisition) {
-            $this->notifications->requisitionStatusChanged($approvedRequisition, 'approved');
-        }
-
-        $updated = count($result['approved']);
-        $skipped = $result['skipped'];
+        $updated = $outcome['approved'];
+        $skipped = $outcome['skipped'];
 
         $message = trans_choice(
             '{1} :count requisition approved.|[0,*] :count requisitions approved.',
@@ -517,10 +342,8 @@ class RequisitionController extends Controller
         return back();
     }
 
-    public function bulkIssue(
-        Request $request,
-        InventoryService $inventory,
-    ): RedirectResponse {
+    public function bulkIssue(Request $request): RedirectResponse
+    {
         abort_unless(
             $request->user()?->hasAnyRole(['Admin', 'Supply Head']),
             403,
@@ -532,39 +355,15 @@ class RequisitionController extends Controller
             'ids.*' => ['integer', 'distinct', 'exists:requisitions,id'],
         ]);
 
-        $requisitions = Requisition::query()
-            ->whereIn('id', $validated['ids'])
-            ->orderBy('created_at')
-            ->get();
+        $outcome = $this->workflow->bulkIssue(
+            ids: array_values(array_map('intval', $validated['ids'])),
+            actor: $request->user(),
+            ipAddress: $request->ip(),
+        );
 
-        $updated = 0;
-        $skipped = 0;
-        $failed = 0;
-
-        foreach ($requisitions as $requisition) {
-            if (! $request->user()->can('issue', $requisition)) {
-                $skipped++;
-
-                continue;
-            }
-
-            try {
-                $issuedRequisition = $inventory->issueRequisition(
-                    user: $request->user(),
-                    requisition: $requisition,
-                    linePayloads: null,
-                    markAsBackordered: false,
-                    notes: null,
-                    ipAddress: $request->ip(),
-                );
-                AuditLogService::logCustom('issue', "Requisition #{$requisition->id} issued.", $issuedRequisition);
-                $this->notifications->requisitionStatusChanged($issuedRequisition, 'issued');
-                $updated++;
-            } catch (\RuntimeException $exception) {
-                report($exception);
-                $failed++;
-            }
-        }
+        $updated = $outcome['issued'];
+        $skipped = $outcome['skipped'];
+        $failed = $outcome['failed'];
 
         $message = trans_choice(
             '{1} :count requisition issued.|[0,*] :count requisitions issued.',
@@ -592,12 +391,11 @@ class RequisitionController extends Controller
     {
         $this->authorize('delete', $requisition);
 
-        $requisition->deleted_by = $request->user()?->id;
-        $requisition->deletion_reason = $request->string('deletion_reason')->trim()->toString() ?: null;
-        $requisition->save();
-        $requisition->delete();
-
-        AuditLogService::logDeleted($requisition);
+        $this->workflow->softDelete(
+            requisition: $requisition,
+            actor: $request->user(),
+            deletionReason: $request->string('deletion_reason')->trim()->toString() ?: null,
+        );
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition moved to trash.')]);
 
@@ -684,9 +482,7 @@ class RequisitionController extends Controller
 
         $this->authorize('restore', $requisition);
 
-        $requisition->restore();
-
-        AuditLogService::logRestored($requisition);
+        $this->workflow->restore($requisition);
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition restored.')]);
 
@@ -700,7 +496,9 @@ class RequisitionController extends Controller
 
         $this->authorize('forceDelete', $requisition);
 
-        if ($this->hasHistoricalRequisitionActivity($requisition)) {
+        $status = $this->workflow->forceDelete($requisition);
+
+        if ($status === 'has_history') {
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => __('Unable to permanently delete this requisition because it has issuance history.'),
@@ -709,76 +507,25 @@ class RequisitionController extends Controller
             return back();
         }
 
-        try {
-            AuditLogService::logForceDeleted($requisition);
-            $requisition->forceDelete();
-
-            Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition permanently deleted.')]);
-        } catch (QueryException $e) {
-            report($e);
-
+        if ($status === 'referenced') {
             Inertia::flash('toast', [
                 'type' => 'error',
                 'message' => __('Unable to permanently delete this requisition because it is referenced by other records.'),
             ]);
+
+            return back();
         }
+
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Requisition permanently deleted.')]);
 
         return back();
     }
 
-    public function bulkRestore(Request $request): RedirectResponse
+    public function bulkRestore(BulkTrashActionRequest $request): RedirectResponse
     {
         $this->authorize('trash', Requisition::class);
 
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct', 'exists:requisitions,id'],
-        ]);
-
-        $requisitions = Requisition::query()
-            ->onlyTrashed()
-            ->whereIn('id', $validated['ids'])
-            ->orderBy('id')
-            ->get();
-
-        foreach ($requisitions as $requisition) {
-            $this->authorize('restore', $requisition);
-        }
-
-        $restored = DB::transaction(function () use ($requisitions): int {
-            if ($requisitions->isEmpty()) {
-                return 0;
-            }
-
-            $ids = $requisitions->modelKeys();
-            $now = CarbonImmutable::now();
-
-            Requisition::query()
-                ->onlyTrashed()
-                ->whereIn('id', $ids)
-                ->update([
-                    'deleted_at' => null,
-                    'updated_at' => $now,
-                ]);
-
-            $auditEntries = [];
-
-            foreach ($requisitions as $requisition) {
-                $requisition->deleted_at = null;
-                $label = $requisition->id ? "#{$requisition->id}" : '';
-                $auditEntries[] = [
-                    'action' => 'restore',
-                    'description' => trim("Requisition {$label} restored."),
-                    'model' => $requisition,
-                    'old_values' => null,
-                    'new_values' => $requisition->toArray(),
-                ];
-            }
-
-            AuditLogService::logBatch($auditEntries);
-
-            return count($ids);
-        });
+        $restored = $this->workflow->bulkRestore($request->ids(), $request->user());
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -792,72 +539,13 @@ class RequisitionController extends Controller
         return back();
     }
 
-    public function bulkForceDelete(Request $request): RedirectResponse
+    public function bulkForceDelete(BulkTrashActionRequest $request): RedirectResponse
     {
         $this->authorize('trash', Requisition::class);
 
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct', 'exists:requisitions,id'],
-        ]);
-
-        $requisitions = Requisition::query()
-            ->onlyTrashed()
-            ->whereIn('id', $validated['ids'])
-            ->orderBy('id')
-            ->get();
-
-        foreach ($requisitions as $requisition) {
-            $this->authorize('forceDelete', $requisition);
-        }
-
-        $deleted = 0;
-        $skipped = 0;
-        $requisitionIds = $requisitions->modelKeys();
-
-        $movementReqIds = $requisitionIds !== []
-            ? StockMovement::query()
-                ->whereIn('requisition_id', $requisitionIds)
-                ->distinct()
-                ->pluck('requisition_id')
-                ->flip()
-            : collect();
-
-        $issuedLineReqIds = $requisitionIds !== []
-            ? RequisitionLine::query()
-                ->whereIn('requisition_id', $requisitionIds)
-                ->where('qty_issued', '>', 0)
-                ->distinct()
-                ->pluck('requisition_id')
-                ->flip()
-            : collect();
-
-        foreach ($requisitions as $requisition) {
-            $hasHistoricalActivity = $movementReqIds->has($requisition->id)
-                || $issuedLineReqIds->has($requisition->id)
-                || in_array($requisition->status, [
-                    RequisitionStatus::Issued,
-                    RequisitionStatus::PartiallyIssued,
-                    RequisitionStatus::Backordered,
-                ], true);
-
-            if ($hasHistoricalActivity) {
-                $skipped++;
-
-                continue;
-            }
-
-            try {
-                DB::transaction(function () use ($requisition): void {
-                    AuditLogService::logForceDeleted($requisition);
-                    $requisition->forceDelete();
-                });
-                $deleted++;
-            } catch (QueryException $e) {
-                report($e);
-                $skipped++;
-            }
-        }
+        $outcome = $this->workflow->bulkForceDelete($request->ids(), $request->user());
+        $deleted = $outcome['deleted'];
+        $skipped = $outcome['skipped'];
 
         $message = trans_choice(
             '{1} :count requisition permanently deleted.|[0,*] :count requisitions permanently deleted.',
@@ -875,16 +563,5 @@ class RequisitionController extends Controller
         ]);
 
         return back();
-    }
-
-    private function hasHistoricalRequisitionActivity(Requisition $requisition): bool
-    {
-        return StockMovement::query()->where('requisition_id', $requisition->id)->exists()
-            || $requisition->lines()->where('qty_issued', '>', 0)->exists()
-            || in_array($requisition->status, [
-                RequisitionStatus::Issued,
-                RequisitionStatus::PartiallyIssued,
-                RequisitionStatus::Backordered,
-            ], true);
     }
 }

@@ -43,9 +43,9 @@ class UatMonitoringSeeder extends Seeder
         /** @var array<string, Product> $products */
         $products = Product::withTrashed()->get()->keyBy('sku')->all();
         /** @var array<string, Booking> $bookings */
-        $bookings = Booking::withTrashed()->get()->keyBy('purpose')->all();
+        $bookings = Booking::withTrashed()->with(['requester', 'asset'])->get()->keyBy('purpose')->all();
         /** @var array<string, Requisition> $requisitions */
-        $requisitions = Requisition::withTrashed()->get()->keyBy('notes')->all();
+        $requisitions = Requisition::withTrashed()->with('requester')->get()->keyBy('notes')->all();
         $pendingHandover = HandoverLog::query()
             ->where('notes', 'Pending director office projector handover')
             ->firstOrFail();
@@ -121,8 +121,8 @@ class UatMonitoringSeeder extends Seeder
 
         $paper = $products['CON-PAPER-A4'];
         $marker = $products['CON-MARKER-BLK'];
-        $disinfectantLot = $products['CON-DISINF-01']->lots()->where('reference_no', 'DR-2026-02347')->firstOrFail();
-        $expiredMaskLot = $products['CON-MASK-3PLY']->lots()->where('reference_no', 'DR-2025-04182')->firstOrFail();
+        $disinfectantLot = $products['CON-DISINF-01']->lots()->with('product')->where('reference_no', 'DR-2026-02347')->firstOrFail();
+        $expiredMaskLot = $products['CON-MASK-3PLY']->lots()->with('product')->where('reference_no', 'DR-2025-04182')->firstOrFail();
 
         InventoryAlert::query()->updateOrCreate(
             [

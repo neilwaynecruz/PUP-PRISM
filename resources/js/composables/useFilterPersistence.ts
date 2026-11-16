@@ -16,20 +16,25 @@ interface PersistenceOptions {
     syncWithUrl?: boolean;
     preserveOnNavigate?: boolean;
     debounceMs?: number;
+    pathPrefix?: string;
 }
+
+const isClient = typeof window !== 'undefined';
 
 /**
  * Filter persistence composable for managing search, filters, and pagination state
- * Persists state in URL query parameters and optionally in sessionStorage
+ * Persists state in URL query parameters and guards against SSR execution
  */
 export function useFilterPersistence(
     filters: FilterConfig[],
     options: PersistenceOptions = {},
 ) {
-    const { syncWithUrl = true, debounceMs = 300 } = options;
+    const { syncWithUrl = true, debounceMs = 300, pathPrefix } = options;
 
     const page = usePage();
-    const urlParams = new URLSearchParams(window.location.search);
+    const urlParams = new URLSearchParams(
+        isClient ? window.location.search : '',
+    );
 
     // Initialize state from URL or defaults
     const initialState: FilterState = {};
@@ -118,7 +123,7 @@ export function useFilterPersistence(
      * Schedule URL sync with debounce
      */
     const scheduleSync = (): void => {
-        if (!syncWithUrl) {
+        if (!syncWithUrl || !isClient) {
             return;
         }
 
@@ -139,6 +144,14 @@ export function useFilterPersistence(
     const syncToUrl = (
         options: { preserveScroll?: boolean; preserveState?: boolean } = {},
     ): void => {
+        if (!isClient) {
+            return;
+        }
+
+        if (pathPrefix && !window.location.pathname.startsWith(pathPrefix)) {
+            return;
+        }
+
         const params = new URLSearchParams();
 
         for (const [key, value] of Object.entries(state.value)) {
@@ -247,7 +260,7 @@ export function useFilterPersistence(
     });
 
     // Watch for URL changes (browser back/forward)
-    if (syncWithUrl) {
+    if (syncWithUrl && isClient) {
         watch(
             () => page.url,
             (newUrl) => {
@@ -255,7 +268,10 @@ export function useFilterPersistence(
                     return;
                 }
 
-                const newParams = new URLSearchParams(window.location.search);
+                const queryIndex = newUrl.indexOf('?');
+                const queryString =
+                    queryIndex >= 0 ? newUrl.slice(queryIndex + 1) : '';
+                const newParams = new URLSearchParams(queryString);
 
                 for (const filter of filters) {
                     const urlValue = newParams.get(filter.key);

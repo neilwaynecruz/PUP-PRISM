@@ -81,7 +81,7 @@ class PurchaseOrderReceiveRequest extends FormRequest
             }
 
             if ($purchaseOrderLine->product?->type === ProductType::Consumable) {
-                $qtyReceived = isset($line['qty_received']) && $line['qty_received'] !== null
+                $qtyReceived = isset($line['qty_received'])
                     ? (int) $line['qty_received']
                     : null;
 
@@ -127,7 +127,6 @@ class PurchaseOrderReceiveRequest extends FormRequest
 
             if (
                 isset($line['qty_received'])
-                && $line['qty_received'] !== null
                 && (int) $line['qty_received'] !== count($tagCodes)
             ) {
                 throw ValidationException::withMessages([

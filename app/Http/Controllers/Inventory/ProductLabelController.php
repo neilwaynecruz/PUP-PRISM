@@ -59,7 +59,7 @@ class ProductLabelController extends Controller
                 'id' => $product->id,
                 'sku' => $product->sku,
                 'name' => $product->name,
-                'type' => $product->type?->value,
+                'type' => $product->type->value,
                 'category' => $product->category?->name,
                 'qr_svg' => $this->makeQrSvg($product->sku, 160),
             ];
@@ -189,7 +189,7 @@ class ProductLabelController extends Controller
             })
             ->when($productIds === [] && $type !== '', fn (Builder $q) => $q->where('type', $type))
             ->when($productIds === [] && $categoryId !== null, fn (Builder $q) => $q->where('category_id', $categoryId))
-            ->when($productIds === [] && $active !== null, fn (Builder $q) => $q->where('is_active', $active));
+            ->when($productIds === [], fn (Builder $q) => $q->where('is_active', $active));
 
         $productCount = (clone $query)->count();
 

@@ -22,29 +22,16 @@ import AdminPagination from '@/components/admin/AdminPagination.vue';
 import AdminTableShell from '@/components/admin/AdminTableShell.vue';
 import EmptyState from '@/components/EmptyState.vue';
 import Heading from '@/components/Heading.vue';
+import ProductBulkAndLabelDialogs from '@/components/inventory/products/ProductBulkAndLabelDialogs.vue';
+import ProductDeleteDialog from '@/components/inventory/products/ProductDeleteDialog.vue';
 import TableSkeleton from '@/components/TableSkeleton.vue';
+import ToastUndo from '@/components/ToastUndo.vue';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-    Dialog,
-    DialogClose,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { useBulkSelection } from '@/composables/useBulkSelection';
+import { getGlobalUndoManager } from '@/composables/useUndoManager';
 import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {
     bulkActivate as productsBulkActivate,
@@ -55,6 +42,7 @@ import {
     edit as productsEdit,
     index as productsIndex,
     show as productsShow,
+    trash as productsTrash,
 } from '@/routes/inventory/products';
 import { sheet as productLabelsSheet } from '@/routes/inventory/products/labels';
 
@@ -303,19 +291,27 @@ function openDeleteDialog(product: ProductRow): void {
     deleteDialogOpen.value = true;
 }
 
+const undoManager = getGlobalUndoManager();
+
 function confirmDelete(): void {
     if (!selectedProduct.value || !canConfirmDelete.value) {
         return;
     }
 
     const productId = selectedProduct.value.id;
+    const productLabel = `${selectedProduct.value.name} (${selectedProduct.value.sku})`;
+    const deletionReason = getDeletionReason();
     router.delete(productsDestroy(productId).url, {
-        data: { deletion_reason: getDeletionReason() },
+        data: { deletion_reason: deletionReason },
         onSuccess: () => {
             deleteDialogOpen.value = false;
             selectedProduct.value = null;
             deleteReason.value = '';
             deleteReasonCustom.value = '';
+            undoManager.registerDelete('product', productId, {
+                label: productLabel,
+                deletionReason,
+            });
             router.reload({
                 only: ['products'],
             } as Record<string, unknown>);
@@ -573,7 +569,7 @@ onBeforeUnmount(() => {
                         class="h-8 gap-1.5 rounded-md px-2.5 text-xs text-muted-foreground hover:text-foreground"
                     >
                         <Link
-                            href="/inventory/products/trash"
+                            :href="productsTrash.url()"
                             title="View deleted products in trash"
                         >
                             <Trash2 class="h-3.5 w-3.5 text-muted-foreground" />
@@ -1623,258 +1619,49 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Delete to Trash Dialog -->
-        <Dialog v-model:open="deleteDialogOpen">
-            <DialogContent class="sm:max-w-md">
-                <DialogHeader class="space-y-2">
-                    <DialogTitle
-                        class="flex items-center gap-2 text-rose-600 dark:text-rose-400"
-                    >
-                        <Trash2 class="h-5 w-5" />
-                        <span>Move product to trash?</span>
-                    </DialogTitle>
-                    <DialogDescription class="text-sm text-muted-foreground">
-                        This will move
-                        <strong class="text-foreground">{{
-                            selectedProduct?.name
-                        }}</strong>
-                        <span
-                            v-if="selectedProduct?.sku"
-                            class="font-mono text-xs"
-                        >
-                            ({{ selectedProduct.sku }})</span
-                        >
-                        to the trash. You can restore it later if needed.
-                    </DialogDescription>
-                </DialogHeader>
+        <ProductDeleteDialog
+            v-model:open="deleteDialogOpen"
+            v-model:reason="deleteReason"
+            v-model:custom-reason="deleteReasonCustom"
+            :product-name="selectedProduct?.name ?? null"
+            :product-sku="selectedProduct?.sku ?? null"
+            :deletion-reasons="deletionReasons"
+            :is-other-reason="isOtherReason"
+            :can-confirm-delete="canConfirmDelete"
+            @confirm="confirmDelete"
+        />
 
-                <div class="grid gap-4 py-2">
-                    <div class="grid gap-2">
-                        <Label
-                            for="delete-reason"
-                            class="text-xs font-semibold"
-                        >
-                            Reason for deletion
-                            <span class="text-rose-500">*</span>
-                        </Label>
-                        <Select v-model="deleteReason">
-                            <SelectTrigger
-                                id="delete-reason"
-                                class="h-10 rounded-lg text-sm"
-                            >
-                                <SelectValue placeholder="Select a reason..." />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="reason in deletionReasons"
-                                    :key="reason.value"
-                                    :value="reason.value"
-                                >
-                                    {{ reason.label }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+        <!-- Label Scope & Bulk Action Dialogs -->
+        <ProductBulkAndLabelDialogs
+            v-model:label-scope-dialog-open="labelScopeDialogOpen"
+            v-model:bulk-category-dialog-open="bulkCategoryDialogOpen"
+            v-model:bulk-category-id="bulkCategoryId"
+            v-model:bulk-action-dialog-open="bulkActionDialogOpen"
+            :pending-bulk-action="pendingBulkAction"
+            :selected-count="selectedIds.size"
+            :categories="categories"
+            :bulk-action-processing="bulkActionProcessing"
+            @confirm-filtered-labels="confirmFilteredLabels"
+            @confirm-bulk-category="confirmBulkCategory"
+            @confirm-bulk-action="confirmBulkAction"
+        />
 
-                    <div v-if="isOtherReason" class="grid gap-2">
-                        <Label
-                            for="delete-reason-custom"
-                            class="text-xs font-semibold"
-                        >
-                            Please specify reason
-                            <span class="text-rose-500">*</span>
-                        </Label>
-                        <textarea
-                            id="delete-reason-custom"
-                            v-model="deleteReasonCustom"
-                            placeholder="Enter specific reason for deletion..."
-                            rows="3"
-                            class="flex min-h-20 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                    </div>
-                </div>
-
-                <DialogFooter class="gap-2 sm:justify-end">
-                    <DialogClose as-child>
-                        <Button variant="outline" class="rounded-lg"
-                            >Cancel</Button
-                        >
-                    </DialogClose>
-                    <Button
-                        variant="destructive"
-                        :disabled="!canConfirmDelete"
-                        class="rounded-lg"
-                        @click="confirmDelete"
-                    >
-                        Move to Trash
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
-        <!-- Print QR Labels for Filtered Products Scope Dialog -->
-        <Dialog v-model:open="labelScopeDialogOpen">
-            <DialogContent class="sm:max-w-lg">
-                <DialogHeader class="space-y-2">
-                    <DialogTitle class="flex items-center gap-2">
-                        <Printer class="h-5 w-5 text-primary" />
-                        <span>Print labels for filtered products?</span>
-                    </DialogTitle>
-                    <DialogDescription class="text-sm text-muted-foreground">
-                        No products are selected. This will prepare one QR label
-                        for every active product matching the current search,
-                        type, and category filters, up to the 500-label safety
-                        limit.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div
-                    class="rounded-xl border border-amber-500/25 bg-amber-500/10 p-3.5 text-xs text-amber-800 dark:border-amber-400/20 dark:bg-amber-400/10 dark:text-amber-300"
-                >
-                    <div class="flex items-start gap-2">
-                        <AlertTriangle
-                            class="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400"
-                        />
-                        <div>
-                            To print only specific products, close this modal
-                            and use the row selection checkboxes first.
-                        </div>
-                    </div>
-                </div>
-
-                <DialogFooter class="gap-2 sm:justify-end">
-                    <DialogClose as-child>
-                        <Button variant="outline" class="rounded-lg"
-                            >Cancel</Button
-                        >
-                    </DialogClose>
-                    <Button class="rounded-lg" @click="confirmFilteredLabels">
-                        Continue to label preview
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
-        <!-- Bulk Change Category Dialog -->
-        <Dialog v-model:open="bulkCategoryDialogOpen">
-            <DialogContent class="sm:max-w-md">
-                <DialogHeader class="space-y-2">
-                    <DialogTitle>Change category</DialogTitle>
-                    <DialogDescription class="text-sm text-muted-foreground">
-                        Update the category for
-                        <strong class="text-foreground"
-                            >{{ selectedIds.size }} selected
-                            {{
-                                selectedIds.size === 1 ? 'product' : 'products'
-                            }}</strong
-                        >.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <div class="grid gap-4 py-2">
-                    <div class="grid gap-2">
-                        <Label
-                            for="bulk-category"
-                            class="text-xs font-semibold"
-                        >
-                            Category
-                            <span class="text-rose-500">*</span>
-                        </Label>
-                        <Select v-model="bulkCategoryId">
-                            <SelectTrigger
-                                id="bulk-category"
-                                class="h-10 rounded-lg text-sm"
-                            >
-                                <SelectValue
-                                    placeholder="Select a category..."
-                                />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem
-                                    v-for="c in categories"
-                                    :key="c.id"
-                                    :value="String(c.id)"
-                                >
-                                    {{ c.name }}
-                                </SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-
-                <DialogFooter class="gap-2 sm:justify-end">
-                    <DialogClose as-child>
-                        <Button
-                            variant="outline"
-                            :disabled="bulkActionProcessing"
-                            class="rounded-lg"
-                        >
-                            Cancel
-                        </Button>
-                    </DialogClose>
-                    <Button
-                        :disabled="!bulkCategoryId || bulkActionProcessing"
-                        class="rounded-lg"
-                        @click="confirmBulkCategory"
-                    >
-                        {{
-                            bulkActionProcessing
-                                ? 'Updating…'
-                                : 'Update Category'
-                        }}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
-        <!-- Bulk Activate / Deactivate Confirmation Dialog -->
-        <Dialog v-model:open="bulkActionDialogOpen">
-            <DialogContent class="sm:max-w-md">
-                <DialogHeader class="space-y-2">
-                    <DialogTitle>
-                        {{
-                            pendingBulkAction === 'activate'
-                                ? 'Activate selected products?'
-                                : 'Deactivate selected products?'
-                        }}
-                    </DialogTitle>
-                    <DialogDescription class="text-sm text-muted-foreground">
-                        This will update the active status for
-                        <strong class="text-foreground"
-                            >{{ selectedIds.size }} selected
-                            {{
-                                selectedIds.size === 1 ? 'product' : 'products'
-                            }}</strong
-                        >
-                        while preserving current filter and page navigation
-                        states.
-                    </DialogDescription>
-                </DialogHeader>
-
-                <DialogFooter class="gap-2 sm:justify-end">
-                    <DialogClose as-child>
-                        <Button
-                            variant="outline"
-                            :disabled="bulkActionProcessing"
-                            class="rounded-lg"
-                        >
-                            Cancel
-                        </Button>
-                    </DialogClose>
-                    <Button
-                        :disabled="bulkActionProcessing"
-                        class="rounded-lg"
-                        @click="confirmBulkAction"
-                    >
-                        {{
-                            bulkActionProcessing
-                                ? 'Updating…'
-                                : pendingBulkAction === 'activate'
-                                  ? 'Confirm activate'
-                                  : 'Confirm deactivate'
-                        }}
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+        <div
+            v-if="undoManager.pendingActions.value.length > 0"
+            class="fixed right-4 bottom-4 z-50 flex max-w-sm flex-col gap-2"
+        >
+            <ToastUndo
+                v-for="action in undoManager.pendingActions.value"
+                :id="action.id"
+                :key="action.id"
+                :resource-type="action.resourceType"
+                :resource-id="action.resourceId"
+                :resource-name="
+                    String(action.data.label ?? `#${action.resourceId}`)
+                "
+                :on-undo="undoManager.undo"
+                :on-dismiss="undoManager.cancel"
+            />
+        </div>
     </div>
 </template>

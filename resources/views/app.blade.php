@@ -45,7 +45,7 @@
         <link rel="apple-touch-icon" sizes="120x120" href="/apple-icon-120x120.png">
         <link rel="apple-touch-icon" sizes="144x144" href="/apple-icon-144x144.png">
         <link rel="apple-touch-icon" sizes="152x152" href="/apple-icon-152x152.png">
-        <link rel="apple-touch-icon" sizes="180x180" href="/Icons/apple-icon-180x180%20(2).png">
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon-180x180.png">
         <link rel="icon" href="/favicon.ico" sizes="any">
         <link rel="icon" type="image/png" sizes="192x192" href="/Icons/prism-icon-192x192.png">
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">

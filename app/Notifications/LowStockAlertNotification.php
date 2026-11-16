@@ -30,7 +30,7 @@ class LowStockAlertNotification extends Notification implements ShouldQueue
         return NotificationEventType::LowStock->value;
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $_notifiable): MailMessage
     {
         $threshold = $this->product->reorder_threshold ?? 0;
         $url = route('inventory.products.index', absolute: false);
@@ -52,7 +52,7 @@ class LowStockAlertNotification extends Notification implements ShouldQueue
     /**
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toArray(object $_notifiable): array
     {
         $url = route('inventory.products.show', $this->product, absolute: false);
 

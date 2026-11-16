@@ -29,10 +29,10 @@ class BookingSubmittedNotification extends Notification implements ShouldQueue
         return NotificationEventType::BookingSubmitted->value;
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $_notifiable): MailMessage
     {
-        $requesterName = $this->booking->requester?->name ?? 'A user';
-        $assetTag = $this->booking->asset?->tag_code ?? 'Unknown asset';
+        $requesterName = $this->booking->requester->name ?? 'A user';
+        $assetTag = $this->booking->asset->tag_code ?? 'Unknown asset';
         $url = route('inventory.bookings.index', absolute: false);
 
         return (new MailMessage)
@@ -52,10 +52,10 @@ class BookingSubmittedNotification extends Notification implements ShouldQueue
     /**
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toArray(object $_notifiable): array
     {
-        $requesterName = $this->booking->requester?->name ?? 'A user';
-        $assetTag = $this->booking->asset?->tag_code ?? 'Unknown asset';
+        $requesterName = $this->booking->requester->name ?? 'A user';
+        $assetTag = $this->booking->asset->tag_code ?? 'Unknown asset';
         $url = route('inventory.bookings.show', $this->booking->id, absolute: false);
 
         return [

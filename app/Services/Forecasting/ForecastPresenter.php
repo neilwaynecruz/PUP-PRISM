@@ -48,7 +48,7 @@ class ForecastPresenter
             'confidence_score' => $snapshot->confidence_score !== null
                 ? round($snapshot->confidence_score, 2)
                 : null,
-            'generated_at' => $snapshot->generated_at?->toISOString(),
+            'generated_at' => $snapshot->generated_at->toISOString(),
             'historical_daily' => data_get($rawData, 'historical_daily', []),
             'forecast_daily' => data_get($rawData, 'forecast_daily', []),
             'history_window_days' => (int) data_get($rawData, 'summary.lookback_days', 0),

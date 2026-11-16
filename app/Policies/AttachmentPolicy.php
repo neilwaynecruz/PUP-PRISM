@@ -39,7 +39,7 @@ class AttachmentPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Attachment $attachment): bool
+    public function update(User $_user, Attachment $_attachment): bool
     {
         return false;
     }
@@ -59,7 +59,7 @@ class AttachmentPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Attachment $attachment): bool
+    public function restore(User $_user, Attachment $_attachment): bool
     {
         return false;
     }
@@ -67,7 +67,7 @@ class AttachmentPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Attachment $attachment): bool
+    public function forceDelete(User $_user, Attachment $_attachment): bool
     {
         return false;
     }

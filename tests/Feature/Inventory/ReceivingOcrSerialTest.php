@@ -40,7 +40,7 @@ test('reviewed manufacturer serials stay paired with tags through each receiving
     expect(Asset::query()->where('tag_code', 'OCR-TAG-B')->firstOrFail()->serial_number)->toBeNull();
     expect(Asset::query()->where('product_id', $product->id)->count())->toBe(3);
     expect(StockMovement::query()->where('product_id', $product->id)->count())->toBe(3);
-    if (isset($poLine)) {
+    if (isset($poLine, $po)) {
         expect($poLine->fresh()->qty_received)->toBe(3);
         expect($po->fresh()->status)->toBe(PurchaseOrderStatus::Partial);
     }

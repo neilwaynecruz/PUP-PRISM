@@ -12,7 +12,7 @@ class OriginPolicy
         return $user->hasRole('Admin');
     }
 
-    public function view(User $user, Origin $origin): bool
+    public function view(User $user, Origin $_origin): bool
     {
         return $user->hasRole('Admin');
     }
@@ -22,17 +22,17 @@ class OriginPolicy
         return $user->hasRole('Admin');
     }
 
-    public function update(User $user, Origin $origin): bool
+    public function update(User $user, Origin $_origin): bool
     {
         return $user->hasRole('Admin');
     }
 
-    public function delete(User $user, Origin $origin): bool
+    public function delete(User $user, Origin $_origin): bool
     {
         return $user->hasRole('Admin');
     }
 
-    public function deactivate(User $user, Origin $origin): bool
+    public function deactivate(User $user, Origin $_origin): bool
     {
         return $user->hasRole('Admin');
     }

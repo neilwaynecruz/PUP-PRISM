@@ -31,6 +31,8 @@ class NotificationService
      */
     public function requisitionSubmitted(Requisition $requisition): void
     {
+        $requisition->loadMissing('requester');
+
         $recipients = $this->usersWithRoles(['Admin', 'Supply Head'])
             ->reject(fn (User $user) => $user->id === $requisition->requester_id);
 
@@ -52,6 +54,8 @@ class NotificationService
      */
     public function requisitionStatusChanged(Requisition $requisition, string $action): void
     {
+        $requisition->loadMissing('requester');
+
         $requester = $requisition->requester;
 
         if (! $requester instanceof User) {
@@ -72,6 +76,8 @@ class NotificationService
      */
     public function bookingSubmitted(Booking $booking): void
     {
+        $booking->loadMissing(['asset', 'requester']);
+
         $recipients = $this->usersWithRoles(['Admin', 'Property Custodian'])
             ->reject(fn (User $user) => $user->id === $booking->requester_id);
 
@@ -93,6 +99,8 @@ class NotificationService
      */
     public function bookingStatusChanged(Booking $booking, string $action): void
     {
+        $booking->loadMissing(['asset', 'requester']);
+
         $requester = $booking->requester;
 
         if (! $requester instanceof User) {
@@ -240,13 +248,5 @@ class NotificationService
             ->whereHas('roles', fn ($query) => $query->whereIn('name', $roleList))
             ->with(['roles', 'notificationPreferences'])
             ->get();
-    }
-
-    /**
-     * @return Collection<int, User>
-     */
-    private function usersWithRole(string $role): Collection
-    {
-        return $this->usersWithRoles([$role]);
     }
 }

@@ -18,7 +18,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { index as requisitionsIndex } from '@/routes/inventory/requisitions';
+import {
+    index as requisitionsIndex,
+    trash as requisitionsTrash,
+} from '@/routes/inventory/requisitions';
 
 type Line = {
     id: number;
@@ -173,7 +176,7 @@ defineOptions({
                     >This requisition is in Deleted Requisitions.</span
                 >
                 <Button variant="ghost" size="sm" as-child class="ml-auto">
-                    <Link href="/inventory/requisitions/trash"
+                    <Link :href="requisitionsTrash.url()"
                         >View Deleted Requisitions</Link
                     >
                 </Button>

@@ -166,7 +166,7 @@ class UatInventorySeeder extends Seeder
                     ['tag_code' => $assetDefinition['tag_code']],
                     [
                         'product_id' => $product->id,
-                        'position_id' => $positions[$assetDefinition['position']]?->id,
+                        'position_id' => $positions[$assetDefinition['position']]->id,
                         'status' => $assetDefinition['status'],
                         'serial_number' => 'PUP-'.str_replace('AST-', '', $assetDefinition['tag_code']),
                         'acquisition_date' => $timeline->subMonths(18)->toDateString(),

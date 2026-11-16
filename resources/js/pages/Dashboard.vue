@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import {
     BarController,
     BarElement,
@@ -14,19 +14,13 @@ import {
     Tooltip,
 } from 'chart.js';
 import {
-    Activity,
     AlertOctagon,
     AlertTriangle,
     Calendar,
-    ClipboardList,
-    Clock3,
     Download,
     FileText,
     PackageCheck,
-    RotateCcw,
     ShoppingCart,
-    Sparkles,
-    TrendingUp,
     Truck,
 } from 'lucide-vue-next';
 import {
@@ -37,14 +31,13 @@ import {
     ref,
     watch,
 } from 'vue';
+import RecentlyDeletedPanel from '@/components/dashboard/RecentlyDeletedPanel.vue';
+import RecommendedActionsPanel from '@/components/dashboard/RecommendedActionsPanel.vue';
+import SystemAlertsPanel from '@/components/dashboard/SystemAlertsPanel.vue';
 import Heading from '@/components/Heading.vue';
 import ForecastWidget from '@/components/inventory/ForecastWidget.vue';
 import { Button } from '@/components/ui/button';
 import { dashboard } from '@/routes';
-import { trash as inventoryTrash } from '@/routes/inventory';
-import { index as handoverIndex } from '@/routes/inventory/handover';
-import { index as productsIndex } from '@/routes/inventory/products';
-import { index as requisitionsIndex } from '@/routes/inventory/requisitions';
 
 Chart.register(
     BarController,
@@ -720,46 +713,6 @@ function summaryToneClass(key: string): string {
 
     return 'border-slate-500/20 bg-slate-500/10 text-slate-700 dark:text-slate-300';
 }
-
-function deletedBadgeClass(type: string): string {
-    const value = type.toLowerCase();
-
-    if (value === 'product') {
-        return 'border-sky-500/20 bg-sky-500/10 text-sky-700 dark:text-sky-300';
-    }
-
-    if (value === 'booking') {
-        return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300';
-    }
-
-    if (value === 'requisition') {
-        return 'border-primary/20 bg-primary/10 text-primary';
-    }
-
-    return 'border-slate-500/20 bg-slate-500/10 text-slate-700 dark:text-slate-300';
-}
-
-function alertBadgeClass(type: string): string {
-    const value = type.toLowerCase();
-
-    if (value.includes('expiry') || value.includes('expired')) {
-        return 'border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300';
-    }
-
-    if (value.includes('stock') || value.includes('low')) {
-        return 'border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300';
-    }
-
-    if (value.includes('forecast')) {
-        return 'border-primary/20 bg-primary/10 text-primary';
-    }
-
-    return 'border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300';
-}
-
-function restoreItem(url: string): void {
-    router.put(url, {}, { preserveScroll: true });
-}
 </script>
 
 <template>
@@ -1043,153 +996,14 @@ function restoreItem(url: string): void {
         </div>
 
         <!-- PRISM Intelligence Panel -->
-        <div
+        <RecommendedActionsPanel
             v-if="isAdmin"
-            class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
-        >
-            <div
-                class="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-                <div class="flex items-center gap-3">
-                    <div
-                        class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/15 text-primary ring-1 ring-primary/20"
-                    >
-                        <Sparkles class="h-5 w-5" />
-                    </div>
-                    <div>
-                        <h2 class="text-base font-semibold text-foreground">
-                            Recommended actions
-                        </h2>
-                        <p class="mt-1 text-sm text-muted-foreground">
-                            Review items that may need action based on stock
-                            levels and pending work.
-                        </p>
-                    </div>
-                </div>
-                <div
-                    class="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-2 text-xs font-medium text-primary"
-                >
-                    Based on current system records
-                </div>
-            </div>
-
-            <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <!-- Observation 1: Low Stock -->
-                <div
-                    class="rounded-2xl border border-l-2 border-border/70 border-l-amber-500/70 bg-muted/20 p-4 transition-[border-color,background-color,box-shadow] hover:border-amber-500/35 hover:bg-amber-500/5 hover:shadow-xs"
-                >
-                    <div class="flex gap-3">
-                        <div
-                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-600 ring-1 ring-amber-500/20 dark:text-amber-300"
-                        >
-                            <AlertTriangle class="h-4.5 w-4.5" />
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="text-sm font-semibold text-foreground">
-                                Reorder Consumables
-                            </div>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                <span class="font-medium text-foreground">{{
-                                    lowStock.length > 0
-                                        ? lowStock[0].name
-                                        : 'No low-stock items'
-                                }}</span>
-                                {{
-                                    lowStock.length > 0
-                                        ? ' is running below reorder threshold.'
-                                        : ' detected right now.'
-                                }}
-                            </p>
-                            <Link
-                                :href="productsIndex()"
-                                class="mt-3 inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold text-amber-700 transition-colors hover:bg-amber-500/25 dark:text-amber-200"
-                            >
-                                Adjust Stock
-                                <TrendingUp class="h-3.5 w-3.5" />
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Observation 2: Near Expiry -->
-                <div
-                    class="rounded-2xl border border-l-2 border-border/70 border-l-rose-500/70 bg-muted/20 p-4 transition-[border-color,background-color,box-shadow] hover:border-rose-500/35 hover:bg-rose-500/5 hover:shadow-xs"
-                >
-                    <div class="flex gap-3">
-                        <div
-                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/20 dark:text-rose-300"
-                        >
-                            <Calendar class="h-4.5 w-4.5" />
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="text-sm font-semibold text-foreground">
-                                Near-Expiry Warning
-                            </div>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                <span class="font-medium text-foreground"
-                                    >{{
-                                        kpiSummary.near_expiry_batch_count ?? 0
-                                    }}
-                                    batch(es)</span
-                                >
-                                {{
-                                    (kpiSummary.near_expiry_batch_count ?? 0) >
-                                    0
-                                        ? ' expire within 30 days.'
-                                        : ' are expiring within 30 days.'
-                                }}
-                            </p>
-                            <Link
-                                :href="handoverIndex()"
-                                class="mt-3 inline-flex items-center gap-1 rounded-full bg-rose-500/15 px-3 py-1 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-500/25 dark:text-rose-200"
-                            >
-                                Initiate Handover
-                                <Clock3 class="h-3.5 w-3.5" />
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Observation 3: Pending Approvals -->
-                <div
-                    class="rounded-2xl border border-l-2 border-border/70 border-l-primary/70 bg-muted/20 p-4 transition-[border-color,background-color,box-shadow] hover:border-primary/35 hover:bg-primary/5 hover:shadow-xs"
-                >
-                    <div class="flex gap-3">
-                        <div
-                            class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-blue-600 ring-1 ring-blue-500/20 dark:text-blue-300"
-                        >
-                            <Activity class="h-4.5 w-4.5" />
-                        </div>
-                        <div class="min-w-0 flex-1">
-                            <div class="text-sm font-semibold text-foreground">
-                                Pending Action Items
-                            </div>
-                            <p class="mt-1 text-sm text-muted-foreground">
-                                You have
-                                <span class="font-medium text-foreground"
-                                    >{{
-                                        pendingRequisitionsCount
-                                    }}
-                                    requisitions</span
-                                >
-                                and
-                                <span class="font-medium text-foreground"
-                                    >{{ pendingBookingsCount }} bookings</span
-                                >
-                                awaiting review.
-                            </p>
-                            <Link
-                                :href="requisitionsIndex()"
-                                class="mt-3 inline-flex items-center gap-1 rounded-full bg-blue-500/15 px-3 py-1 text-xs font-semibold text-blue-700 transition-colors hover:bg-blue-500/25 dark:text-blue-200"
-                            >
-                                Approve Requisitions
-                                <ClipboardList class="h-3.5 w-3.5" />
-                            </Link>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+            :low-stock-count="lowStock.length"
+            :first-low-stock-name="lowStock[0]?.name ?? null"
+            :near-expiry-batch-count="kpiSummary.near_expiry_batch_count ?? 0"
+            :pending-requisitions-count="pendingRequisitionsCount"
+            :pending-bookings-count="pendingBookingsCount"
+        />
 
         <div
             v-if="isSupplyHead"
@@ -1869,122 +1683,11 @@ function restoreItem(url: string): void {
         <ForecastWidget v-if="canViewForecasting" :summary="forecastSummary" />
 
         <!-- Recently Deleted Widget -->
-        <div
+        <RecentlyDeletedPanel
             v-if="isAdmin && recentlyDeleted.length > 0"
-            class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
-        >
-            <div class="mb-4 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div
-                        class="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-500/15 text-slate-600 ring-1 ring-slate-500/20 dark:text-slate-300"
-                    >
-                        <RotateCcw class="h-4 w-4" />
-                    </div>
-                    <div>
-                        <div class="text-sm font-semibold tracking-tight">
-                            Recently Deleted
-                        </div>
-                        <div class="text-xs text-muted-foreground">
-                            Recoverable inventory records
-                        </div>
-                    </div>
-                </div>
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    as-child
-                    class="rounded-xl border border-slate-500/20 bg-slate-500/10 text-slate-700 hover:bg-slate-500/15 dark:text-slate-200"
-                >
-                    <Link :href="inventoryTrash()">View Trash</Link>
-                </Button>
-            </div>
-            <ul class="space-y-2 text-sm">
-                <li
-                    v-for="item in recentlyDeleted"
-                    :key="`${item.type}-${item.id}`"
-                    class="flex items-center justify-between gap-3 rounded-2xl border border-border/40 bg-background/50 p-3 transition-colors hover:border-slate-500/25 hover:bg-slate-500/5"
-                >
-                    <div class="flex items-center gap-3">
-                        <span
-                            class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold tracking-wide uppercase"
-                            :class="deletedBadgeClass(item.type)"
-                        >
-                            {{ item.type }}
-                        </span>
-                        <div>
-                            <div class="font-medium">{{ item.name }}</div>
-                            <div class="text-xs text-muted-foreground">
-                                <template
-                                    v-if="
-                                        item.deleted_by &&
-                                        item.deleted_by !== 'Unknown'
-                                    "
-                                >
-                                    Deleted by {{ item.deleted_by }} ·
-                                </template>
-                                {{ item.deleted_at }}
-                            </div>
-                        </div>
-                    </div>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        class="h-8 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300"
-                        @click="restoreItem(item.restore_url)"
-                    >
-                        Restore
-                    </Button>
-                </li>
-            </ul>
-        </div>
+            :items="recentlyDeleted"
+        />
 
-        <div
-            v-if="isAdmin"
-            class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
-        >
-            <div class="mb-4 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <div
-                        class="flex h-8 w-8 items-center justify-center rounded-xl bg-rose-500/15 text-rose-600 ring-1 ring-rose-500/20 dark:text-rose-300"
-                    >
-                        <AlertOctagon class="h-4 w-4" />
-                    </div>
-                    <div>
-                        <div class="text-sm font-semibold tracking-tight">
-                            System Alerts
-                        </div>
-                        <div class="text-xs text-muted-foreground">
-                            Active operational warnings
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div
-                v-if="alerts.length === 0"
-                class="rounded-2xl border border-dashed border-emerald-500/20 bg-emerald-500/5 px-5 py-8 text-center text-sm text-muted-foreground"
-            >
-                No active alerts.
-            </div>
-            <ul v-else class="space-y-3 text-sm">
-                <li
-                    v-for="a in alerts"
-                    :key="a.id"
-                    class="rounded-2xl border border-rose-500/15 bg-background/50 p-4 transition-colors hover:border-rose-500/30 hover:bg-rose-500/5"
-                >
-                    <div
-                        class="flex flex-wrap items-center gap-2 text-xs text-muted-foreground"
-                    >
-                        <span
-                            class="inline-flex items-center rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase"
-                            :class="alertBadgeClass(a.type)"
-                        >
-                            {{ a.type }}
-                        </span>
-                        <span>{{ a.detected_at }}</span>
-                    </div>
-                    <div class="mt-1.5 leading-relaxed">{{ a.message }}</div>
-                </li>
-            </ul>
-        </div>
+        <SystemAlertsPanel v-if="isAdmin" :alerts="alerts" />
     </div>
 </template>

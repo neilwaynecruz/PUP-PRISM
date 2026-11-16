@@ -30,7 +30,7 @@ class BookingStatusChangedNotification extends Notification implements ShouldQue
         return NotificationEventType::BookingStatusChanged->value;
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $_notifiable): MailMessage
     {
         $status = match ($this->action) {
             'approved' => __('approved'),
@@ -44,7 +44,7 @@ class BookingStatusChangedNotification extends Notification implements ShouldQue
             default => __('Your booking request status changed'),
         };
 
-        $assetTag = $this->booking->asset?->tag_code ?? 'Unknown asset';
+        $assetTag = $this->booking->asset->tag_code ?? 'Unknown asset';
         $url = route('inventory.bookings.index', absolute: false);
 
         $message = (new MailMessage)
@@ -70,9 +70,9 @@ class BookingStatusChangedNotification extends Notification implements ShouldQue
     /**
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toArray(object $_notifiable): array
     {
-        $assetTag = $this->booking->asset?->tag_code ?? 'Unknown asset';
+        $assetTag = $this->booking->asset->tag_code ?? 'Unknown asset';
         $url = route('inventory.bookings.show', $this->booking->id, absolute: false);
 
         return [

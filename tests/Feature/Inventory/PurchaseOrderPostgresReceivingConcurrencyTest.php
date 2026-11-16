@@ -2,12 +2,13 @@
 
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use PHPUnit\Framework\Assert;
 
 test('postgresql row locks serialize concurrent receiving and prevent over-receiving across independent connections', function () {
     try {
         $pdo1 = DB::connection('pgsql_testing')->getPdo();
     } catch (Throwable $e) {
-        $this->markTestSkipped('PostgreSQL testing connection unavailable: '.$e->getMessage());
+        Assert::markTestSkipped('PostgreSQL testing connection unavailable: '.$e->getMessage());
     }
 
     $config = config('database.connections.pgsql_testing');

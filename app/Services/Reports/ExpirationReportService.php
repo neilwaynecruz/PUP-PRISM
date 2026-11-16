@@ -41,8 +41,8 @@ class ExpirationReportService extends AbstractTableReportService
 
                 return [
                     'reference_no' => $lot->reference_no ?? "LOT-{$lot->id}",
-                    'sku' => $lot->product?->sku ?? '',
-                    'product_name' => $lot->product?->name ?? '',
+                    'sku' => $lot->product->sku ?? '',
+                    'product_name' => $lot->product->name ?? '',
                     'qty_remaining' => $lot->qty_remaining,
                     'received_at' => CarbonImmutable::parse((string) $lot->received_at)->toDateString(),
                     'expires_at' => $expiresAt->toDateString(),

@@ -81,7 +81,7 @@ class DashboardStatsService
             'supplierPerformance' => $this->supplierPerformance(),
             'assetConditionSummary' => $this->assetConditionSummary(),
             'recentlyDeleted' => $this->recentlyDeleted(),
-            'kpiSummary' => $this->kpiSummary($from, $to),
+            'kpiSummary' => $this->kpiSummary(),
             'nearExpiryLots' => $this->nearExpiryLots(),
             'expiredLots' => $this->expiredLots(),
         ];
@@ -104,7 +104,7 @@ class DashboardStatsService
             'supplierPerformance' => $this->supplierPerformance(),
             'requisitionSummary' => $this->requisitionSummary($from, $to),
             'bookingSummary' => $this->bookingSummary($from, $to),
-            'kpiSummary' => $this->kpiSummary($from, $to),
+            'kpiSummary' => $this->kpiSummary(),
         ];
     }
 
@@ -166,8 +166,8 @@ class DashboardStatsService
         $items = $latestSnapshots
             ->map(fn (ForecastSnapshot $snapshot) => [
                 'product_id' => $snapshot->product_id,
-                'product_name' => $snapshot->product?->name ?? 'Unknown product',
-                'sku' => $snapshot->product?->sku ?? 'N/A',
+                'product_name' => $snapshot->product->name ?? 'Unknown product',
+                'sku' => $snapshot->product->sku ?? 'N/A',
                 'current_on_hand_qty' => $snapshot->current_on_hand_qty,
                 'reorder_point_qty' => $snapshot->reorder_point_qty,
                 'predicted_daily_consumption' => round($snapshot->predicted_daily_consumption, 2),
@@ -191,8 +191,8 @@ class DashboardStatsService
             'last_generated_at' => $lastGeneratedAt !== null
                 ? CarbonImmutable::parse((string) $lastGeneratedAt)->toISOString()
                 : null,
-            'urgent_count' => (int) ($snapshotSummary?->urgent_count ?? 0),
-            'at_risk_count' => (int) ($snapshotSummary?->at_risk_count ?? 0),
+            'urgent_count' => (int) ($snapshotSummary->urgent_count ?? 0),
+            'at_risk_count' => (int) ($snapshotSummary->at_risk_count ?? 0),
             'average_confidence' => $averageConfidence !== null
                 ? round((float) $averageConfidence, 2)
                 : null,
@@ -307,7 +307,7 @@ class DashboardStatsService
         }
 
         foreach ($rows as $row) {
-            $dates[$row->date] = (int) $row->count;
+            $dates[$row->getAttribute('date')] = (int) $row->getAttribute('count');
         }
 
         return [
@@ -418,10 +418,10 @@ class DashboardStatsService
             ->map(static fn (Supplier $supplier): array => [
                 'id' => (int) $supplier->id,
                 'name' => $supplier->name,
-                'total_pos' => (int) $supplier->total_pos,
-                'open_pos' => (int) $supplier->open_pos,
-                'avg_lead_time_days' => $supplier->avg_lead_time_days !== null
-                    ? round((float) $supplier->avg_lead_time_days, 2)
+                'total_pos' => (int) $supplier->getAttribute('total_pos'),
+                'open_pos' => (int) $supplier->getAttribute('open_pos'),
+                'avg_lead_time_days' => $supplier->getAttribute('avg_lead_time_days') !== null
+                    ? round((float) $supplier->getAttribute('avg_lead_time_days'), 2)
                     : null,
             ])
             ->all();
@@ -463,7 +463,7 @@ class DashboardStatsService
                 'name' => $product->name,
                 'deleted_at' => $this->formatDeletedAt($product->deleted_at),
                 '_sort_ts' => $product->deleted_at !== null ? CarbonImmutable::parse((string) $product->deleted_at)->getTimestamp() : 0,
-                'deleted_by' => $product->deletedBy?->name ?? 'Unknown',
+                'deleted_by' => $product->deletedBy->name ?? 'Unknown',
                 'restore_url' => route('inventory.products.restore', $product->id),
             ]);
 
@@ -475,10 +475,10 @@ class DashboardStatsService
             ->map(fn (Booking $booking) => [
                 'id' => $booking->id,
                 'type' => 'booking',
-                'name' => 'Booking: '.($booking->asset?->tag_code ?? 'Unknown'),
+                'name' => 'Booking: '.($booking->asset->tag_code ?? 'Unknown'),
                 'deleted_at' => $this->formatDeletedAt($booking->deleted_at),
                 '_sort_ts' => $booking->deleted_at !== null ? CarbonImmutable::parse((string) $booking->deleted_at)->getTimestamp() : 0,
-                'deleted_by' => $booking->deletedBy?->name ?? 'Unknown',
+                'deleted_by' => $booking->deletedBy->name ?? 'Unknown',
                 'restore_url' => route('inventory.bookings.restore', $booking->id),
             ]);
 
@@ -493,7 +493,7 @@ class DashboardStatsService
                 'name' => 'Requisition #'.$requisition->id,
                 'deleted_at' => $this->formatDeletedAt($requisition->deleted_at),
                 '_sort_ts' => $requisition->deleted_at !== null ? CarbonImmutable::parse((string) $requisition->deleted_at)->getTimestamp() : 0,
-                'deleted_by' => $requisition->deletedBy?->name ?? 'Unknown',
+                'deleted_by' => $requisition->deletedBy->name ?? 'Unknown',
                 'restore_url' => route('inventory.requisitions.restore', $requisition->id),
             ]);
 
@@ -597,7 +597,7 @@ class DashboardStatsService
      *     open_purchase_orders_count: int
      * }
      */
-    private function kpiSummary(CarbonImmutable $from, CarbonImmutable $to): array
+    private function kpiSummary(): array
     {
         $today = CarbonImmutable::now();
 
@@ -666,8 +666,8 @@ class DashboardStatsService
             ->get(['id', 'product_id', 'qty_remaining', 'expires_at'])
             ->map(fn (StockLot $lot) => [
                 'id' => $lot->id,
-                'product_name' => $lot->product?->name ?? 'Unknown',
-                'sku' => $lot->product?->sku ?? 'N/A',
+                'product_name' => $lot->product->name ?? 'Unknown',
+                'sku' => $lot->product->sku ?? 'N/A',
                 'qty_remaining' => $lot->qty_remaining,
                 'expires_at' => CarbonImmutable::parse((string) $lot->expires_at)->toDateString(),
             ])
@@ -691,8 +691,8 @@ class DashboardStatsService
             ->get(['id', 'product_id', 'qty_remaining', 'expires_at'])
             ->map(fn (StockLot $lot) => [
                 'id' => $lot->id,
-                'product_name' => $lot->product?->name ?? 'Unknown',
-                'sku' => $lot->product?->sku ?? 'N/A',
+                'product_name' => $lot->product->name ?? 'Unknown',
+                'sku' => $lot->product->sku ?? 'N/A',
                 'qty_remaining' => $lot->qty_remaining,
                 'expires_at' => CarbonImmutable::parse((string) $lot->expires_at)->toDateString(),
             ])

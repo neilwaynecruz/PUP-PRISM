@@ -33,21 +33,25 @@ class AssetMaintenance extends Model
         ];
     }
 
+    /** @return BelongsTo<Asset, $this> */
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function reporter(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reported_by');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
+    /** @return MorphMany<Attachment, $this> */
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');

@@ -11,12 +11,12 @@ class ForecastProfileObserver
         private readonly InventoryOptimizationCache $inventoryOptimizationCache,
     ) {}
 
-    public function saved(ForecastProfile $profile): void
+    public function saved(ForecastProfile $_profile): void
     {
         $this->inventoryOptimizationCache->invalidate();
     }
 
-    public function deleted(ForecastProfile $profile): void
+    public function deleted(ForecastProfile $_profile): void
     {
         $this->inventoryOptimizationCache->invalidate();
     }

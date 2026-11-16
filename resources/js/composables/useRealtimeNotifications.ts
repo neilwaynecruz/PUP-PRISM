@@ -229,6 +229,46 @@ export function useRealtimeNotifications() {
             return 'audit-logs';
         }
 
+        if (currentUrl.startsWith('/inventory/trash')) {
+            return 'trash';
+        }
+
+        if (currentUrl.startsWith('/notifications')) {
+            return 'notifications';
+        }
+
+        if (currentUrl.startsWith('/admin/alerts')) {
+            return 'admin-alerts';
+        }
+
+        if (currentUrl.startsWith('/admin/operations')) {
+            return 'admin-operations';
+        }
+
+        if (currentUrl.startsWith('/admin/users')) {
+            return 'admin-users';
+        }
+
+        if (currentUrl.startsWith('/admin/categories')) {
+            return 'admin-categories';
+        }
+
+        if (currentUrl.startsWith('/admin/departments')) {
+            return 'admin-departments';
+        }
+
+        if (currentUrl.startsWith('/admin/origins')) {
+            return 'admin-origins';
+        }
+
+        if (currentUrl.startsWith('/admin/positions')) {
+            return 'admin-positions';
+        }
+
+        if (currentUrl.startsWith('/admin/locations')) {
+            return 'admin-locations';
+        }
+
         if (currentUrl.startsWith('/settings')) {
             return 'settings';
         }
@@ -241,9 +281,9 @@ export function useRealtimeNotifications() {
     ): string[] {
         switch (notification.category) {
             case 'booking':
-                return ['dashboard', 'bookings'];
+                return ['dashboard', 'bookings', 'notifications'];
             case 'requisition':
-                return ['dashboard', 'requisitions'];
+                return ['dashboard', 'requisitions', 'notifications'];
             case 'inventory':
                 return [
                     'dashboard',
@@ -254,11 +294,25 @@ export function useRealtimeNotifications() {
                     'counts',
                     'purchase-orders',
                     'forecasting',
+                    'admin-alerts',
+                    'notifications',
                 ];
             case 'handover':
-                return ['dashboard', 'handover'];
+                return ['dashboard', 'handover', 'assets', 'notifications'];
+            case 'procurement':
+                return [
+                    'dashboard',
+                    'purchase-orders',
+                    'receiving',
+                    'products',
+                    'forecasting',
+                    'suppliers',
+                    'notifications',
+                ];
+            case 'reports':
+                return ['dashboard', 'reports', 'forecasting', 'notifications'];
             default:
-                return [];
+                return ['notifications'];
         }
     }
 

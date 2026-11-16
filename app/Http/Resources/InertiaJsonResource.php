@@ -18,7 +18,7 @@ abstract class InertiaJsonResource extends JsonResource
         $request ??= request();
 
         return collect($resources)
-            ->map(fn (mixed $resource) => (new static($resource))->resolve($request))
+            ->map(fn (mixed $resource) => static::make($resource)->resolve($request))
             ->values()
             ->all();
     }

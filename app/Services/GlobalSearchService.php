@@ -95,7 +95,7 @@ class GlobalSearchService
                 'type' => 'asset',
                 'id' => $asset->id,
                 'title' => $asset->tag_code,
-                'subtitle' => trim(($asset->product?->name ?? 'Asset').' · '.$asset->status->value),
+                'subtitle' => trim(($asset->product->name ?? 'Asset').' · '.$asset->status->value),
                 'url' => route('inventory.assets.show', $asset, absolute: false),
             ])
             ->all();
@@ -125,7 +125,7 @@ class GlobalSearchService
                 'type' => 'requisition',
                 'id' => $requisition->id,
                 'title' => 'Requisition #'.$requisition->id,
-                'subtitle' => trim(($requisition->requester?->name ?? $requisition->requester?->email ?? 'Unknown').' · '.$requisition->status->value),
+                'subtitle' => trim(($requisition->requester->name ?? $requisition->requester->email ?? 'Unknown').' · '.$requisition->status->value),
                 'url' => route('inventory.requisitions.show', $requisition, absolute: false),
             ])
             ->all();
@@ -156,7 +156,7 @@ class GlobalSearchService
                 'type' => 'booking',
                 'id' => $booking->id,
                 'title' => 'Booking #'.$booking->id,
-                'subtitle' => trim(($booking->asset?->tag_code ?? 'Asset').' · '.$booking->status->value),
+                'subtitle' => trim(($booking->asset->tag_code ?? 'Asset').' · '.$booking->status->value),
                 'url' => route('inventory.bookings.show', $booking, absolute: false),
             ])
             ->all();
@@ -184,7 +184,7 @@ class GlobalSearchService
                 'type' => 'purchase_order',
                 'id' => $purchaseOrder->id,
                 'title' => $purchaseOrder->po_number ?? 'PO #'.$purchaseOrder->id,
-                'subtitle' => trim(($purchaseOrder->supplier?->name ?? 'Supplier').' · '.$purchaseOrder->status->value),
+                'subtitle' => trim(($purchaseOrder->supplier->name ?? 'Supplier').' · '.$purchaseOrder->status->value),
                 'url' => route('inventory.purchase-orders.show', $purchaseOrder, absolute: false),
             ])
             ->all();

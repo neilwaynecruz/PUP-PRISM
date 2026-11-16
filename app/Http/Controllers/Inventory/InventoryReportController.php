@@ -22,6 +22,8 @@ use App\Services\Reports\RequisitionHistoryReportService;
 use App\Services\Reports\SlowMovingStockReportService;
 use App\Services\Reports\StockMovementAuditReportService;
 use App\Services\Reports\Support\TableReport;
+use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -151,7 +153,7 @@ class InventoryReportController extends Controller
 
         $diskName = (string) config('reports.queued_pdf_disk', 'local');
         $path = "reports/generated/{$user}/{$file}";
-        $disk = Storage::disk($diskName);
+        $disk = $this->downloadableDisk(Storage::disk($diskName));
 
         abort_unless($disk->exists($path), 404);
 
@@ -160,6 +162,15 @@ class InventoryReportController extends Controller
         return $disk->download($path, $downloadName, [
             'Content-Type' => 'application/pdf',
         ]);
+    }
+
+    private function downloadableDisk(Filesystem $disk): FilesystemAdapter
+    {
+        if (! $disk instanceof FilesystemAdapter) {
+            throw new \LogicException('The generated report disk must support streamed downloads.');
+        }
+
+        return $disk;
     }
 
     private function download(Request $request, string $reportKey, string $format, TableReport $report): Response

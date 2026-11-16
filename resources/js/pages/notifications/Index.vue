@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { Head, Link, router } from '@inertiajs/vue3';
-import { onBeforeUnmount, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useOptimisticState } from '@/composables/useOptimisticState';
 import {
     index as notificationsIndex,
     read as markNotificationRead,
@@ -54,6 +55,19 @@ const category = ref(props.filters.category ?? '');
 const dateFrom = ref(props.filters.date_from ?? '');
 const dateTo = ref(props.filters.date_to ?? '');
 const markingAllRead = ref(false);
+const optimisticState = useOptimisticState();
+
+watch(
+    () => props.notifications.data,
+    (rows) => {
+        optimisticState.initialize(rows);
+    },
+    { immediate: true },
+);
+
+const displayNotifications = computed<NotificationRow[]>(
+    () => optimisticState.items.value as NotificationRow[],
+);
 
 let refreshTimer: number | undefined;
 
@@ -87,10 +101,23 @@ function formatTimestamp(value: string | null): string {
 }
 
 function markRead(notificationId: string): void {
+    const actionKey = `read-${notificationId}`;
+    optimisticState.optimisticUpdate(actionKey, notificationId, {
+        readAt: new Date().toISOString(),
+    });
+
     router.put(
         markNotificationRead(notificationId).url,
         {},
-        { preserveScroll: true },
+        {
+            preserveScroll: true,
+            onSuccess: () => optimisticState.confirmSuccess(actionKey),
+            onError: () =>
+                optimisticState.rollback(
+                    actionKey,
+                    new Error('Failed to mark notification as read'),
+                ),
+        },
     );
 }
 
@@ -235,14 +262,14 @@ function severityToneClass(severity: string): string {
             class="overflow-hidden rounded-xl border border-border/60 bg-card shadow-sm"
         >
             <div
-                v-if="notifications.data.length === 0"
+                v-if="displayNotifications.length === 0"
                 class="px-4 py-10 text-center text-sm text-muted-foreground"
             >
                 No notifications are available in this view. Try changing the
                 search, category, status, or dates.
             </div>
             <article
-                v-for="notification in notifications.data"
+                v-for="notification in displayNotifications"
                 :key="notification.id"
                 class="flex flex-col gap-3 border-b border-border/60 px-4 py-4 last:border-b-0 sm:flex-row sm:items-start sm:gap-4"
             >
@@ -301,6 +328,9 @@ function severityToneClass(severity: string): string {
                         variant="outline"
                         size="sm"
                         class="min-h-11 rounded-lg sm:min-h-8"
+                        :disabled="
+                            optimisticState.isProcessing(notification.id)
+                        "
                         @click="markRead(notification.id)"
                     >
                         Mark as Read

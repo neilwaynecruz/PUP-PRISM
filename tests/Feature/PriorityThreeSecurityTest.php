@@ -191,7 +191,7 @@ test('api scopes requisition listings by role, includes position department on a
     $supplyHead = createSecurityUser('Supply Head');
 
     $ownRequisition = Requisition::factory()->create(['requester_id' => $custodianA->id]);
-    $otherRequisition = Requisition::factory()->create(['requester_id' => $custodianB->id]);
+    Requisition::factory()->create(['requester_id' => $custodianB->id]);
 
     $tokenCustodianA = $custodianA->createToken('custodian', ['read'])->plainTextToken;
     $tokenSupplyHead = $supplyHead->createToken('supply-head', ['read'])->plainTextToken;
@@ -278,7 +278,7 @@ test('verified handover recipients are redirected according to their role and bo
         'requester_id' => $supplyHead->id,
         'status' => BookingStatus::Requested,
     ]);
-    $otherBooking = Booking::factory()->create([
+    Booking::factory()->create([
         'requester_id' => $otherUser->id,
         'status' => BookingStatus::Requested,
     ]);

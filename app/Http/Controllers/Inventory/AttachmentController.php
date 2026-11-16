@@ -41,7 +41,7 @@ class AttachmentController extends Controller
             function () use ($attachment): void {
                 $stream = Storage::disk($attachment->disk)->readStream($attachment->path);
 
-                abort_if($stream === false, 404);
+                abort_unless(is_resource($stream), 404);
                 fpassthru($stream);
                 fclose($stream);
             },

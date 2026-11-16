@@ -33,36 +33,43 @@ class InventoryCountLine extends Model
         ];
     }
 
+    /** @return BelongsTo<InventoryCountSession, $this> */
     public function session(): BelongsTo
     {
         return $this->belongsTo(InventoryCountSession::class, 'inventory_count_session_id');
     }
 
+    /** @return BelongsTo<Product, $this> */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
+    /** @return BelongsTo<StockLot, $this> */
     public function stockLot(): BelongsTo
     {
         return $this->belongsTo(StockLot::class);
     }
 
+    /** @return BelongsTo<Asset, $this> */
     public function asset(): BelongsTo
     {
         return $this->belongsTo(Asset::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function countedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'counted_by');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function reviewedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    /** @return BelongsTo<StockMovement, $this> */
     public function adjustmentMovement(): BelongsTo
     {
         return $this->belongsTo(StockMovement::class, 'adjustment_movement_id');

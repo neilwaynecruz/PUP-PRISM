@@ -5,7 +5,7 @@ type JsQrFunction = typeof jsQR;
 
 type UseQrScannerOptions = {
     onDetected: (value: string) => void;
-    continuous?: boolean;
+    continuous?: boolean | (() => boolean);
     cooldownMs?: number;
 };
 
@@ -24,6 +24,11 @@ function loadJsQr(): Promise<JsQrFunction> {
 export function useQrScanner(options: UseQrScannerOptions) {
     const videoRef = useTemplateRef<HTMLVideoElement>('videoRef');
     const canvasRef = useTemplateRef<HTMLCanvasElement>('canvasRef');
+
+    const isContinuous = (): boolean =>
+        typeof options.continuous === 'function'
+            ? options.continuous()
+            : Boolean(options.continuous);
 
     const isRunning = ref(false);
     const isStarting = ref(false);
@@ -244,7 +249,7 @@ export function useQrScanner(options: UseQrScannerOptions) {
                 triggerScanFeedback();
                 options.onDetected(nextValue);
 
-                if (options.continuous) {
+                if (isContinuous()) {
                     status.value = `Captured ${nextValue}. Keep scanning…`;
                     frameRequestId = window.requestAnimationFrame(scanFrame);
 
@@ -323,7 +328,7 @@ export function useQrScanner(options: UseQrScannerOptions) {
 
             isRunning.value = true;
             isStarting.value = false;
-            status.value = options.continuous
+            status.value = isContinuous()
                 ? 'Camera ready. Keep the camera open to capture multiple QR codes.'
                 : 'Camera ready. Point it at a QR code.';
             scanFrame();

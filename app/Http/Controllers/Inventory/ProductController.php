@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Inventory;
 
 use App\Enums\ProductType;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Inventory\BulkTrashActionRequest;
 use App\Http\Requests\Inventory\ProductStoreRequest;
 use App\Http\Requests\Inventory\ProductUpdateRequest;
 use App\Http\Resources\ProductCollection;
@@ -19,6 +20,7 @@ use App\Models\UnitOfMeasurement;
 use App\Services\AuditLogService;
 use App\Services\Forecasting\DemandForecaster;
 use App\Services\Forecasting\ForecastPresenter;
+use App\Services\Inventory\BulkTrashService;
 use App\Services\Optimization\InventoryOptimizationCache;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
@@ -160,7 +162,7 @@ class ProductController extends Controller
                 'id' => $p->id,
                 'sku' => $p->sku,
                 'name' => $p->name,
-                'type' => $p->type?->value,
+                'type' => $p->type->value,
                 'category_id' => $p->category_id,
                 'category' => $p->category?->name,
                 'variant' => $p->variant,
@@ -169,7 +171,7 @@ class ProductController extends Controller
                 'color' => $p->color,
                 'size' => $p->size,
                 'unit' => $p->unitOfMeasurement?->abbreviation,
-                'on_hand_qty' => $p->stock?->on_hand_qty ?? 0,
+                'on_hand_qty' => $p->stock->on_hand_qty ?? 0,
                 'reorder_threshold' => $p->reorder_threshold,
                 'unit_price' => $p->unit_price !== null ? (float) $p->unit_price : null,
                 'is_active' => $p->is_active,
@@ -282,8 +284,8 @@ class ProductController extends Controller
                 'qty_delta' => $m->qty_delta,
                 'qty_before' => $m->qty_before,
                 'qty_after' => $m->qty_after,
-                'performed_by' => $m->performedBy?->name ?? 'System',
-                'performed_at' => $m->performed_at?->toIso8601String(),
+                'performed_by' => $m->performedBy->name ?? 'System',
+                'performed_at' => $m->performed_at->toIso8601String(),
                 'notes' => $m->notes,
                 'reference' => $m->requisition_id !== null
                     ? "Requisition #{$m->requisition_id}"
@@ -510,63 +512,17 @@ class ProductController extends Controller
         return back();
     }
 
-    public function bulkRestore(Request $request): RedirectResponse
+    public function bulkRestore(BulkTrashActionRequest $request, BulkTrashService $bulkTrash): RedirectResponse
     {
         $this->authorize('trash', Product::class);
 
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct', 'exists:products,id'],
-        ]);
-
-        $products = Product::query()
-            ->onlyTrashed()
-            ->whereIn('id', $validated['ids'])
-            ->orderBy('id')
-            ->get();
-
-        foreach ($products as $product) {
-            $this->authorize('restore', $product);
-        }
-
-        $restored = DB::transaction(function () use ($products): int {
-            if ($products->isEmpty()) {
-                return 0;
-            }
-
-            $ids = $products->modelKeys();
-            $now = now();
-
-            Product::query()
-                ->onlyTrashed()
-                ->whereIn('id', $ids)
-                ->update([
-                    'deleted_at' => null,
-                    'updated_at' => $now,
-                ]);
-
-            $auditEntries = [];
-
-            foreach ($products as $product) {
-                $product->deleted_at = null;
-                $label = $product->name ?: $product->sku ?: ($product->id ? "#{$product->id}" : '');
-                $auditEntries[] = [
-                    'action' => 'restore',
-                    'description' => trim("Product {$label} restored."),
-                    'model' => $product,
-                    'old_values' => null,
-                    'new_values' => $product->toArray(),
-                ];
-            }
-
-            AuditLogService::logBatch($auditEntries);
-
-            return count($ids);
-        });
-
-        if ($restored > 0) {
-            app(InventoryOptimizationCache::class)->invalidate();
-        }
+        $restored = $bulkTrash->bulkRestore(
+            modelClass: Product::class,
+            ids: $request->ids(),
+            actor: $request->user(),
+            labelResolver: fn (Product $product): string => $product->name ?: $product->sku ?: ($product->id ? "#{$product->id}" : ''),
+            afterRestore: fn () => app(InventoryOptimizationCache::class)->invalidate(),
+        );
 
         Inertia::flash('toast', [
             'type' => 'success',
@@ -580,40 +536,19 @@ class ProductController extends Controller
         return back();
     }
 
-    public function bulkForceDelete(Request $request): RedirectResponse
+    public function bulkForceDelete(BulkTrashActionRequest $request, BulkTrashService $bulkTrash): RedirectResponse
     {
         $this->authorize('trash', Product::class);
 
-        $validated = $request->validate([
-            'ids' => ['required', 'array', 'min:1'],
-            'ids.*' => ['integer', 'distinct', 'exists:products,id'],
-        ]);
+        $outcome = $bulkTrash->bulkForceDelete(
+            modelClass: Product::class,
+            ids: $request->ids(),
+            actor: $request->user(),
+            afterForceDelete: fn () => app(InventoryOptimizationCache::class)->invalidate(),
+        );
 
-        $products = Product::query()
-            ->onlyTrashed()
-            ->whereIn('id', $validated['ids'])
-            ->orderBy('id')
-            ->get();
-
-        foreach ($products as $product) {
-            $this->authorize('forceDelete', $product);
-        }
-
-        $deleted = 0;
-        $errors = 0;
-
-        foreach ($products as $product) {
-            try {
-                DB::transaction(function () use ($product): void {
-                    AuditLogService::logForceDeleted($product);
-                    $product->forceDelete();
-                });
-                $deleted++;
-            } catch (QueryException $e) {
-                report($e);
-                $errors++;
-            }
-        }
+        $deleted = $outcome['deleted'];
+        $errors = $outcome['skipped'];
 
         $message = trans_choice(
             '{1} :count product permanently deleted.|[0,*] :count products permanently deleted.',

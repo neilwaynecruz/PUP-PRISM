@@ -11,7 +11,7 @@ class UserPolicy
         return $user->hasRole('Admin');
     }
 
-    public function view(User $user, User $managedUser): bool
+    public function view(User $user, User $_managedUser): bool
     {
         return $user->hasRole('Admin');
     }
@@ -21,7 +21,7 @@ class UserPolicy
         return $user->hasRole('Admin');
     }
 
-    public function update(User $user, User $managedUser): bool
+    public function update(User $user, User $_managedUser): bool
     {
         return $user->hasRole('Admin');
     }

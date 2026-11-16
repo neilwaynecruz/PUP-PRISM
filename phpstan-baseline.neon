@@ -1,0 +1,2185 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method App\\Actions\\Fortify\\CreateNewUser\:\:passwordRules\(\) should return array\<int, array\<mixed\>\|Illuminate\\Contracts\\Validation\\ValidationRule\|string\> but returns array\<int, Illuminate\\Validation\\Rules\\Password\|string\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Actions/Fortify/CreateNewUser.php
+
+		-
+			message: '#^Method App\\Actions\\Fortify\\ResetUserPassword\:\:passwordRules\(\) should return array\<int, array\<mixed\>\|Illuminate\\Contracts\\Validation\\ValidationRule\|string\> but returns array\<int, Illuminate\\Validation\\Rules\\Password\|string\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Actions/Fortify/ResetUserPassword.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Console/Commands/InventoryGenerateAlerts.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Console/Commands/SendNotificationDigests.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Console/Commands/SendNotificationDigests.php
+
+		-
+			message: '#^Instanceof between App\\Models\\User and App\\Models\\User will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Console/Commands/SendNotificationDigests.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\InventoryAlert\:\:\$acknowledged_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AlertsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\InventoryAlert\:\:\$active_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AlertsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\InventoryAlert\:\:\$assigned_to_me_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AlertsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\InventoryAlert\:\:\$resolved_this_week_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AlertsController.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\InventoryAlert\:\:\$unacknowledged_count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Admin/AlertsController.php
+
+		-
+			message: '#^Cannot call method toDateString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Admin/AlertsController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 5
+			path: app/Http/Controllers/Admin/AlertsController.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Admin/AlertsController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: app/Http/Controllers/Admin/UserManagementController.php
+
+		-
+			message: '#^Call to function abort_if\(\) with false and 404 will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Http/Controllers/Inventory/AttachmentController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between resource\|null and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Controllers/Inventory/AttachmentController.php
+
+		-
+			message: '#^Call to function abort_unless\(\) with false and 404 will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 2
+			path: app/Http/Controllers/Inventory/ForecastController.php
+
+		-
+			message: '#^Method App\\Http\\Controllers\\Inventory\\ForecastController\:\:resolveForecast\(\) never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Http/Controllers/Inventory/ForecastController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ProductType\:\:Consumable will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Http/Controllers/Inventory/ForecastController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/ForecastController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/Inventory/ForecastController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/ForecastController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Controllers/Inventory/HandoverController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Controllers/Inventory/HandoverController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 4
+			path: app/Http/Controllers/Inventory/HandoverController.php
+
+		-
+			message: '#^Cannot call method diffInSeconds\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Inventory/HandoverController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Http/Controllers/Inventory/HandoverController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Asset\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Inventory/HandoverController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/Inventory/HandoverController.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/HandoverController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Http/Controllers/Inventory/HandoverController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Product\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\StockMovement\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ProductType\:\:Consumable will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Http/Controllers/Inventory/ProductController.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductLabelController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,App\\Models\\Product\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductLabelController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between bool and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductLabelController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/ProductLabelController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Inventory/ReceivingController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Product\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Inventory/ReceivingController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/ReceivingController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/ReceivingController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/ReceivingController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/StockMovementController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Inventory/SupplierController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Product\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Inventory/SupplierController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/SupplierController.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Controllers/Inventory/TrashController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Product\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Http/Controllers/Inventory/TrashController.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Http/Controllers/Inventory/TrashController.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Controllers/Inventory/TrashController.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Http/Controllers/NotificationController.php
+
+		-
+			message: '#^Instanceof between Laravel\\Sanctum\\PersonalAccessToken and Laravel\\Sanctum\\PersonalAccessToken will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Http/Middleware/EnsureActiveUser.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: app/Http/Middleware/EnsureActiveUser.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between Laravel\\Sanctum\\PersonalAccessToken and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Middleware/EnsureActiveUser.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: app/Http/Middleware/EnsurePrivilegedTwoFactorIsConfirmed.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between Laravel\\Sanctum\\PersonalAccessToken and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Middleware/EnsurePrivilegedTwoFactorIsConfirmed.php
+
+		-
+			message: '#^Method App\\Http\\Requests\\Admin\\StoreUserRequest\:\:passwordRules\(\) should return array\<int, array\<mixed\>\|Illuminate\\Contracts\\Validation\\ValidationRule\|string\> but returns array\<int, Illuminate\\Validation\\Rules\\Password\|string\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Requests/Admin/StoreUserRequest.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Requests/Inventory/BatchReceiveStockRequest.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ProductType\:\:Consumable will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Requests/Inventory/BatchReceiveStockRequest.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Requests/Inventory/CycleCountRequest.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Requests/Inventory/ProductUpdateRequest.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Http/Requests/Inventory/PurchaseOrderReceiveRequest.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string\|null and App\\Enums\\ProductType\:\:Consumable will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Requests/Inventory/PurchaseOrderReceiveRequest.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 1
+			path: app/Http/Requests/Inventory/ReceiveStockRequest.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ProductType\:\:Asset will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Http/Requests/Inventory/ReceiveStockRequest.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ProductType\:\:Consumable will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 2
+			path: app/Http/Requests/Inventory/ReceiveStockRequest.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Requests/Inventory/StockAdjustmentRequest.php
+
+		-
+			message: '#^Method App\\Http\\Requests\\Settings\\PasswordUpdateRequest\:\:passwordRules\(\) should return array\<int, array\<mixed\>\|Illuminate\\Contracts\\Validation\\ValidationRule\|string\> but returns array\<int, Illuminate\\Validation\\Rules\\Password\|string\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Requests/Settings/PasswordUpdateRequest.php
+
+		-
+			message: '#^Method App\\Http\\Requests\\Settings\\ProfileDeleteRequest\:\:passwordRules\(\) should return array\<int, array\<mixed\>\|Illuminate\\Contracts\\Validation\\ValidationRule\|string\> but returns array\<int, Illuminate\\Validation\\Rules\\Password\|string\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Http/Requests/Settings/ProfileDeleteRequest.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$acquisition_cost\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$acquisition_date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$condition_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$currentLocation\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$installed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$lifecycle_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$maintenance_interval_days\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$position\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$product\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$serial_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$tag_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\AssetResource\:\:\$warranty_expires_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\AssetResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: app/Http/Resources/AssetResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$approved_ip_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$approver\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$asset\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$asset_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$deletedBy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$deletion_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$end_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$purpose\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$requested_ip_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$requester\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$requester_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$start_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\BookingResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\BookingResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 6
+			path: app/Http/Resources/BookingResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$asset\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$cancellation_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$cancelledBy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$cancelled_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$fromUser\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$initiatedBy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$initiated_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$last_sent_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$toUser\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\HandoverLogResource\:\:\$verified_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\HandoverLogResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 8
+			path: app/Http/Resources/HandoverLogResource.php
+
+		-
+			message: '#^Unsafe usage of new static\(\)\.$#'
+			identifier: new.static
+			count: 1
+			path: app/Http/Resources/InertiaJsonResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$brand\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$category\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$category_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$color\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$deletedBy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$deletion_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$is_bookable\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$lead_time_days\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$model\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$origin\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$origin_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$reorder_threshold\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$size\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$sku\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$specifications\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$stock\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$supplier\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$supplier_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$unitOfMeasurement\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$unit_of_measurement_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$unit_price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\ProductResource\:\:\$variant\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\ProductResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 6
+			path: app/Http/Resources/ProductResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$approver\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$expected_delivery_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$lines\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$po_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$received_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$requester\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$sent_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$subtotal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$supplier\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$supplier_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$tax\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\PurchaseOrderResource\:\:\$total_amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\PurchaseOrderResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 4
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Using nullsafe property access on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Http/Resources/PurchaseOrderResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$approved_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$approved_ip_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$approver\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$deletedBy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$deleted_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$deletion_reason\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$issued_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$issued_ip_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$issuer\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$lines\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$requested_ip_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$requester\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\RequisitionResource\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\RequisitionResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 7
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Http/Resources/RequisitionResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$accountablePosition\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$asset\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$counted_qty\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$ip_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$movement_type\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$performedBy\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$performed_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$product\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$qty_after\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$qty_before\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$qty_delta\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$reason_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$stockLot\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\StockMovementResource\:\:\$variance_qty\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\StockMovementResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 5
+			path: app/Http/Resources/StockMovementResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$contact_person\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$is_active\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$lead_time_days\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$payment_terms\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\SupplierResource\:\:\$website\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Http/Resources/SupplierResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Access to an undefined property App\\Http\\Resources\\UserResource\:\:\$position\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Call to an undefined method App\\Http\\Resources\\UserResource\:\:relationLoaded\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Http/Resources/UserResource.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Models/InventoryAlert.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tag_code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Notifications/BookingStatusChangedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Notifications/BookingSubmittedNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tag_code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Notifications/BookingSubmittedNotification.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Notifications/DailyNotificationDigest.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Notifications/ExpiringStockAlertNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Notifications/ExpiringStockAlertNotification.php
+
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Notifications/PurchaseOrderSentNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Notifications/PurchaseOrderSentNotification.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Notifications/RequisitionSubmittedNotification.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Observers/UserObserver.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:attachments\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Services/Attachments/AttachmentService.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 2
+			path: app/Services/Attachments/AttachmentService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ApprovalStatus\:\:Approved will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Attachments/AttachmentService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\AssetTransferStatus\:\:Approved will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Attachments/AttachmentService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AuditLogService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/AuditLogService.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: app/Services/AuditLogService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StockMovement\:\:\$count\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\StockMovement\:\:\$date\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Supplier\:\:\$avg_lead_time_days\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Supplier\:\:\$open_pos\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Access to an undefined property App\\Models\\Supplier\:\:\$total_pos\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Models\\Asset\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>at_risk_count" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 6
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tag_code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>urgent_count" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/DashboardStatsService.php
+
+		-
+			message: '#^Called ''Model\:\:make\(\)'' which performs unnecessary work, use ''new Model\(\)''\.$#'
+			identifier: larastan.noModelMake
+			count: 1
+			path: app/Services/Forecasting/DemandForecaster.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Forecasting/DemandForecaster.php
+
+		-
+			message: '#^Call to function is_array\(\) with string\|null will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Services/Forecasting/ForecastPresenter.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/Forecasting/ForecastPresenter.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Forecasting/ForecastPresenter.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Services/GlobalSearchService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/GlobalSearchService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Services/GlobalSearchService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tag_code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/GlobalSearchService.php
+
+		-
+			message: '#^Call to function in_array\(\) with arguments string, array\{App\\Enums\\AssetStatus\:\:Condemned, App\\Enums\\AssetStatus\:\:Unserviceable\} and true will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Services/Inventory/AssetIntegrityService.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 3
+			path: app/Services/Inventory/AssetIntegrityService.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: app/Services/Inventory/AssetIntegrityService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\AssetLifecycleStatus\:\:Active will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 5
+			path: app/Services/Inventory/AssetIntegrityService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\AssetStatus\:\:Available will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Inventory/AssetIntegrityService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 4
+			path: app/Services/Inventory/AssetIntegrityService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$approver\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/Inventory/AssetLifecycleService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$notes\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/Inventory/AssetLifecycleService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$reviewer\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/Inventory/AssetLifecycleService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\ApprovalStatus\:\:Pending will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Services/Inventory/AssetLifecycleService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\AssetLifecycleStatus\:\:Active will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: app/Services/Inventory/AssetLifecycleService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\AssetLifecycleStatus\:\:Retired will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Inventory/AssetLifecycleService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 2
+			path: app/Services/Inventory/AssetLifecycleService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$payload\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/Inventory/AssetMaintenanceService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$user\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/Inventory/AssetMaintenanceService.php
+
+		-
+			message: '#^Call to function in_array\(\) with arguments App\\Enums\\MaintenanceStatus, array\{\} and true will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Services/Inventory/AssetMaintenanceService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/Inventory/AssetMaintenanceService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\MaintenanceStatus\:\:InProgress is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/Inventory/AssetMaintenanceService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\MaintenanceStatus\:\:Reported is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/Inventory/AssetMaintenanceService.php
+
+		-
+			message: '#^Match arm comparison between string and App\\Enums\\MaintenanceStatus\:\:Scheduled is always false\.$#'
+			identifier: match.alwaysFalse
+			count: 1
+			path: app/Services/Inventory/AssetMaintenanceService.php
+
+		-
+			message: '#^Property App\\Services\\Inventory\\AssetMaintenanceService\:\:\$integrity is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Services/Inventory/AssetMaintenanceService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\AssetLifecycleStatus\:\:Active will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Inventory/AssetMaintenanceService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 2
+			path: app/Services/Inventory/AssetMaintenanceService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$approver\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/Inventory/AssetTransferService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$notes\.$#'
+			identifier: closure.unusedUse
+			count: 2
+			path: app/Services/Inventory/AssetTransferService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$reviewer\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/Inventory/AssetTransferService.php
+
+		-
+			message: '#^Anonymous function has an unused use \$user\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: app/Services/Inventory/AssetTransferService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\AssetTransferStatus\:\:Pending will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Services/Inventory/AssetTransferService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 3
+			path: app/Services/Inventory/AssetTransferService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Support\\Collection\<int, App\\Models\\RequisitionLine\>\:\:modelKeys\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Call to function array_key_exists\(\) with ''id'' and array\{id\: int, qty_to_issue\: int\} will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Call to function array_key_exists\(\) with ''qty_to_issue'' and array\{id\: int, qty_to_issue\: int\} will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Result of \|\| is always false\.$#'
+			identifier: booleanOr.alwaysFalse
+			count: 1
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between int\<0, max\> and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\ProductType\:\:Asset will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\ProductType\:\:Consumable will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ProductType\:\:Asset will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string and App\\Enums\\ProductType\:\:Consumable will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 3
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between string\|null and App\\Enums\\ProductType\:\:Consumable will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 4
+			path: app/Services/Inventory/InventoryService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$asset_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$review_status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$stock_lot_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$variance_qty\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Call to function in_array\(\) with arguments string, array\{App\\Enums\\InventoryCountReviewStatus\:\:Pending, App\\Enums\\InventoryCountReviewStatus\:\:RecountRequested\} and true will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Comparison operation "\<" between int\<0, max\> and 0 is always false\.$#'
+			identifier: smaller.alwaysFalse
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Parameter \#1 \$key of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:contains\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|Illuminate\\Database\\Eloquent\\Model\|int\|string, Closure\(App\\Models\\InventoryCountLine\)\: bool given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Parameter \#1 \$key of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:contains\(\) expects \(callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: bool\)\|Illuminate\\Database\\Eloquent\\Model\|int\|string, Closure\(App\\Models\\InventoryCountLine\)\: false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Parameter \#2 \$line of method App\\Services\\Inventory\\InventoryService\:\:applyApprovedCountVariance\(\) expects App\\Models\\InventoryCountLine, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and App\\Enums\\AssetLifecycleStatus\:\:Active will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Services/Inventory/PhysicalCountService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Support\\Collection\<int,string\>\:\:map\(\) expects callable\(string, 0\)\: array\{sku\: string, name\: mixed, qty_requested\: int, availability\: array\{available\: bool, message\: ''This product is currently inactive\.''\|''This SKU is no longer in the catalog\.''\|null\}\}, Closure\(array\)\: array\{sku\: string, name\: mixed, qty_requested\: int, availability\: array\{available\: bool, message\: ''This product is currently inactive\.''\|''This SKU is no longer in the catalog\.''\|null\}\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Inventory/RequisitionTemplateService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Inventory/RequisitionTemplateService.php
+
+		-
+			message: '#^Method App\\Services\\NotificationService\:\:usersWithRole\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: app/Services/NotificationService.php
+
+		-
+			message: '#^Parameter \#1 \$query of method App\\Services\\Operations\\OperationalDataRetentionService\:\:deleteInChunks\(\) expects Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>, Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\AuditLog\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Operations/OperationalDataRetentionService.php
+
+		-
+			message: '#^Parameter \#1 \$query of method App\\Services\\Operations\\OperationalDataRetentionService\:\:deleteInChunks\(\) expects Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>, Illuminate\\Database\\Eloquent\\Builder\<App\\Models\\ForecastSnapshot\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Operations/OperationalDataRetentionService.php
+
+		-
+			message: '#^Parameter \#1 \$query of method App\\Services\\Operations\\OperationalDataRetentionService\:\:deleteInChunks\(\) expects Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Database\\Eloquent\\Model\>, Illuminate\\Database\\Eloquent\\Builder\<Illuminate\\Notifications\\DatabaseNotification\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Services/Operations/OperationalDataRetentionService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Support\\Collection\<int, App\\Models\\Product\>\:\:loadMissing\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Services/Optimization/InventoryOptimizationService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Optimization/InventoryOptimizationService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>lead_time_days" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Optimization/SafetyStockCalculator.php
+
+		-
+			message: '#^Type Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\> in generic type Illuminate\\Database\\Eloquent\\Collection\<int\|string, Illuminate\\Database\\Eloquent\\Collection\<int, App\\Models\\Product\>\> in PHPDoc tag @var for variable \$products is not subtype of template type TModel of Illuminate\\Database\\Eloquent\\Model of class Illuminate\\Database\\Eloquent\\Collection\.$#'
+			identifier: generics.notSubtype
+			count: 2
+			path: app/Services/Procurement/PurchaseOrderGenerator.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>lead_time_days" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Procurement/PurchaseOrderGenerator.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Procurement/PurchaseOrderGenerator.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reports/AssetConditionReportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Services/Reports/AssetConditionReportService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: app/Services/Reports/AssetConditionReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/AssetConditionReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/AssetConditionReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/AssetConditionReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/Reports/BookingScheduleReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Services/Reports/BookingScheduleReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tag_code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/BookingScheduleReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/ExpirationReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/ExpirationReportService.php
+
+		-
+			message: '#^Anonymous function never returns null so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: app/Services/Reports/ForecastSummaryReportService.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between string and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Services/Reports/ForecastSummaryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/ForecastSummaryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/ForecastSummaryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/InventoryOptimizationReportService.php
+
+		-
+			message: '#^Instanceof between App\\Enums\\PurchaseOrderStatus and App\\Enums\\PurchaseOrderStatus will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: app/Services/Reports/ProcurementReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Services/Reports/ProcurementReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>qty_ordered" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/ProcurementReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>qty_received" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/ProcurementReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/ProcurementReportService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/Reports/ProductInventoryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>abbreviation" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/ProductInventoryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: app/Services/Reports/ProductInventoryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/ProductInventoryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 3
+			path: app/Services/Reports/RequisitionHistoryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 4
+			path: app/Services/Reports/RequisitionHistoryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>qty_issued" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/RequisitionHistoryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>qty_requested" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/RequisitionHistoryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/RequisitionHistoryReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/SlowMovingStockReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>on_hand_qty" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/SlowMovingStockReportService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: app/Services/Reports/StockMovementAuditReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>email" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/StockMovementAuditReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>name" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/StockMovementAuditReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>reference_no" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/StockMovementAuditReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>sku" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/StockMovementAuditReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>tag_code" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/StockMovementAuditReportService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>value" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Services/Reports/StockMovementAuditReportService.php

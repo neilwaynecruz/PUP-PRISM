@@ -82,7 +82,7 @@ class StockMovementController extends Controller
                 'sku' => $product->sku,
                 'name' => $product->name,
                 'category' => $product->category?->name,
-                'on_hand_qty' => (int) ($product->stock?->on_hand_qty ?? 0),
+                'on_hand_qty' => (int) ($product->stock->on_hand_qty ?? 0),
                 'reorder_threshold' => (int) ($product->reorder_threshold ?? 0),
             ])
             ->values()

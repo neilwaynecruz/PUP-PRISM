@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Asset;
 use Illuminate\Http\Request;
 
+/** @mixin Asset */
 class AssetResource extends InertiaJsonResource
 {
     /**
@@ -17,9 +19,9 @@ class AssetResource extends InertiaJsonResource
             'id' => (int) $this->id,
             'tag_code' => $this->tag_code,
             'serial_number' => $this->serial_number,
-            'status' => $this->status?->value,
-            'lifecycle_status' => $this->lifecycle_status?->value,
-            'condition_status' => $this->condition_status?->value,
+            'status' => $this->status->value,
+            'lifecycle_status' => $this->lifecycle_status->value,
+            'condition_status' => $this->condition_status->value,
             'acquisition_date' => $this->acquisition_date?->toDateString(),
             'acquisition_cost' => $this->acquisition_cost !== null ? round((float) $this->acquisition_cost, 2) : null,
             'warranty_expires_at' => $this->warranty_expires_at?->toDateString(),

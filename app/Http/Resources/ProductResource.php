@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Product;
 use Illuminate\Http\Request;
 
+/** @mixin Product */
 class ProductResource extends InertiaJsonResource
 {
     /**
@@ -23,7 +25,7 @@ class ProductResource extends InertiaJsonResource
             'color' => $this->color,
             'size' => $this->size,
             'specifications' => $this->specifications,
-            'type' => $this->type?->value,
+            'type' => $this->type->value,
             'is_active' => $this->is_active,
             'reorder_threshold' => $this->reorder_threshold,
             'category_id' => $this->category_id,

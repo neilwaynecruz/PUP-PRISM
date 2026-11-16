@@ -18,7 +18,7 @@ class AssetTransferPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, AssetTransfer $assetTransfer): bool
+    public function view(User $user, AssetTransfer $_assetTransfer): bool
     {
         return $this->viewAny($user);
     }
@@ -42,7 +42,7 @@ class AssetTransferPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, AssetTransfer $assetTransfer): bool
+    public function delete(User $_user, AssetTransfer $_assetTransfer): bool
     {
         return false;
     }
@@ -50,7 +50,7 @@ class AssetTransferPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, AssetTransfer $assetTransfer): bool
+    public function restore(User $_user, AssetTransfer $_assetTransfer): bool
     {
         return false;
     }
@@ -58,7 +58,7 @@ class AssetTransferPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, AssetTransfer $assetTransfer): bool
+    public function forceDelete(User $_user, AssetTransfer $_assetTransfer): bool
     {
         return false;
     }

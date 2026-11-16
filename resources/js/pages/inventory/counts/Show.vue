@@ -11,6 +11,14 @@ import { computed, defineAsyncComponent, reactive, ref, watch } from 'vue';
 import Heading from '@/components/Heading.vue';
 import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
     approve,
@@ -171,20 +179,78 @@ function reviewLine(
     );
 }
 
-function runAction(name: 'submit' | 'approve' | 'complete' | 'cancel'): void {
-    const prompts = {
-        submit: 'Submit this physical count for review? Counted quantities will be locked until a recount is requested.',
-        approve:
-            'Approve this count and post the accepted stock differences? This changes official stock balances.',
-        complete: 'Mark this approved count session as complete?',
-        cancel: 'Cancel this count session? Saved observations will remain in the history.',
+type CountActionName = 'submit' | 'approve' | 'complete' | 'cancel';
+
+const confirmActionDialog = ref<{
+    open: boolean;
+    action: CountActionName | null;
+    title: string;
+    description: string;
+    confirmLabel: string;
+    destructive: boolean;
+}>({
+    open: false,
+    action: null,
+    title: '',
+    description: '',
+    confirmLabel: 'Confirm',
+    destructive: false,
+});
+
+function runAction(name: CountActionName): void {
+    const config: Record<
+        CountActionName,
+        {
+            title: string;
+            description: string;
+            confirmLabel: string;
+            destructive: boolean;
+        }
+    > = {
+        submit: {
+            title: 'Submit Count for Review',
+            description:
+                'Submit this physical count for review? Counted quantities will be locked until a recount is requested.',
+            confirmLabel: 'Confirm Submission',
+            destructive: false,
+        },
+        approve: {
+            title: 'Post Approved Differences',
+            description:
+                'Approve this count and post the accepted stock differences? This changes official stock balances.',
+            confirmLabel: 'Confirm Approval',
+            destructive: false,
+        },
+        complete: {
+            title: 'Complete Count Session',
+            description: 'Mark this approved count session as complete?',
+            confirmLabel: 'Confirm Completion',
+            destructive: false,
+        },
+        cancel: {
+            title: 'Cancel Count Session',
+            description:
+                'Cancel this count session? Saved observations will remain in the history.',
+            confirmLabel: 'Confirm Cancellation',
+            destructive: true,
+        },
     };
 
-    if (!window.confirm(prompts[name])) {
+    confirmActionDialog.value = {
+        open: true,
+        action: name,
+        ...config[name],
+    };
+}
+
+function executeConfirmedAction(): void {
+    const name = confirmActionDialog.value.action;
+
+    if (!name) {
         return;
     }
 
-    const route =
+    const actionRoute =
         name === 'submit'
             ? submit(props.session.id)
             : name === 'approve'
@@ -192,11 +258,21 @@ function runAction(name: 'submit' | 'approve' | 'complete' | 'cancel'): void {
               : name === 'complete'
                 ? complete(props.session.id)
                 : cancel(props.session.id);
+
     busyAction.value = name;
     router.post(
-        route.url,
+        actionRoute.url,
         {},
-        { preserveScroll: true, onFinish: () => (busyAction.value = '') },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                confirmActionDialog.value.open = false;
+                confirmActionDialog.value.action = null;
+            },
+            onFinish: () => {
+                busyAction.value = '';
+            },
+        },
     );
 }
 
@@ -499,23 +575,23 @@ const visibleLines = computed(() => {
                 >
                     <label class="grid gap-1.5 text-sm font-medium"
                         >Counted quantity
-                        <input
+                        <Input
                             v-model="countValues[line.id]"
                             type="number"
                             min="0"
                             :max="line.asset ? 1 : undefined"
                             required
                             inputmode="numeric"
-                            class="min-h-11 rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:min-h-9"
+                            class="min-h-11 sm:min-h-9"
                         />
                     </label>
                     <label class="grid gap-1.5 text-sm font-medium"
                         >Counting remarks
-                        <input
+                        <Input
                             v-model="countNotes[line.id]"
                             type="text"
                             placeholder="Optional note about this count"
-                            class="min-h-11 rounded-md border border-input bg-background px-3 text-sm focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none sm:min-h-9"
+                            class="min-h-11 sm:min-h-9"
                         />
                     </label>
                     <Button type="submit" :disabled="busyLine === line.id">{{
@@ -565,11 +641,11 @@ const visibleLines = computed(() => {
                     >
                         <label class="grid gap-1 text-sm font-medium"
                             >Review notes
-                            <input
+                            <Input
                                 v-model="reviewNotes[line.id]"
                                 type="text"
                                 placeholder="Explain the review or recount request"
-                                class="min-h-11 rounded-md border border-input bg-background px-3 text-sm sm:min-h-9"
+                                class="min-h-11 sm:min-h-9"
                             />
                         </label>
                         <div class="flex flex-wrap items-end gap-2">
@@ -610,5 +686,43 @@ const visibleLines = computed(() => {
                 </div>
             </article>
         </section>
+
+        <Dialog v-model:open="confirmActionDialog.open">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{{ confirmActionDialog.title }}</DialogTitle>
+                    <DialogDescription>{{
+                        confirmActionDialog.description
+                    }}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        :disabled="busyAction !== ''"
+                        @click="confirmActionDialog.open = false"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        data-testid="confirm-count-action-button"
+                        :variant="
+                            confirmActionDialog.destructive
+                                ? 'destructive'
+                                : 'default'
+                        "
+                        :disabled="busyAction !== ''"
+                        @click="executeConfirmedAction"
+                    >
+                        {{
+                            busyAction !== ''
+                                ? 'Processing…'
+                                : confirmActionDialog.confirmLabel
+                        }}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
 </template>

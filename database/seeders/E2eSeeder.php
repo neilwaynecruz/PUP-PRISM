@@ -150,7 +150,7 @@ class E2eSeeder extends Seeder
                 ['tag_code' => $def['tag_code']],
                 [
                     'product_id' => $assetProduct->id,
-                    'position_id' => $def['position'] === null ? null : $positions[$def['position']]->id,
+                    'position_id' => $positions[$def['position']]->id,
                     'status' => $def['status'],
                 ],
             );

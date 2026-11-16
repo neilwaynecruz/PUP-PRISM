@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 
+/** @mixin Supplier */
 class SupplierResource extends InertiaJsonResource
 {
     /**
@@ -25,7 +27,7 @@ class SupplierResource extends InertiaJsonResource
             'notes' => $this->notes,
             'products_count' => isset($this->products_count) ? (int) $this->products_count : null,
             'purchase_orders_count' => isset($this->purchase_orders_count) ? (int) $this->purchase_orders_count : null,
-            'avg_lead_time_days' => isset($this->avg_lead_time_days) && $this->avg_lead_time_days !== null
+            'avg_lead_time_days' => isset($this->avg_lead_time_days)
                 ? round((float) $this->avg_lead_time_days, 2)
                 : null,
             'can_delete' => $request->user()?->can('delete', $this->resource) ?? false,

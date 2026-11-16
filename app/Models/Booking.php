@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\BookingStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -11,17 +12,17 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property BookingStatus $status
+ * @property CarbonImmutable|null $start_at
+ * @property CarbonImmutable|null $end_at
+ */
 #[Fillable([
     'asset_id',
     'requester_id',
     'requester_position_id',
-    'approver_id',
-    'approver_position_id',
-    'requested_ip_address',
-    'approved_ip_address',
     'start_at',
     'end_at',
-    'status',
     'purpose',
 ])]
 class Booking extends Model

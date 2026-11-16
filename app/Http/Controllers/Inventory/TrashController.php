@@ -14,6 +14,8 @@ class TrashController extends Controller
 {
     public function __invoke(Request $request): Response
     {
+        $this->authorize('trash', Product::class);
+
         $search = $request->string('search')->trim()->toString();
         $modelType = $request->string('type')->trim()->toString();
 
@@ -70,7 +72,7 @@ class TrashController extends Controller
                 'id' => $p->id,
                 'type' => 'product',
                 'label' => "{$p->sku} — {$p->name}",
-                'meta' => $p->type?->value,
+                'meta' => $p->type->value,
                 'deleted_at' => $p->deleted_at?->toIso8601String(),
                 'deleted_by' => $p->deletedBy ? ['id' => $p->deletedBy->id, 'name' => $p->deletedBy->name, 'email' => $p->deletedBy->email] : null,
                 'deletion_reason' => $p->deletion_reason,
@@ -105,7 +107,7 @@ class TrashController extends Controller
             ->map(fn (Booking $b) => [
                 'id' => $b->id,
                 'type' => 'booking',
-                'label' => ($b->asset?->product?->name ?? 'Asset').' — '.$b->status->value,
+                'label' => ($b->asset?->product->name ?? 'Asset').' — '.$b->status->value,
                 'meta' => $b->asset?->tag_code,
                 'deleted_at' => $b->deleted_at?->toIso8601String(),
                 'deleted_by' => $b->deletedBy ? ['id' => $b->deletedBy->id, 'name' => $b->deletedBy->name, 'email' => $b->deletedBy->email] : null,
@@ -138,7 +140,7 @@ class TrashController extends Controller
             ->map(fn (Requisition $r) => [
                 'id' => $r->id,
                 'type' => 'requisition',
-                'label' => 'Requisition #'.$r->id.' — '.($r->requester?->name ?? 'Unknown'),
+                'label' => 'Requisition #'.$r->id.' — '.($r->requester->name ?? 'Unknown'),
                 'meta' => $r->status->value,
                 'deleted_at' => $r->deleted_at?->toIso8601String(),
                 'deleted_by' => $r->deletedBy ? ['id' => $r->deletedBy->id, 'name' => $r->deletedBy->name, 'email' => $r->deletedBy->email] : null,

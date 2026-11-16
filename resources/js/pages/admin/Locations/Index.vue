@@ -263,11 +263,23 @@ function submitEdit(): void {
         });
 }
 
-function toggle(location: Location): void {
-    if (!location.is_active && !window.confirm('Reactivate this location?')) {
-        return;
-    }
+const confirmLocationDialog = ref<{
+    open: boolean;
+    mode: 'reactivate' | 'deactivate' | null;
+    location: Location | null;
+    title: string;
+    description: string;
+    confirmLabel: string;
+}>({
+    open: false,
+    mode: null,
+    location: null,
+    title: '',
+    description: '',
+    confirmLabel: 'Confirm',
+});
 
+function executeLocationStatusUpdate(location: Location): void {
     router.put(
         update(location.id).url,
         {
@@ -283,18 +295,65 @@ function toggle(location: Location): void {
             capacity: location.capacity,
             is_active: !location.is_active,
         },
-        { preserveScroll: true },
+        {
+            preserveScroll: true,
+            onSuccess: () => {
+                confirmLocationDialog.value.open = false;
+                confirmLocationDialog.value.location = null;
+            },
+        },
     );
 }
 
-function deactivate(location: Location): void {
-    if (
-        window.confirm(
-            `Deactivate ${location.name}? Existing asset and transfer history will be preserved.`,
-        )
-    ) {
-        router.delete(destroy(location.id).url, { preserveScroll: true });
+function toggle(location: Location): void {
+    if (!location.is_active) {
+        confirmLocationDialog.value = {
+            open: true,
+            mode: 'reactivate',
+            location,
+            title: 'Reactivate Location',
+            description: `Reactivate ${location.name}? It will be selectable for new transfers, counts, and bookings again.`,
+            confirmLabel: 'Confirm Reactivation',
+        };
+
+        return;
     }
+
+    executeLocationStatusUpdate(location);
+}
+
+function deactivate(location: Location): void {
+    confirmLocationDialog.value = {
+        open: true,
+        mode: 'deactivate',
+        location,
+        title: 'Deactivate Location',
+        description: `Deactivate ${location.name}? Existing asset and transfer history will be preserved.`,
+        confirmLabel: 'Confirm Deactivation',
+    };
+}
+
+function executeConfirmedLocationAction(): void {
+    const location = confirmLocationDialog.value.location;
+    const mode = confirmLocationDialog.value.mode;
+
+    if (!location || !mode) {
+        return;
+    }
+
+    if (mode === 'reactivate') {
+        executeLocationStatusUpdate(location);
+
+        return;
+    }
+
+    router.delete(destroy(location.id).url, {
+        preserveScroll: true,
+        onSuccess: () => {
+            confirmLocationDialog.value.open = false;
+            confirmLocationDialog.value.location = null;
+        },
+    });
 }
 </script>
 
@@ -891,6 +950,38 @@ function deactivate(location: Location): void {
                         </Button>
                     </DialogFooter>
                 </form>
+            </DialogContent>
+        </Dialog>
+
+        <Dialog v-model:open="confirmLocationDialog.open">
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{{ confirmLocationDialog.title }}</DialogTitle>
+                    <DialogDescription>{{
+                        confirmLocationDialog.description
+                    }}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter class="gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        @click="confirmLocationDialog.open = false"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        type="button"
+                        data-testid="confirm-location-action-button"
+                        :variant="
+                            confirmLocationDialog.mode === 'deactivate'
+                                ? 'destructive'
+                                : 'default'
+                        "
+                        @click="executeConfirmedLocationAction"
+                    >
+                        {{ confirmLocationDialog.confirmLabel }}
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     </div>

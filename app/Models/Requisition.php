@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RequisitionStatus;
+use Carbon\CarbonImmutable;
 use Database\Factories\RequisitionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -11,19 +12,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @property RequisitionStatus $status
+ * @property CarbonImmutable|null $needed_at
+ * @property CarbonImmutable|null $approved_at
+ * @property CarbonImmutable|null $issued_at
+ */
 #[Fillable([
     'requester_id',
     'requester_position_id',
-    'approver_id',
-    'approver_position_id',
-    'requested_ip_address',
-    'approved_ip_address',
-    'approved_at',
-    'issued_by',
-    'issued_position_id',
-    'issued_ip_address',
-    'issued_at',
-    'status',
     'notes',
 ])]
 class Requisition extends Model

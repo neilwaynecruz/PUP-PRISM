@@ -19,6 +19,7 @@ import {
     forecasting as reportForecasting,
     optimization as reportOptimization,
 } from '@/actions/App/Http/Controllers/Inventory/InventoryReportController';
+import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import ForecastWidget from '@/components/inventory/ForecastWidget.vue';
 import { Button } from '@/components/ui/button';
@@ -572,14 +573,14 @@ const filteredExpiringLots = computed(() => {
                                 <Input
                                     v-model="search"
                                     placeholder="Search SKU or product name"
-                                    aria-label="Search forecasts"
-                                    class="h-11 rounded-xl border-border/70 bg-background/80 pl-9 shadow-inner shadow-black/5 focus-visible:ring-ring/40"
+                                    aria-label="Search forecasts by SKU or name"
+                                    class="h-11 rounded-xl border-border/70 bg-background/80 pl-9 shadow-inner shadow-black/5 focus-visible:ring-3 focus-visible:ring-ring/50"
                                 />
                             </div>
                             <select
                                 v-model="urgency"
-                                class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-primary/40 focus:border-primary focus:ring-2 focus:ring-ring/30 focus:outline-none"
-                                aria-label="Urgency filter"
+                                class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-primary/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                                aria-label="Filter by stockout urgency"
                             >
                                 <option value="">All urgency levels</option>
                                 <option value="urgent">
@@ -597,8 +598,8 @@ const filteredExpiringLots = computed(() => {
                             </select>
                             <select
                                 v-model="method"
-                                class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-primary/40 focus:border-ring focus:ring-2 focus:ring-ring/20 focus:outline-none"
-                                aria-label="Method filter"
+                                class="h-11 rounded-xl border border-border/70 bg-background/80 px-3 text-sm shadow-inner shadow-black/5 transition-colors hover:border-primary/40 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                                aria-label="Filter by forecasting method"
                             >
                                 <option value="">All methods</option>
                                 <option
@@ -616,8 +617,8 @@ const filteredExpiringLots = computed(() => {
                                 max="100"
                                 step="1"
                                 placeholder="Min confidence %"
-                                aria-label="Minimum confidence"
-                                class="h-11 rounded-xl border-border/70 bg-background/80 shadow-inner shadow-black/5 focus-visible:ring-cyan-500/30"
+                                aria-label="Minimum confidence percentage"
+                                class="h-11 rounded-xl border-border/70 bg-background/80 shadow-inner shadow-black/5 focus-visible:ring-3 focus-visible:ring-ring/50"
                             />
                         </div>
                     </div>
@@ -993,33 +994,12 @@ const filteredExpiringLots = computed(() => {
                 <!-- Pagination -->
                 <div
                     v-if="products.links.length > 3"
-                    class="flex flex-wrap items-center gap-2 border-t border-border/50 px-5 py-4"
+                    class="border-t border-border/50 px-5 py-4"
                 >
-                    <template
-                        v-for="link in products.links"
-                        :key="`${link.label}-${link.url}`"
-                    >
-                        <Button
-                            v-if="link.url"
-                            variant="ghost"
-                            size="sm"
-                            as-child
-                        >
-                            <Link
-                                :href="link.url"
-                                preserve-scroll
-                                preserve-state
-                            >
-                                <span v-html="link.label" />
-                            </Link>
-                        </Button>
-                        <span
-                            v-else
-                            aria-disabled="true"
-                            class="pointer-events-none inline-flex min-h-8 items-center rounded-md px-3 text-xs font-medium text-muted-foreground/50 select-none"
-                            v-html="link.label"
-                        />
-                    </template>
+                    <AdminPagination
+                        :links="products.links"
+                        label="Forecast product pages"
+                    />
                 </div>
             </section>
         </div>
@@ -1173,12 +1153,14 @@ const filteredExpiringLots = computed(() => {
                             <Input
                                 v-model="optimizationSearch"
                                 placeholder="Filter SKU or name"
+                                aria-label="Filter optimization items by SKU or name"
                                 class="h-10 pl-9"
                             />
                         </div>
                         <select
                             v-model="optimizationClass"
-                            class="h-10 rounded-xl border border-border/70 bg-background px-3 text-sm focus:outline-none"
+                            aria-label="Filter optimization items by ABC class"
+                            class="h-10 rounded-xl border border-border/70 bg-background px-3 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                         >
                             <option value="">All ABC classes</option>
                             <option value="A">Class A only</option>
@@ -1423,12 +1405,14 @@ const filteredExpiringLots = computed(() => {
                             <Input
                                 v-model="expiringSearch"
                                 placeholder="Search lot or SKU"
+                                aria-label="Search expiring stock lots"
                                 class="h-10 pl-9"
                             />
                         </div>
                         <select
                             v-model="expiringStatus"
-                            class="h-10 rounded-xl border border-border/70 bg-background px-3 text-sm focus:outline-none"
+                            aria-label="Filter expiring lots by status"
+                            class="h-10 rounded-xl border border-border/70 bg-background px-3 text-sm focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
                         >
                             <option value="">All statuses</option>
                             <option value="expired">Expired only</option>

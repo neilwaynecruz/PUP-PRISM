@@ -11,6 +11,7 @@ use App\Http\Resources\SupplierResource;
 use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Services\AuditLogService;
+use App\Services\InventoryRealtimeService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,6 +71,7 @@ class SupplierController extends Controller
         Cache::forget(Supplier::OPTIONS_CACHE_KEY);
 
         AuditLogService::logCreated($supplier);
+        app(InventoryRealtimeService::class)->supplierUpdated($supplier, 'created');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Supplier created.')]);
 
@@ -103,7 +105,7 @@ class SupplierController extends Controller
                 'id' => (int) $product->id,
                 'sku' => $product->sku,
                 'name' => $product->name,
-                'type' => $product->type?->value,
+                'type' => $product->type->value,
                 'category' => $product->category?->name,
                 'on_hand_qty' => $product->stock?->on_hand_qty,
                 'reorder_threshold' => $product->reorder_threshold,
@@ -144,6 +146,7 @@ class SupplierController extends Controller
         Cache::forget(Supplier::OPTIONS_CACHE_KEY);
 
         AuditLogService::logUpdated($supplier, $oldValues);
+        app(InventoryRealtimeService::class)->supplierUpdated($supplier, 'updated');
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Supplier updated.')]);
 

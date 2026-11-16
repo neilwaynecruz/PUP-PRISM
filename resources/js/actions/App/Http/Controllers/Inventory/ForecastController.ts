@@ -181,7 +181,7 @@ show.head = (args: { product: number | { id: number } } | [product: number | { i
     show.form = showForm
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::updateProfile
- * @see app/Http/Controllers/Inventory/ForecastController.php:166
+ * @see app/Http/Controllers/Inventory/ForecastController.php:164
  * @route '/inventory/forecasting/{product}/profile'
  */
 export const updateProfile = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -196,7 +196,7 @@ updateProfile.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::updateProfile
- * @see app/Http/Controllers/Inventory/ForecastController.php:166
+ * @see app/Http/Controllers/Inventory/ForecastController.php:164
  * @route '/inventory/forecasting/{product}/profile'
  */
 updateProfile.url = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions) => {
@@ -229,7 +229,7 @@ updateProfile.url = (args: { product: number | { id: number } } | [product: numb
 
 /**
 * @see \App\Http\Controllers\Inventory\ForecastController::updateProfile
- * @see app/Http/Controllers/Inventory/ForecastController.php:166
+ * @see app/Http/Controllers/Inventory/ForecastController.php:164
  * @route '/inventory/forecasting/{product}/profile'
  */
 updateProfile.put = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteDefinition<'put'> => ({
@@ -239,7 +239,7 @@ updateProfile.put = (args: { product: number | { id: number } } | [product: numb
 
     /**
 * @see \App\Http\Controllers\Inventory\ForecastController::updateProfile
- * @see app/Http/Controllers/Inventory/ForecastController.php:166
+ * @see app/Http/Controllers/Inventory/ForecastController.php:164
  * @route '/inventory/forecasting/{product}/profile'
  */
     const updateProfileForm = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({
@@ -254,7 +254,7 @@ updateProfile.put = (args: { product: number | { id: number } } | [product: numb
 
             /**
 * @see \App\Http\Controllers\Inventory\ForecastController::updateProfile
- * @see app/Http/Controllers/Inventory/ForecastController.php:166
+ * @see app/Http/Controllers/Inventory/ForecastController.php:164
  * @route '/inventory/forecasting/{product}/profile'
  */
         updateProfileForm.put = (args: { product: number | { id: number } } | [product: number | { id: number } ] | number | { id: number }, options?: RouteQueryOptions): RouteFormDefinition<'post'> => ({

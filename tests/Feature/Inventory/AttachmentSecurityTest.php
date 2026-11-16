@@ -31,7 +31,7 @@ test('authorized personnel can upload and download a privately stored document',
         ->assertRedirect();
 
     $attachment = Attachment::query()->firstOrFail();
-    Storage::disk('local')->assertExists($attachment->path);
+    expect(Storage::disk('local')->exists($attachment->path))->toBeTrue();
     expect($attachment->path)->not->toContain('inspection.pdf')
         ->and($attachment->disk)->toBe('local');
 
@@ -92,7 +92,7 @@ test('removing an attachment preserves the private file for retention', function
 
     expect(Attachment::query()->find($attachment->id))->toBeNull()
         ->and(Attachment::withTrashed()->find($attachment->id)?->deleted_at)->not->toBeNull();
-    Storage::disk('local')->assertExists($attachment->path);
+    expect(Storage::disk('local')->exists($attachment->path))->toBeTrue();
 });
 
 test('repeated uploads of the same document do not create duplicate records', function () {

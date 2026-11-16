@@ -48,6 +48,8 @@ class HandoverController extends Controller
 
     public function index(Request $request): Response
     {
+        $this->authorize('viewAny', HandoverLog::class);
+
         $filters = [
             'asset_search' => Str::limit($request->string('asset_search')->trim()->toString(), 120, ''),
             'asset' => Str::limit($request->string('asset')->trim()->toString(), 64, ''),
@@ -93,6 +95,8 @@ class HandoverController extends Controller
 
     public function store(HandoverInitiateRequest $request): RedirectResponse
     {
+        $this->authorize('create', HandoverLog::class);
+
         $validated = $request->validated();
 
         $asset = Asset::query()->where('tag_code', $validated['asset_tag_code'])->firstOrFail();
@@ -108,12 +112,15 @@ class HandoverController extends Controller
             $fromPositionId = $asset->position_id ?? $request->user()->position_id;
             $now = CarbonImmutable::now();
 
-            return HandoverLog::create([
+            $handover = new HandoverLog([
                 'asset_id' => $asset->id,
                 'from_user_id' => $request->user()->id,
                 'to_user_id' => $toUser->id,
                 'from_position_id' => $fromPositionId,
                 'to_position_id' => $toUser->position_id,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+            $handover->forceFill([
                 'initiated_by' => $request->user()->id,
                 'initiated_at' => $now,
                 'last_sent_at' => $now,
@@ -122,8 +129,9 @@ class HandoverController extends Controller
                 'verification_token_hash' => hash('sha256', $rawToken),
                 'ip_address' => $request->ip(),
                 'verified_ip_address' => null,
-                'notes' => $validated['notes'] ?? null,
-            ]);
+            ])->save();
+
+            return $handover;
         });
 
         $toUser->notify(new HandoverVerificationNotification(
@@ -157,6 +165,8 @@ class HandoverController extends Controller
 
     public function cancel(HandoverCancelRequest $request, HandoverLog $handoverLog): RedirectResponse
     {
+        $this->authorize('cancel', $handoverLog);
+
         $reason = $request->string('cancellation_reason')->trim()->toString();
 
         $wasCancelled = DB::transaction(function () use ($request, $handoverLog, $reason): bool {
@@ -166,13 +176,13 @@ class HandoverController extends Controller
                 return false;
             }
 
-            $handoverLog->update([
+            $handoverLog->forceFill([
                 'cancelled_at' => CarbonImmutable::now(),
                 'cancelled_by' => $request->user()->id,
                 'cancellation_reason' => $reason,
                 // Invalidate the emailed link immediately.
                 'verification_token_hash' => null,
-            ]);
+            ])->save();
 
             return true;
         });
@@ -196,9 +206,9 @@ class HandoverController extends Controller
         return back();
     }
 
-    public function resend(Request $request, HandoverLog $handoverLog): RedirectResponse
+    public function resend(HandoverLog $handoverLog): RedirectResponse
     {
-        abort_unless($request->user()?->hasAnyRole(['Admin', 'Property Custodian']), 403);
+        $this->authorize('resend', $handoverLog);
 
         $rawToken = Str::random(64);
 
@@ -211,15 +221,15 @@ class HandoverController extends Controller
 
             $lastSentAt = $handoverLog->last_sent_at ?? $handoverLog->initiated_at;
 
-            if ($lastSentAt !== null && $lastSentAt->diffInSeconds(CarbonImmutable::now()) < self::RESEND_COOLDOWN_SECONDS) {
+            if ($lastSentAt->diffInSeconds(CarbonImmutable::now()) < self::RESEND_COOLDOWN_SECONDS) {
                 return 'cooldown';
             }
 
             // A new token replaces the old one, so earlier links stop working.
-            $handoverLog->update([
+            $handoverLog->forceFill([
                 'verification_token_hash' => hash('sha256', $rawToken),
                 'last_sent_at' => CarbonImmutable::now(),
-            ]);
+            ])->save();
 
             return 'sent';
         });
@@ -265,9 +275,7 @@ class HandoverController extends Controller
             return redirect()->route('verification.notice');
         }
 
-        if ($user->id !== $handoverLog->to_user_id) {
-            abort(403);
-        }
+        $this->authorize('verify', $handoverLog);
 
         if ($handoverLog->verified_at !== null) {
             $request->session()->forget("handover_verify_token.{$handoverLog->id}");
@@ -330,13 +338,13 @@ class HandoverController extends Controller
                 ignoreHandoverLogId: $handoverLog->id,
             );
 
-            $handoverLog->update([
+            $handoverLog->forceFill([
                 'verified_at' => CarbonImmutable::now(),
                 'verified_by' => $user->id,
                 'verified_ip_address' => $request->ip(),
                 'verification_token_hash' => null,
                 'signature_png' => $signaturePng,
-            ]);
+            ])->save();
 
             $asset->update([
                 'position_id' => $handoverLog->to_position_id,
@@ -433,7 +441,7 @@ class HandoverController extends Controller
                 'id' => (int) $asset->id,
                 'tag_code' => $asset->tag_code,
                 'name' => $asset->product?->name,
-                'status' => $asset->status?->value,
+                'status' => $asset->status->value,
                 'position' => $asset->position ? [
                     'title' => $asset->position->title,
                     'department' => $asset->position->department?->name,
@@ -545,9 +553,9 @@ class HandoverController extends Controller
             'tag_code' => $asset->tag_code,
             'name' => $asset->product?->name,
             'category' => $asset->product?->category?->name,
-            'status' => $asset->status?->value,
-            'condition' => $asset->condition_status?->value,
-            'lifecycle' => $asset->lifecycle_status?->value,
+            'status' => $asset->status->value,
+            'condition' => $asset->condition_status->value,
+            'lifecycle' => $asset->lifecycle_status->value,
             'location' => $asset->currentLocation ? [
                 'code' => $asset->currentLocation->code,
                 'name' => $asset->currentLocation->name,
@@ -564,7 +572,7 @@ class HandoverController extends Controller
             'pending_handover' => $pending ? [
                 'id' => (int) $pending->id,
                 'to' => $pending->toUser?->name,
-                'initiated_at' => $pending->initiated_at?->toIso8601String(),
+                'initiated_at' => $pending->initiated_at->toIso8601String(),
             ] : null,
             'eligible' => $blockers === [],
             'blockers' => $blockers,

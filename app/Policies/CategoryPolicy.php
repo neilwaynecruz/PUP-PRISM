@@ -12,7 +12,7 @@ class CategoryPolicy
         return $user->hasRole('Admin');
     }
 
-    public function view(User $user, Category $category): bool
+    public function view(User $user, Category $_category): bool
     {
         return $user->hasRole('Admin');
     }
@@ -22,17 +22,17 @@ class CategoryPolicy
         return $user->hasRole('Admin');
     }
 
-    public function update(User $user, Category $category): bool
+    public function update(User $user, Category $_category): bool
     {
         return $user->hasRole('Admin');
     }
 
-    public function delete(User $user, Category $category): bool
+    public function delete(User $user, Category $_category): bool
     {
         return $user->hasRole('Admin');
     }
 
-    public function deactivate(User $user, Category $category): bool
+    public function deactivate(User $user, Category $_category): bool
     {
         return $user->hasRole('Admin');
     }

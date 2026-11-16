@@ -46,7 +46,7 @@ class AssetFactory extends Factory
     public function assignedToPosition(?Position $position = null): static
     {
         return $this->state(fn () => [
-            'position_id' => $position?->id ?? Position::factory(),
+            'position_id' => $position->id ?? Position::factory(),
         ]);
     }
 }

@@ -13,19 +13,19 @@ class StockMovementObserver
         private readonly InventoryOptimizationCache $inventoryOptimizationCache,
     ) {}
 
-    public function created(StockMovement $stockMovement): void
+    public function created(StockMovement $_stockMovement): void
     {
         $this->dashboardStatsCache->invalidate();
         $this->inventoryOptimizationCache->invalidate();
     }
 
-    public function updated(StockMovement $stockMovement): void
+    public function updated(StockMovement $_stockMovement): void
     {
         $this->dashboardStatsCache->invalidate();
         $this->inventoryOptimizationCache->invalidate();
     }
 
-    public function deleted(StockMovement $stockMovement): void
+    public function deleted(StockMovement $_stockMovement): void
     {
         $this->dashboardStatsCache->invalidate();
         $this->inventoryOptimizationCache->invalidate();

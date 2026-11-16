@@ -44,7 +44,7 @@ class InventoryCountSessionPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, InventoryCountSession $inventoryCountSession): bool
+    public function delete(User $_user, InventoryCountSession $_inventoryCountSession): bool
     {
         return false;
     }
@@ -52,7 +52,7 @@ class InventoryCountSessionPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, InventoryCountSession $inventoryCountSession): bool
+    public function restore(User $_user, InventoryCountSession $_inventoryCountSession): bool
     {
         return false;
     }
@@ -60,7 +60,7 @@ class InventoryCountSessionPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, InventoryCountSession $inventoryCountSession): bool
+    public function forceDelete(User $_user, InventoryCountSession $_inventoryCountSession): bool
     {
         return false;
     }
@@ -70,12 +70,12 @@ class InventoryCountSessionPolicy
         return $this->update($user, $inventoryCountSession);
     }
 
-    public function review(User $user, InventoryCountSession $inventoryCountSession): bool
+    public function review(User $user, InventoryCountSession $_inventoryCountSession): bool
     {
         return $user->hasRole('Admin');
     }
 
-    public function complete(User $user, InventoryCountSession $inventoryCountSession): bool
+    public function complete(User $user, InventoryCountSession $_inventoryCountSession): bool
     {
         return $user->hasRole('Admin');
     }

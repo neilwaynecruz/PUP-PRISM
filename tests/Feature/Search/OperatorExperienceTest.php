@@ -25,7 +25,7 @@ test('global search returns matching products and requisitions for authorized us
     $admin = User::factory()->withTwoFactor()->create();
     $admin->assignRole('Admin');
 
-    $product = Product::factory()->consumable()->create([
+    Product::factory()->consumable()->create([
         'sku' => 'SKU-GLOBAL-001',
         'name' => 'Global Search Paper',
     ]);
@@ -88,6 +88,8 @@ test('requisition index supports search and status filters', function () {
 });
 
 test('booking index supports list search and status filters', function () {
+    $this->withoutExceptionHandling();
+
     $position = Position::factory()->create();
     $user = User::factory()->assignedPosition($position)->create();
     $user->assignRole('Property Custodian');
@@ -122,6 +124,9 @@ test('booking index supports list search and status filters', function () {
             ->component('inventory/bookings/Index')
             ->where('filters.search', 'TAG-FILTER-001')
             ->where('filters.status', BookingStatus::Requested->value)
+            ->where('assets.0.serial_number', $asset->serial_number)
+            ->where('assets.0.lifecycle_status', $asset->lifecycle_status->value)
+            ->where('assets.0.condition_status', $asset->condition_status->value)
             ->has('bookings.data', 1));
 });
 

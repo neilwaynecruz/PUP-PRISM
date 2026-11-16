@@ -155,11 +155,11 @@ class AuditLogService
     {
         $name = '';
 
-        if (method_exists($model, 'getNameAttribute') || $model->name ?? false) {
-            $name = $model->name ?? '';
-        } elseif ($model->sku ?? false) {
-            $name = $model->sku;
-        } elseif ($model->id) {
+        if (method_exists($model, 'getNameAttribute') || $model->getAttribute('name')) {
+            $name = $model->getAttribute('name') ?? '';
+        } elseif ($model->getAttribute('sku')) {
+            $name = $model->getAttribute('sku');
+        } elseif ($model->getKey() !== null) {
             $name = '#'.$model->getKey();
         }
 

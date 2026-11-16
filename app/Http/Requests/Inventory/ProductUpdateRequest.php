@@ -74,7 +74,7 @@ class ProductUpdateRequest extends FormRequest
         $this->merge([
             'sku' => strtoupper(trim((string) $this->input('sku'))),
             'name' => Str::squish((string) $this->input('name')),
-            'type' => $this->input('type') ?: ($product->type->value ?? (string) $product->type),
+            'type' => $this->input('type') ?: $product->type->value,
             'category_id' => $this->filled('category_id') ? (int) $this->input('category_id') : null,
             'origin_id' => $this->filled('origin_id') ? (int) $this->input('origin_id') : null,
             'supplier_id' => $this->filled('supplier_id') ? (int) $this->input('supplier_id') : null,

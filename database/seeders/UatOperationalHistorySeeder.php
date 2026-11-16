@@ -149,7 +149,7 @@ class UatOperationalHistorySeeder extends Seeder
 
         // Historical rows must not trigger live notifications or broadcasts, and one
         // transaction keeps a run all-or-nothing (and fast on SQLite).
-        Model::withoutEvents(fn () => DB::transaction(function (): void {
+        Model::unguarded(fn () => Model::withoutEvents(fn () => DB::transaction(function (): void {
             $this->seedConsumableHistory();
 
             $catalogAssets = $this->catalogAssets();
@@ -161,7 +161,7 @@ class UatOperationalHistorySeeder extends Seeder
             $this->seedBookings($catalogAssets);
             $this->seedPhysicalCounts();
             $this->seedForecastHistory();
-        }));
+        })));
     }
 
     /**
@@ -560,7 +560,7 @@ class UatOperationalHistorySeeder extends Seeder
             $acquired = CarbonImmutable::parse($asset->acquisition_date);
             $keptIds = [];
             $interval = (int) ($asset->maintenance_interval_days ?? 0);
-            $category = $asset->product->category?->name ?? 'Equipment';
+            $category = $asset->product->category->name ?? 'Equipment';
 
             if ($interval > 0) {
                 for ($cycle = 1; $cycle <= 12; $cycle++) {
@@ -813,7 +813,7 @@ class UatOperationalHistorySeeder extends Seeder
     private function seedForecastHistory(): void
     {
         $forecaster = app(DemandForecaster::class);
-        $products = Product::query()->whereIn('sku', self::FORECAST_SKUS)->get();
+        $products = Product::query()->with('stock')->whereIn('sku', self::FORECAST_SKUS)->get();
 
         foreach ($products as $product) {
             ForecastProfile::query()->updateOrCreate(

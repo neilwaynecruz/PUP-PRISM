@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Models\StockMovement;
 use Illuminate\Http\Request;
 
+/** @mixin StockMovement */
 class StockMovementResource extends InertiaJsonResource
 {
     /**
@@ -22,7 +24,7 @@ class StockMovementResource extends InertiaJsonResource
             'qty_after' => $this->qty_after,
             'counted_qty' => $this->counted_qty,
             'variance_qty' => $this->variance_qty,
-            'performed_at' => $this->performed_at?->toIso8601String(),
+            'performed_at' => $this->performed_at->toIso8601String(),
             'ip_address' => $this->ip_address,
             'notes' => $this->notes,
             'product' => $this->relationLoaded('product') && $this->product ? [
@@ -37,13 +39,13 @@ class StockMovementResource extends InertiaJsonResource
             'stock_lot' => $this->relationLoaded('stockLot') && $this->stockLot ? [
                 'id' => (int) $this->stockLot->id,
                 'reference_no' => $this->stockLot->reference_no,
-                'received_at' => $this->stockLot->received_at?->toIso8601String(),
+                'received_at' => $this->stockLot->received_at->toIso8601String(),
                 'expires_at' => $this->stockLot->expires_at?->toDateString(),
             ] : null,
             'asset' => $this->relationLoaded('asset') && $this->asset ? [
                 'id' => (int) $this->asset->id,
                 'tag_code' => $this->asset->tag_code,
-                'status' => $this->asset->status?->value,
+                'status' => $this->asset->status->value,
             ] : null,
             'performed_by' => $this->relationLoaded('performedBy') && $this->performedBy
                 ? (new UserResource($this->performedBy))->resolve($request)

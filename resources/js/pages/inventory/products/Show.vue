@@ -21,6 +21,7 @@ import {
     edit as productsEdit,
     index as productsIndex,
     label as productLabel,
+    trash as productsTrash,
 } from '@/routes/inventory/products';
 
 type Product = {
@@ -194,7 +195,7 @@ function stockToneClass(): string {
                 as-child
                 class="border-rose-300 bg-white text-rose-700 hover:bg-rose-50 hover:text-rose-800 dark:border-rose-800 dark:bg-rose-900/40 dark:text-rose-200"
             >
-                <Link href="/inventory/products/trash">
+                <Link :href="productsTrash.url()">
                     <span>Manage in Trash</span>
                 </Link>
             </Button>

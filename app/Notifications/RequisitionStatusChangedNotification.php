@@ -30,7 +30,7 @@ class RequisitionStatusChangedNotification extends Notification implements Shoul
         return NotificationEventType::RequisitionStatusChanged->value;
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $_notifiable): MailMessage
     {
         $status = match ($this->action) {
             'approved' => __('approved'),
@@ -68,7 +68,7 @@ class RequisitionStatusChangedNotification extends Notification implements Shoul
     /**
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toArray(object $_notifiable): array
     {
         $url = route('inventory.requisitions.show', $this->requisition, absolute: false);
         $severity = match ($this->action) {

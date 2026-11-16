@@ -55,6 +55,7 @@ import {
     index as suppliersIndex,
 } from '@/routes/inventory/suppliers';
 import { index as notificationsIndex } from '@/routes/notifications';
+import { edit as profileEdit } from '@/routes/profile';
 import type { Auth, AuthPermissions, NavItem } from '@/types';
 
 type InventoryNavItem = NavItem & {
@@ -214,7 +215,7 @@ const mainNavigationItems: InventoryNavItem[] = [
 const footerNavigationItems: NavItem[] = [
     {
         title: 'Settings',
-        href: '/settings/profile',
+        href: profileEdit(),
         icon: Settings,
     },
 ];
@@ -369,7 +370,7 @@ const searchNavigationItems: InventorySearchItem[] = [
     },
     {
         title: 'My settings',
-        href: '/settings/profile',
+        href: profileEdit(),
         icon: UserCog,
         description:
             'Your own profile, password, appearance, and notifications',
@@ -591,7 +592,7 @@ export function useInventoryNavigation() {
                 items: [
                     {
                         title: 'My settings',
-                        href: '/settings/profile',
+                        href: profileEdit(),
                         icon: UserCog,
                     },
                 ],

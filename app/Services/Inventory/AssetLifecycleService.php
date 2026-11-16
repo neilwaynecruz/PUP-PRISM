@@ -14,6 +14,7 @@ use App\Models\Location;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\InventoryRealtimeService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -47,8 +48,9 @@ class AssetLifecycleService
                 throw new \RuntimeException('Condition changes can only be recorded for active assets.');
             }
 
-            $event = AssetLifecycleEvent::create([
-                ...$payload,
+            $event = new AssetLifecycleEvent;
+            $event->fill($payload);
+            $event->forceFill([
                 'event_type' => $eventType,
                 'status' => ApprovalStatus::Pending,
                 'from_lifecycle_status' => $asset->lifecycle_status,
@@ -56,7 +58,7 @@ class AssetLifecycleService
                 'from_condition_status' => $asset->condition_status,
                 'to_condition_status' => $payload['condition_status'] ?? $asset->condition_status,
                 'initiated_by' => $user->id,
-            ]);
+            ])->save();
             AuditLogService::logCreated($event, "Lifecycle change proposed for asset {$asset->tag_code}.");
 
             return $event;
@@ -102,13 +104,14 @@ class AssetLifecycleService
                 'condition_status' => $event->to_condition_status,
                 'status' => $nextStatus,
             ]);
-            $event->update([
+            $event->forceFill([
                 'status' => ApprovalStatus::Approved,
                 'approved_by' => $approver->id,
                 'approved_at' => CarbonImmutable::now(),
                 'occurred_at' => CarbonImmutable::now(),
-            ]);
+            ])->save();
             AuditLogService::logCustom('approve', "Lifecycle change approved for asset {$asset->tag_code}.", $event);
+            app(InventoryRealtimeService::class)->assetOperationUpdated($asset->id, 'lifecycle_approved');
 
             return $event->fresh() ?? $event;
         });
@@ -122,7 +125,7 @@ class AssetLifecycleService
                 throw new \RuntimeException('Only pending lifecycle changes can be rejected.');
             }
 
-            $event->update(['status' => ApprovalStatus::Rejected, 'approved_by' => $reviewer->id, 'approved_at' => now(), 'notes' => $notes]);
+            $event->forceFill(['status' => ApprovalStatus::Rejected, 'approved_by' => $reviewer->id, 'approved_at' => now(), 'notes' => $notes])->save();
             AuditLogService::logCustom('reject', 'Asset lifecycle change rejected.', $event);
 
             return $event->fresh() ?? $event;

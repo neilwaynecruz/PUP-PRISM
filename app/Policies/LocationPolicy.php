@@ -18,7 +18,7 @@ class LocationPolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, Location $location): bool
+    public function view(User $user, Location $_location): bool
     {
         return $this->viewAny($user);
     }
@@ -34,7 +34,7 @@ class LocationPolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, Location $location): bool
+    public function update(User $user, Location $_location): bool
     {
         return $user->hasRole('Admin');
     }
@@ -42,7 +42,7 @@ class LocationPolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, Location $location): bool
+    public function delete(User $_user, Location $_location): bool
     {
         return false;
     }
@@ -50,7 +50,7 @@ class LocationPolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, Location $location): bool
+    public function restore(User $_user, Location $_location): bool
     {
         return false;
     }
@@ -58,7 +58,7 @@ class LocationPolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, Location $location): bool
+    public function forceDelete(User $_user, Location $_location): bool
     {
         return false;
     }

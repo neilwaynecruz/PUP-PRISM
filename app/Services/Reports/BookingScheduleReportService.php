@@ -32,17 +32,17 @@ class BookingScheduleReportService extends AbstractTableReportService
         $rows = (function () use ($query) {
             foreach ($query->lazy(200) as $booking) {
                 yield [
-                    'asset_tag' => $booking->asset?->tag_code ?? '',
-                    'asset_name' => $booking->asset?->product?->name ?? '',
+                    'asset_tag' => $booking->asset->tag_code ?? '',
+                    'asset_name' => $booking->asset?->product->name ?? '',
                     'status' => $booking->status->value,
                     'start_at' => optional($booking->start_at)?->format('Y-m-d H:i:s T') ?? '',
                     'end_at' => optional($booking->end_at)?->format('Y-m-d H:i:s T') ?? '',
-                    'requester' => $booking->requester?->name ?? $booking->requester?->email ?? '',
+                    'requester' => $booking->requester->name ?? $booking->requester->email ?? '',
                     'requester_position' => $this->formatPosition(
                         $booking->requesterPosition?->title,
                         $booking->requesterPosition?->department?->name,
                     ),
-                    'approver' => $booking->approver?->name ?? $booking->approver?->email ?? '',
+                    'approver' => $booking->approver->name ?? $booking->approver->email ?? '',
                     'purpose' => $booking->purpose ?? '',
                 ];
             }

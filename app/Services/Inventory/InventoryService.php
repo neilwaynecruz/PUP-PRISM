@@ -403,7 +403,7 @@ class InventoryService
     }
 
     /**
-     * @param  array<int, array{id: int, qty_to_issue: int}>|null  $linePayloads
+     * @param  array<int, array{id?: int, qty_to_issue?: int}>|null  $linePayloads
      */
     public function issueRequisition(
         User $user,
@@ -427,7 +427,6 @@ class InventoryService
                 throw new \RuntimeException('Only approved or partially fulfilled requisitions can be issued.');
             }
 
-            /** @var Collection<int, RequisitionLine> $lines */
             $lines = RequisitionLine::query()
                 ->where('requisition_id', $requisition->id)
                 ->with('product:id,sku,type')
@@ -654,8 +653,7 @@ class InventoryService
                 ];
 
                 if (
-                    $product->reorder_threshold !== null
-                    && $updatedOnHand <= $product->reorder_threshold
+                    $updatedOnHand <= $product->reorder_threshold
                 ) {
                     $lowStockAlerts[] = [
                         'product' => $product,
@@ -678,14 +676,14 @@ class InventoryService
                 default => RequisitionStatus::PartiallyIssued,
             };
 
-            $requisition->update([
+            $requisition->forceFill([
                 'status' => $status,
                 'issued_by' => $issuedAnyQuantity ? $user->id : $requisition->issued_by,
                 'issued_position_id' => $issuedAnyQuantity ? $user->position_id : $requisition->issued_position_id,
                 'issued_ip_address' => $issuedAnyQuantity ? $ipAddress : $requisition->issued_ip_address,
                 'issued_at' => $issuedAnyQuantity ? CarbonImmutable::now() : $requisition->issued_at,
                 'notes' => $notes ?? $requisition->notes,
-            ]);
+            ])->save();
 
             return [
                 'requisition' => $requisition,

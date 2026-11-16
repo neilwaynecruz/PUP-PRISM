@@ -40,6 +40,7 @@ class Location extends Model
         ];
     }
 
+    /** @return BelongsTo<Department, $this> */
     public function department(): BelongsTo
     {
         return $this->belongsTo(Department::class);
@@ -61,6 +62,7 @@ class Location extends Model
         return $this->hasMany(self::class, 'parent_location_id');
     }
 
+    /** @return HasMany<Asset, $this> */
     public function assets(): HasMany
     {
         return $this->hasMany(Asset::class, 'current_location_id');

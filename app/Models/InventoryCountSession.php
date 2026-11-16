@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ * @property InventoryCountStatus $status
+ */
 #[Fillable([
     'reference_no', 'location_id', 'created_by', 'assigned_to', 'approved_by',
     'counting_date', 'scope', 'status', 'snapshot_at', 'movement_cutoff_id', 'submitted_at',
@@ -35,31 +38,37 @@ class InventoryCountSession extends Model
         ];
     }
 
+    /** @return BelongsTo<Location, $this> */
     public function location(): BelongsTo
     {
         return $this->belongsTo(Location::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function assignedUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_to');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
+    /** @return HasMany<InventoryCountLine, $this> */
     public function lines(): HasMany
     {
         return $this->hasMany(InventoryCountLine::class);
     }
 
+    /** @return MorphMany<Attachment, $this> */
     public function attachments(): MorphMany
     {
         return $this->morphMany(Attachment::class, 'attachable');

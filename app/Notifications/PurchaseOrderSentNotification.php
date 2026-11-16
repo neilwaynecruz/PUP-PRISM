@@ -23,14 +23,14 @@ class PurchaseOrderSentNotification extends Notification implements ShouldQueue
     /**
      * @return array<int, string>
      */
-    public function via(object $notifiable): array
+    public function via(object $_notifiable): array
     {
         return ['mail'];
     }
 
-    public function toMail(object $notifiable): MailMessage
+    public function toMail(object $_notifiable): MailMessage
     {
-        $supplierName = $this->purchaseOrder->supplier?->name ?? __('Supplier');
+        $supplierName = $this->purchaseOrder->supplier->name ?? __('Supplier');
         $poNumber = $this->purchaseOrder->po_number;
 
         return (new MailMessage)
@@ -50,7 +50,7 @@ class PurchaseOrderSentNotification extends Notification implements ShouldQueue
     /**
      * @return array<string, mixed>
      */
-    public function toArray(object $notifiable): array
+    public function toArray(object $_notifiable): array
     {
         return [
             'type' => 'procurement.purchase-order.sent',
@@ -59,7 +59,7 @@ class PurchaseOrderSentNotification extends Notification implements ShouldQueue
             'title' => __('Purchase order sent'),
             'message' => __(':po has been sent to :supplier.', [
                 'po' => $this->purchaseOrder->po_number,
-                'supplier' => $this->purchaseOrder->supplier?->name ?? __('supplier'),
+                'supplier' => $this->purchaseOrder->supplier->name ?? __('supplier'),
             ]),
             'url' => route('inventory.purchase-orders.show', $this->purchaseOrder, absolute: false),
             'purchase_order_id' => $this->purchaseOrder->id,

@@ -25,7 +25,6 @@ class DashboardController extends Controller
         abort_unless($user instanceof User, 403);
 
         $canViewForecasting = $user->hasAnyRole(['Admin', 'Supply Head']);
-        $canViewProcurement = $user->hasAnyRole(['Admin', 'Supply Head']);
 
         $maxRangeDays = max(1, (int) config('dashboard.max_range_days', 366));
         $validator = Validator::make($request->all(), [

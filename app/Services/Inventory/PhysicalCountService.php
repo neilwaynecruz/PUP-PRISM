@@ -16,6 +16,7 @@ use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\AuditLogService;
+use App\Services\InventoryRealtimeService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -179,8 +180,8 @@ class PhysicalCountService
 
             $countedAt = CarbonImmutable::now();
             $expectedAtCount = $lot instanceof StockLot
-                ? (int) $lot->qty_remaining
-                : (int) $line->expected_qty_snapshot;
+                ? (int) $lot->getAttribute('qty_remaining')
+                : (int) $line->getAttribute('expected_qty_snapshot');
 
             if ($expectedAtCount < 0) {
                 throw new \RuntimeException('The movement history for this line is inconsistent. Review the stock lot before counting.');
@@ -210,7 +211,7 @@ class PhysicalCountService
         });
     }
 
-    public function submit(User $user, InventoryCountSession $session): InventoryCountSession
+    public function submit(User $_user, InventoryCountSession $session): InventoryCountSession
     {
         return DB::transaction(function () use ($session): InventoryCountSession {
             $session = InventoryCountSession::query()->whereKey($session->id)->lockForUpdate()->firstOrFail();
@@ -348,6 +349,8 @@ class PhysicalCountService
         foreach ($result['changes'] as $change) {
             $this->inventory->publishInventoryDelta($change);
         }
+
+        app(InventoryRealtimeService::class)->physicalCountUpdated($result['session'], 'approved');
 
         return $result['session'];
     }

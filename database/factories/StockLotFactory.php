@@ -21,12 +21,15 @@ class StockLotFactory extends Factory
         $qtyReceived = fake()->numberBetween(1, 500);
         $qtyRemaining = fake()->numberBetween(0, $qtyReceived);
         $receivedAt = fake()->dateTimeBetween('-30 days', 'now');
+        $expiresAt = fake()->boolean()
+            ? fake()->dateTimeBetween('now', '+180 days')->format('Y-m-d')
+            : null;
 
         return [
             'product_id' => Product::factory()->consumable(),
             'reference_no' => fake()->optional()->bothify('DEL-#####'),
             'received_at' => $receivedAt,
-            'expires_at' => fake()->optional()->dateTimeBetween('now', '+180 days')?->format('Y-m-d'),
+            'expires_at' => $expiresAt,
             'qty_received' => $qtyReceived,
             'qty_remaining' => $qtyRemaining,
         ];

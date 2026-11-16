@@ -16,6 +16,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { trash as inventoryTrash } from '@/routes/inventory';
 
 type PaginationLink = { url: string | null; label: string; active: boolean };
 
@@ -68,7 +69,7 @@ const hasActiveFilters = computed(
 
 watch([search, type], () => {
     router.get(
-        '/inventory/trash',
+        inventoryTrash.url(),
         { search: search.value, type: type.value },
         { preserveState: true, preserveScroll: true, replace: true },
     );

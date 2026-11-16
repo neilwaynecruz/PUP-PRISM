@@ -229,7 +229,7 @@ test('dashboard metrics separate expired vs near-expiry batches, sort recently d
     $deletedNew = Product::factory()->consumable()->create(['name' => 'Deleted Nov 2026']);
     $deletedNew->forceFill(['deleted_at' => CarbonImmutable::parse('2026-11-10 08:00:00')])->save();
 
-    $po = PurchaseOrder::factory()->create([
+    PurchaseOrder::factory()->create([
         'supplier_id' => $supplier->id,
         'status' => PurchaseOrderStatus::Received,
         'created_at' => CarbonImmutable::now()->subDays(20),
@@ -343,7 +343,7 @@ test('postgresql partial unique indexes prevent duplicate unresolved inventory a
 
         expect($reopened->id)->not->toBe($first->id);
 
-        $lotAlert = InventoryAlert::upsertUnresolved(
+        InventoryAlert::upsertUnresolved(
             ['type' => 'expired', 'product_id' => $product->id, 'stock_lot_id' => $lot->id],
             ['message' => 'Expired lot', 'detected_at' => now()],
         );

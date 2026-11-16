@@ -3,6 +3,8 @@
 use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
+use Laravel\Sanctum\PersonalAccessToken;
+use Laravel\Sanctum\TransientToken;
 
 beforeEach(function () {
     (new RoleSeeder)->run();
@@ -16,6 +18,20 @@ function confirmedApiTokenUser(string $role): User
 
     return $user;
 }
+
+test('current credentials preserve session, transient, and personal token identities', function () {
+    $user = User::factory()->make();
+
+    expect($user->currentAccessToken())->toBeNull();
+
+    $transientToken = new TransientToken;
+    $user->withAccessToken($transientToken);
+    expect($user->currentAccessToken())->toBe($transientToken);
+
+    $personalToken = new PersonalAccessToken;
+    $user->withAccessToken($personalToken);
+    expect($user->currentAccessToken())->toBe($personalToken);
+});
 
 test('admin and supply head can view the api token settings page', function (string $role) {
     $user = confirmedApiTokenUser($role);

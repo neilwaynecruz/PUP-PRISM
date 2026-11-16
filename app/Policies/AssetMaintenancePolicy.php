@@ -18,7 +18,7 @@ class AssetMaintenancePolicy
     /**
      * Determine whether the user can view the model.
      */
-    public function view(User $user, AssetMaintenance $assetMaintenance): bool
+    public function view(User $user, AssetMaintenance $_assetMaintenance): bool
     {
         return $this->viewAny($user);
     }
@@ -34,7 +34,7 @@ class AssetMaintenancePolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(User $user, AssetMaintenance $assetMaintenance): bool
+    public function update(User $user, AssetMaintenance $_assetMaintenance): bool
     {
         return $user->hasAnyRole(['Admin', 'Property Custodian']);
     }
@@ -42,7 +42,7 @@ class AssetMaintenancePolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(User $user, AssetMaintenance $assetMaintenance): bool
+    public function delete(User $_user, AssetMaintenance $_assetMaintenance): bool
     {
         return false;
     }
@@ -50,7 +50,7 @@ class AssetMaintenancePolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(User $user, AssetMaintenance $assetMaintenance): bool
+    public function restore(User $_user, AssetMaintenance $_assetMaintenance): bool
     {
         return false;
     }
@@ -58,12 +58,12 @@ class AssetMaintenancePolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(User $user, AssetMaintenance $assetMaintenance): bool
+    public function forceDelete(User $_user, AssetMaintenance $_assetMaintenance): bool
     {
         return false;
     }
 
-    public function transition(User $user, AssetMaintenance $assetMaintenance): bool
+    public function transition(User $user, AssetMaintenance $_assetMaintenance): bool
     {
         return $user->hasAnyRole(['Admin', 'Property Custodian']);
     }

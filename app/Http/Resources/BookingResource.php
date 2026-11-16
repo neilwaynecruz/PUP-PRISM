@@ -2,8 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Booking;
 use Illuminate\Http\Request;
 
+/** @mixin Booking */
 class BookingResource extends InertiaJsonResource
 {
     /**

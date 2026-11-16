@@ -57,7 +57,8 @@ class E2eCreateHandoverCommand extends Command
             return Command::FAILURE;
         }
 
-        $handover = HandoverLog::create([
+        $handover = new HandoverLog;
+        $handover->forceFill([
             'asset_id' => $asset->id,
             'from_user_id' => $fromUser->id,
             'to_user_id' => $toUser->id,
@@ -72,7 +73,7 @@ class E2eCreateHandoverCommand extends Command
             'verified_ip_address' => null,
             'signature_png' => null,
             'notes' => $this->option('notes'),
-        ]);
+        ])->save();
 
         $this->line("{$handover->id}");
 

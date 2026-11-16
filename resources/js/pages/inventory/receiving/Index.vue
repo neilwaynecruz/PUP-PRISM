@@ -12,6 +12,7 @@ import {
     Package,
     PackageCheck,
     Plus,
+    QrCode,
     RotateCcw,
     Search,
     Trash2,
@@ -31,6 +32,8 @@ import InputError from '@/components/InputError.vue';
 import OcrAssistButton from '@/components/inventory/OcrAssistButton.vue';
 import ProductSelectDialog from '@/components/inventory/ProductSelectDialog.vue';
 import type { ProductLookupItem } from '@/components/inventory/ProductSelectDialog.vue';
+import ReceivingBatchSummaryFooter from '@/components/inventory/receiving/ReceivingBatchSummaryFooter.vue';
+import ReceivingVerificationSidebar from '@/components/inventory/receiving/ReceivingVerificationSidebar.vue';
 import ReceivingSerialFields from '@/components/inventory/ReceivingSerialFields.vue';
 
 const QrScannerDialog = defineAsyncComponent(
@@ -124,6 +127,26 @@ const mode = ref<ReceivingMode>(
 
 const isCatalogOpen = ref(false);
 const catalogTarget = ref<'single' | 'batch'>('single');
+
+type QrScannerConfig = {
+    title: string;
+    description: string;
+    continuous?: boolean;
+    closeOnScan?: boolean;
+    onScanned: (value: string) => void;
+};
+
+const isQrScannerOpen = ref(false);
+const activeQrScanner = ref<QrScannerConfig | null>(null);
+
+function openQrScanner(config: QrScannerConfig): void {
+    activeQrScanner.value = config;
+    isQrScannerOpen.value = true;
+}
+
+function handleSharedQrScanned(value: string): void {
+    activeQrScanner.value?.onScanned(value);
+}
 const feedbackBanner = ref<{
     type: 'info' | 'warning' | 'success';
     text: string;
@@ -1145,13 +1168,26 @@ function submitPoReceipt(): void {
                                 <BookOpen class="size-4" />
                                 Browse Catalog
                             </Button>
-                            <QrScannerDialog
-                                button-label="Scan SKU"
-                                button-size="sm"
-                                title="Scan product SKU"
-                                description="Scan the product label QR code to populate the SKU field."
-                                @scanned="handleSingleQrScanned"
-                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                class="min-h-11 w-full sm:w-auto"
+                                @click="
+                                    openQrScanner({
+                                        title: 'Scan product SKU',
+                                        description:
+                                            'Scan the product label QR code to populate the SKU field.',
+                                        onScanned: handleSingleQrScanned,
+                                    })
+                                "
+                            >
+                                <QrCode
+                                    aria-hidden="true"
+                                    class="mr-2 size-4"
+                                />
+                                Scan SKU
+                            </Button>
                         </div>
                     </div>
 
@@ -1505,16 +1541,29 @@ function submitPoReceipt(): void {
                                     separated).
                                 </p>
                             </div>
-                            <QrScannerDialog
-                                button-label="Batch Scan Tags"
-                                button-size="sm"
-                                title="Batch scan asset tag codes"
-                                description="Keep the scanner open and scan each asset tag to append it to the receipt list."
-                                :continuous="true"
-                                :close-on-scan="false"
-                                trigger-test-id="receiving-tag-scanner-button"
-                                @scanned="appendTagCode"
-                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                data-testid="receiving-tag-scanner-button"
+                                class="min-h-11 w-full sm:w-auto"
+                                @click="
+                                    openQrScanner({
+                                        title: 'Batch scan asset tag codes',
+                                        description:
+                                            'Keep the scanner open and scan each asset tag to append it to the receipt list.',
+                                        continuous: true,
+                                        closeOnScan: false,
+                                        onScanned: appendTagCode,
+                                    })
+                                "
+                            >
+                                <QrCode
+                                    aria-hidden="true"
+                                    class="mr-2 size-4"
+                                />
+                                Batch Scan Tags
+                            </Button>
                             <OcrAssistButton
                                 v-if="matchedSingleProduct?.type === 'asset'"
                                 label="Read printed asset tags"
@@ -1595,92 +1644,13 @@ function submitPoReceipt(): void {
             </div>
 
             <!-- Right Sidebar: Receipt Verification Summary -->
-            <aside class="flex flex-col gap-4 xl:sticky xl:top-6 xl:self-start">
-                <div
-                    class="rounded-2xl border border-border/70 bg-card p-5 shadow-xs"
-                >
-                    <div class="flex items-center justify-between gap-2">
-                        <span
-                            class="text-xs font-semibold tracking-wider text-muted-foreground uppercase"
-                        >
-                            Receipt summary
-                        </span>
-                        <Badge variant="outline">Single Item</Badge>
-                    </div>
-
-                    <dl
-                        class="mt-4 space-y-2.5 border-b border-border/60 pb-4 text-xs"
-                    >
-                        <div class="flex items-center justify-between gap-2">
-                            <dt class="text-muted-foreground">SKU</dt>
-                            <dd class="font-mono font-semibold">
-                                {{ form.sku.trim() || '—' }}
-                            </dd>
-                        </div>
-                        <div class="flex items-center justify-between gap-2">
-                            <dt class="text-muted-foreground">Product</dt>
-                            <dd class="truncate font-medium text-foreground">
-                                {{
-                                    matchedSingleProduct?.name ||
-                                    (form.sku.trim()
-                                        ? 'Custom / Unmatched SKU'
-                                        : 'Not selected')
-                                }}
-                            </dd>
-                        </div>
-                        <div class="flex items-center justify-between gap-2">
-                            <dt class="text-muted-foreground">Reference no.</dt>
-                            <dd class="font-medium text-foreground">
-                                {{ form.reference_no.trim() || '—' }}
-                            </dd>
-                        </div>
-                        <div
-                            v-if="matchedSingleProduct"
-                            class="flex items-center justify-between gap-2"
-                        >
-                            <dt class="text-muted-foreground">Current stock</dt>
-                            <dd class="font-mono font-semibold">
-                                {{ matchedSingleProduct.on_hand_qty ?? 0 }}
-                            </dd>
-                        </div>
-                        <div
-                            v-if="
-                                matchedSingleProduct &&
-                                matchedSingleProduct.type === 'consumable' &&
-                                Number(form.qty || 0) > 0
-                            "
-                            class="flex items-center justify-between gap-2"
-                        >
-                            <dt class="text-muted-foreground">
-                                Stock after receipt
-                            </dt>
-                            <dd
-                                class="font-mono font-bold text-emerald-600 dark:text-emerald-400"
-                            >
-                                {{
-                                    (matchedSingleProduct.on_hand_qty ?? 0) +
-                                    Number(form.qty || 0)
-                                }}
-                                (+{{ Number(form.qty || 0) }})
-                            </dd>
-                        </div>
-                    </dl>
-
-                    <Button
-                        type="submit"
-                        :disabled="form.processing"
-                        data-testid="receive-stock-button"
-                        class="mt-4 w-full"
-                    >
-                        <PackageCheck class="mr-1.5 size-4" />
-                        {{
-                            form.processing
-                                ? 'Recording receipt…'
-                                : 'Receive Stock'
-                        }}
-                    </Button>
-                </div>
-            </aside>
+            <ReceivingVerificationSidebar
+                :sku="form.sku"
+                :reference-no="form.reference_no"
+                :qty="form.qty"
+                :processing="form.processing"
+                :matched-product="matchedSingleProduct"
+            />
         </form>
 
         <!-- ========================================================== -->
@@ -1933,17 +1903,29 @@ function submitPoReceipt(): void {
                                     <Label :for="`batch-mobile-sku-${index}`"
                                         >SKU</Label
                                     >
-                                    <QrScannerDialog
-                                        button-label="Scan SKU"
-                                        title="Scan batch line SKU"
-                                        description="Scan a product QR code to fill this batch line SKU."
-                                        @scanned="
-                                            applyBatchLineQrScanned(
-                                                index,
-                                                $event,
-                                            )
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        class="min-h-11 w-full sm:w-auto"
+                                        @click="
+                                            openQrScanner({
+                                                title: 'Scan batch line SKU',
+                                                description:
+                                                    'Scan a product QR code to fill this batch line SKU.',
+                                                onScanned: (value) =>
+                                                    applyBatchLineQrScanned(
+                                                        index,
+                                                        value,
+                                                    ),
+                                            })
                                         "
-                                    />
+                                    >
+                                        <QrCode
+                                            aria-hidden="true"
+                                            class="mr-2 size-4"
+                                        />
+                                        Scan SKU
+                                    </Button>
                                 </div>
                                 <Input
                                     :id="`batch-mobile-sku-${index}`"
@@ -1992,16 +1974,31 @@ function submitPoReceipt(): void {
                                     <Label :for="`batch-mobile-tags-${index}`">
                                         Asset tag codes
                                     </Label>
-                                    <QrScannerDialog
-                                        button-label="Batch scan tags"
-                                        title="Batch scan line asset tags"
-                                        description="Scan one or more asset tags to append them to this delivery line."
-                                        :continuous="true"
-                                        :close-on-scan="false"
-                                        @scanned="
-                                            appendBatchTagCode(index, $event)
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        class="min-h-11 w-full sm:w-auto"
+                                        @click="
+                                            openQrScanner({
+                                                title: 'Batch scan line asset tags',
+                                                description:
+                                                    'Scan one or more asset tags to append them to this delivery line.',
+                                                continuous: true,
+                                                closeOnScan: false,
+                                                onScanned: (value) =>
+                                                    appendBatchTagCode(
+                                                        index,
+                                                        value,
+                                                    ),
+                                            })
                                         "
-                                    />
+                                    >
+                                        <QrCode
+                                            aria-hidden="true"
+                                            class="mr-2 size-4"
+                                        />
+                                        Batch scan tags
+                                    </Button>
                                     <OcrAssistButton
                                         v-if="
                                             findCatalogProductBySku(line.sku)
@@ -2161,17 +2158,29 @@ function submitPoReceipt(): void {
                                         class="text-xs font-medium"
                                         >SKU</Label
                                     >
-                                    <QrScannerDialog
-                                        button-label="Scan SKU"
-                                        title="Scan batch line SKU"
-                                        description="Scan a product QR code to fill this batch line SKU."
-                                        @scanned="
-                                            applyBatchLineQrScanned(
-                                                index,
-                                                $event,
-                                            )
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        class="min-h-11 w-full sm:w-auto"
+                                        @click="
+                                            openQrScanner({
+                                                title: 'Scan batch line SKU',
+                                                description:
+                                                    'Scan a product QR code to fill this batch line SKU.',
+                                                onScanned: (value) =>
+                                                    applyBatchLineQrScanned(
+                                                        index,
+                                                        value,
+                                                    ),
+                                            })
                                         "
-                                    />
+                                    >
+                                        <QrCode
+                                            aria-hidden="true"
+                                            class="mr-2 size-4"
+                                        />
+                                        Scan SKU
+                                    </Button>
                                 </div>
                                 <Input
                                     :id="`batch-sku-${index}`"
@@ -2292,16 +2301,31 @@ function submitPoReceipt(): void {
                                     >
                                         Asset tag codes (for asset SKUs)
                                     </Label>
-                                    <QrScannerDialog
-                                        button-label="Batch scan tags"
-                                        title="Batch scan line asset tags"
-                                        description="Scan one or more asset tags to append them to this delivery line."
-                                        :continuous="true"
-                                        :close-on-scan="false"
-                                        @scanned="
-                                            appendBatchTagCode(index, $event)
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        class="min-h-11 w-full sm:w-auto"
+                                        @click="
+                                            openQrScanner({
+                                                title: 'Batch scan line asset tags',
+                                                description:
+                                                    'Scan one or more asset tags to append them to this delivery line.',
+                                                continuous: true,
+                                                closeOnScan: false,
+                                                onScanned: (value) =>
+                                                    appendBatchTagCode(
+                                                        index,
+                                                        value,
+                                                    ),
+                                            })
                                         "
-                                    />
+                                    >
+                                        <QrCode
+                                            aria-hidden="true"
+                                            class="mr-2 size-4"
+                                        />
+                                        Batch scan tags
+                                    </Button>
                                 </div>
                                 <textarea
                                     :id="`batch-tags-${index}`"
@@ -2368,47 +2392,12 @@ function submitPoReceipt(): void {
                 </div>
 
                 <!-- Batch Submission Footer -->
-                <div
-                    class="mt-5 flex flex-col gap-3 rounded-xl border border-border/70 bg-muted/20 p-4 sm:flex-row sm:items-center sm:justify-between"
-                >
-                    <div
-                        class="flex flex-wrap items-center gap-3 text-xs text-muted-foreground"
-                    >
-                        <span>
-                            Active lines:
-                            <strong class="text-foreground">{{
-                                batchSummary.populatedLines
-                            }}</strong>
-                        </span>
-                        <span>•</span>
-                        <span>
-                            Consumable units:
-                            <strong class="text-foreground">{{
-                                batchSummary.totalConsumableQty
-                            }}</strong>
-                        </span>
-                        <span>•</span>
-                        <span>
-                            Serialized asset tags:
-                            <strong class="text-foreground">{{
-                                batchSummary.totalAssetTags
-                            }}</strong>
-                        </span>
-                    </div>
-
-                    <Button
-                        type="submit"
-                        :disabled="batchForm.processing"
-                        class="w-full sm:w-auto"
-                    >
-                        <PackageCheck class="mr-1.5 size-4" />
-                        {{
-                            batchForm.processing
-                                ? 'Processing batch…'
-                                : 'Receive Batch'
-                        }}
-                    </Button>
-                </div>
+                <ReceivingBatchSummaryFooter
+                    :populated-lines="batchSummary.populatedLines"
+                    :total-consumable-qty="batchSummary.totalConsumableQty"
+                    :total-asset-tags="batchSummary.totalAssetTags"
+                    :processing="batchForm.processing"
+                />
             </div>
         </form>
 
@@ -2491,15 +2480,28 @@ function submitPoReceipt(): void {
                                     <ExternalLink class="ml-1.5 size-3.5" />
                                 </Link>
                             </Button>
-                            <QrScannerDialog
-                                button-label="Scan Product QR / SKU"
-                                button-size="sm"
-                                title="Scan delivered PO product"
-                                description="Scan a product QR code to match it against this purchase order and increment its received quantity."
-                                :continuous="true"
-                                :close-on-scan="false"
-                                @scanned="handlePoProductMatch"
-                            />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                class="min-h-11 w-full sm:w-auto"
+                                @click="
+                                    openQrScanner({
+                                        title: 'Scan delivered PO product',
+                                        description:
+                                            'Scan a product QR code to match it against this purchase order and increment its received quantity.',
+                                        continuous: true,
+                                        closeOnScan: false,
+                                        onScanned: handlePoProductMatch,
+                                    })
+                                "
+                            >
+                                <QrCode
+                                    aria-hidden="true"
+                                    class="mr-2 size-4"
+                                />
+                                Scan Product QR / SKU
+                            </Button>
                             <Button
                                 type="button"
                                 variant="secondary"
@@ -2936,16 +2938,31 @@ function submitPoReceipt(): void {
                                         }}
                                         remaining)
                                     </Label>
-                                    <QrScannerDialog
-                                        button-label="Scan Asset Tags"
-                                        title="Scan PO asset tags"
-                                        description="Scan serialized asset tags for this purchase order line."
-                                        :continuous="true"
-                                        :close-on-scan="false"
-                                        @scanned="
-                                            appendPoAssetTag(index, $event)
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        class="min-h-11 w-full sm:w-auto"
+                                        @click="
+                                            openQrScanner({
+                                                title: 'Scan PO asset tags',
+                                                description:
+                                                    'Scan serialized asset tags for this purchase order line.',
+                                                continuous: true,
+                                                closeOnScan: false,
+                                                onScanned: (value) =>
+                                                    appendPoAssetTag(
+                                                        index,
+                                                        value,
+                                                    ),
+                                            })
                                         "
-                                    />
+                                    >
+                                        <QrCode
+                                            aria-hidden="true"
+                                            class="mr-2 size-4"
+                                        />
+                                        Scan Asset Tags
+                                    </Button>
                                     <OcrAssistButton
                                         label="Read printed tags"
                                         title="Read PO receiving tags"
@@ -3043,6 +3060,20 @@ function submitPoReceipt(): void {
             :close-on-select="catalogTarget === 'single'"
             :exclude-skus="catalogTarget === 'batch' ? batchSelectedSkus : []"
             @select="handleCatalogSelection"
+        />
+
+        <!-- Shared Camera QR Scanner Dialog -->
+        <QrScannerDialog
+            v-model:open="isQrScannerOpen"
+            hide-trigger
+            :title="activeQrScanner?.title ?? 'Scan QR code'"
+            :description="
+                activeQrScanner?.description ??
+                'Point the camera at a QR code or enter it manually.'
+            "
+            :continuous="activeQrScanner?.continuous ?? false"
+            :close-on-scan="activeQrScanner?.closeOnScan"
+            @scanned="handleSharedQrScanned"
         />
     </div>
 </template>

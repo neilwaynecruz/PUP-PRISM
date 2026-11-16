@@ -16,18 +16,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'to_user_id',
     'from_position_id',
     'to_position_id',
-    'initiated_by',
-    'initiated_at',
-    'verified_at',
-    'verified_by',
-    'cancelled_at',
-    'cancelled_by',
-    'cancellation_reason',
-    'last_sent_at',
-    'verification_token_hash',
-    'ip_address',
-    'verified_ip_address',
-    'signature_png',
     'notes',
 ])]
 #[Hidden(['verification_token_hash', 'signature_png'])]

@@ -12,7 +12,7 @@ class PositionPolicy
         return $user->hasRole('Admin');
     }
 
-    public function view(User $user, Position $position): bool
+    public function view(User $user, Position $_position): bool
     {
         return $user->hasRole('Admin');
     }
@@ -22,17 +22,17 @@ class PositionPolicy
         return $user->hasRole('Admin');
     }
 
-    public function update(User $user, Position $position): bool
+    public function update(User $user, Position $_position): bool
     {
         return $user->hasRole('Admin');
     }
 
-    public function delete(User $user, Position $position): bool
+    public function delete(User $user, Position $_position): bool
     {
         return $user->hasRole('Admin');
     }
 
-    public function deactivate(User $user, Position $position): bool
+    public function deactivate(User $user, Position $_position): bool
     {
         return $user->hasRole('Admin');
     }

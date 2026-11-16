@@ -23,6 +23,7 @@ import BookingController from '@/actions/App/Http/Controllers/Inventory/BookingC
 import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
+import ToastUndo from '@/components/ToastUndo.vue';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -48,12 +49,15 @@ const QrScannerDialog = defineAsyncComponent(
     () => import('@/components/inventory/QrScannerDialog.vue'),
 );
 import { useBulkSelection } from '@/composables/useBulkSelection';
+import { getGlobalUndoManager } from '@/composables/useUndoManager';
 import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {
-    index as bookingsIndex,
-    destroy as bookingsDestroy,
     bulkApprove as bookingsBulkApprove,
     bulkReject as bookingsBulkReject,
+    destroy as bookingsDestroy,
+    index as bookingsIndex,
+    show as bookingsShow,
+    trash as bookingsTrash,
 } from '@/routes/inventory/bookings';
 
 type AssetOption = {
@@ -215,18 +219,27 @@ function openDeleteDialog(booking: BookingBase): void {
     deleteDialogOpen.value = true;
 }
 
+const undoManager = getGlobalUndoManager();
+
 function confirmDelete(): void {
     if (!selectedBooking.value || !canConfirmDelete.value) {
         return;
     }
 
-    router.delete(bookingsDestroy(selectedBooking.value.id).url, {
-        data: { deletion_reason: getDeletionReason() },
+    const deletedId = selectedBooking.value.id;
+    const reason = getDeletionReason();
+
+    router.delete(bookingsDestroy(deletedId).url, {
+        data: { deletion_reason: reason },
         onSuccess: () => {
             deleteDialogOpen.value = false;
             selectedBooking.value = null;
             deleteReason.value = '';
             deleteReasonCustom.value = '';
+            undoManager.registerDelete('booking', deletedId, {
+                label: `Booking #${deletedId}`,
+                deletionReason: reason,
+            });
         },
     });
 }
@@ -494,7 +507,7 @@ function onCalendarDateClick(click: DateClickArg): void {
 
 function onCalendarEventClick(click: EventClickArg): void {
     click.jsEvent.preventDefault();
-    router.visit(`/inventory/bookings/${click.event.id}`);
+    router.visit(bookingsShow.url(Number(click.event.id)));
 }
 
 const events = computed(() =>
@@ -713,7 +726,7 @@ function selectedBookingRequestLabel(): string {
                     <a :href="props.exportUrls.pdf">Download PDF</a>
                 </Button>
                 <Button variant="outline" size="sm" as-child class="rounded-lg">
-                    <Link href="/inventory/bookings/trash">Trash</Link>
+                    <Link :href="bookingsTrash.url()">Trash</Link>
                 </Button>
             </div>
         </div>
@@ -1321,8 +1334,7 @@ function selectedBookingRequestLabel(): string {
                                     as-child
                                     class="min-h-11 rounded-lg text-xs sm:h-8 sm:min-h-8"
                                 >
-                                    <Link
-                                        :href="`/inventory/bookings/${booking.id}`"
+                                    <Link :href="bookingsShow.url(booking.id)"
                                         >View</Link
                                     >
                                 </Button>
@@ -1552,8 +1564,7 @@ function selectedBookingRequestLabel(): string {
                                     as-child
                                     class="min-h-11 rounded-lg text-xs sm:h-8 sm:min-h-8"
                                 >
-                                    <Link
-                                        :href="`/inventory/bookings/${booking.id}`"
+                                    <Link :href="bookingsShow.url(booking.id)"
                                         >View Details</Link
                                     >
                                 </Button>
@@ -1763,5 +1774,23 @@ function selectedBookingRequestLabel(): string {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+
+        <div
+            v-if="undoManager.pendingActions.value.length > 0"
+            class="fixed right-4 bottom-4 z-50 flex max-w-sm flex-col gap-2"
+        >
+            <ToastUndo
+                v-for="action in undoManager.pendingActions.value"
+                :id="action.id"
+                :key="action.id"
+                :resource-type="action.resourceType"
+                :resource-id="action.resourceId"
+                :resource-name="
+                    String(action.data.label ?? `#${action.resourceId}`)
+                "
+                :on-undo="undoManager.undo"
+                :on-dismiss="undoManager.cancel"
+            />
+        </div>
     </div>
 </template>

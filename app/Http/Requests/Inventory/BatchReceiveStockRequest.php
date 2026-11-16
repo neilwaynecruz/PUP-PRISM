@@ -63,7 +63,7 @@ class BatchReceiveStockRequest extends FormRequest
             }
 
             if ($product->type === ProductType::Consumable) {
-                $qty = isset($line['qty']) && $line['qty'] !== null ? (int) $line['qty'] : null;
+                $qty = isset($line['qty']) ? (int) $line['qty'] : null;
 
                 if ($qty === null || $qty < 1) {
                     throw ValidationException::withMessages([

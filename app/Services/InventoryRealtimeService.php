@@ -5,8 +5,12 @@ namespace App\Services;
 use App\Events\InventoryRealtimeMessage;
 use App\Models\Booking;
 use App\Models\HandoverLog;
+use App\Models\InventoryAlert;
+use App\Models\InventoryCountSession;
 use App\Models\Product;
+use App\Models\PurchaseOrder;
 use App\Models\Requisition;
+use App\Models\Supplier;
 
 class InventoryRealtimeService
 {
@@ -159,6 +163,91 @@ class InventoryRealtimeService
                 'handover_log_id' => $handoverLog->id,
                 'asset_id' => $handoverLog->asset_id,
                 'verified_by' => $handoverLog->verified_by,
+            ],
+        );
+    }
+
+    public function purchaseOrderUpdated(PurchaseOrder $purchaseOrder, string $action): void
+    {
+        $this->dispatch(
+            entity: 'purchase_order',
+            action: $action,
+            title: __('Purchase order updated'),
+            message: __('Purchase order :po was :action.', ['po' => $purchaseOrder->po_number, 'action' => $action]),
+            roles: [self::ROLE_ADMIN, self::ROLE_SUPPLY_HEAD],
+            modules: ['dashboard', 'purchase-orders', 'forecasting', 'products', 'receiving', 'audit-logs'],
+            url: route('inventory.purchase-orders.show', $purchaseOrder, absolute: false),
+            context: [
+                'purchase_order_id' => $purchaseOrder->id,
+                'po_number' => $purchaseOrder->po_number,
+                'status' => $purchaseOrder->status->value,
+            ],
+        );
+    }
+
+    public function assetOperationUpdated(int $assetId, string $action, ?string $message = null): void
+    {
+        $this->dispatch(
+            entity: 'asset',
+            action: $action,
+            title: __('Asset status updated'),
+            message: $message ?? __('An asset operation (:action) was recorded.', ['action' => $action]),
+            roles: [self::ROLE_ADMIN, self::ROLE_PROPERTY_CUSTODIAN],
+            modules: ['dashboard', 'assets', 'movements', 'audit-logs'],
+            url: route('inventory.assets.show', $assetId, absolute: false),
+            context: [
+                'asset_id' => $assetId,
+            ],
+        );
+    }
+
+    public function physicalCountUpdated(InventoryCountSession $session, string $action): void
+    {
+        $this->dispatch(
+            entity: 'physical_count',
+            action: $action,
+            title: __('Physical count updated'),
+            message: __('Physical count :ref was :action.', ['ref' => $session->reference_no, 'action' => $action]),
+            roles: [self::ROLE_ADMIN, self::ROLE_SUPPLY_HEAD, self::ROLE_PROPERTY_CUSTODIAN],
+            modules: ['dashboard', 'counts', 'products', 'assets', 'movements', 'audit-logs'],
+            url: route('inventory.counts.show', $session, absolute: false),
+            context: [
+                'session_id' => $session->id,
+                'reference_no' => $session->reference_no,
+                'status' => $session->status->value,
+            ],
+        );
+    }
+
+    public function supplierUpdated(Supplier $supplier, string $action): void
+    {
+        $this->dispatch(
+            entity: 'supplier',
+            action: $action,
+            title: __('Supplier updated'),
+            message: __('Supplier :name was :action.', ['name' => $supplier->name, 'action' => $action]),
+            roles: [self::ROLE_ADMIN, self::ROLE_SUPPLY_HEAD],
+            modules: ['suppliers', 'purchase-orders', 'audit-logs'],
+            url: route('inventory.suppliers.index', absolute: false),
+            context: [
+                'supplier_id' => $supplier->id,
+            ],
+        );
+    }
+
+    public function alertUpdated(InventoryAlert $alert, string $action): void
+    {
+        $this->dispatch(
+            entity: 'alert',
+            action: $action,
+            title: __('Inventory alert updated'),
+            message: __('Inventory alert #:id was :action.', ['id' => $alert->id, 'action' => $action]),
+            roles: [self::ROLE_ADMIN, self::ROLE_SUPPLY_HEAD],
+            modules: ['dashboard', 'admin-alerts', 'forecasting', 'audit-logs'],
+            url: route('admin.alerts.index', absolute: false),
+            context: [
+                'alert_id' => $alert->id,
+                'type' => $alert->type,
             ],
         );
     }
