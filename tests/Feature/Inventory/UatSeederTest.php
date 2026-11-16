@@ -404,18 +404,18 @@ test('year-boundary reruns preserve master identities and valid four-year ledger
     try {
         seed(DatabaseSeeder::class);
 
-        $productIds = Product::withTrashed()->pluck('id', 'sku');
-        $assetIds = Asset::query()->pluck('id', 'tag_code');
-        $locationIds = Location::query()->pluck('id', 'code');
-        $unitIds = UnitOfMeasurement::query()->pluck('id', 'code');
+        $productIds = Product::withTrashed()->orderBy('id')->pluck('id', 'sku');
+        $assetIds = Asset::query()->orderBy('id')->pluck('id', 'tag_code');
+        $locationIds = Location::query()->orderBy('id')->pluck('id', 'code');
+        $unitIds = UnitOfMeasurement::query()->orderBy('id')->pluck('id', 'code');
 
         CarbonImmutable::setTestNow($initialDate->addDay());
         seed(DatabaseSeeder::class);
 
-        expect(Product::withTrashed()->pluck('id', 'sku')->all())->toBe($productIds->all())
-            ->and(Asset::query()->pluck('id', 'tag_code')->all())->toBe($assetIds->all())
-            ->and(Location::query()->pluck('id', 'code')->all())->toBe($locationIds->all())
-            ->and(UnitOfMeasurement::query()->pluck('id', 'code')->all())->toBe($unitIds->all())
+        expect(Product::withTrashed()->orderBy('id')->pluck('id', 'sku')->all())->toBe($productIds->all())
+            ->and(Asset::query()->orderBy('id')->pluck('id', 'tag_code')->all())->toBe($assetIds->all())
+            ->and(Location::query()->orderBy('id')->pluck('id', 'code')->all())->toBe($locationIds->all())
+            ->and(UnitOfMeasurement::query()->orderBy('id')->pluck('id', 'code')->all())->toBe($unitIds->all())
             ->and(Product::withTrashed()->select('sku')->groupBy('sku')->havingRaw('COUNT(*) > 1')->exists())->toBeFalse()
             ->and(Asset::query()->whereNotNull('serial_number')->select('serial_number')->groupBy('serial_number')->havingRaw('COUNT(*) > 1')->exists())->toBeFalse()
             ->and(Location::query()->select('code')->groupBy('code')->havingRaw('COUNT(*) > 1')->exists())->toBeFalse()

@@ -88,58 +88,71 @@ test('postgresql product locks prevent concurrent duplicate draft recommendation
         COMMIT;
         SQL;
 
-    expect(pg_send_query($asyncConnection, $concurrentSql))->toBeTrue();
-    usleep(100_000);
-    pg_consume_input($asyncConnection);
-    expect(pg_connection_busy($asyncConnection))->toBeTrue();
-
-    $originalConnection = DB::getDefaultConnection();
-    DB::setDefaultConnection('pgsql_testing');
-
     try {
-        $requestedBy = User::query()->findOrFail($userId);
-        $generated = app(PurchaseOrderGenerator::class)->generateFromAlerts($requestedBy);
+        expect(pg_send_query($asyncConnection, $concurrentSql))->toBeTrue();
+        usleep(100_000);
+        pg_consume_input($asyncConnection);
+        expect(pg_connection_busy($asyncConnection))->toBeTrue();
 
-        expect($generated)->toBeEmpty();
+        $originalConnection = DB::getDefaultConnection();
+        DB::setDefaultConnection('pgsql_testing');
+
+        try {
+            $requestedBy = User::query()->findOrFail($userId);
+            $generated = app(PurchaseOrderGenerator::class)->generateFromAlerts($requestedBy);
+
+            expect($generated)->toBeEmpty();
+        } finally {
+            DB::setDefaultConnection($originalConnection);
+        }
+
+        while (($result = pg_get_result($asyncConnection)) instanceof Result) {
+            expect(pg_result_status($result))->toBeIn([PGSQL_COMMAND_OK, PGSQL_TUPLES_OK]);
+        }
+
+        pg_close($asyncConnection);
+        $asyncConnection = null;
+
+        $activeOrderStatement = $pdo->prepare(
+            'SELECT COUNT(*)
+             FROM purchase_order_lines pol
+             JOIN purchase_orders po ON po.id = pol.purchase_order_id
+             WHERE pol.product_id = ?
+               AND po.status IN (?, ?, ?)
+               AND po.deleted_at IS NULL',
+        );
+
+        if (! $activeOrderStatement instanceof PDOStatement) {
+            throw new RuntimeException('Unable to prepare the active order count statement.');
+        }
+
+        $activeOrderStatement->execute([
+            $productId,
+            PurchaseOrderStatus::Draft->value,
+            PurchaseOrderStatus::Sent->value,
+            PurchaseOrderStatus::Partial->value,
+        ]);
+        $activeOrderCount = (int) $activeOrderStatement->fetchColumn();
+
+        $statusStatement = $pdo->prepare('SELECT status FROM purchase_orders WHERE po_number = ?');
+
+        if (! $statusStatement instanceof PDOStatement) {
+            throw new RuntimeException('Unable to prepare the purchase order status statement.');
+        }
+
+        $statusStatement->execute([$competingPoNumber]);
+
+        expect($activeOrderCount)->toBe(1)
+            ->and((string) $statusStatement->fetchColumn())->toBe(PurchaseOrderStatus::Draft->value);
     } finally {
-        DB::setDefaultConnection($originalConnection);
+        if ($asyncConnection instanceof Connection) {
+            pg_close($asyncConnection);
+        }
+        $pdo->exec("DELETE FROM purchase_order_lines WHERE product_id = {$productId}");
+        $pdo->exec("DELETE FROM purchase_orders WHERE po_number = '{$competingPoNumber}' OR supplier_id = {$supplierId}");
+        $pdo->exec("DELETE FROM product_stocks WHERE product_id = {$productId}");
+        $pdo->exec("DELETE FROM products WHERE id = {$productId}");
+        $pdo->exec("DELETE FROM users WHERE id = {$userId}");
+        $pdo->exec("DELETE FROM suppliers WHERE id = {$supplierId}");
     }
-
-    while (($result = pg_get_result($asyncConnection)) instanceof Result) {
-        expect(pg_result_status($result))->toBeIn([PGSQL_COMMAND_OK, PGSQL_TUPLES_OK]);
-    }
-
-    pg_close($asyncConnection);
-
-    $activeOrderStatement = $pdo->prepare(
-        'SELECT COUNT(*)
-         FROM purchase_order_lines pol
-         JOIN purchase_orders po ON po.id = pol.purchase_order_id
-         WHERE pol.product_id = ?
-           AND po.status IN (?, ?, ?)
-           AND po.deleted_at IS NULL',
-    );
-
-    if (! $activeOrderStatement instanceof PDOStatement) {
-        throw new RuntimeException('Unable to prepare the active order count statement.');
-    }
-
-    $activeOrderStatement->execute([
-        $productId,
-        PurchaseOrderStatus::Draft->value,
-        PurchaseOrderStatus::Sent->value,
-        PurchaseOrderStatus::Partial->value,
-    ]);
-    $activeOrderCount = (int) $activeOrderStatement->fetchColumn();
-
-    $statusStatement = $pdo->prepare('SELECT status FROM purchase_orders WHERE po_number = ?');
-
-    if (! $statusStatement instanceof PDOStatement) {
-        throw new RuntimeException('Unable to prepare the purchase order status statement.');
-    }
-
-    $statusStatement->execute([$competingPoNumber]);
-
-    expect($activeOrderCount)->toBe(1)
-        ->and((string) $statusStatement->fetchColumn())->toBe(PurchaseOrderStatus::Draft->value);
 });

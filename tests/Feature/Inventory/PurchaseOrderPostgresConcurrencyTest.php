@@ -24,34 +24,44 @@ test('postgresql concurrent transactions allocate distinct consecutive purchase 
     // Clean up sequence table for test prefix
     $pdo1->exec("DELETE FROM purchase_order_sequences WHERE date_prefix = '{$prefix}'");
 
-    // Concurrently allocate numbers:
-    // Connection 1 begins transaction, ensures row and acquires lock
-    $pdo1->beginTransaction();
-    $pdo1->exec("INSERT INTO purchase_order_sequences (date_prefix, last_sequence, created_at, updated_at) VALUES ('{$prefix}', 0, NOW(), NOW()) ON CONFLICT (date_prefix) DO NOTHING");
-    $stmt1 = $pdo1->prepare('SELECT last_sequence FROM purchase_order_sequences WHERE date_prefix = :p FOR UPDATE');
-    $stmt1->execute([':p' => $prefix]);
-    $seq1 = (int) $stmt1->fetchColumn();
-    $nextSeq1 = $seq1 + 1;
-    $upd1 = $pdo1->prepare('UPDATE purchase_order_sequences SET last_sequence = :s, updated_at = NOW() WHERE date_prefix = :p');
-    $upd1->execute([':s' => $nextSeq1, ':p' => $prefix]);
+    try {
+        // Concurrently allocate numbers:
+        // Connection 1 begins transaction, ensures row and acquires lock
+        $pdo1->beginTransaction();
+        $pdo1->exec("INSERT INTO purchase_order_sequences (date_prefix, last_sequence, created_at, updated_at) VALUES ('{$prefix}', 0, NOW(), NOW()) ON CONFLICT (date_prefix) DO NOTHING");
+        $stmt1 = $pdo1->prepare('SELECT last_sequence FROM purchase_order_sequences WHERE date_prefix = :p FOR UPDATE');
+        $stmt1->execute([':p' => $prefix]);
+        $seq1 = (int) $stmt1->fetchColumn();
+        $nextSeq1 = $seq1 + 1;
+        $upd1 = $pdo1->prepare('UPDATE purchase_order_sequences SET last_sequence = :s, updated_at = NOW() WHERE date_prefix = :p');
+        $upd1->execute([':s' => $nextSeq1, ':p' => $prefix]);
 
-    // Connection 1 commits
-    $pdo1->commit();
+        // Connection 1 commits
+        $pdo1->commit();
 
-    // Now Connection 2 runs in its own transaction
-    $pdo2->beginTransaction();
-    $stmt2 = $pdo2->prepare('SELECT last_sequence FROM purchase_order_sequences WHERE date_prefix = :p FOR UPDATE');
-    $stmt2->execute([':p' => $prefix]);
-    $seq2 = (int) $stmt2->fetchColumn();
-    $nextSeq2 = $seq2 + 1;
-    $upd2 = $pdo2->prepare('UPDATE purchase_order_sequences SET last_sequence = :s, updated_at = NOW() WHERE date_prefix = :p');
-    $upd2->execute([':s' => $nextSeq2, ':p' => $prefix]);
-    $pdo2->commit();
+        // Now Connection 2 runs in its own transaction
+        $pdo2->beginTransaction();
+        $stmt2 = $pdo2->prepare('SELECT last_sequence FROM purchase_order_sequences WHERE date_prefix = :p FOR UPDATE');
+        $stmt2->execute([':p' => $prefix]);
+        $seq2 = (int) $stmt2->fetchColumn();
+        $nextSeq2 = $seq2 + 1;
+        $upd2 = $pdo2->prepare('UPDATE purchase_order_sequences SET last_sequence = :s, updated_at = NOW() WHERE date_prefix = :p');
+        $upd2->execute([':s' => $nextSeq2, ':p' => $prefix]);
+        $pdo2->commit();
 
-    expect($nextSeq1)->toBe(1)
-        ->and($nextSeq2)->toBe(2);
+        expect($nextSeq1)->toBe(1)
+            ->and($nextSeq2)->toBe(2);
 
-    $finalStmt = $pdo1->query("SELECT last_sequence FROM purchase_order_sequences WHERE date_prefix = '{$prefix}'");
-    $finalSeq = (int) $finalStmt->fetchColumn();
-    expect($finalSeq)->toBe(2);
+        $finalStmt = $pdo1->query("SELECT last_sequence FROM purchase_order_sequences WHERE date_prefix = '{$prefix}'");
+        $finalSeq = (int) $finalStmt->fetchColumn();
+        expect($finalSeq)->toBe(2);
+    } finally {
+        if ($pdo1->inTransaction()) {
+            $pdo1->rollBack();
+        }
+        if ($pdo2->inTransaction()) {
+            $pdo2->rollBack();
+        }
+        $pdo1->exec("DELETE FROM purchase_order_sequences WHERE date_prefix = '{$prefix}'");
+    }
 });

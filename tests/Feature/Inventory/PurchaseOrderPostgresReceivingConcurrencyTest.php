@@ -42,47 +42,62 @@ test('postgresql row locks serialize concurrent receiving and prevent over-recei
     $pdo1->exec("INSERT INTO purchase_order_lines (purchase_order_id, product_id, qty_ordered, qty_received, unit_price, subtotal, created_at, updated_at) VALUES ({$poId}, {$productId}, 10, 0, 10, 100, '{$now}', '{$now}')");
     $lineId = (int) $pdo1->query("SELECT id FROM purchase_order_lines WHERE purchase_order_id = {$poId}")->fetchColumn();
 
-    // Concurrency test:
-    // Connection 1 begins, locks PO row and line row
-    $pdo1->beginTransaction();
-    $stmt1 = $pdo1->prepare('SELECT id, status FROM purchase_orders WHERE id = :id FOR UPDATE');
-    $stmt1->execute([':id' => $poId]);
+    try {
+        // Concurrency test:
+        // Connection 1 begins, locks PO row and line row
+        $pdo1->beginTransaction();
+        $stmt1 = $pdo1->prepare('SELECT id, status FROM purchase_orders WHERE id = :id FOR UPDATE');
+        $stmt1->execute([':id' => $poId]);
 
-    $lineStmt1 = $pdo1->prepare('SELECT qty_ordered, qty_received FROM purchase_order_lines WHERE id = :id FOR UPDATE');
-    $lineStmt1->execute([':id' => $lineId]);
-    $lineData1 = $lineStmt1->fetch(PDO::FETCH_ASSOC);
+        $lineStmt1 = $pdo1->prepare('SELECT qty_ordered, qty_received FROM purchase_order_lines WHERE id = :id FOR UPDATE');
+        $lineStmt1->execute([':id' => $lineId]);
+        $lineData1 = $lineStmt1->fetch(PDO::FETCH_ASSOC);
 
-    $remaining1 = (int) $lineData1['qty_ordered'] - (int) $lineData1['qty_received'];
-    expect($remaining1)->toBe(10);
+        $remaining1 = (int) $lineData1['qty_ordered'] - (int) $lineData1['qty_received'];
+        expect($remaining1)->toBe(10);
 
-    // Connection 1 processes receipt of 6 units
-    $receiveQty1 = 6;
-    $pdo1->exec("UPDATE purchase_order_lines SET qty_received = qty_received + {$receiveQty1} WHERE id = {$lineId}");
-    $pdo1->exec("UPDATE purchase_orders SET status = 'partial' WHERE id = {$poId}");
-    $pdo1->commit();
+        // Connection 1 processes receipt of 6 units
+        $receiveQty1 = 6;
+        $pdo1->exec("UPDATE purchase_order_lines SET qty_received = qty_received + {$receiveQty1} WHERE id = {$lineId}");
+        $pdo1->exec("UPDATE purchase_orders SET status = 'partial' WHERE id = {$poId}");
+        $pdo1->commit();
 
-    // Now Connection 2 runs in its own transaction and checks remaining quantity
-    $pdo2->beginTransaction();
-    $stmt2 = $pdo2->prepare('SELECT id, status FROM purchase_orders WHERE id = :id FOR UPDATE');
-    $stmt2->execute([':id' => $poId]);
+        // Now Connection 2 runs in its own transaction and checks remaining quantity
+        $pdo2->beginTransaction();
+        $stmt2 = $pdo2->prepare('SELECT id, status FROM purchase_orders WHERE id = :id FOR UPDATE');
+        $stmt2->execute([':id' => $poId]);
 
-    $lineStmt2 = $pdo2->prepare('SELECT qty_ordered, qty_received FROM purchase_order_lines WHERE id = :id FOR UPDATE');
-    $lineStmt2->execute([':id' => $lineId]);
-    $lineData2 = $lineStmt2->fetch(PDO::FETCH_ASSOC);
+        $lineStmt2 = $pdo2->prepare('SELECT qty_ordered, qty_received FROM purchase_order_lines WHERE id = :id FOR UPDATE');
+        $lineStmt2->execute([':id' => $lineId]);
+        $lineData2 = $lineStmt2->fetch(PDO::FETCH_ASSOC);
 
-    $remaining2 = (int) $lineData2['qty_ordered'] - (int) $lineData2['qty_received'];
-    // Remaining must now be 4 (not 10!) because Connection 1 committed
-    expect($remaining2)->toBe(4);
+        $remaining2 = (int) $lineData2['qty_ordered'] - (int) $lineData2['qty_received'];
+        // Remaining must now be 4 (not 10!) because Connection 1 committed
+        expect($remaining2)->toBe(4);
 
-    // If Connection 2 was attempting to receive 6 units, it detects over-receiving
-    $receiveQty2 = 6;
-    $wouldOverReceive = $receiveQty2 > $remaining2;
-    expect($wouldOverReceive)->toBeTrue();
+        // If Connection 2 was attempting to receive 6 units, it detects over-receiving
+        $receiveQty2 = 6;
+        $wouldOverReceive = $receiveQty2 > $remaining2;
+        expect($wouldOverReceive)->toBeTrue();
 
-    // Connection 2 rejects receipt and rolls back
-    $pdo2->rollBack();
+        // Connection 2 rejects receipt and rolls back
+        $pdo2->rollBack();
 
-    // Verify final state in database
-    $finalLine = $pdo1->query("SELECT qty_received FROM purchase_order_lines WHERE id = {$lineId}")->fetch(PDO::FETCH_ASSOC);
-    expect((int) $finalLine['qty_received'])->toBe(6);
+        // Verify final state in database
+        $finalLine = $pdo1->query("SELECT qty_received FROM purchase_order_lines WHERE id = {$lineId}")->fetch(PDO::FETCH_ASSOC);
+        expect((int) $finalLine['qty_received'])->toBe(6);
+    } finally {
+        if ($pdo1->inTransaction()) {
+            $pdo1->rollBack();
+        }
+        if ($pdo2->inTransaction()) {
+            $pdo2->rollBack();
+        }
+        $pdo1->exec("DELETE FROM purchase_order_lines WHERE id = {$lineId}");
+        $pdo1->exec("DELETE FROM purchase_orders WHERE id = {$poId}");
+        $pdo1->exec("DELETE FROM product_stocks WHERE product_id = {$productId}");
+        $pdo1->exec("DELETE FROM products WHERE id = {$productId}");
+        $pdo1->exec("DELETE FROM users WHERE id = {$userId}");
+        $pdo1->exec("DELETE FROM suppliers WHERE id = {$supplierId}");
+    }
 });

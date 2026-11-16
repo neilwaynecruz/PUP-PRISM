@@ -70,57 +70,89 @@ test('postgresql row locks serialize concurrent count adjustment approvals', fun
 
     $suffix = bin2hex(random_bytes(6));
     $now = now()->toDateTimeString();
-    $counterId = phaseFourInsertId($pdo, 'INSERT INTO users (name, email, password, is_active, created_at, updated_at) VALUES (?, ?, ?, true, ?, ?) RETURNING id', [
-        'Phase 4 Counter', "p4-counter-{$suffix}@test.local", 'secret', $now, $now,
-    ]);
-    $approverId = phaseFourInsertId($pdo, 'INSERT INTO users (name, email, password, is_active, created_at, updated_at) VALUES (?, ?, ?, true, ?, ?) RETURNING id', [
-        'Phase 4 Approver', "p4-approver-{$suffix}@test.local", 'secret', $now, $now,
-    ]);
-    $productId = phaseFourInsertId($pdo, 'INSERT INTO products (name, sku, type, is_active, reorder_threshold, created_at, updated_at) VALUES (?, ?, ?, true, 0, ?, ?) RETURNING id', [
-        'Phase 4 PostgreSQL Product', "P4-PG-{$suffix}", 'consumable', $now, $now,
-    ]);
-    $lotId = phaseFourInsertId($pdo, 'INSERT INTO stock_lots (product_id, reference_no, received_at, qty_received, qty_remaining, created_at, updated_at) VALUES (?, ?, ?, 20, 10, ?, ?) RETURNING id', [
-        $productId, "P4-LOT-{$suffix}", $now, $now, $now,
-    ]);
-    phaseFourInsertId($pdo, 'INSERT INTO product_stocks (product_id, on_hand_qty, created_at, updated_at) VALUES (?, 10, ?, ?) RETURNING id', [$productId, $now, $now]);
-    $sessionId = phaseFourInsertId($pdo, "INSERT INTO inventory_count_sessions (reference_no, created_by, assigned_to, counting_date, scope, status, snapshot_at, submitted_at, created_at, updated_at) VALUES (?, ?, ?, CURRENT_DATE, 'PostgreSQL concurrency', 'submitted', ?, ?, ?, ?) RETURNING id", [
-        "COUNT-PG-{$suffix}", $counterId, $counterId, $now, $now, $now, $now,
-    ]);
-    $lineId = phaseFourInsertId($pdo, "INSERT INTO inventory_count_lines (inventory_count_session_id, product_id, stock_lot_id, expected_qty_snapshot, counted_qty, expected_qty_at_count, variance_qty, counted_by, counted_at, review_status, reviewed_by, reviewed_at, created_at, updated_at) VALUES (?, ?, ?, 10, 15, 10, 5, ?, ?, 'approved', ?, ?, ?, ?) RETURNING id", [
-        $sessionId, $productId, $lotId, $counterId, $now, $approverId, $now, $now, $now,
-    ]);
+    $counterId = null;
+    $approverId = null;
+    $productId = null;
+    $sessionId = null;
+    $lineId = null;
 
-    $pdo->beginTransaction();
-    $pdo->query("SELECT status FROM inventory_count_sessions WHERE id = {$sessionId} FOR UPDATE")->fetchColumn();
-    $pdo->query("SELECT id FROM inventory_count_lines WHERE id = {$lineId} FOR UPDATE")->fetchColumn();
-    $pdo->query("SELECT id FROM stock_lots WHERE id = {$lotId} FOR UPDATE")->fetchColumn();
+    try {
+        $counterId = phaseFourInsertId($pdo, 'INSERT INTO users (name, email, password, is_active, created_at, updated_at) VALUES (?, ?, ?, true, ?, ?) RETURNING id', [
+            'Phase 4 Counter', "p4-counter-{$suffix}@test.local", 'secret', $now, $now,
+        ]);
+        $approverId = phaseFourInsertId($pdo, 'INSERT INTO users (name, email, password, is_active, created_at, updated_at) VALUES (?, ?, ?, true, ?, ?) RETURNING id', [
+            'Phase 4 Approver', "p4-approver-{$suffix}@test.local", 'secret', $now, $now,
+        ]);
+        $productId = phaseFourInsertId($pdo, 'INSERT INTO products (name, sku, type, is_active, reorder_threshold, created_at, updated_at) VALUES (?, ?, ?, true, 0, ?, ?) RETURNING id', [
+            'Phase 4 PostgreSQL Product', "P4-PG-{$suffix}", 'consumable', $now, $now,
+        ]);
+        $lotId = phaseFourInsertId($pdo, 'INSERT INTO stock_lots (product_id, reference_no, received_at, qty_received, qty_remaining, created_at, updated_at) VALUES (?, ?, ?, 20, 10, ?, ?) RETURNING id', [
+            $productId, "P4-LOT-{$suffix}", $now, $now, $now,
+        ]);
+        phaseFourInsertId($pdo, 'INSERT INTO product_stocks (product_id, on_hand_qty, created_at, updated_at) VALUES (?, 10, ?, ?) RETURNING id', [$productId, $now, $now]);
+        $sessionId = phaseFourInsertId($pdo, "INSERT INTO inventory_count_sessions (reference_no, created_by, assigned_to, counting_date, scope, status, snapshot_at, submitted_at, created_at, updated_at) VALUES (?, ?, ?, CURRENT_DATE, 'PostgreSQL concurrency', 'submitted', ?, ?, ?, ?) RETURNING id", [
+            "COUNT-PG-{$suffix}", $counterId, $counterId, $now, $now, $now, $now,
+        ]);
+        $lineId = phaseFourInsertId($pdo, "INSERT INTO inventory_count_lines (inventory_count_session_id, product_id, stock_lot_id, expected_qty_snapshot, counted_qty, expected_qty_at_count, variance_qty, counted_by, counted_at, review_status, reviewed_by, reviewed_at, created_at, updated_at) VALUES (?, ?, ?, 10, 15, 10, 5, ?, ?, 'approved', ?, ?, ?, ?) RETURNING id", [
+            $sessionId, $productId, $lotId, $counterId, $now, $approverId, $now, $now, $now,
+        ]);
 
-    pg_query($asyncConnection, 'BEGIN');
-    expect(pg_send_query($asyncConnection, "SELECT status FROM inventory_count_sessions WHERE id = {$sessionId} FOR UPDATE"))->toBeTrue();
-    usleep(150_000);
-    pg_consume_input($asyncConnection);
-    expect(pg_connection_busy($asyncConnection))->toBeTrue();
+        $pdo->beginTransaction();
+        $pdo->query("SELECT status FROM inventory_count_sessions WHERE id = {$sessionId} FOR UPDATE")->fetchColumn();
+        $pdo->query("SELECT id FROM inventory_count_lines WHERE id = {$lineId} FOR UPDATE")->fetchColumn();
+        $pdo->query("SELECT id FROM stock_lots WHERE id = {$lotId} FOR UPDATE")->fetchColumn();
 
-    $pdo->exec("UPDATE product_stocks SET on_hand_qty = 15 WHERE product_id = {$productId}");
-    $adjustmentLotId = phaseFourInsertId($pdo, 'INSERT INTO stock_lots (product_id, reference_no, received_at, qty_received, qty_remaining, created_at, updated_at) VALUES (?, ?, ?, 5, 5, ?, ?) RETURNING id', [
-        $productId, "COUNT-PG-{$suffix}-{$lineId}", $now, $now, $now,
-    ]);
-    $movementId = phaseFourInsertId($pdo, "INSERT INTO stock_movements (movement_type, product_id, stock_lot_id, qty_delta, performed_by, performed_at, notes, qty_before, qty_after, reason_code, counted_qty, variance_qty, created_at, updated_at) VALUES ('cycle_count', ?, ?, 5, ?, ?, ?, 10, 15, 'variance_review', 15, 5, ?, ?) RETURNING id", [
-        $productId, $adjustmentLotId, $approverId, $now, "phase-four-concurrency-{$suffix}", $now, $now,
-    ]);
-    $pdo->exec("UPDATE inventory_count_lines SET adjustment_movement_id = {$movementId} WHERE id = {$lineId}");
-    $pdo->exec("UPDATE inventory_count_sessions SET status = 'approved', approved_by = {$approverId}, approved_at = NOW() WHERE id = {$sessionId}");
-    $pdo->commit();
+        pg_query($asyncConnection, 'BEGIN');
+        expect(pg_send_query($asyncConnection, "SELECT status FROM inventory_count_sessions WHERE id = {$sessionId} FOR UPDATE"))->toBeTrue();
+        usleep(150_000);
+        pg_consume_input($asyncConnection);
+        expect(pg_connection_busy($asyncConnection))->toBeTrue();
 
-    $concurrentRow = phaseFourAwaitRow($asyncConnection);
-    expect($concurrentRow['status'] ?? null)->toBe('approved');
-    pg_query($asyncConnection, 'ROLLBACK');
-    pg_close($asyncConnection);
+        $pdo->exec("UPDATE product_stocks SET on_hand_qty = 15 WHERE product_id = {$productId}");
+        $adjustmentLotId = phaseFourInsertId($pdo, 'INSERT INTO stock_lots (product_id, reference_no, received_at, qty_received, qty_remaining, created_at, updated_at) VALUES (?, ?, ?, 5, 5, ?, ?) RETURNING id', [
+            $productId, "COUNT-PG-{$suffix}-{$lineId}", $now, $now, $now,
+        ]);
+        $movementId = phaseFourInsertId($pdo, "INSERT INTO stock_movements (movement_type, product_id, stock_lot_id, qty_delta, performed_by, performed_at, notes, qty_before, qty_after, reason_code, counted_qty, variance_qty, created_at, updated_at) VALUES ('cycle_count', ?, ?, 5, ?, ?, ?, 10, 15, 'variance_review', 15, 5, ?, ?) RETURNING id", [
+            $productId, $adjustmentLotId, $approverId, $now, "phase-four-concurrency-{$suffix}", $now, $now,
+        ]);
+        $pdo->exec("UPDATE inventory_count_lines SET adjustment_movement_id = {$movementId} WHERE id = {$lineId}");
+        $pdo->exec("UPDATE inventory_count_sessions SET status = 'approved', approved_by = {$approverId}, approved_at = NOW() WHERE id = {$sessionId}");
+        $pdo->commit();
 
-    expect((int) $pdo->query("SELECT COUNT(*) FROM stock_movements WHERE notes = 'phase-four-concurrency-{$suffix}'")->fetchColumn())->toBe(1)
-        ->and((int) $pdo->query("SELECT qty_remaining FROM stock_lots WHERE id = {$lotId}")->fetchColumn())->toBe(10)
-        ->and((int) $pdo->query("SELECT SUM(qty_remaining) FROM stock_lots WHERE product_id = {$productId}")->fetchColumn())->toBe(15)
-        ->and((int) $pdo->query("SELECT on_hand_qty FROM product_stocks WHERE product_id = {$productId}")->fetchColumn())->toBe(15);
+        $concurrentRow = phaseFourAwaitRow($asyncConnection);
+        expect($concurrentRow['status'] ?? null)->toBe('approved');
+        pg_query($asyncConnection, 'ROLLBACK');
+        pg_close($asyncConnection);
+        $asyncConnection = null;
+
+        expect((int) $pdo->query("SELECT COUNT(*) FROM stock_movements WHERE notes = 'phase-four-concurrency-{$suffix}'")->fetchColumn())->toBe(1)
+            ->and((int) $pdo->query("SELECT qty_remaining FROM stock_lots WHERE id = {$lotId}")->fetchColumn())->toBe(10)
+            ->and((int) $pdo->query("SELECT SUM(qty_remaining) FROM stock_lots WHERE product_id = {$productId}")->fetchColumn())->toBe(15)
+            ->and((int) $pdo->query("SELECT on_hand_qty FROM product_stocks WHERE product_id = {$productId}")->fetchColumn())->toBe(15);
+    } finally {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if ($asyncConnection instanceof Connection) {
+            pg_close($asyncConnection);
+        }
+        if ($lineId !== null) {
+            $pdo->exec("UPDATE inventory_count_lines SET adjustment_movement_id = NULL WHERE id = {$lineId}");
+            $pdo->exec("DELETE FROM inventory_count_lines WHERE id = {$lineId}");
+        }
+        if ($sessionId !== null) {
+            $pdo->exec("DELETE FROM inventory_count_sessions WHERE id = {$sessionId}");
+        }
+        if ($productId !== null) {
+            $pdo->exec("DELETE FROM stock_movements WHERE product_id = {$productId}");
+            $pdo->exec("DELETE FROM stock_lots WHERE product_id = {$productId}");
+            $pdo->exec("DELETE FROM product_stocks WHERE product_id = {$productId}");
+            $pdo->exec("DELETE FROM products WHERE id = {$productId}");
+        }
+        foreach (array_filter([$approverId, $counterId]) as $uid) {
+            $pdo->exec("DELETE FROM users WHERE id = {$uid}");
+        }
+    }
 });
 
 test('postgresql row locks serialize simultaneous asset transfer approvals', function () {
@@ -136,44 +168,76 @@ test('postgresql row locks serialize simultaneous asset transfer approvals', fun
 
     $suffix = bin2hex(random_bytes(6));
     $now = now()->toDateTimeString();
-    $userId = phaseFourInsertId($pdo, 'INSERT INTO users (name, email, password, is_active, created_at, updated_at) VALUES (?, ?, ?, true, ?, ?) RETURNING id', [
-        'Phase 4 Transfer User', "p4-transfer-{$suffix}@test.local", 'secret', $now, $now,
-    ]);
-    $productId = phaseFourInsertId($pdo, 'INSERT INTO products (name, sku, type, is_active, reorder_threshold, created_at, updated_at) VALUES (?, ?, ?, true, 0, ?, ?) RETURNING id', [
-        'Phase 4 Transfer Asset', "P4-ASSET-{$suffix}", 'asset', $now, $now,
-    ]);
-    $sourceId = phaseFourInsertId($pdo, 'INSERT INTO locations (code, name, is_active, created_at, updated_at) VALUES (?, ?, true, ?, ?) RETURNING id', ["P4-SRC-{$suffix}", 'Source', $now, $now]);
-    $destinationId = phaseFourInsertId($pdo, 'INSERT INTO locations (code, name, is_active, created_at, updated_at) VALUES (?, ?, true, ?, ?) RETURNING id', ["P4-DST-{$suffix}", 'Destination', $now, $now]);
-    $assetId = phaseFourInsertId($pdo, "INSERT INTO assets (product_id, tag_code, status, current_location_id, lifecycle_status, condition_status, created_at, updated_at) VALUES (?, ?, 'Available', ?, 'active', 'serviceable', ?, ?) RETURNING id", [
-        $productId, "P4-TAG-{$suffix}", $sourceId, $now, $now,
-    ]);
-    $transferId = phaseFourInsertId($pdo, "INSERT INTO asset_transfers (asset_id, from_location_id, to_location_id, status, reason, transfer_date, initiated_by, created_at, updated_at) VALUES (?, ?, ?, 'pending', 'Concurrent transfer test', CURRENT_DATE, ?, ?, ?) RETURNING id", [
-        $assetId, $sourceId, $destinationId, $userId, $now, $now,
-    ]);
+    $userId = null;
+    $productId = null;
+    $sourceId = null;
+    $destinationId = null;
+    $assetId = null;
+    $transferId = null;
 
-    expect(fn () => phaseFourInsertId($pdo, "INSERT INTO asset_transfers (asset_id, from_location_id, to_location_id, status, reason, transfer_date, initiated_by, created_at, updated_at) VALUES (?, ?, ?, 'pending', 'Duplicate pending transfer', CURRENT_DATE, ?, ?, ?) RETURNING id", [
-        $assetId, $sourceId, $destinationId, $userId, $now, $now,
-    ]))->toThrow(PDOException::class);
+    try {
+        $userId = phaseFourInsertId($pdo, 'INSERT INTO users (name, email, password, is_active, created_at, updated_at) VALUES (?, ?, ?, true, ?, ?) RETURNING id', [
+            'Phase 4 Transfer User', "p4-transfer-{$suffix}@test.local", 'secret', $now, $now,
+        ]);
+        $productId = phaseFourInsertId($pdo, 'INSERT INTO products (name, sku, type, is_active, reorder_threshold, created_at, updated_at) VALUES (?, ?, ?, true, 0, ?, ?) RETURNING id', [
+            'Phase 4 Transfer Asset', "P4-ASSET-{$suffix}", 'asset', $now, $now,
+        ]);
+        $sourceId = phaseFourInsertId($pdo, 'INSERT INTO locations (code, name, is_active, created_at, updated_at) VALUES (?, ?, true, ?, ?) RETURNING id', ["P4-SRC-{$suffix}", 'Source', $now, $now]);
+        $destinationId = phaseFourInsertId($pdo, 'INSERT INTO locations (code, name, is_active, created_at, updated_at) VALUES (?, ?, true, ?, ?) RETURNING id', ["P4-DST-{$suffix}", 'Destination', $now, $now]);
+        $assetId = phaseFourInsertId($pdo, "INSERT INTO assets (product_id, tag_code, status, current_location_id, lifecycle_status, condition_status, created_at, updated_at) VALUES (?, ?, 'Available', ?, 'active', 'serviceable', ?, ?) RETURNING id", [
+            $productId, "P4-TAG-{$suffix}", $sourceId, $now, $now,
+        ]);
+        $transferId = phaseFourInsertId($pdo, "INSERT INTO asset_transfers (asset_id, from_location_id, to_location_id, status, reason, transfer_date, initiated_by, created_at, updated_at) VALUES (?, ?, ?, 'pending', 'Concurrent transfer test', CURRENT_DATE, ?, ?, ?) RETURNING id", [
+            $assetId, $sourceId, $destinationId, $userId, $now, $now,
+        ]);
 
-    $pdo->beginTransaction();
-    $pdo->query("SELECT status FROM asset_transfers WHERE id = {$transferId} FOR UPDATE")->fetchColumn();
-    $pdo->query("SELECT current_location_id FROM assets WHERE id = {$assetId} FOR UPDATE")->fetchColumn();
+        expect(fn () => phaseFourInsertId($pdo, "INSERT INTO asset_transfers (asset_id, from_location_id, to_location_id, status, reason, transfer_date, initiated_by, created_at, updated_at) VALUES (?, ?, ?, 'pending', 'Duplicate pending transfer', CURRENT_DATE, ?, ?, ?) RETURNING id", [
+            $assetId, $sourceId, $destinationId, $userId, $now, $now,
+        ]))->toThrow(PDOException::class);
 
-    pg_query($asyncConnection, 'BEGIN');
-    expect(pg_send_query($asyncConnection, "SELECT status FROM asset_transfers WHERE id = {$transferId} FOR UPDATE"))->toBeTrue();
-    usleep(150_000);
-    pg_consume_input($asyncConnection);
-    expect(pg_connection_busy($asyncConnection))->toBeTrue();
+        $pdo->beginTransaction();
+        $pdo->query("SELECT status FROM asset_transfers WHERE id = {$transferId} FOR UPDATE")->fetchColumn();
+        $pdo->query("SELECT current_location_id FROM assets WHERE id = {$assetId} FOR UPDATE")->fetchColumn();
 
-    $pdo->exec("UPDATE assets SET current_location_id = {$destinationId} WHERE id = {$assetId}");
-    $pdo->exec("UPDATE asset_transfers SET status = 'approved', approved_by = {$userId}, approved_at = NOW() WHERE id = {$transferId}");
-    $pdo->commit();
+        pg_query($asyncConnection, 'BEGIN');
+        expect(pg_send_query($asyncConnection, "SELECT status FROM asset_transfers WHERE id = {$transferId} FOR UPDATE"))->toBeTrue();
+        usleep(150_000);
+        pg_consume_input($asyncConnection);
+        expect(pg_connection_busy($asyncConnection))->toBeTrue();
 
-    $concurrentRow = phaseFourAwaitRow($asyncConnection);
-    expect($concurrentRow['status'] ?? null)->toBe('approved');
-    pg_query($asyncConnection, 'ROLLBACK');
-    pg_close($asyncConnection);
+        $pdo->exec("UPDATE assets SET current_location_id = {$destinationId} WHERE id = {$assetId}");
+        $pdo->exec("UPDATE asset_transfers SET status = 'approved', approved_by = {$userId}, approved_at = NOW() WHERE id = {$transferId}");
+        $pdo->commit();
 
-    expect((int) $pdo->query("SELECT current_location_id FROM assets WHERE id = {$assetId}")->fetchColumn())->toBe($destinationId)
-        ->and((int) $pdo->query("SELECT COUNT(*) FROM asset_transfers WHERE asset_id = {$assetId} AND status = 'approved'")->fetchColumn())->toBe(1);
+        $concurrentRow = phaseFourAwaitRow($asyncConnection);
+        expect($concurrentRow['status'] ?? null)->toBe('approved');
+        pg_query($asyncConnection, 'ROLLBACK');
+        pg_close($asyncConnection);
+        $asyncConnection = null;
+
+        expect((int) $pdo->query("SELECT current_location_id FROM assets WHERE id = {$assetId}")->fetchColumn())->toBe($destinationId)
+            ->and((int) $pdo->query("SELECT COUNT(*) FROM asset_transfers WHERE asset_id = {$assetId} AND status = 'approved'")->fetchColumn())->toBe(1);
+    } finally {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if ($asyncConnection instanceof Connection) {
+            pg_close($asyncConnection);
+        }
+        if ($transferId !== null) {
+            $pdo->exec("DELETE FROM asset_transfers WHERE id = {$transferId}");
+        }
+        if ($assetId !== null) {
+            $pdo->exec("DELETE FROM assets WHERE id = {$assetId}");
+        }
+        if ($productId !== null) {
+            $pdo->exec("DELETE FROM products WHERE id = {$productId}");
+        }
+        foreach (array_filter([$destinationId, $sourceId]) as $locId) {
+            $pdo->exec("DELETE FROM locations WHERE id = {$locId}");
+        }
+        if ($userId !== null) {
+            $pdo->exec("DELETE FROM users WHERE id = {$userId}");
+        }
+    }
 });

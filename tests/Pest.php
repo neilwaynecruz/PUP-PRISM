@@ -73,6 +73,21 @@ function expectResponsePreventsClientCaching(TestResponse $response): void
  */
 function withPostgresTestingDatabase(callable $callback): void
 {
+    if (DB::connection()->getDriverName() === 'pgsql') {
+        // When the test suite itself runs against PostgreSQL, LazilyRefreshDatabase
+        // already wraps this test in a rolled-back transaction; opening a second
+        // connection to the same database would deadlock against uncommitted locks.
+        DB::beginTransaction();
+
+        try {
+            $callback();
+        } finally {
+            DB::rollBack();
+        }
+
+        return;
+    }
+
     try {
         DB::connection('pgsql_testing')->getPdo();
     } catch (Throwable $exception) {

@@ -294,7 +294,8 @@ test('identical receiving requests are serialized before the idempotency check',
 
     expect($line->refresh()->qty_received)->toBe(0)
         ->and($stock->refresh()->on_hand_qty)->toBe(0)
-        ->and(StockMovement::query()->where('reference_no', 'CONCURRENT-REF-1')->exists())->toBeFalse();
+        ->and(StockLot::query()->where('reference_no', 'CONCURRENT-REF-1')->exists())->toBeFalse()
+        ->and(StockMovement::query()->where('product_id', $product->id)->exists())->toBeFalse();
 });
 
 test('partial receiving across separate submissions transitions to received when complete', function () {

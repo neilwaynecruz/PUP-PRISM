@@ -17,6 +17,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   playwright:
     name: Playwright (${{ matrix.browser }}, shard ${{ matrix.shard }}/2)
@@ -95,7 +99,7 @@ jobs:
           E2E_APP_URL: http://127.0.0.1:8001
 
       - name: Upload Playwright report and diagnostics
-        if: ${{ !cancelled() }}
+        if: ${{ failure() }}
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-${{ matrix.browser }}-shard-${{ matrix.shard }}
@@ -103,4 +107,4 @@ jobs:
             tests/e2e/report/
             test-results/
           if-no-files-found: ignore
-          retention-days: 7
+          retention-days: 3

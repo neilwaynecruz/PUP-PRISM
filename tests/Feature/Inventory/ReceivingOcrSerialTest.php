@@ -77,7 +77,7 @@ test('postgresql retains reviewed serials and its unique constraint rolls back d
         expect(Asset::query()->where('tag_code', 'OCR-PG-TAG-1')->firstOrFail()->serial_number)->toBe('OCR-PG-SERIAL-1');
         expect(fn () => $inventory->receive($user, $product, ['tag_codes' => ['OCR-PG-TAG-2'], 'serial_numbers' => ['OCR-PG-SERIAL-1']]))
             ->toThrow(ValidationException::class);
-        expect(fn () => DB::connection('pgsql_testing')->transaction(fn () => Asset::query()->create([
+        expect(fn () => DB::transaction(fn () => Asset::query()->create([
             'product_id' => $product->id,
             'tag_code' => 'OCR-PG-TAG-2',
             'serial_number' => 'OCR-PG-SERIAL-1',
