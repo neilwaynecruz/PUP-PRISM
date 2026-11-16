@@ -4,9 +4,9 @@ import { expect, test } from './fixtures/test';
 test.describe('Asset Booking Flow', () => {
     test('Request booking -> Approve -> Verify calendar', async ({ page }) => {
         // Step 1: Login as requester and request booking
-        await loginAs(page, 'requester@e2e.test');
-
-        await page.goto('/inventory/bookings');
+        await loginAs(page, 'requester@e2e.test', 'password', {
+            redirectTo: '/inventory/bookings',
+        });
         await expect(page.getByTestId('bookings-page')).toBeVisible();
 
         // Search and select an asset
@@ -30,18 +30,23 @@ test.describe('Asset Booking Flow', () => {
             .getByTestId('booking-purpose-input')
             .fill('Engineering laboratory equipment reservation');
 
-        // Submit the booking request
+        // Submit the booking request and wait for the POST + Inertia redirect rather than networkidle.
+        const requestCreated = page.waitForResponse(
+            (response) =>
+                new URL(response.url()).pathname === '/inventory/bookings' &&
+                response.request().method() === 'POST' &&
+                response.status() < 400,
+        );
         await page.getByTestId('request-booking-button').click();
-        await page.waitForLoadState('networkidle');
+        await requestCreated;
 
         // Verify booking request was created
         await expect(page.locator('body')).toContainText('Requested');
 
-        // Step 2: Login as Admin and approve
-        await loginAs(page, 'admin@e2e.test');
-
-        await page.goto('/inventory/bookings');
-        await page.waitForLoadState('networkidle');
+        // Step 2: Login as Admin directly onto /inventory/bookings and approve
+        await loginAs(page, 'admin@e2e.test', 'password', {
+            redirectTo: '/inventory/bookings',
+        });
 
         // The approval queue should have our pending request
         await expect(
@@ -49,10 +54,19 @@ test.describe('Asset Booking Flow', () => {
         ).toBeVisible({ timeout: 10000 });
 
         // Approve the booking
+        const requestApproved = page.waitForResponse(
+            (response) =>
+                new URL(response.url()).pathname.startsWith(
+                    '/inventory/bookings/',
+                ) &&
+                response.request().method() !== 'GET' &&
+                response.status() < 400,
+        );
         await page.getByTestId('approve-booking-button').first().click();
-        await page.waitForLoadState('networkidle');
+        await requestApproved;
 
-        // Verify the booking was approved
+        // Verify the pending action clears and the booking transitions to Approved
+        await expect(page.getByTestId('approve-booking-button')).toHaveCount(0);
         await expect(page.locator('body')).toContainText('Approved');
 
         // Step 3: Verify the booking appears in the booking records section

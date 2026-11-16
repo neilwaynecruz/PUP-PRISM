@@ -276,6 +276,8 @@ test.describe('Header and account menus', () => {
 });
 
 test.describe('Settings', () => {
+    test.use({ serviceWorkers: 'block' });
+
     test('theme changes apply immediately and survive a reload', async ({
         page,
     }) => {
@@ -288,7 +290,10 @@ test.describe('Settings', () => {
             page.getByRole('button', { name: 'Dark' }),
         ).toHaveAttribute('aria-pressed', 'true');
 
-        await page.reload({ waitUntil: 'domcontentloaded' });
+        // Navigate explicitly rather than page.reload() to avoid Firefox Juggler reload hangs after history updates.
+        await page.goto('/settings/appearance', {
+            waitUntil: 'domcontentloaded',
+        });
         await expect(page.locator('html')).toHaveClass(/dark/);
         await expect(
             page.getByRole('button', { name: 'Dark' }),
@@ -334,7 +339,8 @@ test.describe('Settings', () => {
         await expect(page.getByText(/valid email/i)).toBeHidden();
         await expect(save).toBeEnabled();
 
-        await page.reload({ waitUntil: 'domcontentloaded' });
+        // Explicit goto forces a clean document reload without Firefox Juggler's page.reload() race.
+        await page.goto('/settings/profile', { waitUntil: 'domcontentloaded' });
         await expect(page.locator('#name')).toHaveValue('Adrian M. Mercado');
     });
 
@@ -367,7 +373,10 @@ test.describe('Settings', () => {
             page.getByText('Notification preferences updated.'),
         ).toBeVisible();
         await expect(save).toBeEnabled();
-        await page.reload({ waitUntil: 'domcontentloaded' });
+        // Explicit goto forces a clean document reload without Firefox Juggler's page.reload() race.
+        await page.goto('/settings/notifications', {
+            waitUntil: 'domcontentloaded',
+        });
 
         await expect(
             page

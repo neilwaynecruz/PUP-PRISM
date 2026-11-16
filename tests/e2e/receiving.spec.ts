@@ -1,5 +1,19 @@
+import type { Page } from '@playwright/test';
 import { loginAs } from './fixtures/auth';
 import { expect, test } from './fixtures/test';
+
+async function submitStockReceipt(page: Page): Promise<void> {
+    const receiptSubmitted = page.waitForResponse(
+        (response) =>
+            new URL(response.url()).pathname === '/inventory/receiving' &&
+            response.request().method() === 'POST' &&
+            response.status() < 400,
+    );
+    await page.getByTestId('receive-stock-button').click();
+    await receiptSubmitted;
+    await expect(page.getByTestId('receiving-page')).toBeVisible();
+    await expect(page.getByTestId('receive-stock-button')).toBeEnabled();
+}
 
 test.describe('Stock Receiving Flow', () => {
     test('Receive consumable stock', async ({ page }) => {
@@ -12,9 +26,8 @@ test.describe('Stock Receiving Flow', () => {
         await page.getByTestId('receiving-qty-input').fill('25');
         await page.getByTestId('receiving-reference-input').fill('E2E-DR-001');
 
-        await page.getByTestId('receive-stock-button').click();
-        await expect(page.getByTestId('receiving-page')).toBeVisible();
-        await page.waitForLoadState('networkidle');
+        await submitStockReceipt(page);
+        await expect(page.getByTestId('receiving-qty-input')).toHaveValue('');
 
         await page.goto('/inventory/products');
         await page.getByTestId('product-search-input').fill('CON-E2E-001');
@@ -42,9 +55,10 @@ test.describe('Stock Receiving Flow', () => {
             .getByTestId('receiving-tag-codes-input')
             .fill('AST-E2E-RCV-001\nAST-E2E-RCV-002');
 
-        await page.getByTestId('receive-stock-button').click();
-        await expect(page.getByTestId('receiving-page')).toBeVisible();
-        await page.waitForLoadState('networkidle');
+        await submitStockReceipt(page);
+        await expect(page.getByTestId('receiving-tag-codes-input')).toHaveValue(
+            '',
+        );
 
         await page.goto('/inventory/products');
         await page.getByTestId('product-search-input').fill('AST-E2E-001');

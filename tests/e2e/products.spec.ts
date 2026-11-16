@@ -60,11 +60,20 @@ test.describe('Product CRUD Lifecycle', () => {
 
         await page.getByTestId('product-name-input').fill(updatedName);
 
-        // Click Save - the update redirects to the edit page via Inertia
+        // Click Save - wait for the mutation response and button re-enable rather than networkidle
+        const productUpdated = page.waitForResponse(
+            (response) =>
+                new URL(response.url()).pathname.startsWith(
+                    '/inventory/products/',
+                ) &&
+                response.request().method() !== 'GET' &&
+                response.status() < 400,
+        );
         await page.getByTestId('save-product-button').click();
-        await page.waitForLoadState('networkidle');
+        await productUpdated;
 
         // Verify the update persisted
+        await expect(page.getByTestId('save-product-button')).toBeEnabled();
         await expect(page.getByTestId('product-edit-page')).toBeVisible({
             timeout: 10000,
         });

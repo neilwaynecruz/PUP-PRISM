@@ -183,5 +183,5 @@ export async function logout(page: Page): Promise<void> {
     await page.getByTestId('sidebar-menu-button').click();
     await page.getByTestId('logout-button').click();
     await page.waitForURL(/\/login$/);
-    await page.waitForLoadState('networkidle');
+    await page.getByTestId('login-page').waitFor();
 }
