@@ -21,6 +21,7 @@ use App\Models\Supplier;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class DashboardStatsService
@@ -154,6 +155,7 @@ class DashboardStatsService
             ->selectRaw('AVG(confidence_score) as average_confidence')
             ->toBase()
             ->first();
+        /** @var Collection<int, ForecastSnapshot> $latestSnapshots */
         $latestSnapshots = ForecastSnapshot::query()
             ->with('product:id,sku,name')
             ->where('forecast_date', $latestForecastValue)
@@ -229,11 +231,14 @@ class DashboardStatsService
      */
     private function lowStockProducts(): array
     {
-        return $this->lowStockQuery()
+        /** @var Collection<int, Product> $products */
+        $products = $this->lowStockQuery()
             ->with(['stock:id,product_id,on_hand_qty', 'category:id,name'])
             ->orderBy('name')
             ->limit(30)
-            ->get(['id', 'sku', 'name', 'category_id', 'reorder_threshold'])
+            ->get(['id', 'sku', 'name', 'category_id', 'reorder_threshold']);
+
+        return $products
             ->map(fn (Product $p) => [
                 'id' => $p->id,
                 'sku' => $p->sku,
@@ -250,13 +255,16 @@ class DashboardStatsService
      */
     private function unserviceableAssets(): array
     {
-        return Asset::query()
+        /** @var Collection<int, Asset> $assets */
+        $assets = Asset::query()
             ->whereIn('status', [AssetStatus::Unserviceable, AssetStatus::Condemned])
             ->with('product:id,name')
             ->orderBy('status')
             ->orderBy('tag_code')
             ->limit(30)
-            ->get(['id', 'product_id', 'tag_code', 'status'])
+            ->get(['id', 'product_id', 'tag_code', 'status']);
+
+        return $assets
             ->map(fn (Asset $a) => [
                 'id' => $a->id,
                 'tag_code' => $a->tag_code,
@@ -397,7 +405,8 @@ class DashboardStatsService
             default => "CASE WHEN purchase_orders.received_at IS NOT NULL AND {$startedExpr} IS NOT NULL THEN GREATEST(0.0, TIMESTAMPDIFF(MICROSECOND, {$startedExpr}, purchase_orders.received_at) / 86400000000.0) END",
         };
 
-        return Supplier::query()
+        /** @var Collection<int, Supplier> $suppliers */
+        $suppliers = Supplier::query()
             ->leftJoin('purchase_orders', function ($join): void {
                 $join->on('purchase_orders.supplier_id', '=', 'suppliers.id')
                     ->whereNull('purchase_orders.deleted_at');
@@ -414,7 +423,9 @@ class DashboardStatsService
             ->orderBy('suppliers.name')
             ->orderBy('suppliers.id')
             ->limit(10)
-            ->get()
+            ->get();
+
+        return $suppliers
             ->map(static fn (Supplier $supplier): array => [
                 'id' => (int) $supplier->id,
                 'name' => $supplier->name,
@@ -452,11 +463,14 @@ class DashboardStatsService
      */
     private function recentlyDeleted(): array
     {
-        $products = Product::onlyTrashed()
+        /** @var Collection<int, Product> $deletedProducts */
+        $deletedProducts = Product::onlyTrashed()
             ->with('deletedBy:id,name')
             ->orderByDesc('deleted_at')
             ->limit(5)
-            ->get(['id', 'name', 'deleted_at'])
+            ->get(['id', 'name', 'deleted_at']);
+
+        $products = $deletedProducts
             ->map(fn (Product $product) => [
                 'id' => $product->id,
                 'type' => 'product',
@@ -467,11 +481,14 @@ class DashboardStatsService
                 'restore_url' => route('inventory.products.restore', $product->id),
             ]);
 
-        $bookings = Booking::onlyTrashed()
+        /** @var Collection<int, Booking> $deletedBookings */
+        $deletedBookings = Booking::onlyTrashed()
             ->with('deletedBy:id,name', 'asset:id,tag_code')
             ->orderByDesc('deleted_at')
             ->limit(5)
-            ->get(['id', 'asset_id', 'deleted_at'])
+            ->get(['id', 'asset_id', 'deleted_at']);
+
+        $bookings = $deletedBookings
             ->map(fn (Booking $booking) => [
                 'id' => $booking->id,
                 'type' => 'booking',
@@ -482,11 +499,14 @@ class DashboardStatsService
                 'restore_url' => route('inventory.bookings.restore', $booking->id),
             ]);
 
-        $requisitions = Requisition::onlyTrashed()
+        /** @var Collection<int, Requisition> $deletedRequisitions */
+        $deletedRequisitions = Requisition::onlyTrashed()
             ->with('deletedBy:id,name')
             ->orderByDesc('deleted_at')
             ->limit(5)
-            ->get(['id', 'deleted_at'])
+            ->get(['id', 'deleted_at']);
+
+        $requisitions = $deletedRequisitions
             ->map(fn (Requisition $requisition) => [
                 'id' => $requisition->id,
                 'type' => 'requisition',
@@ -655,7 +675,8 @@ class DashboardStatsService
         $today = CarbonImmutable::now();
         $threshold = $today->addDays(30);
 
-        return StockLot::query()
+        /** @var Collection<int, StockLot> $lots */
+        $lots = StockLot::query()
             ->with('product:id,sku,name')
             ->where('qty_remaining', '>', 0)
             ->whereNotNull('expires_at')
@@ -663,7 +684,9 @@ class DashboardStatsService
             ->whereDate('expires_at', '<=', $threshold->toDateString())
             ->orderBy('expires_at')
             ->limit(10)
-            ->get(['id', 'product_id', 'qty_remaining', 'expires_at'])
+            ->get(['id', 'product_id', 'qty_remaining', 'expires_at']);
+
+        return $lots
             ->map(fn (StockLot $lot) => [
                 'id' => $lot->id,
                 'product_name' => $lot->product->name ?? 'Unknown',
@@ -681,14 +704,17 @@ class DashboardStatsService
     {
         $today = CarbonImmutable::now()->toDateString();
 
-        return StockLot::query()
+        /** @var Collection<int, StockLot> $lots */
+        $lots = StockLot::query()
             ->with('product:id,sku,name')
             ->where('qty_remaining', '>', 0)
             ->whereNotNull('expires_at')
             ->whereDate('expires_at', '<', $today)
             ->orderBy('expires_at')
             ->limit(10)
-            ->get(['id', 'product_id', 'qty_remaining', 'expires_at'])
+            ->get(['id', 'product_id', 'qty_remaining', 'expires_at']);
+
+        return $lots
             ->map(fn (StockLot $lot) => [
                 'id' => $lot->id,
                 'product_name' => $lot->product->name ?? 'Unknown',

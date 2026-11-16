@@ -15,6 +15,7 @@ use App\Services\Forecasting\ForecastBacktester;
 use App\Services\Forecasting\ForecastPresenter;
 use App\Services\Optimization\InventoryOptimizationService;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -81,14 +82,17 @@ class ForecastController extends Controller
             ->through(fn (Product $product) => $this->formatIndexRow($product));
 
         $today = CarbonImmutable::now()->startOfDay();
-        $expiringLots = StockLot::query()
+        /** @var Collection<int, StockLot> $expiringLotModels */
+        $expiringLotModels = StockLot::query()
             ->where('qty_remaining', '>', 0)
             ->whereNotNull('expires_at')
             ->whereDate('expires_at', '<=', $today->addDays(60))
             ->with('product:id,sku,name')
             ->orderBy('expires_at')
             ->limit(50)
-            ->get()
+            ->get();
+
+        $expiringLots = $expiringLotModels
             ->map(function (StockLot $lot) use ($today): array {
                 $expiresAt = CarbonImmutable::parse((string) $lot->expires_at)->startOfDay();
                 $diffDays = (int) $today->diffInDays($expiresAt, false);

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\AssetConditionStatus;
 use App\Enums\AssetLifecycleStatus;
 use App\Enums\AssetStatus;
+use Carbon\CarbonInterface;
 use Database\Factories\AssetFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,6 +14,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
+/**
+ * @property CarbonInterface|null $acquisition_date
+ * @property CarbonInterface|null $warranty_expires_at
+ * @property CarbonInterface|null $installed_at
+ */
 #[Fillable([
     'product_id',
     'position_id',

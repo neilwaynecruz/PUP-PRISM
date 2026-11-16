@@ -11,6 +11,7 @@ use App\Models\Requisition;
 use App\Support\SchedulerHeartbeat;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -88,6 +89,7 @@ class CleanupTrash extends Command
             ->where('deleted_at', '<', $cutoffDate)
             ->orderBy('id')
             ->chunkById(100, function ($products) use (&$deleted, &$skipped, &$candidateCount, $dryRun): void {
+                /** @var Collection<int, Product> $products */
                 foreach ($products as $product) {
                     if ($this->productHasHistory($product->id)) {
                         $skipped++;
@@ -149,6 +151,7 @@ class CleanupTrash extends Command
             ->where('deleted_at', '<', $cutoffDate)
             ->orderBy('id')
             ->chunkById(100, function ($bookings) use (&$deleted, &$skipped, &$candidateCount, $dryRun): void {
+                /** @var Collection<int, Booking> $bookings */
                 foreach ($bookings as $booking) {
                     $candidateCount++;
                     if ($dryRun) {
@@ -203,6 +206,7 @@ class CleanupTrash extends Command
             ->where('deleted_at', '<', $cutoffDate)
             ->orderBy('id')
             ->chunkById(100, function ($requisitions) use (&$deleted, &$skipped, &$candidateCount, $dryRun): void {
+                /** @var Collection<int, Requisition> $requisitions */
                 foreach ($requisitions as $requisition) {
                     if ($this->requisitionHasHistory($requisition)) {
                         $skipped++;
@@ -263,6 +267,7 @@ class CleanupTrash extends Command
             ->where('deleted_at', '<', $cutoffDate)
             ->orderBy('id')
             ->chunkById(100, function ($attachments) use (&$deleted, &$skipped, &$candidateCount, $dryRun): void {
+                /** @var Collection<int, Attachment> $attachments */
                 foreach ($attachments as $attachment) {
                     $candidateCount++;
                     if ($dryRun) {
@@ -325,6 +330,7 @@ class CleanupTrash extends Command
      */
     private function detachAndDeleteAttachments(string $attachableType, int $attachableId): array
     {
+        /** @var Collection<int, Attachment> $attachments */
         $attachments = Attachment::query()
             ->withTrashed()
             ->where('attachable_type', $attachableType)

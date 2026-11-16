@@ -5,7 +5,11 @@ namespace App\Http\Resources;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 
-/** @mixin Booking */
+/**
+ * @mixin Booking
+ *
+ * @property Booking $resource
+ */
 class BookingResource extends InertiaJsonResource
 {
     /**

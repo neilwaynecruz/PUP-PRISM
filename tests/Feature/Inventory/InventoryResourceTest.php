@@ -11,16 +11,51 @@ use App\Http\Resources\RequisitionResource;
 use App\Http\Resources\StockMovementResource;
 use App\Models\Asset;
 use App\Models\Booking;
+use App\Models\ForecastSnapshot;
 use App\Models\HandoverLog;
+use App\Models\InventoryCountLine;
 use App\Models\Position;
 use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\PurchaseOrderLine;
 use App\Models\Requisition;
+use App\Models\StockLot;
 use App\Models\StockMovement;
 use App\Models\UnitOfMeasurement;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
+
+test('inventory date attributes expose Carbon values and preserve nullable dates', function () {
+    $asset = new Asset([
+        'acquisition_date' => '2026-11-16',
+        'warranty_expires_at' => null,
+        'installed_at' => '2026-11-17',
+    ]);
+    $lot = new StockLot(['received_at' => '2026-11-16', 'expires_at' => null]);
+    $snapshot = new ForecastSnapshot(['forecast_date' => '2026-11-16']);
+
+    expect($asset->acquisition_date)->toBeInstanceOf(CarbonInterface::class)
+        ->and($asset->acquisition_date?->toDateString())->toBe('2026-11-16')
+        ->and($asset->warranty_expires_at)->toBeNull()
+        ->and($asset->installed_at)->toBeInstanceOf(CarbonInterface::class)
+        ->and($lot->received_at)->toBeInstanceOf(CarbonInterface::class)
+        ->and($lot->expires_at)->toBeNull()
+        ->and($snapshot->forecast_date)->toBeInstanceOf(CarbonInterface::class)
+        ->and($snapshot->forecast_date->toDateString())->toBe('2026-11-16');
+});
+
+test('uncounted inventory lines preserve null rather than implying a zero count', function () {
+    $line = new InventoryCountLine(['counted_qty' => null, 'variance_qty' => null]);
+
+    expect($line->counted_qty)->toBeNull()
+        ->and($line->variance_qty)->toBeNull();
+
+    $line->fill(['counted_qty' => '0', 'variance_qty' => '-2']);
+
+    expect($line->counted_qty)->toBe(0)
+        ->and($line->variance_qty)->toBe(-2);
+});
 
 test('product collection preserves paginator keys and row shape for inertia pages', function () {
     $product = Product::factory()->consumable()->create([

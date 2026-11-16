@@ -9,6 +9,7 @@ use App\Models\PurchaseOrder;
 use App\Models\Requisition;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 
 class GlobalSearchService
 {
@@ -59,14 +60,17 @@ class GlobalSearchService
      */
     private function searchProducts(string $term): array
     {
-        return Product::query()
+        /** @var Collection<int, Product> $products */
+        $products = Product::query()
             ->where(function (Builder $query) use ($term) {
                 $query->whereLike('sku', "%{$term}%")
                     ->orWhereLike('name', "%{$term}%");
             })
             ->orderBy('name')
             ->limit(self::LIMIT_PER_TYPE)
-            ->get(['id', 'sku', 'name', 'type'])
+            ->get(['id', 'sku', 'name', 'type']);
+
+        return $products
             ->map(fn (Product $product) => [
                 'type' => 'product',
                 'id' => $product->id,
@@ -82,7 +86,8 @@ class GlobalSearchService
      */
     private function searchAssets(string $term): array
     {
-        return Asset::query()
+        /** @var Collection<int, Asset> $assets */
+        $assets = Asset::query()
             ->with('product:id,name')
             ->where(function (Builder $query) use ($term) {
                 $query->whereLike('tag_code', "%{$term}%")
@@ -90,7 +95,9 @@ class GlobalSearchService
             })
             ->orderBy('tag_code')
             ->limit(self::LIMIT_PER_TYPE)
-            ->get(['id', 'product_id', 'tag_code', 'status'])
+            ->get(['id', 'product_id', 'tag_code', 'status']);
+
+        return $assets
             ->map(fn (Asset $asset) => [
                 'type' => 'asset',
                 'id' => $asset->id,
@@ -106,7 +113,8 @@ class GlobalSearchService
      */
     private function searchRequisitions(string $term): array
     {
-        return Requisition::query()
+        /** @var Collection<int, Requisition> $requisitions */
+        $requisitions = Requisition::query()
             ->with('requester:id,name,email')
             ->where(function (Builder $query) use ($term) {
                 if ($this->recordNumber($term) !== null) {
@@ -120,7 +128,9 @@ class GlobalSearchService
             })
             ->orderByDesc('created_at')
             ->limit(self::LIMIT_PER_TYPE)
-            ->get(['id', 'status', 'requester_id', 'created_at'])
+            ->get(['id', 'status', 'requester_id', 'created_at']);
+
+        return $requisitions
             ->map(fn (Requisition $requisition) => [
                 'type' => 'requisition',
                 'id' => $requisition->id,
@@ -136,7 +146,8 @@ class GlobalSearchService
      */
     private function searchBookings(string $term): array
     {
-        return Booking::query()
+        /** @var Collection<int, Booking> $bookings */
+        $bookings = Booking::query()
             ->with(['asset:id,tag_code,product_id', 'asset.product:id,name', 'requester:id,name,email'])
             ->where(function (Builder $query) use ($term) {
                 if ($this->recordNumber($term) !== null) {
@@ -151,7 +162,9 @@ class GlobalSearchService
             })
             ->orderByDesc('start_at')
             ->limit(self::LIMIT_PER_TYPE)
-            ->get(['id', 'status', 'asset_id', 'requester_id', 'start_at'])
+            ->get(['id', 'status', 'asset_id', 'requester_id', 'start_at']);
+
+        return $bookings
             ->map(fn (Booking $booking) => [
                 'type' => 'booking',
                 'id' => $booking->id,
@@ -167,7 +180,8 @@ class GlobalSearchService
      */
     private function searchPurchaseOrders(string $term): array
     {
-        return PurchaseOrder::query()
+        /** @var Collection<int, PurchaseOrder> $purchaseOrders */
+        $purchaseOrders = PurchaseOrder::query()
             ->with('supplier:id,name')
             ->where(function (Builder $query) use ($term) {
                 $query->whereLike('po_number', "%{$term}%")
@@ -179,7 +193,9 @@ class GlobalSearchService
             })
             ->orderByDesc('created_at')
             ->limit(self::LIMIT_PER_TYPE)
-            ->get(['id', 'po_number', 'status', 'supplier_id'])
+            ->get(['id', 'po_number', 'status', 'supplier_id']);
+
+        return $purchaseOrders
             ->map(fn (PurchaseOrder $purchaseOrder) => [
                 'type' => 'purchase_order',
                 'id' => $purchaseOrder->id,
@@ -195,14 +211,17 @@ class GlobalSearchService
      */
     private function searchUsers(string $term): array
     {
-        return User::query()
+        /** @var Collection<int, User> $users */
+        $users = User::query()
             ->where(function (Builder $query) use ($term) {
                 $query->whereLike('name', "%{$term}%")
                     ->orWhereLike('email', "%{$term}%");
             })
             ->orderBy('name')
             ->limit(self::LIMIT_PER_TYPE)
-            ->get(['id', 'name', 'email'])
+            ->get(['id', 'name', 'email']);
+
+        return $users
             ->map(fn (User $searchedUser) => [
                 'type' => 'user',
                 'id' => $searchedUser->id,

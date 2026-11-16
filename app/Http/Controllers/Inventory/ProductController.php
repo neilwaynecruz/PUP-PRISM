@@ -265,7 +265,8 @@ class ProductController extends Controller
 
         $this->authorize('view', $product);
 
-        $stockMovements = StockMovement::query()
+        /** @var Collection<int, StockMovement> $stockMovementModels */
+        $stockMovementModels = StockMovement::query()
             ->where('product_id', $product->id)
             ->with([
                 'performedBy:id,name',
@@ -277,7 +278,9 @@ class ProductController extends Controller
             ])
             ->orderByDesc('performed_at')
             ->limit(20)
-            ->get()
+            ->get();
+
+        $stockMovements = $stockMovementModels
             ->map(fn (StockMovement $m) => [
                 'id' => $m->id,
                 'movement_type' => $m->movement_type,
@@ -762,16 +765,21 @@ class ProductController extends Controller
     {
         $options = $this->rememberOptionList(
             Category::OPTIONS_CACHE_KEY,
-            fn () => Category::query()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name'])
-                ->map(fn (Category $category) => [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                ])
-                ->values()
-                ->all(),
+            function (): array {
+                /** @var Collection<int, Category> $categories */
+                $categories = Category::query()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+
+                return $categories
+                    ->map(fn (Category $category) => [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                    ])
+                    ->values()
+                    ->all();
+            },
         );
 
         return $this->appendInactiveReferenceOption($options, Category::class, $includeId);
@@ -784,16 +792,21 @@ class ProductController extends Controller
     {
         $options = $this->rememberOptionList(
             Origin::OPTIONS_CACHE_KEY,
-            fn () => Origin::query()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name'])
-                ->map(fn (Origin $origin) => [
-                    'id' => $origin->id,
-                    'name' => $origin->name,
-                ])
-                ->values()
-                ->all(),
+            function (): array {
+                /** @var Collection<int, Origin> $origins */
+                $origins = Origin::query()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+
+                return $origins
+                    ->map(fn (Origin $origin) => [
+                        'id' => $origin->id,
+                        'name' => $origin->name,
+                    ])
+                    ->values()
+                    ->all();
+            },
         );
 
         return $this->appendInactiveReferenceOption($options, Origin::class, $includeId);
@@ -831,16 +844,21 @@ class ProductController extends Controller
     {
         return $this->rememberOptionList(
             Supplier::OPTIONS_CACHE_KEY,
-            fn () => Supplier::query()
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name'])
-                ->map(fn (Supplier $supplier) => [
-                    'id' => $supplier->id,
-                    'name' => $supplier->name,
-                ])
-                ->values()
-                ->all(),
+            function (): array {
+                /** @var Collection<int, Supplier> $suppliers */
+                $suppliers = Supplier::query()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name']);
+
+                return $suppliers
+                    ->map(fn (Supplier $supplier) => [
+                        'id' => $supplier->id,
+                        'name' => $supplier->name,
+                    ])
+                    ->values()
+                    ->all();
+            },
         );
     }
 
@@ -856,7 +874,10 @@ class ProductController extends Controller
             })
             ->orderBy('name');
 
-        return $query->get(['id', 'name', 'abbreviation'])
+        /** @var Collection<int, UnitOfMeasurement> $units */
+        $units = $query->get(['id', 'name', 'abbreviation']);
+
+        return $units
             ->map(fn (UnitOfMeasurement $unit) => [
                 'id' => $unit->id,
                 'name' => $unit->name,

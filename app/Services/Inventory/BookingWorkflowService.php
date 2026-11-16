@@ -10,6 +10,7 @@ use App\Services\AuditLogService;
 use App\Services\DashboardStatsCache;
 use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -133,6 +134,7 @@ class BookingWorkflowService
     {
         /** @var array{approved: array<int, Booking>, conflicts: int, skipped: int} $result */
         $result = DB::transaction(function () use ($ids, $actor, $ipAddress): array {
+            /** @var Collection<int, Booking> $bookings */
             $bookings = Booking::query()
                 ->with(['asset', 'requester'])
                 ->whereIn('id', $ids)
@@ -193,6 +195,7 @@ class BookingWorkflowService
     {
         /** @var array{rejected: array<int, Booking>, skipped: int} $result */
         $result = DB::transaction(function () use ($ids, $actor, $ipAddress): array {
+            /** @var Collection<int, Booking> $bookings */
             $bookings = Booking::query()
                 ->with('requester')
                 ->whereIn('id', $ids)

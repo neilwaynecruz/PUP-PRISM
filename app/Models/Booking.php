@@ -13,6 +13,14 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
+ * @property int $id
+ * @property int $asset_id
+ * @property int $requester_id
+ * @property string|null $purpose
+ * @property string|null $requested_ip_address
+ * @property string|null $approved_ip_address
+ * @property CarbonImmutable|null $deleted_at
+ * @property string|null $deletion_reason
  * @property BookingStatus $status
  * @property CarbonImmutable|null $start_at
  * @property CarbonImmutable|null $end_at

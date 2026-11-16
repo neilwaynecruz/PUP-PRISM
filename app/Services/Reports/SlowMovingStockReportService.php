@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use App\Services\Reports\Support\TableReport;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -24,6 +25,7 @@ class SlowMovingStockReportService extends AbstractTableReportService
             ->groupBy('product_id')
             ->pluck('issue_count', 'product_id');
 
+        /** @var Collection<int, Product> $products */
         $products = Product::query()
             ->where('type', ProductType::Consumable)
             ->where('is_active', true)

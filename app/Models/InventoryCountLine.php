@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property int|null $counted_qty
+ * @property int|null $variance_qty
+ */
 #[Fillable([
     'inventory_count_session_id', 'product_id', 'stock_lot_id', 'asset_id',
     'expected_qty_snapshot', 'counted_qty', 'expected_qty_at_count', 'variance_qty',

@@ -27,6 +27,7 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Storage;
@@ -209,11 +210,14 @@ class UatAssetOperationsSeeder extends Seeder
             ->sortBy('code')
             ->values();
 
-        Asset::query()
+        /** @var Collection<int, Asset> $unassignedAssets */
+        $unassignedAssets = Asset::query()
             ->whereNull('current_location_id')
             ->with('product')
             ->orderBy('tag_code')
-            ->get()
+            ->get();
+
+        $unassignedAssets
             ->each(function (Asset $asset, int $index) use ($locations, $assignmentLocations): void {
                 $candidateCodes = $asset->product !== null
                     ? $this->targetLocationCodesForProduct($asset->product)

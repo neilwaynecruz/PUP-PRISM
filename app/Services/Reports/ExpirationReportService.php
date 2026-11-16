@@ -5,6 +5,7 @@ namespace App\Services\Reports;
 use App\Models\StockLot;
 use App\Services\Reports\Support\TableReport;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class ExpirationReportService extends AbstractTableReportService
@@ -25,6 +26,7 @@ class ExpirationReportService extends AbstractTableReportService
             $query->whereDate('expires_at', '<=', $cutoff);
         }
 
+        /** @var Collection<int, StockLot> $lots */
         $lots = $query->orderBy('expires_at')->orderBy('received_at')->get();
 
         $rows = $lots

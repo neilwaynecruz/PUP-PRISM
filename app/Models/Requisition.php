@@ -13,6 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
+ * @property int $id
+ * @property CarbonImmutable|null $deleted_at
+ * @property string|null $deletion_reason
  * @property RequisitionStatus $status
  * @property CarbonImmutable|null $needed_at
  * @property CarbonImmutable|null $approved_at

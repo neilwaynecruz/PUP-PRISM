@@ -5,6 +5,7 @@ namespace App\Services\Reports;
 use App\Models\ForecastSnapshot;
 use App\Services\Reports\Support\TableReport;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -27,6 +28,7 @@ class ForecastSummaryReportService extends AbstractTableReportService
                 DB::raw('ROW_NUMBER() OVER (PARTITION BY product_id ORDER BY forecast_date DESC, generated_at DESC, id DESC) as row_num'),
             ]);
 
+        /** @var Collection<int, ForecastSnapshot> $latestSnapshots */
         $latestSnapshots = ForecastSnapshot::query()
             ->fromSub($rankedSnapshots, 'forecast_snapshots')
             ->select([

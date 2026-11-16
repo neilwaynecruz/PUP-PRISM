@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\NotificationPreferenceSeeder;
 use App\Services\Security\AccessLifecycleService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -381,14 +382,17 @@ class UserManagementController extends Controller
      */
     private function positionOptions(?int $currentPositionId = null): array
     {
-        return Position::query()
+        /** @var Collection<int, Position> $positions */
+        $positions = Position::query()
             ->with('department:id,name')
             ->where(function ($query) use ($currentPositionId): void {
                 $query->where('is_active', true)
                     ->when($currentPositionId !== null, fn ($query) => $query->orWhere('id', $currentPositionId));
             })
             ->orderBy('title')
-            ->get()
+            ->get();
+
+        return $positions
             ->map(function (Position $position): array {
                 $label = "{$position->title} ({$position->code})";
 

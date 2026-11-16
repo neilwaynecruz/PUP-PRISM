@@ -60,6 +60,7 @@ class AbcAnalyzer
             ->pluck('total_issued', 'product_id');
 
         // 2. Load all active consumable products
+        /** @var Collection<int, Product> $products */
         $products = Product::query()
             ->where('type', ProductType::Consumable)
             ->where('is_active', true)

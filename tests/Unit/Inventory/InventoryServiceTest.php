@@ -15,6 +15,7 @@ use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\Inventory\InventoryService;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
@@ -95,6 +96,7 @@ test('receive assets creates assets and movement rows for each tag', function ()
         ipAddress: '10.0.0.20',
     );
 
+    /** @var Collection<int, Asset> $assets */
     $assets = Asset::query()->where('product_id', $product->id)->orderBy('id')->get();
 
     expect(Asset::query()->where('product_id', $product->id)->count())->toBe(2);

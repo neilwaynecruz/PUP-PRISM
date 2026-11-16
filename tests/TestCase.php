@@ -14,8 +14,8 @@ abstract class TestCase extends BaseTestCase
         // Laravel 13 may load .env values during test bootstrap on some platforms
         // (e.g., Windows + PHP 8.4), causing mailer to use production settings.
         // Force array mailer so tests never hit real mail services.
-        if ($this->app['config']['mail.default'] !== 'array') {
-            $this->app['config']->set('mail.default', 'array');
+        if (config('mail.default') !== 'array') {
+            config()->set('mail.default', 'array');
         }
     }
 

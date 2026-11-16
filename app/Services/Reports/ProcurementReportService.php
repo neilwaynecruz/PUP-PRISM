@@ -6,6 +6,7 @@ use App\Models\PurchaseOrder;
 use App\Services\Reports\Support\TableReport;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Support\LazyCollection;
 
 class ProcurementReportService extends AbstractTableReportService
 {
@@ -23,7 +24,10 @@ class ProcurementReportService extends AbstractTableReportService
             ->orderByDesc('created_at');
 
         $rows = (function () use ($query) {
-            foreach ($query->lazy(100) as $purchaseOrder) {
+            /** @var LazyCollection<int, PurchaseOrder> $purchaseOrders */
+            $purchaseOrders = $query->lazy(100);
+
+            foreach ($purchaseOrders as $purchaseOrder) {
                 $lines = $purchaseOrder->lines;
 
                 if ($lines->isEmpty()) {

@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\DashboardStatsCache;
 use App\Services\NotificationService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -276,6 +277,7 @@ class RequisitionWorkflowService
     {
         /** @var array{approved: array<int, Requisition>, skipped: int} $result */
         $result = DB::transaction(function () use ($ids, $actor, $ipAddress): array {
+            /** @var Collection<int, Requisition> $requisitions */
             $requisitions = Requisition::query()
                 ->with('requester')
                 ->whereIn('id', $ids)
@@ -353,6 +355,7 @@ class RequisitionWorkflowService
      */
     public function bulkIssue(array $ids, User $actor, ?string $ipAddress = null): array
     {
+        /** @var Collection<int, Requisition> $requisitions */
         $requisitions = Requisition::query()
             ->with('requester')
             ->whereIn('id', $ids)

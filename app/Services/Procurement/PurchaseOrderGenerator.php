@@ -134,6 +134,7 @@ class PurchaseOrderGenerator
             ->lockForUpdate()
             ->get(['id']);
 
+        /** @var Collection<int, Product> $products */
         $products = Product::query()
             ->whereKey($productIds)
             ->where('type', ProductType::Consumable)
@@ -149,7 +150,9 @@ class PurchaseOrderGenerator
                 'supplier:id,name,lead_time_days,is_active',
             ])
             ->orderBy('id')
-            ->get()
+            ->get();
+
+        $products = $products
             ->filter(fn (Product $product): bool => $product->supplier?->is_active === true)
             ->values();
 

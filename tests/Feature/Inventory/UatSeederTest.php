@@ -146,9 +146,12 @@ test('seeded stock lots balances and movement snapshots remain internally consis
                 ->toBe((int) ($product->stock()->value('on_hand_qty') ?? 0));
         });
 
-    StockMovement::query()
+    /** @var Collection<int, StockMovement> $movements */
+    $movements = StockMovement::query()
         ->whereNotNull('qty_delta')
-        ->get()
+        ->get();
+
+    $movements
         ->each(function (StockMovement $movement): void {
             expect((int) $movement->qty_after)
                 ->toBe((int) $movement->qty_before + (int) $movement->qty_delta)
@@ -305,11 +308,15 @@ test('month-boundary reruns roll historical demand without unintended movement d
             ->whereDoesntHave('product', static fn (Builder $query): Builder => $query->withTrashed()->whereLike('sku', 'OFF-%'))
             ->count();
         $movementsBefore = $curatedMovements();
-        $historicalMovementIdsBefore = StockMovement::query()
+        /** @var Collection<int, StockMovement> $historicalMovementsBefore */
+        $historicalMovementsBefore = StockMovement::query()
             ->whereIn('product_id', $forecastProductIds)
             ->where('movement_type', 'issue')
             ->where('notes', 'like', 'Monthly % allocation - %')
-            ->get()
+            ->get();
+
+        /** @var Collection<string, int> $historicalMovementIdsBefore */
+        $historicalMovementIdsBefore = $historicalMovementsBefore
             ->mapWithKeys(static fn (StockMovement $movement): array => [
                 $movementIdentity($movement) => $movement->id,
             ]);
@@ -317,11 +324,13 @@ test('month-boundary reruns roll historical demand without unintended movement d
         CarbonImmutable::setTestNow($initialDate->addDay());
         seed(DatabaseSeeder::class);
 
+        /** @var Collection<int, StockMovement> $historicalMovementsAfter */
         $historicalMovementsAfter = StockMovement::query()
             ->whereIn('product_id', $forecastProductIds)
             ->where('movement_type', 'issue')
             ->where('notes', 'like', 'Monthly % allocation - %')
             ->get();
+        /** @var Collection<string, int> $historicalMovementIdsAfter */
         $historicalMovementIdsAfter = $historicalMovementsAfter
             ->mapWithKeys(static fn (StockMovement $movement): array => [
                 $movementIdentity($movement) => $movement->id,

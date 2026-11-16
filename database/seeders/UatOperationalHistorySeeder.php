@@ -813,6 +813,7 @@ class UatOperationalHistorySeeder extends Seeder
     private function seedForecastHistory(): void
     {
         $forecaster = app(DemandForecaster::class);
+        /** @var Collection<int, Product> $products */
         $products = Product::query()->with('stock')->whereIn('sku', self::FORECAST_SKUS)->get();
 
         foreach ($products as $product) {

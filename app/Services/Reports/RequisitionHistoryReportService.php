@@ -6,6 +6,7 @@ use App\Models\Requisition;
 use App\Services\Reports\Support\TableReport;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Support\LazyCollection;
 
 class RequisitionHistoryReportService extends AbstractTableReportService
 {
@@ -37,7 +38,10 @@ class RequisitionHistoryReportService extends AbstractTableReportService
             ->orderByDesc('id');
 
         $rows = (function () use ($query) {
-            foreach ($query->lazy(100) as $requisition) {
+            /** @var LazyCollection<int, Requisition> $requisitions */
+            $requisitions = $query->lazy(100);
+
+            foreach ($requisitions as $requisition) {
                 $lines = $requisition->lines;
 
                 if ($lines->isEmpty()) {

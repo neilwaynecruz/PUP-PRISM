@@ -22,7 +22,10 @@ class ProductUpdateRequest extends FormRequest
             return $product;
         }
 
-        return Product::query()->withTrashed()->findOrFail((int) $product);
+        /** @var Product $targetProduct */
+        $targetProduct = Product::query()->withTrashed()->findOrFail((int) $product);
+
+        return $targetProduct;
     }
 
     /**

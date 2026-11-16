@@ -14,6 +14,7 @@ use App\Models\StockMovement;
 use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\Inventory\InventoryService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -71,12 +72,15 @@ class StockMovementController extends Controller
             ->orderBy('name')
             ->get();
 
-        $products = Product::query()
+        /** @var Collection<int, Product> $productModels */
+        $productModels = Product::query()
             ->with(['stock:id,product_id,on_hand_qty', 'category:id,name'])
             ->where('type', ProductType::Consumable)
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'sku', 'name', 'category_id', 'reorder_threshold'])
+            ->get(['id', 'sku', 'name', 'category_id', 'reorder_threshold']);
+
+        $products = $productModels
             ->map(fn (Product $product): array => [
                 'id' => (int) $product->id,
                 'sku' => $product->sku,

@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Services\Optimization\InventoryOptimizationService;
 use App\Services\Reports\Support\TableReport;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class InventoryOptimizationReportService extends AbstractTableReportService
@@ -23,6 +24,7 @@ class InventoryOptimizationReportService extends AbstractTableReportService
         $abcAnalysis = $this->optimizationService->getAbcAnalysis($today);
         $abcByProductId = collect($abcAnalysis['items'])->keyBy('product_id');
 
+        /** @var Collection<int, Product> $products */
         $products = Product::query()
             ->where('type', ProductType::Consumable)
             ->where('is_active', true)

@@ -18,6 +18,7 @@ use App\Models\User;
 use App\Services\AuditLogService;
 use App\Services\InventoryRealtimeService;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -67,6 +68,7 @@ class PhysicalCountService
                 ->lockForUpdate()
                 ->get();
 
+            /** @var Collection<int, Asset> $assets */
             $assets = Asset::query()
                 ->whereIn('id', $assetIds)
                 ->where('lifecycle_status', AssetLifecycleStatus::Active)
@@ -219,6 +221,7 @@ class PhysicalCountService
                 throw new \RuntimeException('Only draft or in-progress count sessions can be submitted.');
             }
 
+            /** @var Collection<int, InventoryCountLine> $lines */
             $lines = $session->lines()->lockForUpdate()->get();
             if ($lines->isEmpty() || $lines->contains(fn (InventoryCountLine $line): bool => $line->counted_qty === null)) {
                 throw new \RuntimeException('Enter a counted quantity for every line before submitting the session.');
@@ -305,6 +308,7 @@ class PhysicalCountService
                 throw new \RuntimeException('Only submitted count sessions can be approved.');
             }
 
+            /** @var Collection<int, InventoryCountLine> $lines */
             $lines = $session->lines()->with('session')->orderBy('product_id')->orderBy('id')->lockForUpdate()->get();
             if ($lines->contains(fn (InventoryCountLine $line): bool => in_array(
                 $line->review_status,

@@ -23,6 +23,7 @@ use App\Services\InventoryRealtimeService;
 use App\Services\NotificationService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
@@ -149,6 +150,7 @@ class InventoryService
 
                 // 3. Lock all affected products in strictly ascending ID order
                 $productIds = $lockedLines->pluck('product_id')->unique()->sort()->values()->all();
+                /** @var EloquentCollection<int, Product> $lockedProducts */
                 $lockedProducts = Product::query()
                     ->whereIn('id', $productIds)
                     ->orderBy('id')
@@ -415,6 +417,7 @@ class InventoryService
     ): Requisition {
         /** @var array{requisition: Requisition, stock_changes: array<int, array{product: Product, on_hand_qty: int, delta: int, requisition_id: int}>, low_stock_alerts: array<int, array{product: Product, on_hand_qty: int}>} $result */
         $result = DB::transaction(function () use ($user, $requisition, $linePayloads, $markAsBackordered, $notes, $ipAddress): array {
+            /** @var Requisition $requisition */
             $requisition = Requisition::query()->whereKey($requisition->id)->lockForUpdate()->firstOrFail();
             $stockChanges = [];
             $lowStockAlerts = [];
@@ -427,6 +430,7 @@ class InventoryService
                 throw new \RuntimeException('Only approved or partially fulfilled requisitions can be issued.');
             }
 
+            /** @var EloquentCollection<int, RequisitionLine> $lines */
             $lines = RequisitionLine::query()
                 ->where('requisition_id', $requisition->id)
                 ->with('product:id,sku,type')
@@ -852,6 +856,7 @@ class InventoryService
         }
 
         $stock = ProductStock::query()->where('product_id', $product->id)->lockForUpdate()->firstOrFail();
+        /** @var StockLot $countedLot */
         $countedLot = StockLot::query()
             ->whereKey($line->stock_lot_id)
             ->where('product_id', $product->id)

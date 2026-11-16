@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Database\Factories\StockLotFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @property CarbonInterface $received_at
+ * @property CarbonInterface|null $expires_at
+ */
 #[Fillable([
     'product_id',
     'reference_no',

@@ -5,7 +5,11 @@ namespace App\Http\Resources;
 use App\Models\HandoverLog;
 use Illuminate\Http\Request;
 
-/** @mixin HandoverLog */
+/**
+ * @mixin HandoverLog
+ *
+ * @property HandoverLog $resource
+ */
 class HandoverLogResource extends InertiaJsonResource
 {
     /**

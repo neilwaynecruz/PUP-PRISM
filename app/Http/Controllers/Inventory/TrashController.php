@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Models\Product;
 use App\Models\Requisition;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -56,7 +57,8 @@ class TrashController extends Controller
             return [];
         }
 
-        return Product::query()
+        /** @var Collection<int, Product> $products */
+        $products = Product::query()
             ->onlyTrashed()
             ->with(['deletedBy:id,name,email'])
             ->when($search !== '', function ($query) use ($search) {
@@ -67,7 +69,9 @@ class TrashController extends Controller
             })
             ->orderByDesc('deleted_at')
             ->limit(50)
-            ->get()
+            ->get();
+
+        return $products
             ->map(fn (Product $p) => [
                 'id' => $p->id,
                 'type' => 'product',
@@ -90,7 +94,8 @@ class TrashController extends Controller
             return [];
         }
 
-        return Booking::query()
+        /** @var Collection<int, Booking> $bookings */
+        $bookings = Booking::query()
             ->onlyTrashed()
             ->with(['asset.product:id,name', 'deletedBy:id,name,email'])
             ->when($search !== '', function ($query) use ($search) {
@@ -103,7 +108,9 @@ class TrashController extends Controller
             })
             ->orderByDesc('deleted_at')
             ->limit(50)
-            ->get()
+            ->get();
+
+        return $bookings
             ->map(fn (Booking $b) => [
                 'id' => $b->id,
                 'type' => 'booking',
@@ -126,7 +133,8 @@ class TrashController extends Controller
             return [];
         }
 
-        return Requisition::query()
+        /** @var Collection<int, Requisition> $requisitions */
+        $requisitions = Requisition::query()
             ->onlyTrashed()
             ->with(['requester:id,name,email', 'deletedBy:id,name,email'])
             ->when($search !== '', function ($query) use ($search) {
@@ -136,7 +144,9 @@ class TrashController extends Controller
             })
             ->orderByDesc('deleted_at')
             ->limit(50)
-            ->get()
+            ->get();
+
+        return $requisitions
             ->map(fn (Requisition $r) => [
                 'id' => $r->id,
                 'type' => 'requisition',

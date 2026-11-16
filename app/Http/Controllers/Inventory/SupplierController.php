@@ -12,6 +12,7 @@ use App\Models\PurchaseOrder;
 use App\Models\Supplier;
 use App\Services\AuditLogService;
 use App\Services\InventoryRealtimeService;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -84,7 +85,8 @@ class SupplierController extends Controller
 
         $supplier->loadCount(['products', 'purchaseOrders']);
 
-        $recentPurchaseOrders = PurchaseOrder::query()
+        /** @var Collection<int, PurchaseOrder> $recentPurchaseOrderModels */
+        $recentPurchaseOrderModels = PurchaseOrder::query()
             ->where('supplier_id', $supplier->id)
             ->with(['supplier:id,name', 'requester:id,name', 'approver:id,name'])
             ->withCount('lines')
@@ -92,7 +94,9 @@ class SupplierController extends Controller
             ->withSum('lines as received_qty_sum', 'qty_received')
             ->latest()
             ->limit(10)
-            ->get()
+            ->get();
+
+        $recentPurchaseOrders = $recentPurchaseOrderModels
             ->map(fn (PurchaseOrder $purchaseOrder) => (new PurchaseOrderResource($purchaseOrder))->resolve($request))
             ->all();
 

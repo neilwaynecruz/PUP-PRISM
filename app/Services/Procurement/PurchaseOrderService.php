@@ -263,10 +263,13 @@ class PurchaseOrderService
      */
     public function supplierOptions(bool $onlyActive = false): array
     {
-        return Supplier::query()
+        /** @var Collection<int, Supplier> $suppliers */
+        $suppliers = Supplier::query()
             ->when($onlyActive, fn ($query) => $query->where('is_active', true))
             ->orderBy('name')
-            ->get(['id', 'name', 'contact_person', 'email', 'phone', 'payment_terms', 'lead_time_days'])
+            ->get(['id', 'name', 'contact_person', 'email', 'phone', 'payment_terms', 'lead_time_days']);
+
+        return $suppliers
             ->map(fn (Supplier $supplier) => [
                 'id' => (int) $supplier->id,
                 'name' => $supplier->name,
@@ -284,11 +287,14 @@ class PurchaseOrderService
      */
     public function productOptions(): array
     {
-        return Product::query()
+        /** @var Collection<int, Product> $products */
+        $products = Product::query()
             ->with(['supplier:id,name', 'category:id,name', 'stock:id,product_id,on_hand_qty'])
             ->where('is_active', true)
             ->orderBy('name')
-            ->get(['id', 'sku', 'name', 'type', 'category_id', 'supplier_id', 'unit_price', 'reorder_threshold'])
+            ->get(['id', 'sku', 'name', 'type', 'category_id', 'supplier_id', 'unit_price', 'reorder_threshold']);
+
+        return $products
             ->map(function (Product $product): array {
                 /** @var mixed $productType */
                 $productType = $product->type;
