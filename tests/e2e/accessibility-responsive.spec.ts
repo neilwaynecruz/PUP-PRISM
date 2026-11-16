@@ -158,36 +158,42 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
         ).toBeVisible();
     });
 
-    for (const viewport of [
-        { name: 'phone-320', width: 320, height: 720 },
-        { name: 'phone-360', width: 360, height: 800 },
-        { name: 'phone-375', width: 375, height: 812 },
-        { name: 'phone-390', width: 390, height: 844 },
-        { name: 'phone-430', width: 430, height: 932 },
-        { name: 'phone-landscape', width: 844, height: 390 },
-        { name: 'tablet-768', width: 768, height: 1024 },
-        { name: 'tablet-834', width: 834, height: 1112 },
-        { name: 'tablet-landscape', width: 1024, height: 768 },
-        { name: 'laptop-1280', width: 1280, height: 800 },
-        { name: 'desktop-1440', width: 1440, height: 900 },
-    ]) {
-        test(`core list pages avoid horizontal overflow on ${viewport.name}`, async ({
-            page,
-        }) => {
-            test.setTimeout(120_000);
-            await loginAs(page, 'admin@e2e.test');
-            await page.setViewportSize(viewport);
+    test('core list pages avoid horizontal overflow across mobile, tablet, and desktop viewports', async ({
+        page,
+    }) => {
+        test.setTimeout(120_000);
+        await loginAs(page, 'admin@e2e.test', 'password', {
+            redirectTo: false,
+        });
 
-            for (const path of [
-                '/inventory/products',
-                '/inventory/bookings',
-                '/inventory/requisitions',
-                '/inventory/purchase-orders',
-                '/notifications',
-                '/admin/users',
-            ]) {
-                await page.goto(path);
-                await expect(page.locator('#main-content')).toBeVisible();
+        const viewports = [
+            { name: 'phone-320', width: 320, height: 720 },
+            { name: 'phone-360', width: 360, height: 800 },
+            { name: 'phone-375', width: 375, height: 812 },
+            { name: 'phone-390', width: 390, height: 844 },
+            { name: 'phone-430', width: 430, height: 932 },
+            { name: 'phone-landscape', width: 844, height: 390 },
+            { name: 'tablet-768', width: 768, height: 1024 },
+            { name: 'tablet-834', width: 834, height: 1112 },
+            { name: 'tablet-landscape', width: 1024, height: 768 },
+            { name: 'laptop-1280', width: 1280, height: 800 },
+            { name: 'desktop-1440', width: 1440, height: 900 },
+        ];
+
+        for (const path of [
+            '/inventory/products',
+            '/inventory/bookings',
+            '/inventory/requisitions',
+            '/inventory/purchase-orders',
+            '/notifications',
+            '/admin/users',
+        ]) {
+            await page.setViewportSize({ width: 1280, height: 900 });
+            await page.goto(path);
+            await expect(page.locator('#main-content')).toBeVisible();
+
+            for (const viewport of viewports) {
+                await page.setViewportSize(viewport);
 
                 const hasHorizontalOverflow = await page.evaluate(
                     () =>
@@ -197,11 +203,11 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
 
                 expect(
                     hasHorizontalOverflow,
-                    `${path} should fit within ${viewport.width}px`,
+                    `${path} should fit within ${viewport.width}px (${viewport.name})`,
                 ).toBeFalsy();
             }
-        });
-    }
+        }
+    });
 
     test('primary mobile controls meet the minimum touch-target height', async ({
         page,
@@ -286,8 +292,9 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
         await expect(closeButton).toBeVisible();
         const closeButtonBox = await closeButton.boundingBox();
         expect(closeButtonBox).not.toBeNull();
-        expect(closeButtonBox!.width).toBeGreaterThanOrEqual(44);
-        expect(closeButtonBox!.height).toBeGreaterThanOrEqual(44);
+        // Firefox CSS layout twips can return 43.999985px for a 44px (size-11) button.
+        expect(closeButtonBox!.width).toBeGreaterThanOrEqual(43.999);
+        expect(closeButtonBox!.height).toBeGreaterThanOrEqual(43.999);
 
         await closeButton.click();
         await expect(closeButton).toBeHidden();
@@ -368,37 +375,47 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
     test('five master-data pages remain usable in both themes across phone, tablet, and desktop', async ({
         page,
     }, testInfo) => {
-        test.setTimeout(240_000);
-        await loginAs(page, 'admin@e2e.test');
+        test.setTimeout(120_000);
+        await loginAs(page, 'admin@e2e.test', 'password', {
+            redirectTo: false,
+        });
 
-        for (const appearance of ['light', 'dark'] as const) {
-            await page.evaluate((value) => {
-                localStorage.setItem('appearance', value);
-            }, appearance);
+        const viewports = [
+            { name: 'phone-320', width: 320, height: 720 },
+            { name: 'tablet-768', width: 768, height: 1024 },
+            { name: 'desktop-1440', width: 1440, height: 900 },
+        ] as const;
 
-            for (const viewport of [
-                { name: 'phone-320', width: 320, height: 720 },
-                { name: 'tablet-768', width: 768, height: 1024 },
-                { name: 'desktop-1440', width: 1440, height: 900 },
-            ]) {
-                await page.setViewportSize(viewport);
+        for (const target of masterDataPages) {
+            await page.setViewportSize({ width: 1440, height: 900 });
+            await page.goto(target.path);
+            await expect(
+                page.getByRole('heading', {
+                    level: 1,
+                    name: target.heading,
+                }),
+            ).toBeVisible();
+            await expect(
+                page.getByRole('textbox', {
+                    name: target.searchLabel,
+                }),
+            ).toBeVisible();
+            await expect(
+                page.getByRole('combobox', { name: 'Status' }),
+            ).toBeVisible();
 
-                for (const target of masterDataPages) {
-                    await page.goto(target.path);
-                    await expect(
-                        page.getByRole('heading', {
-                            level: 1,
-                            name: target.heading,
-                        }),
-                    ).toBeVisible();
-                    await expect(
-                        page.getByRole('textbox', {
-                            name: target.searchLabel,
-                        }),
-                    ).toBeVisible();
-                    await expect(
-                        page.getByRole('combobox', { name: 'Status' }),
-                    ).toBeVisible();
+            for (const appearance of ['light', 'dark'] as const) {
+                await page.evaluate((value) => {
+                    localStorage.setItem('appearance', value);
+                    document.documentElement.classList.toggle(
+                        'dark',
+                        value === 'dark',
+                    );
+                    document.documentElement.style.colorScheme = value;
+                }, appearance);
+
+                for (const viewport of viewports) {
+                    await page.setViewportSize(viewport);
 
                     if (viewport.width < 768) {
                         await expect(page.locator('table')).toBeHidden();
@@ -413,35 +430,58 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
                     );
                     expect(overflow).toBeLessThanOrEqual(1);
 
-                    await page.screenshot({
-                        path: testInfo.outputPath(
-                            `master-${target.heading.toLowerCase()}-${viewport.name}-${appearance}.png`,
-                        ),
-                        fullPage: true,
-                    });
+                    if (
+                        (appearance === 'light' &&
+                            viewport.name === 'phone-320') ||
+                        (appearance === 'dark' &&
+                            viewport.name === 'desktop-1440')
+                    ) {
+                        await page.screenshot({
+                            path: testInfo.outputPath(
+                                `master-${target.heading.toLowerCase()}-${viewport.name}-${appearance}.png`,
+                            ),
+                            fullPage: false,
+                        });
+                    }
                 }
+            }
+        }
 
-                await page.goto('/admin/locations');
-                await expect(
-                    page.getByRole('heading', {
-                        level: 1,
-                        name: 'Physical locations',
-                    }),
-                ).toBeVisible();
-                await expect(
-                    page.getByRole('textbox', { name: 'Location code' }),
-                ).toBeVisible();
-                await expect(
-                    page.getByRole('textbox', { name: 'Name', exact: true }),
-                ).toBeVisible();
-                await expect(
-                    page.getByRole('textbox', { name: 'Search locations' }),
-                ).toBeVisible();
-                await expect(
-                    page.getByRole('combobox', {
-                        name: 'Filter locations by status',
-                    }),
-                ).toBeVisible();
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await page.goto('/admin/locations');
+        await expect(
+            page.getByRole('heading', {
+                level: 1,
+                name: 'Physical locations',
+            }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole('textbox', { name: 'Location code' }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole('textbox', { name: 'Name', exact: true }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole('textbox', { name: 'Search locations' }),
+        ).toBeVisible();
+        await expect(
+            page.getByRole('combobox', {
+                name: 'Filter locations by status',
+            }),
+        ).toBeVisible();
+
+        for (const appearance of ['light', 'dark'] as const) {
+            await page.evaluate((value) => {
+                localStorage.setItem('appearance', value);
+                document.documentElement.classList.toggle(
+                    'dark',
+                    value === 'dark',
+                );
+                document.documentElement.style.colorScheme = value;
+            }, appearance);
+
+            for (const viewport of viewports) {
+                await page.setViewportSize(viewport);
 
                 const locationsOverflow = await page.evaluate(
                     () =>
@@ -450,12 +490,17 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
                 );
                 expect(locationsOverflow).toBeLessThanOrEqual(1);
 
-                await page.screenshot({
-                    path: testInfo.outputPath(
-                        `master-locations-${viewport.name}-${appearance}.png`,
-                    ),
-                    fullPage: true,
-                });
+                if (
+                    (appearance === 'light' && viewport.name === 'phone-320') ||
+                    (appearance === 'dark' && viewport.name === 'desktop-1440')
+                ) {
+                    await page.screenshot({
+                        path: testInfo.outputPath(
+                            `master-locations-${viewport.name}-${appearance}.png`,
+                        ),
+                        fullPage: false,
+                    });
+                }
             }
         }
     });

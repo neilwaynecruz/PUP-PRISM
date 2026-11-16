@@ -1,5 +1,9 @@
 import { existsSync, readFileSync, rmSync } from 'fs';
-import { e2eServerStatePath } from './server-environment';
+import {
+    e2eServerStatePath,
+    e2eTemplateDatabasePath,
+    e2eTwoFactorFixturesPath,
+} from './server-environment';
 
 type ServerState = {
     pid: number;
@@ -7,6 +11,9 @@ type ServerState = {
 };
 
 export default function globalTeardown(): void {
+    rmSync(e2eTemplateDatabasePath, { force: true });
+    rmSync(e2eTwoFactorFixturesPath, { force: true });
+
     if (!existsSync(e2eServerStatePath)) {
         return;
     }

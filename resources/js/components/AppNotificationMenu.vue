@@ -49,9 +49,24 @@ function releaseStaleBodyPointerLock(): void {
         '[data-slot="dialog-content"][data-state="open"], [data-slot="dropdown-menu-content"][data-state="open"]',
     );
 
-    if (!hasOpenModalLayer && document.body.style.pointerEvents === 'none') {
-        document.body.style.pointerEvents = '';
-        document.body.style.overflow = '';
+    if (!hasOpenModalLayer) {
+        if (document.body.style.pointerEvents === 'none') {
+            document.body.style.pointerEvents = '';
+            document.body.style.overflow = '';
+        }
+
+        for (const hiddenElement of document.querySelectorAll(
+            '[data-aria-hidden="true"]',
+        )) {
+            hiddenElement.removeAttribute('aria-hidden');
+            hiddenElement.removeAttribute('data-aria-hidden');
+        }
+
+        const appRoot = document.getElementById('app');
+
+        if (appRoot?.getAttribute('aria-hidden') === 'true') {
+            appRoot.removeAttribute('aria-hidden');
+        }
     }
 }
 
@@ -120,7 +135,7 @@ function formatTimestamp(timestamp: string | null): string {
 </script>
 
 <template>
-    <DropdownMenu v-model:open="open">
+    <DropdownMenu v-model:open="open" :modal="false">
         <DropdownMenuTrigger as-child>
             <Button
                 type="button"
@@ -144,7 +159,7 @@ function formatTimestamp(timestamp: string | null): string {
         <DropdownMenuContent
             align="end"
             :side-offset="10"
-            class="w-[calc(100vw-2rem)] max-w-[24rem] rounded-2xl border border-border/70 p-0 shadow-2xl data-[state=closed]:animate-none"
+            class="w-[calc(100vw-2rem)] max-w-[24rem] rounded-2xl border border-border/70 p-0 shadow-2xl data-[state=closed]:animate-none!"
         >
             <div class="flex items-center justify-between px-4 py-3">
                 <div>

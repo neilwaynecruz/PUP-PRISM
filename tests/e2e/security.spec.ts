@@ -28,9 +28,9 @@ test.describe('Security Settings', () => {
 
         const setupDataResponsePromise = page.waitForResponse(
             (response) =>
-                response.url().includes(
-                    '/settings/security/two-factor/setup-data',
-                ) &&
+                response
+                    .url()
+                    .includes('/settings/security/two-factor/setup-data') &&
                 response.request().method() === 'GET',
         );
 
@@ -52,9 +52,9 @@ test.describe('Security Settings', () => {
         await expect(
             setupDialog.getByTestId('two-factor-qr-code').locator('svg'),
         ).toBeVisible();
-        await expect(setupDialog.getByTestId('two-factor-setup-key')).toHaveValue(
-            /^[A-Z0-9]{16,}$/,
-        );
+        await expect(
+            setupDialog.getByTestId('two-factor-setup-key'),
+        ).toHaveValue(/^[A-Z0-9]{16,}$/);
     });
 
     test('pending two-factor setup can be resumed from the security page', async ({
@@ -77,15 +77,13 @@ test.describe('Security Settings', () => {
 
         const setupDataResponsePromise = page.waitForResponse(
             (response) =>
-                response.url().includes(
-                    '/settings/security/two-factor/setup-data',
-                ) &&
+                response
+                    .url()
+                    .includes('/settings/security/two-factor/setup-data') &&
                 response.request().method() === 'GET',
         );
 
-        await page
-            .getByRole('button', { name: 'Continue setup' })
-            .click();
+        await page.getByRole('button', { name: 'Continue setup' }).click();
 
         const setupDataResponse = await setupDataResponsePromise;
 
@@ -103,9 +101,9 @@ test.describe('Security Settings', () => {
         await expect(
             setupDialog.getByTestId('two-factor-qr-code').locator('svg'),
         ).toBeVisible();
-        await expect(setupDialog.getByTestId('two-factor-setup-key')).toHaveValue(
-            'e2e-secret',
-        );
+        await expect(
+            setupDialog.getByTestId('two-factor-setup-key'),
+        ).toHaveValue('e2e-secret');
     });
 
     test('admin users with pending two-factor setup can resume setup and load the QR data', async ({
@@ -132,15 +130,13 @@ test.describe('Security Settings', () => {
 
         const setupDataResponsePromise = page.waitForResponse(
             (response) =>
-                response.url().includes(
-                    '/settings/security/two-factor/setup-data',
-                ) &&
+                response
+                    .url()
+                    .includes('/settings/security/two-factor/setup-data') &&
                 response.request().method() === 'GET',
         );
 
-        await page
-            .getByRole('button', { name: 'Continue setup' })
-            .click();
+        await page.getByRole('button', { name: 'Continue setup' }).click();
 
         const setupDataResponse = await setupDataResponsePromise;
 
@@ -152,14 +148,14 @@ test.describe('Security Settings', () => {
             }),
         ).toBeVisible();
         const setupDialog = page.getByRole('dialog');
-        await expect(page.getByText('Failed to load two-factor setup data')).toHaveCount(
-            0,
-        );
+        await expect(
+            page.getByText('Failed to load two-factor setup data'),
+        ).toHaveCount(0);
         await expect(
             setupDialog.getByTestId('two-factor-qr-code').locator('svg'),
         ).toBeVisible();
-        await expect(setupDialog.getByTestId('two-factor-setup-key')).toHaveValue(
-            'e2e-secret',
-        );
+        await expect(
+            setupDialog.getByTestId('two-factor-setup-key'),
+        ).toHaveValue('e2e-secret');
     });
 });

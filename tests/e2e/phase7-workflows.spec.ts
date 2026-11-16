@@ -166,40 +166,42 @@ test.describe('Phase 7 optimized workflows', () => {
         await expect(page).toHaveURL(/\/inventory\/products$/);
     });
 
-    for (const viewport of [
-        { width: 320, height: 720 },
-        { width: 375, height: 812 },
-        { width: 768, height: 1024 },
-        { width: 1024, height: 900 },
-        { width: 1440, height: 1000 },
-    ]) {
-        for (const theme of ['light', 'dark'] as const) {
-            test(`requisition catalog is responsive at ${viewport.width}px in ${theme} mode`, async ({
-                page,
-            }, testInfo) => {
-                await page.setViewportSize(viewport);
-                await loginAs(page, 'requester@e2e.test');
-                await page.goto('/inventory/requisitions');
+    test('requisition catalog is responsive across viewports in light and dark mode', async ({
+        page,
+    }, testInfo) => {
+        await loginAs(page, 'requester@e2e.test', 'password', {
+            redirectTo: '/inventory/requisitions',
+        });
+        await page
+            .getByRole('button', {
+                name: 'Browse Catalog',
+                exact: true,
+            })
+            .click();
+        const dialog = page.getByRole('dialog', {
+            name: 'Browse products for requisition',
+        });
+        await expect(dialog).toBeVisible();
+        await expect(
+            page.getByText('Multipurpose Copy Paper, A4, 80 gsm'),
+        ).toBeVisible();
+
+        for (const viewport of [
+            { width: 320, height: 720 },
+            { width: 375, height: 812 },
+            { width: 768, height: 1024 },
+            { width: 1024, height: 900 },
+            { width: 1440, height: 1000 },
+        ]) {
+            await page.setViewportSize(viewport);
+
+            for (const theme of ['light', 'dark'] as const) {
                 await page.evaluate((selectedTheme) => {
                     document.documentElement.classList.toggle(
                         'dark',
                         selectedTheme === 'dark',
                     );
                 }, theme);
-                await page
-                    .getByRole('button', {
-                        name: 'Browse Catalog',
-                        exact: true,
-                    })
-                    .click();
-                await expect(
-                    page.getByRole('dialog', {
-                        name: 'Browse products for requisition',
-                    }),
-                ).toBeVisible();
-                await expect(
-                    page.getByText('Multipurpose Copy Paper, A4, 80 gsm'),
-                ).toBeVisible();
 
                 const hasHorizontalOverflow = await page.evaluate(
                     () =>
@@ -207,12 +209,11 @@ test.describe('Phase 7 optimized workflows', () => {
                         document.documentElement.clientWidth,
                 );
 
-                expect(hasHorizontalOverflow).toBeFalsy();
-                const dialogBox = await page
-                    .getByRole('dialog', {
-                        name: 'Browse products for requisition',
-                    })
-                    .boundingBox();
+                expect(
+                    hasHorizontalOverflow,
+                    `requisition catalog overflows at ${viewport.width}px in ${theme} mode`,
+                ).toBeFalsy();
+                const dialogBox = await dialog.boundingBox();
 
                 expect(dialogBox).not.toBeNull();
                 expect(dialogBox!.x).toBeGreaterThanOrEqual(0);
@@ -220,13 +221,16 @@ test.describe('Phase 7 optimized workflows', () => {
                     viewport.width,
                 );
                 expect(dialogBox!.height).toBeLessThanOrEqual(viewport.height);
-                await page.screenshot({
-                    path: testInfo.outputPath(
-                        `requisition-catalog-${viewport.width}-${theme}.png`,
-                    ),
-                    fullPage: false,
-                });
-            });
+
+                if (viewport.width === 320 || viewport.width === 1440) {
+                    await page.screenshot({
+                        path: testInfo.outputPath(
+                            `requisition-catalog-${viewport.width}-${theme}.png`,
+                        ),
+                        fullPage: false,
+                    });
+                }
+            }
         }
-    }
+    });
 });

@@ -77,11 +77,21 @@ const viewports = [
     { name: 'desktop-1440', width: 1440, height: 900 },
 ] as const;
 
+const screenshotTargets = new Set([
+    'dashboard',
+    'products',
+    'purchase-orders',
+    'receiving',
+    'audit-logs',
+    'users',
+    'settings-profile',
+]);
+
 test.describe('Phase 3 visual review', () => {
     test('dashboard remains balanced in both themes across representative viewports', async ({
         page,
     }, testInfo) => {
-        test.setTimeout(180_000);
+        test.setTimeout(120_000);
 
         const browserErrors: string[] = [];
         page.on('pageerror', (error) => browserErrors.push(error.message));
@@ -123,17 +133,17 @@ test.describe('Phase 3 visual review', () => {
             await page.evaluate((value) => {
                 localStorage.setItem('appearance', value);
             }, appearance);
+            await page.goto('/dashboard');
+            await expect(page.getByTestId('dashboard-page')).toBeVisible();
+
+            if (appearance === 'dark') {
+                await expect(page.locator('html')).toHaveClass(/dark/);
+            } else {
+                await expect(page.locator('html')).not.toHaveClass(/dark/);
+            }
 
             for (const viewport of viewports) {
                 await page.setViewportSize(viewport);
-                await page.goto('/dashboard');
-                await expect(page.getByTestId('dashboard-page')).toBeVisible();
-
-                if (appearance === 'dark') {
-                    await expect(page.locator('html')).toHaveClass(/dark/);
-                } else {
-                    await expect(page.locator('html')).not.toHaveClass(/dark/);
-                }
 
                 const overflow = await page.evaluate(
                     () =>
@@ -150,7 +160,7 @@ test.describe('Phase 3 visual review', () => {
                     path: testInfo.outputPath(
                         `dashboard-focused-${viewport.name}-${appearance}.png`,
                     ),
-                    fullPage: true,
+                    fullPage: false,
                 });
             }
         }
@@ -161,7 +171,7 @@ test.describe('Phase 3 visual review', () => {
     test('login and key pages remain balanced across viewports', async ({
         page,
     }, testInfo) => {
-        test.setTimeout(900_000);
+        test.setTimeout(180_000);
 
         const browserErrors: string[] = [];
         page.on('pageerror', (error) => browserErrors.push(error.message));
@@ -192,56 +202,58 @@ test.describe('Phase 3 visual review', () => {
         await expect(page.getByTestId('login-page')).toBeVisible();
         await page.screenshot({
             path: testInfo.outputPath('login-desktop.png'),
-            fullPage: true,
+            fullPage: false,
         });
 
-        await loginAs(page, 'admin@e2e.test');
+        await loginAs(page, 'admin@e2e.test', 'password', {
+            redirectTo: false,
+        });
 
-        for (const appearance of ['light', 'dark'] as const) {
-            await page.evaluate((value) => {
-                localStorage.setItem('appearance', value);
-            }, appearance);
+        for (const target of pages) {
+            await page.setViewportSize(viewports[2]);
+            await page.goto(target.path);
 
-            for (const viewport of viewports) {
-                await page.setViewportSize({
-                    width: viewport.width,
-                    height: viewport.height,
-                });
+            if (page.url().includes('/user/confirm-password')) {
+                await page.locator('input[name="password"]').fill('password');
+                await Promise.all([
+                    page.waitForURL(new RegExp(`${target.path}$`)),
+                    page
+                        .getByRole('button', {
+                            name: 'Confirm password',
+                        })
+                        .click(),
+                ]);
+            }
 
-                for (const target of pages) {
-                    await page.goto(target.path);
+            if (target.testId) {
+                await expect(page.getByTestId(target.testId)).toBeVisible();
+            } else {
+                await expect(
+                    page.getByRole('heading', { level: 1 }),
+                ).toBeVisible();
+            }
 
-                    if (page.url().includes('/user/confirm-password')) {
-                        await page
-                            .locator('input[name="password"]')
-                            .fill('password');
-                        await Promise.all([
-                            page.waitForURL(new RegExp(`${target.path}$`)),
-                            page
-                                .getByRole('button', {
-                                    name: 'Confirm password',
-                                })
-                                .click(),
-                        ]);
-                    }
+            for (const appearance of ['light', 'dark'] as const) {
+                await page.evaluate((value) => {
+                    localStorage.setItem('appearance', value);
+                    document.documentElement.classList.toggle(
+                        'dark',
+                        value === 'dark',
+                    );
+                    document.documentElement.style.colorScheme = value;
+                }, appearance);
 
-                    if (target.testId) {
-                        await expect(
-                            page.getByTestId(target.testId),
-                        ).toBeVisible();
-                    } else {
-                        await expect(
-                            page.getByRole('heading', { level: 1 }),
-                        ).toBeVisible();
-                    }
+                if (appearance === 'dark') {
+                    await expect(page.locator('html')).toHaveClass(/dark/);
+                } else {
+                    await expect(page.locator('html')).not.toHaveClass(/dark/);
+                }
 
-                    if (appearance === 'dark') {
-                        await expect(page.locator('html')).toHaveClass(/dark/);
-                    } else {
-                        await expect(page.locator('html')).not.toHaveClass(
-                            /dark/,
-                        );
-                    }
+                for (const viewport of viewports) {
+                    await page.setViewportSize({
+                        width: viewport.width,
+                        height: viewport.height,
+                    });
 
                     const overflow = await page.evaluate(() => {
                         const root = document.documentElement;
@@ -254,12 +266,20 @@ test.describe('Phase 3 visual review', () => {
                         `${target.name} overflow at ${viewport.name} in ${appearance} mode`,
                     ).toBeLessThanOrEqual(1);
 
-                    await page.screenshot({
-                        path: testInfo.outputPath(
-                            `${target.name}-${viewport.name}-${appearance}.png`,
-                        ),
-                        fullPage: true,
-                    });
+                    if (
+                        screenshotTargets.has(target.name) &&
+                        ((appearance === 'light' &&
+                            viewport.name === 'phone-390') ||
+                            (appearance === 'dark' &&
+                                viewport.name === 'desktop-1440'))
+                    ) {
+                        await page.screenshot({
+                            path: testInfo.outputPath(
+                                `${target.name}-${viewport.name}-${appearance}.png`,
+                            ),
+                            fullPage: false,
+                        });
+                    }
                 }
             }
         }

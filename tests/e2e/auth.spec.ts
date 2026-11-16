@@ -8,13 +8,17 @@ const TEST_USER = {
 
 test.describe('Authentication Flow', () => {
     test('Login -> Dashboard -> Logout -> Login', async ({ page }) => {
-        await loginAs(page, TEST_USER.email, TEST_USER.password);
+        await loginAs(page, TEST_USER.email, TEST_USER.password, {
+            viaUi: true,
+        });
         await expect(page).toHaveURL(/\/dashboard$/);
         await expect(page.getByTestId('dashboard-page')).toBeVisible();
 
         await logout(page);
 
-        await loginAs(page, TEST_USER.email, TEST_USER.password);
+        await loginAs(page, TEST_USER.email, TEST_USER.password, {
+            viaUi: true,
+        });
         await expect(page).toHaveURL(/\/dashboard$/);
         await expect(page.getByTestId('dashboard-page')).toBeVisible();
     });
@@ -22,7 +26,9 @@ test.describe('Authentication Flow', () => {
     test('back button after logout does not restore protected dashboard content', async ({
         page,
     }) => {
-        await loginAs(page, TEST_USER.email, TEST_USER.password);
+        await loginAs(page, TEST_USER.email, TEST_USER.password, {
+            viaUi: true,
+        });
         await expect(page.getByTestId('dashboard-page')).toBeVisible();
 
         await page.getByTestId('sidebar-menu-button').click();

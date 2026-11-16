@@ -50,40 +50,50 @@ test.describe('Global search', () => {
         await expect(page.getByTestId('global-search-input')).toBeFocused();
     });
 
-    test('shows loading instead of a false empty state and ignores superseded results', async ({
-        page,
-        browserName,
-    }) => {
-        test.skip(
-            browserName === 'webkit' && process.platform === 'win32',
-            'Playwright request interception does not reach fetch() in this Windows WebKit build, so delayed and failed responses cannot be simulated.',
-        );
+    test.describe('slow search response ordering', () => {
+        test.use({ serviceWorkers: 'block' });
 
-        await loginAs(page, 'admin@e2e.test');
-        await page.goto('/dashboard');
+        test('shows loading instead of a false empty state and ignores superseded results', async ({
+            page,
+        }) => {
+            await loginAs(page, 'admin@e2e.test', 'password', {
+                redirectTo: false,
+            });
+            await page.goto('/dashboard');
 
-        await page.route('**/search?**', async (route) => {
-            await new Promise((resolve) => setTimeout(resolve, 900));
-            await route.continue();
+            await page.route('**/search?**', async (route) => {
+                await new Promise((resolve) => setTimeout(resolve, 900));
+                await route.continue();
+            });
+
+            const dialog = await openGlobalSearch(page);
+            const input = page.getByTestId('global-search-input');
+
+            await input.pressSequentially('la');
+            await expect(
+                dialog.getByTestId('global-search-loading'),
+            ).toBeVisible();
+            await expect(
+                dialog.getByTestId('global-search-empty'),
+            ).toBeHidden();
+
+            // A newer term supersedes the request that is still in flight.
+            await page.waitForTimeout(400);
+            await input.pressSequentially('ptop');
+            await expect(
+                dialog.getByTestId('global-search-loading'),
+            ).toBeVisible();
+            await expect(
+                dialog.getByTestId('global-search-empty'),
+            ).toBeHidden();
+
+            await expect(
+                dialog.getByRole('option', { name: /AST-E2E-0001/ }),
+            ).toBeVisible();
+            await expect(
+                dialog.getByTestId('global-search-loading'),
+            ).toBeHidden();
         });
-
-        const dialog = await openGlobalSearch(page);
-        const input = page.getByTestId('global-search-input');
-
-        await input.pressSequentially('la');
-        await expect(dialog.getByTestId('global-search-loading')).toBeVisible();
-        await expect(dialog.getByTestId('global-search-empty')).toBeHidden();
-
-        // A newer term supersedes the request that is still in flight.
-        await page.waitForTimeout(400);
-        await input.pressSequentially('ptop');
-        await expect(dialog.getByTestId('global-search-loading')).toBeVisible();
-        await expect(dialog.getByTestId('global-search-empty')).toBeHidden();
-
-        await expect(
-            dialog.getByRole('option', { name: /AST-E2E-0001/ }),
-        ).toBeVisible();
-        await expect(dialog.getByTestId('global-search-loading')).toBeHidden();
     });
 
     test('arrow keys and Enter open the highlighted record', async ({
@@ -414,42 +424,38 @@ const viewports = [
     { width: 1440, height: 900 },
 ];
 
-test.describe('Responsive navigation', () => {
-    for (const viewport of viewports) {
-        test(`navigation toggle, search, and layout work at ${viewport.width}x${viewport.height}`, async ({
-            page,
-        }) => {
-            const errors = collectPageErrors(page);
-            await page.setViewportSize(viewport);
-            await loginAs(page, 'admin@e2e.test');
-            await page.goto('/inventory/products');
+const mobileViewports = viewports.filter((viewport) => viewport.width < 768);
+const desktopViewports = viewports.filter((viewport) => viewport.width >= 768);
 
+test.describe('Responsive navigation', () => {
+    test('mobile navigation drawer, search, and layout work across phone viewports', async ({
+        page,
+    }) => {
+        const errors = collectPageErrors(page);
+        await loginAs(page, 'admin@e2e.test', 'password', {
+            redirectTo: '/inventory/products',
+        });
+
+        for (const viewport of mobileViewports) {
+            await page.setViewportSize(viewport);
             const trigger = page
                 .locator('main [data-sidebar="trigger"]')
                 .first();
             await expect(trigger).toBeVisible();
+            await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
-            if (viewport.width < 768) {
-                await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-                // Keyboard activation: WebKit does not focus buttons on click, so focus
-                // restoration is verified for keyboard users, who depend on it.
-                await trigger.focus();
-                await page.keyboard.press('Enter');
-                await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-                await expect(
-                    page.getByRole('searchbox', { name: 'Search navigation' }),
-                ).toBeVisible();
+            // Keyboard activation: WebKit does not focus buttons on click, so focus
+            // restoration is verified for keyboard users, who depend on it.
+            await trigger.focus();
+            await page.keyboard.press('Enter');
+            await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+            await expect(
+                page.getByRole('searchbox', { name: 'Search navigation' }),
+            ).toBeVisible();
 
-                await page.keyboard.press('Escape');
-                await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-                await expect(trigger).toBeFocused();
-            } else {
-                await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-                await trigger.click();
-                await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-                await trigger.click();
-                await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-            }
+            await page.keyboard.press('Escape');
+            await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+            await expect(trigger).toBeFocused();
 
             await page.keyboard.press('Control+K');
             await expect(
@@ -460,8 +466,50 @@ test.describe('Responsive navigation', () => {
             const overflow = await page.evaluate(
                 () => document.documentElement.scrollWidth - window.innerWidth,
             );
-            expect(overflow).toBeLessThanOrEqual(1);
-            expect(errors).toEqual([]);
+            expect(
+                overflow,
+                `mobile layout overflows at ${viewport.width}x${viewport.height}`,
+            ).toBeLessThanOrEqual(1);
+        }
+
+        expect(errors).toEqual([]);
+    });
+
+    test('desktop sidebar toggle, search, and layout work across wider viewports', async ({
+        page,
+    }) => {
+        const errors = collectPageErrors(page);
+        await loginAs(page, 'admin@e2e.test', 'password', {
+            redirectTo: '/inventory/products',
         });
-    }
+
+        for (const viewport of desktopViewports) {
+            await page.setViewportSize(viewport);
+            const trigger = page
+                .locator('main [data-sidebar="trigger"]')
+                .first();
+            await expect(trigger).toBeVisible();
+            await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+            await trigger.click();
+            await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+            await trigger.click();
+            await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+            await page.keyboard.press('Control+K');
+            await expect(
+                page.getByRole('dialog', { name: 'Global search' }),
+            ).toBeVisible();
+            await page.keyboard.press('Escape');
+
+            const overflow = await page.evaluate(
+                () => document.documentElement.scrollWidth - window.innerWidth,
+            );
+            expect(
+                overflow,
+                `desktop layout overflows at ${viewport.width}x${viewport.height}`,
+            ).toBeLessThanOrEqual(1);
+        }
+
+        expect(errors).toEqual([]);
+    });
 });

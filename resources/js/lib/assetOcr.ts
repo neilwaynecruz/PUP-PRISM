@@ -31,6 +31,10 @@ async function terminateSharedWorker(): Promise<void> {
     }
 }
 
+export function releaseOcrWorker(): void {
+    void terminateSharedWorker();
+}
+
 function scheduleIdleTerminate(): void {
     clearIdleTimer();
     idleTimer = setTimeout(() => {
@@ -44,9 +48,11 @@ function registerUnloadCleanup(): void {
     }
 
     unloadListenerRegistered = true;
-    window.addEventListener('beforeunload', () => {
+    const cleanup = (): void => {
         void terminateSharedWorker();
-    });
+    };
+    window.addEventListener('beforeunload', cleanup);
+    window.addEventListener('pagehide', cleanup);
 }
 
 async function getOrCreateWorker(

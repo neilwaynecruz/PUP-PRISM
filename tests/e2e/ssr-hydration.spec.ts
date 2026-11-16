@@ -1,47 +1,85 @@
-import { existsSync, readFileSync } from 'fs';
-import { resolve } from 'path';
+import type { ChildProcess } from 'child_process';
+import { spawn } from 'child_process';
+import { existsSync } from 'fs';
 import type { Page } from '@playwright/test';
 import { loginAs } from './fixtures/auth';
 import { expect, test } from './fixtures/test';
+import { e2eSsrBundlePath } from './server-environment';
 
 /*
- * The isolated E2E server does not server-render pages, but local development does
- * (through the Vite dev server). These tests render pages with that same SSR endpoint,
- * serve the result to a dark-mode browser, and fail on any hydration mismatch, because a
- * mismatch corrupts Vue's DOM bookkeeping and later Inertia visits stop rendering.
+ * The isolated E2E app server sets INERTIA_SSR_ENABLED=false for fast test runs.
+ * These tests render pages through the built Inertia SSR bundle (`bootstrap/ssr/app.js`),
+ * serve the SSR markup to Chromium, Firefox, and WebKit in dark mode, and fail on any
+ * hydration mismatch because mismatches corrupt Vue's DOM bookkeeping on subsequent visits.
  */
-const hotFile = resolve(process.cwd(), 'public', 'hot');
+const ssrServerUrl = 'http://127.0.0.1:13714';
 
 test.use({ colorScheme: 'dark', serviceWorkers: 'block' });
 
-test.skip(
-    ({ browserName }) => browserName !== 'chromium',
-    'Hydration checks rely on Vue development warnings; one engine is sufficient.',
-);
-test.skip(
-    () => !existsSync(hotFile),
-    'Requires the Vite dev server (public/hot), which provides the SSR endpoint.',
-);
+let ssrProcess: ChildProcess | null = null;
+let startedSsrServer = false;
+
+async function isSsrServerHealthy(): Promise<boolean> {
+    try {
+        const response = await fetch(`${ssrServerUrl}/health`, {
+            signal: AbortSignal.timeout(1_000),
+        });
+
+        return response.ok;
+    } catch {
+        return false;
+    }
+}
+
+test.beforeAll(async () => {
+    if (await isSsrServerHealthy()) {
+        return;
+    }
+
+    if (!existsSync(e2eSsrBundlePath)) {
+        throw new Error(
+            'The Inertia SSR bundle is missing. Run `npx vite build --mode=e2e --ssr` before running SSR hydration tests.',
+        );
+    }
+
+    ssrProcess = spawn(process.execPath, [e2eSsrBundlePath], {
+        stdio: 'ignore',
+        windowsHide: true,
+    });
+    startedSsrServer = true;
+
+    const deadline = Date.now() + 15_000;
+
+    while (Date.now() < deadline) {
+        if (await isSsrServerHealthy()) {
+            return;
+        }
+
+        await new Promise((resolvePromise) => setTimeout(resolvePromise, 100));
+    }
+
+    ssrProcess.kill();
+    ssrProcess = null;
+    startedSsrServer = false;
+
+    throw new Error('The Inertia SSR server did not become healthy in time.');
+});
+
+test.afterAll(async () => {
+    if (!startedSsrServer) {
+        return;
+    }
+
+    await fetch(`${ssrServerUrl}/shutdown`).catch(() => {});
+    ssrProcess?.kill();
+    ssrProcess = null;
+    startedSsrServer = false;
+});
 
 async function serveServerRenderedPage(
     page: Page,
     path: string,
 ): Promise<void> {
-    const hotUrl = readFileSync(hotFile, 'utf8').trim();
-
-    // Chrome blocks a 127.0.0.1 page from loading scripts from the localhost dev server,
-    // so dev-server requests are fetched by Playwright and handed to the page directly.
-    await page.route(`${hotUrl}/**`, async (route) => {
-        const response = await route.fetch();
-        await route.fulfill({
-            response,
-            headers: {
-                ...response.headers(),
-                'access-control-allow-origin': '*',
-            },
-        });
-    });
-
     await page.route(`**${path}`, async (route) => {
         if (route.request().resourceType() !== 'document') {
             await route.continue();
@@ -60,34 +98,22 @@ async function serveServerRenderedPage(
             'Inertia page data should be embedded in the document',
         ).toBeTruthy();
 
-        const ssr = await page.request.post(`${hotUrl}/__inertia_ssr`, {
+        const ssr = await page.request.post(`${ssrServerUrl}/render`, {
             data: JSON.parse(pageJson as string),
         });
         expect(
             ssr.ok(),
-            'The dev SSR endpoint should render the page',
+            'The built SSR server should render the page',
         ).toBeTruthy();
 
         const { body } = (await ssr.json()) as { body: string };
-        // Load the development client from the Vite dev server, as local development does,
-        // so hydration runs against the same source as the SSR render and reports details.
-        const developmentHtml = html
+        expect(body).toContain('data-server-rendered');
+
+        const ssrHtml = html
             .replace(/<script[^>]*data-page="app"[^>]*>[\s\S]*?<\/script>/, '')
-            .replace(
-                /<script type="module" src="[^"]*\/build\/assets\/[^"]+"><\/script>/g,
-                '',
-            )
-            .replace(
-                /<link rel="(?:modulepreload|stylesheet|preload)"[^>]*\/build\/assets\/[^>]*>/g,
-                '',
-            )
-            .replace(
-                '</head>',
-                `<script type="module" src="${hotUrl}/@vite/client"></script><script type="module" src="${hotUrl}/resources/js/app.ts"></script></head>`,
-            )
             .replace(/<div id="app"><\/div>/, body);
 
-        await route.fulfill({ response, body: developmentHtml });
+        await route.fulfill({ response, body: ssrHtml });
     });
 }
 
@@ -117,7 +143,9 @@ for (const appearance of ['system', 'dark', 'light'] as const) {
         page,
         context,
     }) => {
-        await loginAs(page, 'admin@e2e.test');
+        await loginAs(page, 'admin@e2e.test', 'password', {
+            redirectTo: false,
+        });
         await context.addCookies([
             {
                 name: 'appearance',
@@ -143,7 +171,6 @@ for (const appearance of ['system', 'dark', 'light'] as const) {
                 ),
             )
             .toBe(true);
-        await page.waitForLoadState('networkidle');
 
         const settingsNav = page.getByRole('navigation', { name: 'Settings' });
         await settingsNav.getByRole('link', { name: 'Appearance' }).click();

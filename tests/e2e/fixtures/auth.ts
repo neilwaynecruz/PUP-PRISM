@@ -3,22 +3,26 @@ import { confirmTwoFactor, verifyEmail } from '../helpers/db';
 
 type LoginOptions = {
     skipPrivilegedTwoFactorAutoconfirm?: boolean;
+    viaUi?: boolean;
+    redirectTo?: string | false;
 };
 
-export async function loginAs(
-    page: Page,
-    email: string,
-    password: string = 'password',
-    options: LoginOptions = {},
-): Promise<void> {
-    if (
-        !options.skipPrivilegedTwoFactorAutoconfirm &&
-        ['admin@e2e.test', 'supply@e2e.test'].includes(email)
-    ) {
-        confirmTwoFactor(email);
+async function readXsrfToken(page: Page): Promise<string> {
+    const cookies = await page.context().cookies();
+    const xsrfCookie = cookies.find((cookie) => cookie.name === 'XSRF-TOKEN');
+
+    if (!xsrfCookie?.value) {
+        throw new Error('Missing XSRF-TOKEN cookie after requesting /login.');
     }
 
-    await page.context().clearCookies();
+    return decodeURIComponent(xsrfCookie.value);
+}
+
+async function loginViaUi(
+    page: Page,
+    email: string,
+    password: string,
+): Promise<void> {
     await page.goto('/login');
     await page.getByTestId('login-page').waitFor();
     await page.getByTestId('login-email-input').fill(email);
@@ -60,6 +64,93 @@ export async function loginAs(
             ),
             page.getByRole('button', { name: 'Confirm password' }).click(),
         ]);
+    }
+}
+
+export async function loginAs(
+    page: Page,
+    email: string,
+    password: string = 'password',
+    options: LoginOptions = {},
+): Promise<void> {
+    if (
+        !options.skipPrivilegedTwoFactorAutoconfirm &&
+        ['admin@e2e.test', 'supply@e2e.test'].includes(email)
+    ) {
+        confirmTwoFactor(email);
+    }
+
+    await page.context().clearCookies();
+
+    if (options.viaUi || options.skipPrivilegedTwoFactorAutoconfirm) {
+        await loginViaUi(page, email, password);
+
+        return;
+    }
+
+    const request = page.context().request;
+    const loginPageResponse = await request.get('/login');
+
+    if (!loginPageResponse.ok()) {
+        throw new Error(
+            `Failed to load /login session bootstrap (${loginPageResponse.status()}).`,
+        );
+    }
+
+    let response = await request.post('/login', {
+        maxRedirects: 0,
+        headers: {
+            Accept: 'text/html,application/xhtml+xml',
+            'X-XSRF-TOKEN': await readXsrfToken(page),
+        },
+        form: {
+            email,
+            password,
+        },
+    });
+    let location = response.headers()['location'] ?? '';
+
+    if (location.includes('/two-factor-challenge')) {
+        response = await request.post('/two-factor-challenge', {
+            maxRedirects: 0,
+            headers: {
+                Accept: 'text/html,application/xhtml+xml',
+                'X-XSRF-TOKEN': await readXsrfToken(page),
+            },
+            form: {
+                recovery_code: 'e2e-recovery-code',
+            },
+        });
+        location = response.headers()['location'] ?? '';
+    }
+
+    if (location.includes('/user/confirm-password')) {
+        response = await request.post('/user/confirm-password', {
+            maxRedirects: 0,
+            headers: {
+                Accept: 'text/html,application/xhtml+xml',
+                'X-XSRF-TOKEN': await readXsrfToken(page),
+            },
+            form: {
+                password,
+            },
+        });
+        location = response.headers()['location'] ?? '';
+    }
+
+    if (
+        response.status() >= 400 ||
+        location.includes('/login') ||
+        location.includes('/two-factor-challenge')
+    ) {
+        await page.context().clearCookies();
+        await loginViaUi(page, email, password);
+
+        return;
+    }
+
+    if (options.redirectTo !== false) {
+        await page.goto(options.redirectTo ?? '/dashboard');
     }
 }
 

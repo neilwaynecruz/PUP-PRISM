@@ -241,9 +241,11 @@ onBeforeUnmount(() => {
 <template>
     <Dialog :open="open" @update:open="$emit('update:open', $event)">
         <DialogContent
-            class="flex max-h-[90vh] max-w-3xl flex-col overflow-hidden p-0 sm:rounded-2xl"
+            class="flex max-h-[calc(100dvh-2rem)] max-w-3xl flex-col overflow-hidden p-0 sm:max-h-[90dvh] sm:rounded-2xl"
         >
-            <DialogHeader class="border-b border-border/60 px-6 py-4">
+            <DialogHeader
+                class="shrink-0 border-b border-border/60 px-4 py-3 pr-12 text-left sm:px-6 sm:py-4 sm:pr-14"
+            >
                 <div class="flex items-center gap-3">
                     <div
                         class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary"
@@ -263,7 +265,9 @@ onBeforeUnmount(() => {
                 </div>
 
                 <!-- Search and Filters Bar -->
-                <div class="mt-4 grid gap-2.5 sm:grid-cols-[1fr_auto_auto]">
+                <div
+                    class="mt-3 grid gap-2.5 sm:mt-4 sm:grid-cols-[1fr_auto_auto]"
+                >
                     <div class="relative">
                         <Search
                             class="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -340,7 +344,7 @@ onBeforeUnmount(() => {
 
             <!-- Results List / Table -->
             <div
-                class="max-h-[500px] min-h-[320px] flex-1 overflow-y-auto px-4 py-3 sm:px-6"
+                class="max-h-[500px] min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-6"
             >
                 <div
                     v-if="isLoading"
@@ -569,7 +573,7 @@ onBeforeUnmount(() => {
             </div>
 
             <DialogFooter
-                class="flex items-center justify-between border-t border-border/60 bg-muted/10 px-6 py-3 sm:justify-between"
+                class="flex shrink-0 items-center justify-between border-t border-border/60 bg-muted/10 px-4 py-3 sm:justify-between sm:px-6"
             >
                 <div class="text-xs text-muted-foreground" aria-live="polite">
                     {{ products.length }} of {{ totalProducts }} matching

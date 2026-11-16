@@ -19,7 +19,11 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { prepareLabelImage, readAssetLabel } from '@/lib/assetOcr';
+import {
+    prepareLabelImage,
+    readAssetLabel,
+    releaseOcrWorker,
+} from '@/lib/assetOcr';
 import { isValidDocumentDate, suggestProcurementFields } from '@/lib/ocrReview';
 import type { ProcurementOcrDraft } from '@/lib/ocrReview';
 import type { OcrPdfSession } from '@/lib/pdfOcr';
@@ -124,9 +128,14 @@ function cancel(): void {
     busy.value = false;
 }
 
-watch(open, () => {
+watch(open, (isOpen) => {
     cancel();
     closePdf();
+
+    if (!isOpen) {
+        releaseOcrWorker();
+    }
+
     status.value = '';
     error.value = '';
     extracted.value = '';
@@ -143,6 +152,7 @@ watch(open, () => {
 onBeforeUnmount(() => {
     cancel();
     closePdf();
+    releaseOcrWorker();
 });
 
 watch(pdfPage, () => {

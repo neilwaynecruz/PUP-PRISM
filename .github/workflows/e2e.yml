@@ -34,6 +34,11 @@ jobs:
         shard: [1, 2]
 
     steps:
+      - name: Maximize disk space on runner
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h
+
       - name: Checkout code
         uses: actions/checkout@v6
 
@@ -42,7 +47,7 @@ jobs:
         with:
           php-version: '8.4'
           tools: composer:v2
-          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, opcache
           coverage: none
 
       - name: Setup Node
@@ -50,6 +55,17 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -60,12 +76,14 @@ jobs:
       - name: Build frontend assets
         run: npm run build:e2e
 
+      - name: Build SSR bundle
+        run: npx vite build --mode=e2e --ssr
+
       - name: Prepare application environment
         run: |
           cp .env.e2e .env
           php artisan key:generate --force
           touch database/e2e.sqlite
-          php artisan e2e:setup --fresh
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps ${{ matrix.browser }}
@@ -85,4 +103,4 @@ jobs:
             tests/e2e/report/
             test-results/
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7

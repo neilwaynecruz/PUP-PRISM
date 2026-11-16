@@ -64,7 +64,7 @@ test('review helpers reject ambiguous dates and never infer financial fields', (
 test('receiving reviews tags and real OCR serial text before explicit receipt submission', async ({
     page,
 }, testInfo) => {
-    await loginAs(page, 'admin@e2e.test');
+    await loginAs(page, 'admin@e2e.test', 'password', { redirectTo: false });
     await page.goto('/inventory/receiving');
     await page.getByTestId('receiving-sku-input').fill('AST-E2E-001');
     await page
@@ -125,7 +125,7 @@ test('receiving reviews tags and real OCR serial text before explicit receipt su
 test('maintenance and transfer label lookup require selecting an existing asset', async ({
     page,
 }, testInfo) => {
-    await loginAs(page, 'admin@e2e.test');
+    await loginAs(page, 'admin@e2e.test', 'password', { redirectTo: false });
 
     for (const workflow of ['maintenance', 'transfer'] as const) {
         await page.goto('/inventory/assets');
@@ -183,7 +183,7 @@ test('maintenance and transfer label lookup require selecting an existing asset'
 test('handover OCR searches candidates without selecting a recipient or initiating a handover', async ({
     page,
 }) => {
-    await loginAs(page, 'admin@e2e.test');
+    await loginAs(page, 'admin@e2e.test', 'password', { redirectTo: false });
     await page.goto('/inventory/handover');
     await page
         .getByRole('button', { name: 'Find asset from label', exact: true })
@@ -205,7 +205,7 @@ test('handover OCR searches candidates without selecting a recipient or initiati
 test('physical-count label lookup stays within the session and leaves observed quantity manual', async ({
     page,
 }) => {
-    await loginAs(page, 'admin@e2e.test');
+    await loginAs(page, 'admin@e2e.test', 'password', { redirectTo: false });
     await page.goto('/inventory/counts');
     await page.locator('#count-scope').fill('OCR fixture session');
     const assignee = page.locator('#count-assigned');
@@ -254,7 +254,7 @@ test('physical-count label lookup stays within the session and leaves observed q
 test('procurement image suggestions stay editable and never change prices, quantities or delivery date', async ({
     page,
 }, testInfo) => {
-    await loginAs(page, 'admin@e2e.test');
+    await loginAs(page, 'admin@e2e.test', 'password', { redirectTo: false });
     await page.goto('/inventory/purchase-orders/create');
     await page
         .getByRole('button', { name: 'Read procurement document', exact: true })
@@ -316,7 +316,7 @@ test('procurement image suggestions stay editable and never change prices, quant
 test('a replacement document image clears old suggestions even when reading fails', async ({
     page,
 }) => {
-    await loginAs(page, 'admin@e2e.test');
+    await loginAs(page, 'admin@e2e.test', 'password', { redirectTo: false });
     await page.goto('/inventory/purchase-orders/create');
     await page
         .getByRole('button', { name: 'Read procurement document', exact: true })

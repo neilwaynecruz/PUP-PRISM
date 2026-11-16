@@ -64,32 +64,34 @@ function monitorUnexpectedBrowserErrors(page: Page): string[] {
 test('Phase 5 forecasting views remain accessible and balanced across supported viewports', async ({
     page,
 }, testInfo) => {
-    test.setTimeout(180_000);
+    test.setTimeout(120_000);
     const browserErrors = monitorUnexpectedBrowserErrors(page);
 
-    await loginAs(page, 'supply@e2e.test');
+    await loginAs(page, 'supply@e2e.test', 'password', { redirectTo: false });
 
     for (const appearance of ['light', 'dark'] as const) {
+        await page.goto('/inventory/forecasting');
         await page.evaluate((value) => {
             localStorage.setItem('appearance', value);
         }, appearance);
+        await page.reload();
+
+        await expect(
+            page.getByRole('heading', {
+                level: 1,
+                name: 'Forecasting & Inventory Optimization',
+            }),
+        ).toBeVisible();
+        await expect(page.getByRole('tab')).toHaveCount(3);
+
+        if (appearance === 'dark') {
+            await expect(page.locator('html')).toHaveClass(/dark/);
+        } else {
+            await expect(page.locator('html')).not.toHaveClass(/dark/);
+        }
 
         for (const viewport of viewports) {
             await page.setViewportSize(viewport);
-            await page.goto('/inventory/forecasting');
-            await expect(
-                page.getByRole('heading', {
-                    level: 1,
-                    name: 'Forecasting & Inventory Optimization',
-                }),
-            ).toBeVisible();
-            await expect(page.getByRole('tab')).toHaveCount(3);
-
-            if (appearance === 'dark') {
-                await expect(page.locator('html')).toHaveClass(/dark/);
-            } else {
-                await expect(page.locator('html')).not.toHaveClass(/dark/);
-            }
 
             for (const view of views) {
                 const tab = page.getByRole('tab', { name: view.label });
@@ -108,12 +110,17 @@ test('Phase 5 forecasting views remain accessible and balanced across supported 
                     `${view.name} overflows at ${viewport.width}px in ${appearance} mode`,
                 ).toBeLessThanOrEqual(1);
 
-                await page.screenshot({
-                    path: testInfo.outputPath(
-                        `phase5-${view.name}-${viewport.name}-${appearance}.png`,
-                    ),
-                    fullPage: true,
-                });
+                if (
+                    viewport.name === 'phone-320' ||
+                    viewport.name === 'desktop-1440'
+                ) {
+                    await page.screenshot({
+                        path: testInfo.outputPath(
+                            `phase5-${view.name}-${viewport.name}-${appearance}.png`,
+                        ),
+                        fullPage: false,
+                    });
+                }
             }
         }
     }

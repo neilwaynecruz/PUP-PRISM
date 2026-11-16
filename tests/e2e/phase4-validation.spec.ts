@@ -38,8 +38,11 @@ function monitorBrowserErrors(page: Page): string[] {
     return errors;
 }
 
-async function loginAsAdmin(page: Page): Promise<void> {
-    await loginAs(page, 'admin@e2e.test');
+async function loginAsAdmin(
+    page: Page,
+    redirectTo: string | false = '/dashboard',
+): Promise<void> {
+    await loginAs(page, 'admin@e2e.test', 'password', { redirectTo });
 }
 
 test.describe.serial('Phase 4 inventory and asset validation', () => {
@@ -223,8 +226,7 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
             .first();
         await expect(transfer).toContainText('Pending');
 
-        await loginAsAdmin(page);
-        await page.goto(assetUrl);
+        await loginAsAdmin(page, assetUrl);
         transfer = page
             .locator('article')
             .filter({ hasText: locationName })
@@ -234,8 +236,9 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
             page.getByLabel('Asset summary').getByText(locationName),
         ).toBeVisible();
 
-        await loginAs(page, 'custodian@e2e.test');
-        await page.goto(assetUrl);
+        await loginAs(page, 'custodian@e2e.test', 'password', {
+            redirectTo: assetUrl,
+        });
         await page
             .getByText('Propose a lifecycle or condition change', {
                 exact: true,
@@ -258,8 +261,7 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
                 .first(),
         ).toContainText('Pending');
 
-        await loginAsAdmin(page);
-        await page.goto(assetUrl);
+        await loginAsAdmin(page, assetUrl);
         const retirement = page
             .locator('article')
             .filter({
@@ -271,8 +273,9 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
             page.getByLabel('Asset summary').getByText('Retired'),
         ).toBeVisible();
 
-        await loginAs(page, 'custodian@e2e.test');
-        await page.goto(assetUrl);
+        await loginAs(page, 'custodian@e2e.test', 'password', {
+            redirectTo: assetUrl,
+        });
         await page
             .getByText('Propose a lifecycle or condition change', {
                 exact: true,
@@ -296,8 +299,7 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
                 .first(),
         ).toContainText('Pending');
 
-        await loginAsAdmin(page);
-        await page.goto(assetUrl);
+        await loginAsAdmin(page, assetUrl);
         const disposal = page
             .locator('article')
             .filter({
@@ -314,7 +316,9 @@ test.describe.serial('Phase 4 inventory and asset validation', () => {
         ).toBeVisible();
         expect(browserErrors).toEqual([]);
 
-        await loginAs(page, 'recipient@e2e.test');
+        await loginAs(page, 'recipient@e2e.test', 'password', {
+            redirectTo: false,
+        });
         const forbiddenResponse = await page.goto(documentHref!);
         expect(forbiddenResponse?.status()).toBe(403);
         expect(

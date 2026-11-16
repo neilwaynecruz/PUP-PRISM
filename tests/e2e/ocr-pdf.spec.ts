@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
             });
         }
     });
-    await loginAs(page, 'admin@e2e.test');
+    await loginAs(page, 'admin@e2e.test', 'password', { redirectTo: false });
 });
 
 async function readPdf(
