@@ -10,7 +10,7 @@ import AppLogoIcon from '@/components/AppLogoIcon.vue';
             <span
                 class="truncate text-[0.85rem] leading-none font-semibold tracking-[0.18em] text-foreground uppercase"
             >
-                PUP PRISM
+                PRISM
             </span>
             <span
                 class="mt-1 truncate text-[0.68rem] leading-none font-medium tracking-[0.08em] text-muted-foreground uppercase"

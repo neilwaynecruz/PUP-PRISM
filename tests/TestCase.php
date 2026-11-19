@@ -2,11 +2,30 @@
 
 namespace Tests;
 
+use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Laravel\Fortify\Features;
+use LogicException;
 
 abstract class TestCase extends BaseTestCase
 {
+    public function createApplication(): Application
+    {
+        $app = parent::createApplication();
+
+        if (! $app->environment('testing') || $app['config']->get('database.default') !== 'sqlite' || $app['config']->get('database.connections.sqlite.database') !== ':memory:') {
+            throw new LogicException('Tests require the testing environment and an in-memory SQLite default database.');
+        }
+
+        $postgresTestDatabase = $app['config']->get('database.connections.pgsql_testing.database');
+
+        if (! is_string($postgresTestDatabase) || ! str_ends_with($postgresTestDatabase, '_test')) {
+            throw new LogicException('The PostgreSQL testing database name must end with _test.');
+        }
+
+        return $app;
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

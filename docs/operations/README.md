@@ -1,6 +1,6 @@
 # Operations Runbooks
 
-Production operations documentation for PUP PRISM. These runbooks cover deployment, recovery, retention, queues, Redis, and logging without containing production credentials.
+Production operations documentation for PRISM. These runbooks cover deployment, recovery, retention, queues, Redis, and logging without containing production credentials.
 
 | Document | Purpose |
 | -------- | ------- |

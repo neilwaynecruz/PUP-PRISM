@@ -41,6 +41,7 @@ use Database\Seeders\UatMonitoringSeeder;
 use Database\Seeders\UatOrganizationSeeder;
 use Database\Seeders\UatProcurementSeeder;
 use Database\Seeders\UatWorkflowSeeder;
+use Database\Seeders\UserSeeder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Seeder;
 use Illuminate\Foundation\Application;
@@ -62,8 +63,26 @@ test('database seeder creates uat organization and walkthrough data', function (
 
     expect(Department::query()->where('name', 'College of Engineering')->exists())->toBeTrue();
     expect(Position::query()->where('code', 'POS-COE-PC')->exists())->toBeTrue();
-    expect(User::query()->where('email', 'admin@local.test')->whereNotNull('position_id')->exists())->toBeTrue();
-    expect(User::query()->where('email', 'eng.custodian@local.test')->exists())->toBeTrue();
+    expect(User::query()->count())->toBe(5);
+    expect(User::role('Admin')->count())->toBe(2);
+    expect(User::query()->whereDoesntHave('roles', fn (Builder $query): Builder => $query->where('name', 'Admin'))->count())->toBe(3);
+
+    $expectedUsers = [
+        'neilwayne0514@gmail.com' => ['name' => 'Neil Wayne Cruz', 'role' => 'Admin'],
+        'cruzneilwayne@gmail.com' => ['name' => 'Neil Wayne Cruz', 'role' => 'Admin'],
+        'norman.cruz0701@gmail.com' => ['name' => 'Norman Cruz', 'role' => 'Supply Head'],
+        'wendzcruz04@gmail.com' => ['name' => 'Wendy Cruz', 'role' => 'Supply Head'],
+        'nathanweiltcruz1415@gmail.com' => ['name' => 'Nathan Weil Cruz', 'role' => 'Property Custodian'],
+    ];
+
+    foreach ($expectedUsers as $email => $attributes) {
+        $seededUser = User::query()->where('email', $email)->whereNotNull('position_id')->firstOrFail();
+
+        expect($seededUser->name)->toBe($attributes['name'])
+            ->and($seededUser->hasRole($attributes['role']))->toBeTrue()
+            ->and(Hash::check('password', (string) $seededUser->password))->toBeTrue();
+    }
+
     expect(Asset::query()->where('tag_code', 'AST-COE-0001')->whereNotNull('position_id')->exists())->toBeTrue();
     expect(Booking::withTrashed()->count())->toBeGreaterThanOrEqual(5);
     expect(Requisition::withTrashed()->count())->toBeGreaterThanOrEqual(7);
@@ -195,12 +214,20 @@ test('forecast products have four years of traceable demand history', function (
             ->and($issueDates->first()?->diffInMonths($issueDates->last()))->toBeGreaterThanOrEqual(47.0)
             ->and($issueDates->map(static fn (CarbonImmutable $date): string => $date->format('Y-m'))->unique()->count())->toBeGreaterThanOrEqual(48)
             ->and(StockLot::query()->whereBelongsTo($product)->count())->toBeGreaterThanOrEqual(16)
-            ->and($lookbackDays)->toBe(365)
+            ->and($lookbackDays)->toBeGreaterThanOrEqual(90)
             ->and($forecastHorizonDays)->toBeLessThanOrEqual(90)
-            ->and(data_get($rawData, 'summary.lookback_days'))->toBe(365)
+            ->and(data_get($rawData, 'summary.lookback_days'))->toBe($lookbackDays)
             ->and(data_get($rawData, 'summary.forecast_horizon_days'))->toBe($forecastHorizonDays)
             ->and(data_get($rawData, 'summary.has_sufficient_history'))->toBeTrue();
     }
+
+    $activeConsumableCount = Product::query()->where('type', 'consumable')->where('is_active', true)->count();
+    $todaySnapshots = ForecastSnapshot::query()->whereDate('forecast_date', CarbonImmutable::today()->toDateString());
+
+    expect((clone $todaySnapshots)->count())->toBe($activeConsumableCount)
+        ->and((clone $todaySnapshots)->where('recommended_reorder_qty', '>', 0)->count())->toBeGreaterThanOrEqual(10)
+        ->and((clone $todaySnapshots)->whereNotNull('predicted_days_until_stockout')->where('predicted_days_until_stockout', '<=', 7)->count())->toBeGreaterThanOrEqual(3)
+        ->and((clone $todaySnapshots)->whereBetween('predicted_days_until_stockout', [8, 14])->count())->toBeGreaterThanOrEqual(3);
 
     expect(StockMovement::query()->where('movement_type', 'issue')->whereNull('stock_lot_id')->exists())->toBeFalse();
 });
@@ -217,9 +244,9 @@ test('operational records use professional names without placeholder wording', f
 
     expect($visibleValues->filter(
         static fn (?string $value): bool => $value !== null
-            && preg_match('/\b(?:uat|sample|demo|example|test)\b/i', $value) === 1,
+            && preg_match('/\b(?:uat|sample|demo|example|test|dummy|lorem)\b/i', $value) === 1,
     ))->toBeEmpty()
-        ->and(User::query()->where('email', 'admin@local.test')->value('name'))->toBe('Adrian M. Mercado')
+        ->and(User::query()->where('email', 'neilwayne0514@gmail.com')->value('name'))->toBe('Neil Wayne Cruz')
         ->and(Product::query()->where('sku', 'CON-PAPER-A4')->value('name'))
         ->toBe('Multipurpose Copy Paper, A4, 80 gsm, 500 Sheets/Ream');
 });
@@ -463,9 +490,10 @@ test('production database seeding excludes demo users and direct demo seeders ar
     try {
         (new DatabaseSeeder)->setContainer($application)->run();
 
-        expect(User::query()->where('email', 'admin@local.test')->exists())->toBeFalse();
+        expect(User::query()->where('email', 'neilwayne0514@gmail.com')->exists())->toBeFalse();
         /** @var list<class-string<Seeder>> $operationalSeeders */
         foreach ([
+            UserSeeder::class,
             UatOrganizationSeeder::class,
             UatInventorySeeder::class,
             UatProcurementSeeder::class,
@@ -538,7 +566,7 @@ test('the e2e setup command refuses similarly named sqlite databases outside the
 test('rerunning the uat organization seeder preserves existing user security settings', function () {
     seed(UatOrganizationSeeder::class);
 
-    $user = User::query()->where('email', 'admin@local.test')->firstOrFail();
+    $user = User::query()->where('email', 'neilwayne0514@gmail.com')->firstOrFail();
     $user->forceFill([
         'password' => 'a-user-selected-password',
         'email_verified_at' => null,

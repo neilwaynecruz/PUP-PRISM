@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatDisplayDate } from '@/lib/dateFormatting';
 import {
     acknowledge,
     assign,
@@ -659,7 +660,11 @@ function submitResolve(): void {
                                     expires
                                     <span
                                         class="font-semibold text-foreground/90"
-                                        >{{ alert.stock_lot.expires_at }}</span
+                                        >{{
+                                            formatDisplayDate(
+                                                alert.stock_lot.expires_at,
+                                            )
+                                        }}</span
                                     >
                                     ({{ alert.stock_lot.qty_remaining }} left)
                                 </span>

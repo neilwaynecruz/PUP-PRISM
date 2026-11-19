@@ -30,6 +30,11 @@ const QrScannerDialog = defineAsyncComponent(
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+    addCalendarDays,
+    formatDisplayDate,
+    manilaCalendarDate,
+} from '@/lib/dateFormatting';
 import type { ProcurementOcrDraft } from '@/lib/ocrReview';
 import {
     create as purchaseOrdersCreate,
@@ -236,9 +241,7 @@ function findProductByCodeOrQuery(rawValue: string): ProductOption | null {
 function applyLeadTimeDate(): void {
     const days = selectedSupplier.value?.lead_time_days;
     const offset = days !== null && days !== undefined && days > 0 ? days : 7;
-    const target = new Date();
-    target.setDate(target.getDate() + offset);
-    form.expected_delivery_at = target.toISOString().slice(0, 10);
+    form.expected_delivery_at = addCalendarDays(manilaCalendarDate(), offset);
 }
 
 function addOrIncrementProduct(
@@ -618,7 +621,12 @@ function submitPurchaseOrder(): void {
                             · Reference:
                             {{ procurementDraft.reference || 'unresolved' }} ·
                             Document date:
-                            {{ procurementDraft.documentDate || 'unresolved' }}
+                            {{
+                                formatDisplayDate(
+                                    procurementDraft.documentDate,
+                                    'unresolved',
+                                )
+                            }}
                         </p>
                         <Button
                             v-if="
@@ -1345,7 +1353,10 @@ function submitPurchaseOrder(): void {
                                     class="size-3 text-muted-foreground"
                                 />
                                 {{
-                                    form.expected_delivery_at || 'Not scheduled'
+                                    formatDisplayDate(
+                                        form.expected_delivery_at,
+                                        'Not scheduled',
+                                    )
                                 }}
                             </dd>
                         </div>

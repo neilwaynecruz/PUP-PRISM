@@ -170,7 +170,7 @@ test.describe('Phase 6 PWA safety', () => {
         await loginAs(page, 'admin@e2e.test');
         await page.goto('/dashboard');
 
-        await expect(page.getByText('Install PUP PRISM')).toHaveCount(0);
+        await expect(page.getByText('Install PRISM')).toHaveCount(0);
 
         await page.evaluate(() => {
             const promptEvent = new Event('beforeinstallprompt', {
@@ -186,7 +186,7 @@ test.describe('Phase 6 PWA safety', () => {
             window.dispatchEvent(promptEvent);
         });
 
-        await expect(page.getByText('Install PUP PRISM')).toBeVisible();
+        await expect(page.getByText('Install PRISM')).toBeVisible();
         await expect(
             page.getByRole('button', { name: 'Install app' }),
         ).toBeVisible();

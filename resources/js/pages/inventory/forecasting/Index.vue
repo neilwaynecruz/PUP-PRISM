@@ -24,6 +24,7 @@ import Heading from '@/components/Heading.vue';
 import ForecastWidget from '@/components/inventory/ForecastWidget.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { formatDisplayDate } from '@/lib/dateFormatting';
 import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import {
     index as forecastingIndex,
@@ -1498,7 +1499,7 @@ const filteredExpiringLots = computed(() => {
                                     Received Date
                                 </div>
                                 <div class="mt-0.5 text-foreground">
-                                    {{ lot.received_at }}
+                                    {{ formatDisplayDate(lot.received_at) }}
                                 </div>
                             </div>
                             <div
@@ -1508,7 +1509,7 @@ const filteredExpiringLots = computed(() => {
                                     Expiration Date
                                 </div>
                                 <div class="mt-0.5 font-medium text-foreground">
-                                    {{ lot.expires_at }}
+                                    {{ formatDisplayDate(lot.expires_at) }}
                                 </div>
                             </div>
                         </div>
@@ -1574,10 +1575,10 @@ const filteredExpiringLots = computed(() => {
                                 <td
                                     class="px-5 py-4 text-xs text-muted-foreground"
                                 >
-                                    {{ lot.received_at }}
+                                    {{ formatDisplayDate(lot.received_at) }}
                                 </td>
                                 <td class="px-5 py-4 font-medium">
-                                    {{ lot.expires_at }}
+                                    {{ formatDisplayDate(lot.expires_at) }}
                                 </td>
                                 <td class="px-5 py-4">
                                     <span

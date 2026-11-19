@@ -16,6 +16,7 @@ import {
 } from 'lucide-vue-next';
 import { computed, ref } from 'vue';
 import { Button } from '@/components/ui/button';
+import { formatDisplayDate } from '@/lib/dateFormatting';
 import { show as productsShow } from '@/routes/inventory/products';
 import { create as purchaseOrdersCreate } from '@/routes/inventory/purchase-orders';
 
@@ -79,11 +80,7 @@ function formatDate(value: string | null): string {
         return 'Not scheduled';
     }
 
-    return new Date(value).toLocaleDateString('en-PH', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    });
+    return formatDisplayDate(value, 'Not scheduled');
 }
 
 function formatDateTime(value: string | null): string {

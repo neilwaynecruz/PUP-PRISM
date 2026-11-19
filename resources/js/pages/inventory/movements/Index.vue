@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { addCalendarDays, manilaCalendarDate } from '@/lib/dateFormatting';
 import { index } from '@/routes/inventory/movements';
 
 type MovementRow = {
@@ -350,8 +351,7 @@ function resetFilters(): void {
 function applyDatePreset(
     preset: 'today' | '7d' | '30d' | 'month' | 'all',
 ): void {
-    const now = new Date();
-    const todayIso = now.toISOString().slice(0, 10);
+    const todayIso = manilaCalendarDate();
 
     if (preset === 'all') {
         filterState.date_from = '';
@@ -360,18 +360,13 @@ function applyDatePreset(
         filterState.date_from = todayIso;
         filterState.date_to = todayIso;
     } else if (preset === '7d') {
-        const start = new Date(now);
-        start.setDate(start.getDate() - 7);
-        filterState.date_from = start.toISOString().slice(0, 10);
+        filterState.date_from = addCalendarDays(todayIso, -7);
         filterState.date_to = todayIso;
     } else if (preset === '30d') {
-        const start = new Date(now);
-        start.setDate(start.getDate() - 30);
-        filterState.date_from = start.toISOString().slice(0, 10);
+        filterState.date_from = addCalendarDays(todayIso, -30);
         filterState.date_to = todayIso;
     } else if (preset === 'month') {
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        filterState.date_from = start.toISOString().slice(0, 10);
+        filterState.date_from = `${todayIso.slice(0, 7)}-01`;
         filterState.date_to = todayIso;
     }
 

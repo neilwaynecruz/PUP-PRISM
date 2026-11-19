@@ -43,6 +43,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { manilaCalendarDate } from '@/lib/dateFormatting';
 
 type CatalogProductOption = {
     id: number;
@@ -720,7 +721,7 @@ const poReceiveForm = useForm<{
 
 const poLineSearchQuery = ref('');
 const poSharedRef = ref('');
-const poSharedDate = ref(new Date().toISOString().slice(0, 10));
+const poSharedDate = ref(manilaCalendarDate());
 
 function syncPoReceiveLines(po: ReceivablePurchaseOrder | null): void {
     if (!po) {

@@ -27,7 +27,7 @@ defineProps<{
                     <span
                         class="text-sm leading-none font-semibold tracking-[0.18em] uppercase"
                     >
-                        PUP PRISM
+                        PRISM
                     </span>
                     <span
                         class="mt-1 text-[0.65rem] leading-none font-medium tracking-[0.16em] text-muted-foreground uppercase"

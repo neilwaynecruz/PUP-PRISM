@@ -171,7 +171,7 @@ try {
             foreach ($role in $newRoles) { [IO.File]::WriteAllText((Join-Path $runtimePath "$role.stop"), 'stop') }
             throw 'Not ready. Newly launched components were asked to stop. Run Check and review private runtime logs.'
         }
-        Write-Host 'PUP-PRISM is ready on this laptop.'
+        Write-Host 'PRISM is ready on this laptop.'
         if (!$NoBrowser) { Start-Process "http://localhost:$($settings.port)" }
     } elseif ($Action -eq 'InstallStartup') {
         Assert-Ready $settings
@@ -187,7 +187,7 @@ try {
                 $trigger = New-ScheduledTaskTrigger -AtLogOn -User $user
                 $principal = New-ScheduledTaskPrincipal -UserId $user -LogonType Interactive -RunLevel Limited
                 $taskSettings = New-ScheduledTaskSettingsSet -MultipleInstances IgnoreNew -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1) -ExecutionTimeLimit ([TimeSpan]::Zero) -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries
-                Register-ScheduledTask -TaskName "$taskPrefix-$role" -Action $taskAction -Trigger $trigger -Principal $principal -Settings $taskSettings -Description "PUP-PRISM $role at $projectRoot; no stored credentials" | Out-Null
+                Register-ScheduledTask -TaskName "$taskPrefix-$role" -Action $taskAction -Trigger $trigger -Principal $principal -Settings $taskSettings -Description "PRISM $role at $projectRoot; no stored credentials" | Out-Null
                 $registered += "$taskPrefix-$role"
             }
         } catch {

@@ -7,7 +7,7 @@ test('the application publishes one installable web app manifest', function () {
     expect($manifest)
         ->toMatchArray([
             'id' => '/',
-            'name' => 'PUP PRISM',
+            'name' => 'PRISM',
             'short_name' => 'PRISM',
             'start_url' => '/dashboard',
             'scope' => '/',

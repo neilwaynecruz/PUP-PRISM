@@ -2,7 +2,7 @@
 
 > **Companion docs:** [PRODUCTION_DEPLOYMENT_RUNBOOK.md](./PRODUCTION_DEPLOYMENT_RUNBOOK.md), [README.md](./README.md)
 
-PUP PRISM uses Laravel's queue system for notifications, broadcasts, and other async work. Production requires a **persistent worker**; the database driver is the default (`QUEUE_CONNECTION=database`).
+PRISM uses Laravel's queue system for notifications, broadcasts, and other async work. Production requires a **persistent worker**; the database driver is the default (`QUEUE_CONNECTION=database`).
 
 ---
 
@@ -141,7 +141,7 @@ All workflow notifications implement `ShouldQueue` and target the `notifications
 ```ini
 [program:pup-prism-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/pup_prism/artisan queue:work --queue=security,mail,default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600
+command=php /var/www/prism/artisan queue:work --queue=security,mail,default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600
 autostart=true
 autorestart=true
 stopasgroup=true
@@ -149,7 +149,7 @@ killasgroup=true
 user=www-data
 numprocs=2
 redirect_stderr=true
-stdout_logfile=/var/www/pup_prism/storage/logs/queue-worker.log
+stdout_logfile=/var/www/prism/storage/logs/queue-worker.log
 stopwaitsecs=3600
 ```
 

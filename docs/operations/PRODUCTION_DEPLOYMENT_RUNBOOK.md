@@ -1,6 +1,6 @@
 # Production Deployment Runbook
 
-This runbook defines a repeatable deployment process for PUP PRISM. It does not assume a hosting provider and does not authorize a production deployment. Complete it first in an isolated staging environment using institution-approved infrastructure and secrets.
+This runbook defines a repeatable deployment process for PRISM. It does not assume a hosting provider and does not authorize a production deployment. Complete it first in an isolated staging environment using institution-approved infrastructure and secrets.
 
 ## 1. Runtime requirements
 
@@ -102,7 +102,7 @@ See [QUEUE_OPERATIONS.md](./QUEUE_OPERATIONS.md) for retry and failed-job proced
 Configure one invocation per minute:
 
 ```cron
-* * * * * cd /var/www/pup_prism && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/prism && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 Verify registration with `php artisan schedule:list`, then verify real execution through scheduler heartbeats in the authorized operations-health page.

@@ -30,8 +30,8 @@ class UatProcurementSeeder extends Seeder
 
         $this->call(SupplierSeeder::class);
 
-        $requestedBy = User::query()->where('email', 'supply@local.test')->firstOrFail();
-        $approvedBy = User::query()->where('email', 'admin@local.test')->firstOrFail();
+        $requestedBy = User::query()->where('email', 'wendzcruz04@gmail.com')->firstOrFail();
+        $approvedBy = User::query()->where('email', 'neilwayne0514@gmail.com')->firstOrFail();
 
         $suppliers = Supplier::query()->get()->keyBy('name');
         $products = Product::query()->get()->keyBy('sku');
@@ -40,17 +40,17 @@ class UatProcurementSeeder extends Seeder
             'CON-PAPER-A4' => [
                 'supplier' => 'Metro Manila Office Solutions Corporation',
                 'lead_time_days' => 5,
-                'unit_price' => 218.50,
+                'unit_price' => 235.00,
             ],
             'CON-INK-BLK' => [
-                'supplier' => 'Metro Manila Office Solutions Corporation',
+                'supplier' => 'PrintCore Imaging and Document Systems',
                 'lead_time_days' => 4,
                 'unit_price' => 675.00,
             ],
             'CON-BAT-AA' => [
-                'supplier' => 'Metro Manila Office Solutions Corporation',
+                'supplier' => 'VoltEdge Electrical Supply Corporation',
                 'lead_time_days' => 5,
-                'unit_price' => 32.00,
+                'unit_price' => 95.00,
             ],
             'CON-ALCOHOL-70' => [
                 'supplier' => 'Luzon Medical and Laboratory Supply, Inc.',
@@ -64,21 +64,21 @@ class UatProcurementSeeder extends Seeder
             ],
             'CON-DISINF-01' => [
                 'supplier' => 'Greenfield Janitorial and Sanitation Supply',
-                'lead_time_days' => 2,
-                'unit_price' => 195.00,
+                'lead_time_days' => 3,
+                'unit_price' => 210.00,
             ],
             'AST-LAP-001' => [
                 'supplier' => 'Northstar Digital Systems Corporation',
                 'lead_time_days' => 10,
-                'unit_price' => 38500.00,
+                'unit_price' => 52000.00,
             ],
             'AST-PRN-001' => [
-                'supplier' => 'Northstar Digital Systems Corporation',
+                'supplier' => 'PrintCore Imaging and Document Systems',
                 'lead_time_days' => 8,
-                'unit_price' => 14990.00,
+                'unit_price' => 24900.00,
             ],
             'CON-TONER-151A' => [
-                'supplier' => 'Metro Manila Office Solutions Corporation',
+                'supplier' => 'PrintCore Imaging and Document Systems',
                 'lead_time_days' => 5,
                 'unit_price' => 5890.00,
             ],
@@ -90,12 +90,12 @@ class UatProcurementSeeder extends Seeder
             'CON-LIGHT-LED12' => [
                 'supplier' => 'VoltEdge Electrical Supply Corporation',
                 'lead_time_days' => 7,
-                'unit_price' => 118.00,
+                'unit_price' => 125.00,
             ],
             'CON-HSOAP-500' => [
                 'supplier' => 'Greenfield Janitorial and Sanitation Supply',
                 'lead_time_days' => 3,
-                'unit_price' => 92.50,
+                'unit_price' => 115.00,
             ],
             'AST-CAB-001' => [
                 'supplier' => 'PrimeLine Furniture and Storage Solutions',
@@ -134,7 +134,7 @@ class UatProcurementSeeder extends Seeder
             tax: 0,
             notes: 'Draft generated from low-stock alert review.',
             lines: [
-                ['sku' => 'CON-PAPER-A4', 'qty_ordered' => 150, 'qty_received' => 0, 'unit_price' => 218.50],
+                ['sku' => 'CON-PAPER-A4', 'qty_ordered' => 150, 'qty_received' => 0, 'unit_price' => 235.00],
                 ['sku' => 'CON-INK-BLK', 'qty_ordered' => 24, 'qty_received' => 0, 'unit_price' => 675.00],
             ],
         );
@@ -153,7 +153,7 @@ class UatProcurementSeeder extends Seeder
             notes: 'Awaiting delivery confirmation from supplier.',
             lines: [
                 ['sku' => 'CON-ALCOHOL-70', 'qty_ordered' => 40, 'qty_received' => 0, 'unit_price' => 145.00],
-                ['sku' => 'CON-GLOVES-M', 'qty_ordered' => 18, 'qty_received' => 0, 'unit_price' => 380.00],
+                ['sku' => 'CON-GLOVES-M', 'qty_ordered' => 4, 'qty_received' => 0, 'unit_price' => 380.00],
             ],
         );
 
@@ -170,7 +170,7 @@ class UatProcurementSeeder extends Seeder
             tax: 0,
             notes: 'First delivery completed. Remaining cases still in transit.',
             lines: [
-                ['sku' => 'CON-DISINF-01', 'qty_ordered' => 20, 'qty_received' => 8, 'unit_price' => 195.00],
+                ['sku' => 'CON-DISINF-01', 'qty_ordered' => 12, 'qty_received' => 8, 'unit_price' => 210.00],
             ],
         );
 
@@ -187,14 +187,14 @@ class UatProcurementSeeder extends Seeder
             tax: 1500.00,
             notes: 'Fully delivered and inspected.',
             lines: [
-                ['sku' => 'AST-LAP-001', 'qty_ordered' => 2, 'qty_received' => 2, 'unit_price' => 38500.00],
-                ['sku' => 'AST-PRN-001', 'qty_ordered' => 1, 'qty_received' => 1, 'unit_price' => 14990.00],
+                ['sku' => 'AST-LAP-001', 'qty_ordered' => 2, 'qty_received' => 2, 'unit_price' => 52000.00],
+                ['sku' => 'AST-PRN-001', 'qty_ordered' => 1, 'qty_received' => 1, 'unit_price' => 24900.00],
             ],
         );
 
         $this->syncPurchaseOrder(
             poNumber: 'PO-20261001-0005',
-            supplier: $suppliers['Metro Manila Office Solutions Corporation'],
+            supplier: $suppliers['VoltEdge Electrical Supply Corporation'],
             requestedBy: $requestedBy,
             approvedBy: $approvedBy,
             status: PurchaseOrderStatus::Cancelled,
@@ -205,7 +205,7 @@ class UatProcurementSeeder extends Seeder
             tax: 0,
             notes: 'Cancelled after request consolidation with a later PO.',
             lines: [
-                ['sku' => 'CON-BAT-AA', 'qty_ordered' => 60, 'qty_received' => 0, 'unit_price' => 32.00],
+                ['sku' => 'CON-BAT-AA', 'qty_ordered' => 60, 'qty_received' => 0, 'unit_price' => 95.00],
             ],
         );
 

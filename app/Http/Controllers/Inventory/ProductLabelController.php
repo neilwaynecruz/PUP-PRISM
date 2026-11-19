@@ -148,7 +148,7 @@ class ProductLabelController extends Controller
         );
 
         $pdf = Pdf::loadView('labels.sheet', [
-            'title' => 'PUP PRISM - Product Labels',
+            'title' => 'PRISM - Product Labels',
             'pages' => $pages,
             'paper_size' => $paperSize,
             'orientation' => 'portrait',

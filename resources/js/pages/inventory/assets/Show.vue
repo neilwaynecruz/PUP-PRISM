@@ -32,6 +32,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { formatDisplayDate } from '@/lib/dateFormatting';
 import {
     approve as approveLifecycle,
     reject as rejectLifecycle,
@@ -368,13 +369,6 @@ function label(value: string | null): string {
               .replace(/\b\w/g, (letter) => letter.toUpperCase())
         : 'Not specified';
 }
-function formatDate(value: string): string {
-    return new Intl.DateTimeFormat('en-PH', {
-        dateStyle: 'medium',
-        timeZone: 'Asia/Manila',
-    }).format(new Date(value));
-}
-
 function formatCurrency(value: number | string | null): string {
     if (value === null || value === '') {
         return 'Not recorded';
@@ -819,7 +813,12 @@ function removeAttachment(record: Attachment): void {
                 <div>
                     <dt class="text-xs text-muted-foreground">Acquired</dt>
                     <dd class="mt-1 font-medium text-foreground">
-                        {{ asset.acquisition_date ?? 'Not recorded' }}
+                        {{
+                            formatDisplayDate(
+                                asset.acquisition_date,
+                                'Not recorded',
+                            )
+                        }}
                     </dd>
                 </div>
                 <div>
@@ -835,7 +834,12 @@ function removeAttachment(record: Attachment): void {
                         Warranty through
                     </dt>
                     <dd class="mt-1 font-medium text-foreground">
-                        {{ asset.warranty_expires_at ?? 'Not recorded' }}
+                        {{
+                            formatDisplayDate(
+                                asset.warranty_expires_at,
+                                'Not recorded',
+                            )
+                        }}
                     </dd>
                 </div>
                 <div>
@@ -998,12 +1002,12 @@ function removeAttachment(record: Attachment): void {
                             </p>
                             <p class="mt-2 text-xs text-muted-foreground">
                                 Reported
-                                {{ formatDate(record.reported_date) }} by
+                                {{ formatDisplayDate(record.reported_date) }} by
                                 {{ record.reporter.name
                                 }}<template v-if="record.scheduled_for">
                                     · Scheduled
                                     {{
-                                        formatDate(record.scheduled_for)
+                                        formatDisplayDate(record.scheduled_for)
                                     }}</template
                                 >
                             </p>
@@ -1328,7 +1332,7 @@ function removeAttachment(record: Attachment): void {
                         </p>
                         <p class="mt-2 text-[11px] text-muted-foreground">
                             Requested by {{ record.initiator.name }} for
-                            {{ formatDate(record.transfer_date) }}
+                            {{ formatDisplayDate(record.transfer_date) }}
                         </p>
                         <div
                             v-if="

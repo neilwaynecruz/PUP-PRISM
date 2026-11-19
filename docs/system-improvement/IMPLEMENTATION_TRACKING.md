@@ -34,7 +34,7 @@
 | P1.7 — Configure persistent queue worker | ⬜ NOT STARTED |
 | P1.8 — Configure scheduler cron | ⬜ NOT STARTED |
 | P1.9 — `php artisan storage:link` in deploy | ⬜ NOT STARTED |
-| P1.11 — Set `APP_NAME` to "PUP PRISM" | ⬜ NOT STARTED |
+| P1.11 — Set `APP_NAME` to "PRISM" | ⬜ NOT STARTED |
 | P1.13 — Production `APP_URL` + HTTPS | ⬜ NOT STARTED |
 | P1.14 — Production optimize commands | ⬜ NOT STARTED |
 

@@ -20,6 +20,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { formatDisplayDate } from '@/lib/dateFormatting';
 import {
     approve,
     cancel,
@@ -282,13 +283,6 @@ function label(value: string): string {
         .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function formatDate(value: string): string {
-    return new Intl.DateTimeFormat('en-PH', {
-        dateStyle: 'medium',
-        timeZone: 'Asia/Manila',
-    }).format(new Date(value));
-}
-
 function formatDateTime(value: string): string {
     return new Intl.DateTimeFormat('en-PH', {
         dateStyle: 'medium',
@@ -409,7 +403,7 @@ const visibleLines = computed(() => {
             <div class="rounded-xl border border-border/70 bg-card p-4">
                 <p class="text-xs text-muted-foreground">Counting date</p>
                 <p class="mt-1 font-semibold">
-                    {{ formatDate(session.counting_date) }}
+                    {{ formatDisplayDate(session.counting_date) }}
                 </p>
             </div>
             <div class="rounded-xl border border-border/70 bg-card p-4">
@@ -517,7 +511,9 @@ const visibleLines = computed(() => {
                             {{ line.product.sku
                             }}<template v-if="line.stock_lot?.expires_at">
                                 · Expires
-                                {{ line.stock_lot.expires_at }}</template
+                                {{
+                                    formatDisplayDate(line.stock_lot.expires_at)
+                                }}</template
                             >
                         </p>
                     </div>

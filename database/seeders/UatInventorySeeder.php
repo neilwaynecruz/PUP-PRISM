@@ -15,6 +15,7 @@ use App\Models\Product;
 use App\Models\ProductStock;
 use App\Models\StockLot;
 use App\Models\StockMovement;
+use App\Models\Supplier;
 use App\Models\UnitOfMeasurement;
 use App\Models\User;
 use Carbon\CarbonImmutable;
@@ -61,9 +62,16 @@ class UatInventorySeeder extends Seeder
 
         $units = $this->seedUnitsOfMeasurement();
 
+        if (Supplier::query()->count() === 0) {
+            $this->call(SupplierSeeder::class);
+        }
+
+        /** @var array<string, Supplier> $suppliers */
+        $suppliers = Supplier::query()->get()->keyBy('name')->all();
+
         /** @var array<string, Position> $positions */
         $positions = Position::query()->get()->keyBy('code')->all();
-        $supplyHead = User::query()->where('email', 'supply@local.test')->firstOrFail();
+        $supplyHead = User::query()->where('email', 'norman.cruz0701@gmail.com')->firstOrFail();
 
         $assetProducts = [
             [
@@ -71,6 +79,12 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Business Laptop, 14-inch, 16 GB RAM, 512 GB SSD',
                 'category' => 'IT Equipment',
                 'origin' => 'Main Campus',
+                'supplier' => 'Northstar Digital Systems Corporation',
+                'brand' => 'Northstar',
+                'model' => 'NS14-Pro',
+                'variant' => '14-inch · 16 GB RAM · 512 GB SSD',
+                'lead_time_days' => 10,
+                'unit_price' => 52000.00,
                 'assets' => [
                     ['tag_code' => 'AST-COE-0001', 'position' => 'POS-COE-PC', 'status' => AssetStatus::Available],
                     ['tag_code' => 'AST-COED-0001', 'position' => 'POS-COED-PC', 'status' => AssetStatus::CheckedOut],
@@ -82,6 +96,12 @@ class UatInventorySeeder extends Seeder
                 'name' => 'LCD Projector, 4,000 ANSI Lumens, Full HD',
                 'category' => 'IT Equipment',
                 'origin' => 'Donation',
+                'supplier' => 'VisionCast Audio Visual Technologies, Inc.',
+                'brand' => 'VisionCast',
+                'model' => 'VC-4000HD',
+                'variant' => '4,000 ANSI Lumens · Full HD',
+                'lead_time_days' => 12,
+                'unit_price' => 48500.00,
                 'assets' => [
                     ['tag_code' => 'AST-DIR-0001', 'position' => 'POS-DIR-PC', 'status' => AssetStatus::Available],
                     ['tag_code' => 'AST-STU-0001', 'position' => 'POS-STUDENT-PC', 'status' => AssetStatus::Available],
@@ -92,6 +112,12 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Monochrome Network Laser Printer with Duplex Printing',
                 'category' => 'Office Equipment',
                 'origin' => 'LGU',
+                'supplier' => 'PrintCore Imaging and Document Systems',
+                'brand' => 'PrintCore',
+                'model' => 'PC-M410N',
+                'variant' => 'Monochrome · Duplex Networking',
+                'lead_time_days' => 8,
+                'unit_price' => 24900.00,
                 'assets' => [
                     ['tag_code' => 'AST-REG-0001', 'position' => 'POS-REG-PC', 'status' => AssetStatus::CheckedOut],
                     ['tag_code' => 'AST-LIB-0001', 'position' => 'POS-LIB-PC', 'status' => AssetStatus::Available],
@@ -102,6 +128,12 @@ class UatInventorySeeder extends Seeder
                 'name' => '10.9-inch Tablet, 128 GB, Wi-Fi',
                 'category' => 'IT Equipment',
                 'origin' => 'CHED',
+                'supplier' => 'Northstar Digital Systems Corporation',
+                'brand' => 'Northstar',
+                'model' => 'NS-Tab11',
+                'variant' => '10.9-inch · 128 GB · Wi-Fi',
+                'lead_time_days' => 10,
+                'unit_price' => 26500.00,
                 'assets' => [
                     ['tag_code' => 'AST-SPMO-0001', 'position' => 'POS-PC-CHIEF', 'status' => AssetStatus::Available],
                     ['tag_code' => 'AST-ADMIN-0001', 'position' => 'POS-ADMIN-PC', 'status' => AssetStatus::Unserviceable],
@@ -112,6 +144,12 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Four-Drawer Steel Filing Cabinet with Central Lock',
                 'category' => 'Furniture and Fixtures',
                 'origin' => 'Research Grant',
+                'supplier' => 'PrimeLine Furniture and Storage Solutions',
+                'brand' => 'PrimeLine',
+                'model' => 'PL-4DC',
+                'variant' => '4-Drawer · Central Lock',
+                'lead_time_days' => 14,
+                'unit_price' => 12800.00,
                 'assets' => [
                     ['tag_code' => 'AST-BACC-0001', 'position' => 'POS-BACC-PC', 'status' => AssetStatus::Available],
                 ],
@@ -121,6 +159,12 @@ class UatInventorySeeder extends Seeder
                 'name' => 'High-Speed Duplex Document Scanner with Automatic Feeder',
                 'category' => 'Office Equipment',
                 'origin' => 'Main Campus',
+                'supplier' => 'PrintCore Imaging and Document Systems',
+                'brand' => 'PrintCore',
+                'model' => 'PC-DS900',
+                'variant' => 'Duplex · 50-Sheet ADF',
+                'lead_time_days' => 8,
+                'unit_price' => 28900.00,
                 'assets' => [
                     ['tag_code' => 'AST-REG-0002', 'position' => 'POS-REG-PC', 'status' => AssetStatus::Available],
                 ],
@@ -130,6 +174,12 @@ class UatInventorySeeder extends Seeder
                 'name' => '24-Port Managed Gigabit Network Switch',
                 'category' => 'IT Equipment',
                 'origin' => 'Main Campus',
+                'supplier' => 'NetBridge Enterprise Networks Corporation',
+                'brand' => 'NetBridge',
+                'model' => 'NB-G24M',
+                'variant' => '24-Port · Managed Gigabit',
+                'lead_time_days' => 14,
+                'unit_price' => 19800.00,
                 'assets' => [
                     ['tag_code' => 'AST-IT-0001', 'position' => 'POS-IT-EXPERT', 'status' => AssetStatus::Available],
                     ['tag_code' => 'AST-IT-0002', 'position' => 'POS-IT-EXPERT', 'status' => AssetStatus::Condemned],
@@ -140,6 +190,12 @@ class UatInventorySeeder extends Seeder
                 'name' => '2.0 HP Inverter Split-Type Air Conditioner',
                 'category' => 'Office Equipment',
                 'origin' => 'Main Campus',
+                'supplier' => 'CoolWorks Mechanical Systems Corporation',
+                'brand' => 'CoolWorks',
+                'model' => 'CW-S20INV',
+                'variant' => '2.0 HP · Inverter Split-Type',
+                'lead_time_days' => 21,
+                'unit_price' => 46500.00,
                 'assets' => [
                     ['tag_code' => 'AST-FMO-0001', 'position' => 'POS-FMO-PC', 'status' => AssetStatus::Unserviceable],
                 ],
@@ -153,7 +209,14 @@ class UatInventorySeeder extends Seeder
                     'name' => $definition['name'],
                     'category_id' => $categories[$definition['category']]->id,
                     'origin_id' => $origins[$definition['origin']]->id,
+                    'supplier_id' => $suppliers[$definition['supplier']]->id ?? null,
                     'unit_of_measurement_id' => $units['piece']->id,
+                    'brand' => $definition['brand'],
+                    'model' => $definition['model'],
+                    'variant' => $definition['variant'],
+                    'specifications' => ['institutional_classification' => $definition['category']],
+                    'lead_time_days' => $definition['lead_time_days'],
+                    'unit_price' => $definition['unit_price'],
                     'type' => ProductType::Asset,
                     'reorder_threshold' => 0,
                     'is_active' => true,
@@ -170,7 +233,7 @@ class UatInventorySeeder extends Seeder
                         'status' => $assetDefinition['status'],
                         'serial_number' => 'PUP-'.str_replace('AST-', '', $assetDefinition['tag_code']),
                         'acquisition_date' => $timeline->subMonths(18)->toDateString(),
-                        'acquisition_cost' => 25000,
+                        'acquisition_cost' => $definition['unit_price'],
                         'warranty_expires_at' => $timeline->addMonths(18)->toDateString(),
                         'lifecycle_status' => $assetDefinition['status'] === AssetStatus::Condemned
                             ? AssetLifecycleStatus::Retired
@@ -191,12 +254,17 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Multipurpose Copy Paper, A4, 80 gsm, 500 Sheets/Ream',
                 'category' => 'Office Supplies',
                 'origin' => 'Main Campus',
+                'supplier' => 'Metro Manila Office Solutions Corporation',
+                'brand' => 'PaperOne',
+                'variant' => 'A4 · 80 gsm · 500 Sheets',
+                'lead_time_days' => 5,
+                'unit_price' => 235.00,
                 'reorder_threshold' => 90,
                 'is_active' => true,
                 'lots' => [
                     ['reference_no' => 'DR-2026-01042', 'received_at' => $timeline->subMonths(5)->subDays(4), 'qty_received' => 120, 'qty_remaining' => 0, 'expires_at' => null],
-                    ['reference_no' => 'DR-2026-01887', 'received_at' => $timeline->subMonths(3)->subDays(6), 'qty_received' => 140, 'qty_remaining' => 90, 'expires_at' => null],
-                    ['reference_no' => 'DR-2026-02631', 'received_at' => $timeline->subMonths(1)->subDays(10), 'qty_received' => 90, 'qty_remaining' => 90, 'expires_at' => null],
+                    ['reference_no' => 'DR-2026-01887', 'received_at' => $timeline->subMonths(3)->subDays(6), 'qty_received' => 140, 'qty_remaining' => 0, 'expires_at' => null],
+                    ['reference_no' => 'DR-2026-02631', 'received_at' => $timeline->subMonths(1)->subDays(10), 'qty_received' => 90, 'qty_remaining' => 36, 'expires_at' => null],
                 ],
             ],
             [
@@ -204,12 +272,17 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Black Printer Ink Bottle, 135 mL',
                 'category' => 'Office Supplies',
                 'origin' => 'LGU',
+                'supplier' => 'Metro Manila Office Solutions Corporation',
+                'brand' => 'PrintCore',
+                'variant' => 'Pigment Black · 135 mL',
+                'lead_time_days' => 4,
+                'unit_price' => 675.00,
                 'reorder_threshold' => 18,
                 'is_active' => true,
                 'lots' => [
                     ['reference_no' => 'DR-2026-01308', 'received_at' => $timeline->subMonths(4)->subDays(3), 'qty_received' => 20, 'qty_remaining' => 0, 'expires_at' => null],
-                    ['reference_no' => 'DR-2026-02174', 'received_at' => $timeline->subMonths(2)->subDays(9), 'qty_received' => 20, 'qty_remaining' => 12, 'expires_at' => null],
-                    ['reference_no' => 'DR-2026-02915', 'received_at' => $timeline->subDays(24), 'qty_received' => 12, 'qty_remaining' => 12, 'expires_at' => null],
+                    ['reference_no' => 'DR-2026-02174', 'received_at' => $timeline->subMonths(2)->subDays(9), 'qty_received' => 20, 'qty_remaining' => 0, 'expires_at' => null],
+                    ['reference_no' => 'DR-2026-02915', 'received_at' => $timeline->subDays(24), 'qty_received' => 20, 'qty_remaining' => 12, 'expires_at' => null],
                 ],
             ],
             [
@@ -217,6 +290,11 @@ class UatInventorySeeder extends Seeder
                 'name' => '70% Isopropyl Alcohol, 500 mL Bottle',
                 'category' => 'Medical Supplies',
                 'origin' => 'Donation',
+                'supplier' => 'Luzon Medical and Laboratory Supply, Inc.',
+                'brand' => 'MedClean',
+                'variant' => '70% Solution · 500 mL',
+                'lead_time_days' => 3,
+                'unit_price' => 145.00,
                 'reorder_threshold' => 20,
                 'is_active' => true,
                 'lots' => [
@@ -230,12 +308,17 @@ class UatInventorySeeder extends Seeder
                 'name' => 'AA Alkaline Battery, 1.5 V, 4 Pieces/Pack',
                 'category' => 'Office Supplies',
                 'origin' => 'CHED',
+                'supplier' => 'Metro Manila Office Solutions Corporation',
+                'brand' => 'VoltCell',
+                'variant' => 'AA 1.5 V · 4-Pack',
+                'lead_time_days' => 5,
+                'unit_price' => 95.00,
                 'reorder_threshold' => 20,
                 'is_active' => true,
                 'lots' => [
                     ['reference_no' => 'DR-2026-01196', 'received_at' => $timeline->subMonths(5), 'qty_received' => 20, 'qty_remaining' => 0, 'expires_at' => $timeline->addMonths(14)->toDateString()],
-                    ['reference_no' => 'DR-2026-02218', 'received_at' => $timeline->subMonths(2)->subDays(16), 'qty_received' => 25, 'qty_remaining' => 19, 'expires_at' => $timeline->addMonths(16)->toDateString()],
-                    ['reference_no' => 'DR-2026-03004', 'received_at' => $timeline->subDays(18), 'qty_received' => 20, 'qty_remaining' => 20, 'expires_at' => $timeline->addMonths(18)->toDateString()],
+                    ['reference_no' => 'DR-2026-02218', 'received_at' => $timeline->subMonths(2)->subDays(16), 'qty_received' => 25, 'qty_remaining' => 0, 'expires_at' => $timeline->addMonths(16)->toDateString()],
+                    ['reference_no' => 'DR-2026-03004', 'received_at' => $timeline->subDays(18), 'qty_received' => 22, 'qty_remaining' => 18, 'expires_at' => $timeline->addMonths(18)->toDateString()],
                 ],
             ],
             [
@@ -243,7 +326,12 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Ready-to-Use Surface Disinfectant, 1 Liter Bottle',
                 'category' => 'Cleaning Supplies',
                 'origin' => 'Main Campus',
-                'reorder_threshold' => 10,
+                'supplier' => 'Greenfield Janitorial and Sanitation Supply',
+                'brand' => 'Greenfield',
+                'variant' => 'Hospital Grade · 1 L',
+                'lead_time_days' => 3,
+                'unit_price' => 210.00,
+                'reorder_threshold' => 15,
                 'is_active' => true,
                 'lots' => [
                     ['reference_no' => 'DR-2026-02347', 'received_at' => $timeline->subMonths(2)->subDays(20), 'qty_received' => 14, 'qty_remaining' => 0, 'expires_at' => $timeline->addDays(4)->toDateString()],
@@ -255,7 +343,12 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Nitrile Examination Gloves, Medium, 100 Pieces/Box',
                 'category' => 'Protective Equipment',
                 'origin' => 'Donation',
-                'reorder_threshold' => 12,
+                'supplier' => 'Luzon Medical and Laboratory Supply, Inc.',
+                'brand' => 'MediShield',
+                'variant' => 'Powder-Free · Medium · 100s',
+                'lead_time_days' => 4,
+                'unit_price' => 380.00,
+                'reorder_threshold' => 15,
                 'is_active' => true,
                 'lots' => [
                     ['reference_no' => 'DR-2026-03018', 'received_at' => $timeline->subDays(20), 'qty_received' => 18, 'qty_remaining' => 6, 'expires_at' => $timeline->addDays(6)->toDateString()],
@@ -266,6 +359,11 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Acid-Free Archive File Box, Legal Size',
                 'category' => 'Office Supplies',
                 'origin' => 'Main Campus',
+                'supplier' => 'SecureHold Packaging and Office Products',
+                'brand' => 'SecureHold',
+                'variant' => 'Archival Board · Legal',
+                'lead_time_days' => 5,
+                'unit_price' => 160.00,
                 'reorder_threshold' => 10,
                 'is_active' => false,
                 'lots' => [
@@ -277,7 +375,12 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Black Laser Printer Toner Cartridge, 3,050-Page Yield',
                 'category' => 'Office Supplies',
                 'origin' => 'Main Campus',
-                'reorder_threshold' => 6,
+                'supplier' => 'Metro Manila Office Solutions Corporation',
+                'brand' => 'PrintCore',
+                'variant' => 'Standard Yield · 3,050 Pages',
+                'lead_time_days' => 5,
+                'unit_price' => 5890.00,
+                'reorder_threshold' => 8,
                 'is_active' => true,
                 'lots' => [
                     // Received before the PHY-2026-0001 count (14 days ago) that adjusts this lot.
@@ -289,6 +392,11 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Three-Ply Surgical Face Mask, 50 Pieces/Box',
                 'category' => 'Protective Equipment',
                 'origin' => 'Donation',
+                'supplier' => 'Luzon Medical and Laboratory Supply, Inc.',
+                'brand' => 'MediShield',
+                'variant' => 'Earloop · 50 Pieces/Box',
+                'lead_time_days' => 4,
+                'unit_price' => 165.00,
                 'reorder_threshold' => 20,
                 'is_active' => true,
                 'lots' => [
@@ -301,10 +409,15 @@ class UatInventorySeeder extends Seeder
                 'name' => 'LED Bulb, 12 W, Daylight, E27 Base',
                 'category' => 'Electrical Supplies',
                 'origin' => 'Main Campus',
+                'supplier' => 'VoltEdge Electrical Supply Corporation',
+                'brand' => 'VoltEdge',
+                'variant' => '12 W · Daylight · E27',
+                'lead_time_days' => 7,
+                'unit_price' => 125.00,
                 'reorder_threshold' => 15,
                 'is_active' => true,
                 'lots' => [
-                    ['reference_no' => 'DR-2026-02794', 'received_at' => $timeline->subDays(45), 'qty_received' => 48, 'qty_remaining' => 48, 'expires_at' => null],
+                    ['reference_no' => 'DR-2026-02794', 'received_at' => $timeline->subDays(120), 'qty_received' => 48, 'qty_remaining' => 48, 'expires_at' => null],
                 ],
             ],
             [
@@ -312,6 +425,11 @@ class UatInventorySeeder extends Seeder
                 'name' => 'Antibacterial Liquid Hand Soap, 500 mL Pump Bottle',
                 'category' => 'Cleaning Supplies',
                 'origin' => 'Main Campus',
+                'supplier' => 'Greenfield Janitorial and Sanitation Supply',
+                'brand' => 'Greenfield',
+                'variant' => 'Antibacterial · 500 mL',
+                'lead_time_days' => 3,
+                'unit_price' => 115.00,
                 'reorder_threshold' => 12,
                 'is_active' => true,
                 'lots' => [
@@ -327,7 +445,12 @@ class UatInventorySeeder extends Seeder
                     'name' => $definition['name'],
                     'category_id' => $categories[$definition['category']]->id,
                     'origin_id' => $origins[$definition['origin']]->id,
+                    'supplier_id' => $suppliers[$definition['supplier']]->id ?? null,
                     'unit_of_measurement_id' => $this->unitForConsumable($definition['sku'], $units)->id,
+                    'brand' => $definition['brand'],
+                    'variant' => $definition['variant'],
+                    'lead_time_days' => $definition['lead_time_days'],
+                    'unit_price' => $definition['unit_price'],
                     'type' => ProductType::Consumable,
                     'reorder_threshold' => $definition['reorder_threshold'],
                     'is_active' => $definition['is_active'],
@@ -374,6 +497,7 @@ class UatInventorySeeder extends Seeder
             origins: $origins,
             units: $units,
             positions: $positions,
+            suppliers: $suppliers,
             performedBy: $supplyHead,
             timeline: $timeline,
         );
@@ -413,35 +537,58 @@ class UatInventorySeeder extends Seeder
         $handSoapProduct = Product::query()->where('sku', 'CON-HSOAP-500')->firstOrFail();
         $handSoapLot = $handSoapProduct->lots()->where('reference_no', 'DR-2026-02411')->firstOrFail();
 
-        StockMovement::query()->updateOrCreate(
-            [
-                'movement_type' => 'issue',
-                'product_id' => $handSoapProduct->id,
-                'stock_lot_id' => $handSoapLot->id,
-                'notes' => 'Monthly washroom sanitation supplies issued to Facilities Management.',
-            ],
-            [
-                'reason_code' => null,
-                'asset_id' => null,
-                'requisition_id' => null,
-                'qty_delta' => -24,
-                'qty_before' => 24,
-                'qty_after' => 0,
-                'counted_qty' => null,
-                'variance_qty' => null,
-                'performed_by' => $supplyHead->id,
-                'accountable_position_id' => $positions['POS-FMO-PC']->id,
-                'ip_address' => '10.250.1.10',
-                'performed_at' => $timeline->subDays(20),
-            ],
-        );
+        StockMovement::query()
+            ->where('product_id', $handSoapProduct->id)
+            ->where('stock_lot_id', $handSoapLot->id)
+            ->where('movement_type', 'issue')
+            ->where('notes', 'Monthly washroom sanitation supplies issued to Facilities Management.')
+            ->delete();
+
+        $handSoapRunning = 24;
+        foreach ([
+            ['daysAgo' => 35, 'qty' => 6, 'note' => 'Washroom sanitation batch #1 issued to Facilities Management.'],
+            ['daysAgo' => 28, 'qty' => 6, 'note' => 'Washroom sanitation batch #2 issued to Facilities Management.'],
+            ['daysAgo' => 21, 'qty' => 6, 'note' => 'Washroom sanitation batch #3 issued to Facilities Management.'],
+            ['daysAgo' => 14, 'qty' => 6, 'note' => 'Washroom sanitation batch #4 issued to Facilities Management.'],
+        ] as $batch) {
+            $before = $handSoapRunning;
+            $handSoapRunning -= $batch['qty'];
+
+            StockMovement::query()->updateOrCreate(
+                [
+                    'movement_type' => 'issue',
+                    'product_id' => $handSoapProduct->id,
+                    'stock_lot_id' => $handSoapLot->id,
+                    'notes' => $batch['note'],
+                ],
+                [
+                    'reason_code' => null,
+                    'asset_id' => null,
+                    'requisition_id' => null,
+                    'qty_delta' => -$batch['qty'],
+                    'qty_before' => $before,
+                    'qty_after' => $handSoapRunning,
+                    'counted_qty' => null,
+                    'variance_qty' => null,
+                    'performed_by' => $supplyHead->id,
+                    'accountable_position_id' => $positions['POS-FMO-PC']->id,
+                    'ip_address' => '10.250.1.10',
+                    'performed_at' => $timeline->subDays($batch['daysAgo']),
+                ],
+            );
+        }
 
         $deletedProduct = Product::withTrashed()->firstOrNew(['sku' => 'CON-MARKER-BLK']);
         $deletedProduct->fill([
             'name' => 'Permanent Marker, Black, Bullet Tip',
             'category_id' => $categories['Office Supplies']->id,
             'origin_id' => $origins['LGU']->id,
+            'supplier_id' => $suppliers['BoardPro Classroom Supplies Corporation']->id ?? null,
             'unit_of_measurement_id' => $units['piece']->id,
+            'brand' => 'BoardPro',
+            'variant' => 'Bullet Tip · Permanent Black',
+            'lead_time_days' => 6,
+            'unit_price' => 48.00,
             'type' => ProductType::Consumable,
             'reorder_threshold' => 8,
             'is_active' => false,
@@ -577,45 +724,113 @@ class UatInventorySeeder extends Seeder
      * @param  array<string, Origin>  $origins
      * @param  array<string, UnitOfMeasurement>  $units
      * @param  array<string, Position>  $positions
+     * @param  array<string, Supplier>  $suppliers
      */
     private function seedExpandedInstitutionalCatalog(
         array $categories,
         array $origins,
         array $units,
         array $positions,
+        array $suppliers,
         User $performedBy,
         CarbonImmutable $timeline,
     ): void {
         $consumableDefinitions = $this->institutionalConsumableDefinitions();
 
+        $supplierByBrand = [
+            'Institutional Standard' => 'Metro Manila Office Solutions Corporation',
+            'WriteRight' => 'Metro Manila Office Solutions Corporation',
+            'BoardPro' => 'BoardPro Classroom Supplies Corporation',
+            'SecureHold' => 'SecureHold Packaging and Office Products',
+            'PrintCore' => 'PrintCore Imaging and Document Systems',
+            'Northstar' => 'Northstar Digital Systems Corporation',
+            'CorePoint' => 'Northstar Digital Systems Corporation',
+            'NetBridge' => 'NetBridge Enterprise Networks Corporation',
+            'DataVault' => 'DataVault Storage Solutions Philippines',
+            'VisionCast' => 'VisionCast Audio Visual Technologies, Inc.',
+            'CampusCraft' => 'CampusCraft Institutional Furnishings, Inc.',
+            'CoolWorks' => 'CoolWorks Mechanical Systems Corporation',
+            'AirFlow' => 'AirFlow Ventilation and Facilities Supply',
+        ];
+
+        $calibratedStockLevels = [
+            // Urgent (<= 7 days of supply under forecasted daily demand)
+            'OFF-PAPER-A4-80' => ['qty' => 20, 'threshold' => 30, 'lead_time' => 7],
+            'OFF-PAPER-LONG-80' => ['qty' => 14, 'threshold' => 25, 'lead_time' => 7],
+            'OFF-PEN-BLU' => ['qty' => 45, 'threshold' => 60, 'lead_time' => 5],
+            'OFF-PEN-BLA' => ['qty' => 36, 'threshold' => 50, 'lead_time' => 5],
+            'OFF-MARK-BLA-REF' => ['qty' => 12, 'threshold' => 20, 'lead_time' => 5],
+            'OFF-LAS-BLA' => ['qty' => 4, 'threshold' => 6, 'lead_time' => 10],
+            'OFF-TAPE-MASK-24mm' => ['qty' => 10, 'threshold' => 18, 'lead_time' => 5],
+            // At-risk (8..14 days of supply)
+            'OFF-PAPER-A4-70' => ['qty' => 28, 'threshold' => 25, 'lead_time' => 7],
+            'OFF-PAPER-SHORT-80' => ['qty' => 22, 'threshold' => 20, 'lead_time' => 7],
+            'OFF-FOLDER-DOCU-BL' => ['qty' => 26, 'threshold' => 24, 'lead_time' => 7],
+            'OFF-INJ-BLA' => ['qty' => 10, 'threshold' => 8, 'lead_time' => 10],
+            'OFF-TAPE-SCOT-24mm' => ['qty' => 20, 'threshold' => 16, 'lead_time' => 5],
+            'OFF-CLIP-M' => ['qty' => 25, 'threshold' => 20, 'lead_time' => 7],
+            // Slow-moving (idle >100 days with positive stock on hand)
+            'OFF-MAG-CRD' => ['qty' => 28, 'threshold' => 10, 'lead_time' => 7],
+            'OFF-RUB-L' => ['qty' => 32, 'threshold' => 12, 'lead_time' => 7],
+            'OFF-CLIP-L' => ['qty' => 24, 'threshold' => 10, 'lead_time' => 7],
+            'OFF-FOLDER-SHOR-MA' => ['qty' => 35, 'threshold' => 15, 'lead_time' => 7],
+            'OFF-TAPE-DOUB-24mm' => ['qty' => 22, 'threshold' => 10, 'lead_time' => 5],
+        ];
+
         foreach ($consumableDefinitions as $index => $definition) {
+            $sku = $definition['sku'];
+            $brand = $definition['brand'];
+            $supplierName = $supplierByBrand[$brand ?? 'Institutional Standard'] ?? 'Metro Manila Office Solutions Corporation';
+            $calibration = $calibratedStockLevels[$sku] ?? null;
+
+            $leadTimeDays = $calibration['lead_time'] ?? match (true) {
+                str_starts_with($sku, 'OFF-INJ-'), str_starts_with($sku, 'OFF-LAS-') => 10,
+                str_starts_with($sku, 'OFF-TAPE-'), str_starts_with($sku, 'OFF-MARK-') => 5,
+                default => 7,
+            };
+
+            $reorderThreshold = $calibration['threshold'] ?? match (true) {
+                str_starts_with($sku, 'OFF-LAS-') => 4,
+                str_starts_with($sku, 'OFF-INJ-') => 6,
+                str_starts_with($sku, 'OFF-PEN-') => 25,
+                str_starts_with($sku, 'OFF-PAPER-') => 18,
+                default => 12 + ($index % 9),
+            };
+
+            $quantity = $calibration['qty'] ?? match (true) {
+                str_starts_with($sku, 'OFF-LAS-') => 12 + ($index % 5),
+                str_starts_with($sku, 'OFF-INJ-') => 20 + ($index % 8),
+                str_starts_with($sku, 'OFF-PEN-') => 68 + (($index * 7) % 35),
+                default => 34 + (($index * 7) % 42),
+            };
+
             $product = Product::query()->updateOrCreate(
-                ['sku' => $definition['sku']],
+                ['sku' => $sku],
                 [
                     'name' => $definition['name'],
                     'category_id' => $categories['Office Supplies']->id,
                     'origin_id' => $origins['Main Campus']->id,
                     'unit_of_measurement_id' => $units[$definition['unit']]->id,
+                    'supplier_id' => ($suppliers[$supplierName] ?? collect($suppliers)->first())?->id,
                     'variant' => $definition['variant'],
-                    'brand' => $definition['brand'],
+                    'brand' => $brand,
                     'model' => null,
                     'color' => $definition['color'],
                     'size' => $definition['size'],
                     'specifications' => $definition['specifications'],
                     'type' => ProductType::Consumable,
-                    'reorder_threshold' => 8 + ($index % 13),
-                    'lead_time_days' => 7 + ($index % 15),
-                    'unit_price' => 12.50 + ($index * 3.75),
+                    'reorder_threshold' => $reorderThreshold,
+                    'lead_time_days' => $leadTimeDays,
+                    'unit_price' => $this->realisticCatalogConsumablePrice($sku),
                     'is_active' => true,
                     'is_bookable' => false,
                 ],
             );
 
-            $quantity = 24 + (($index * 7) % 57);
             $lot = StockLot::query()->updateOrCreate(
-                ['product_id' => $product->id, 'reference_no' => 'CATALOG-'.$definition['sku']],
+                ['product_id' => $product->id, 'reference_no' => 'CATALOG-'.$sku],
                 [
-                    'received_at' => $timeline->startOfMonth()->subDays(15 + ($index % 12)),
+                    'received_at' => $timeline->startOfMonth()->subDays(110 + ($index % 25)),
                     'expires_at' => null,
                     'qty_received' => $quantity,
                     'qty_remaining' => $quantity,
@@ -639,6 +854,8 @@ class UatInventorySeeder extends Seeder
         $positionCycle = collect($positions)->values();
 
         foreach ($this->institutionalAssetProductDefinitions() as $index => $definition) {
+            $assetSupplierName = $supplierByBrand[$definition['brand']] ?? 'Northstar Digital Systems Corporation';
+
             $product = Product::query()->updateOrCreate(
                 ['sku' => $definition['sku']],
                 [
@@ -646,6 +863,7 @@ class UatInventorySeeder extends Seeder
                     'category_id' => $categories[$definition['category']]->id,
                     'origin_id' => $origins[$definition['origin']]->id,
                     'unit_of_measurement_id' => $units['piece']->id,
+                    'supplier_id' => ($suppliers[$assetSupplierName] ?? collect($suppliers)->first())?->id,
                     'variant' => $definition['variant'],
                     'brand' => $definition['brand'],
                     'model' => $definition['model'],
@@ -654,7 +872,11 @@ class UatInventorySeeder extends Seeder
                     'specifications' => $definition['specifications'],
                     'type' => ProductType::Asset,
                     'reorder_threshold' => 0,
-                    'lead_time_days' => 20 + ($index % 25),
+                    'lead_time_days' => match ($definition['category']) {
+                        'Equipment' => 14,
+                        'Facilities Equipment' => 21,
+                        default => 18,
+                    },
                     'unit_price' => $definition['cost'],
                     'is_active' => true,
                     'is_bookable' => $definition['bookable'],
@@ -869,5 +1091,42 @@ class UatInventorySeeder extends Seeder
                 'maintenance_interval_days' => $interval,
             ];
         })->all();
+    }
+
+    private function realisticCatalogConsumablePrice(string $sku): float
+    {
+        return match (true) {
+            str_starts_with($sku, 'OFF-PAPER-') && str_ends_with($sku, '-80') => str_contains($sku, 'A4') || str_contains($sku, 'SHORT') ? 285.00 : 310.00,
+            str_starts_with($sku, 'OFF-PAPER-') => str_contains($sku, 'A4') || str_contains($sku, 'SHORT') ? 245.00 : 265.00,
+            str_starts_with($sku, 'OFF-PEN-') => 22.00,
+            str_starts_with($sku, 'OFF-FOLDER-EXPA-') => 65.00,
+            str_starts_with($sku, 'OFF-FOLDER-SHOR-') => 18.00,
+            str_starts_with($sku, 'OFF-FOLDER-') => 24.00,
+            $sku === 'OFF-MAG-PLS' => 145.00,
+            $sku === 'OFF-MAG-CRD' => 68.00,
+            $sku === 'OFF-CLIP-S' => 28.00,
+            $sku === 'OFF-CLIP-M' => 36.00,
+            $sku === 'OFF-CLIP-L' => 48.00,
+            $sku === 'OFF-RUB-S' => 42.00,
+            $sku === 'OFF-RUB-M' => 58.00,
+            $sku === 'OFF-RUB-L' => 75.00,
+            str_starts_with($sku, 'OFF-MARK-') && str_ends_with($sku, '-REF') => 68.00,
+            str_starts_with($sku, 'OFF-MARK-') => 48.00,
+            $sku === 'OFF-TAPE-SCOT-12mm' => 28.00,
+            $sku === 'OFF-TAPE-SCOT-24mm' => 45.00,
+            $sku === 'OFF-TAPE-MASK-12mm' => 42.00,
+            $sku === 'OFF-TAPE-MASK-24mm' => 68.00,
+            $sku === 'OFF-TAPE-PACK-12mm' => 52.00,
+            $sku === 'OFF-TAPE-PACK-24mm' => 78.00,
+            $sku === 'OFF-TAPE-DOUB-12mm' => 55.00,
+            $sku === 'OFF-TAPE-DOUB-24mm' => 85.00,
+            $sku === 'OFF-TAPE-ELEC-12mm' => 45.00,
+            $sku === 'OFF-TAPE-ELEC-24mm' => 72.00,
+            $sku === 'OFF-INJ-BLA' => 420.00,
+            str_starts_with($sku, 'OFF-INJ-') => 395.00,
+            $sku === 'OFF-LAS-BLA' => 2850.00,
+            str_starts_with($sku, 'OFF-LAS-') => 3150.00,
+            default => 55.00,
+        };
     }
 }

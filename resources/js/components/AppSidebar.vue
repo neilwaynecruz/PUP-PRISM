@@ -106,7 +106,7 @@ function goToFirstMatch(): void {
                                 <span
                                     class="truncate text-sm leading-none font-bold tracking-[0.16em] text-sidebar-foreground uppercase"
                                 >
-                                    PUP PRISM
+                                    PRISM
                                 </span>
                                 <span
                                     class="mt-1 truncate text-[0.62rem] leading-none font-medium tracking-widest text-sidebar-foreground/60 uppercase"

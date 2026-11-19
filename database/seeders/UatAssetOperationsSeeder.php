@@ -67,7 +67,7 @@ class UatAssetOperationsSeeder extends Seeder
 
         $this->seedPrivateAttachment(
             $maintenances['projector-inspection'],
-            $users['custodian@local.test'],
+            $users['nathanweiltcruz1415@gmail.com'],
             'inspection',
             'Projector preventive maintenance report',
             'projector-preventive-maintenance-report.pdf',
@@ -75,15 +75,15 @@ class UatAssetOperationsSeeder extends Seeder
         );
         $this->seedPrivateAttachment(
             $transfers['engineering-laptop'],
-            $users['custodian@local.test'],
+            $users['nathanweiltcruz1415@gmail.com'],
             'transfer',
             'Property transfer acknowledgment',
             'engineering-laptop-transfer-acknowledgment.pdf',
-            'Transfer acknowledged by the College of Engineering property custodian.',
+            'Transfer acknowledged by the property custodian.',
         );
         $this->seedPrivateAttachment(
             $lifecycleEvents['network-switch-disposal'],
-            $users['custodian@local.test'],
+            $users['cruzneilwayne@gmail.com'],
             'disposal',
             'Information technology equipment disposal record',
             'network-switch-disposal-record.pdf',
@@ -91,7 +91,7 @@ class UatAssetOperationsSeeder extends Seeder
         );
         $this->seedPrivateAttachment(
             $countSessions['completed'],
-            $users['inventory.analyst@local.test'],
+            $users['norman.cruz0701@gmail.com'],
             'inspection',
             'Central stockroom physical count sheet',
             'central-stockroom-physical-count-sheet.pdf',
@@ -306,7 +306,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'asset' => 'AST-FMO-0001', 'type' => MaintenanceType::Corrective, 'status' => MaintenanceStatus::Reported,
                 'issue' => 'Indoor unit is leaking water and no longer cools the room consistently.',
                 'description' => 'Inspect the drainage line, evaporator coil, refrigerant pressure, and electrical controls.',
-                'reported_by' => 'facilities.custodian@local.test', 'reported_date' => $timeline->subDay(),
+                'reported_by' => 'nathanweiltcruz1415@gmail.com', 'reported_date' => $timeline->subDay(),
                 'assigned_to' => null, 'provider' => null, 'scheduled_for' => null, 'completed_at' => null,
                 'cost' => null, 'findings' => null, 'notes' => 'Awaiting technical assessment and service quotation.',
             ],
@@ -314,32 +314,32 @@ class UatAssetOperationsSeeder extends Seeder
                 'asset' => 'AST-IT-0001', 'type' => MaintenanceType::Preventive, 'status' => MaintenanceStatus::Scheduled,
                 'issue' => 'Quarterly preventive maintenance is due for the core access switch.',
                 'description' => 'Back up configuration, inspect ports, clean ventilation openings, and test redundant uplinks.',
-                'reported_by' => 'it.expert@local.test', 'reported_date' => $timeline->subDays(4),
-                'assigned_to' => 'it.expert@local.test', 'provider' => 'University Information Technology Office', 'scheduled_for' => $timeline->addDays(3), 'completed_at' => null,
+                'reported_by' => 'nathanweiltcruz1415@gmail.com', 'reported_date' => $timeline->subDays(4),
+                'assigned_to' => 'cruzneilwayne@gmail.com', 'provider' => 'University Information Technology Office', 'scheduled_for' => $timeline->addDays(3), 'completed_at' => null,
                 'cost' => null, 'findings' => null, 'notes' => 'Maintenance window coordinated with offices using the affected network segment.',
             ],
             'tablet-repair' => [
                 'asset' => 'AST-ADMIN-0001', 'type' => MaintenanceType::Repair, 'status' => MaintenanceStatus::InProgress,
                 'issue' => 'Tablet does not hold a charge and restarts when disconnected from power.',
                 'description' => 'Replace the battery assembly and complete a charging-cycle diagnostic.',
-                'reported_by' => 'admin.office.custodian@local.test', 'reported_date' => $timeline->subDays(7),
-                'assigned_to' => 'it.expert@local.test', 'provider' => 'Northstar Digital Systems Corporation', 'scheduled_for' => $timeline->subDays(2), 'completed_at' => null,
+                'reported_by' => 'wendzcruz04@gmail.com', 'reported_date' => $timeline->subDays(7),
+                'assigned_to' => 'cruzneilwayne@gmail.com', 'provider' => 'Northstar Digital Systems Corporation', 'scheduled_for' => $timeline->subDays(2), 'completed_at' => null,
                 'cost' => 3850.00, 'findings' => 'Battery health measured below service threshold; replacement is in progress.', 'notes' => 'Asset remains unavailable until the post-repair test is completed.',
             ],
             'projector-inspection' => [
                 'asset' => 'AST-DIR-0001', 'type' => MaintenanceType::Inspection, 'status' => MaintenanceStatus::Completed,
                 'issue' => 'Annual audiovisual equipment inspection was due.',
                 'description' => 'Inspect lamp hours, image quality, filters, ports, remote control, and power cable.',
-                'reported_by' => 'director.office.custodian@local.test', 'reported_date' => $timeline->subDays(18),
-                'assigned_to' => 'it.expert@local.test', 'provider' => 'University Information Technology Office', 'scheduled_for' => $timeline->subDays(12), 'completed_at' => $timeline->subDays(12)->addHours(2),
+                'reported_by' => 'neilwayne0514@gmail.com', 'reported_date' => $timeline->subDays(18),
+                'assigned_to' => 'cruzneilwayne@gmail.com', 'provider' => 'University Information Technology Office', 'scheduled_for' => $timeline->subDays(12), 'completed_at' => $timeline->subDays(12)->addHours(2),
                 'cost' => 0.00, 'findings' => 'Equipment passed the functional inspection after filter cleaning and cable replacement.', 'notes' => 'Next preventive inspection is due in twelve months.',
             ],
             'cabinet-cancelled' => [
                 'asset' => 'AST-BACC-0001', 'type' => MaintenanceType::Other, 'status' => MaintenanceStatus::Cancelled,
                 'issue' => 'A replacement key was requested for the filing cabinet.',
                 'description' => 'Verify the lock code and arrange key duplication if no spare key is available.',
-                'reported_by' => 'business.custodian@local.test', 'reported_date' => $timeline->subDays(9),
-                'assigned_to' => 'facilities.custodian@local.test', 'provider' => null, 'scheduled_for' => $timeline->subDays(5), 'completed_at' => null,
+                'reported_by' => 'wendzcruz04@gmail.com', 'reported_date' => $timeline->subDays(9),
+                'assigned_to' => 'nathanweiltcruz1415@gmail.com', 'provider' => null, 'scheduled_for' => $timeline->subDays(5), 'completed_at' => null,
                 'cost' => null, 'findings' => 'The labeled spare key was located during the records-room inventory.', 'notes' => 'Service request cancelled because no repair was required.',
             ],
         ];
@@ -382,7 +382,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'asset' => 'AST-COE-0001', 'from' => 'SPMO-PROP', 'to' => 'COE-COMPLAB',
                 'from_position' => 'POS-PC-CHIEF', 'to_position' => 'POS-COE-PC', 'status' => AssetTransferStatus::Approved,
                 'reason' => 'Permanent deployment for engineering laboratory instruction and faculty research.',
-                'date' => $timeline->subDays(45), 'initiated_by' => 'custodian@local.test', 'approved_by' => 'admin@local.test',
+                'date' => $timeline->subDays(45), 'initiated_by' => 'nathanweiltcruz1415@gmail.com', 'approved_by' => 'neilwayne0514@gmail.com',
                 'approved_at' => $timeline->subDays(44), 'cancelled_by' => null, 'cancelled_at' => null,
                 'notes' => 'Asset tag and accessories were verified during acknowledgment.',
             ],
@@ -390,7 +390,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'asset' => 'AST-REG-0002', 'from' => 'REG-RECORDS', 'to' => 'ADMIN-RECORDS',
                 'from_position' => 'POS-REG-PC', 'to_position' => 'POS-ADMIN-PC', 'status' => AssetTransferStatus::Pending,
                 'reason' => 'Temporary deployment for the university-wide records digitization project.',
-                'date' => $timeline->addDays(2), 'initiated_by' => 'registrar.custodian@local.test', 'approved_by' => null,
+                'date' => $timeline->addDays(2), 'initiated_by' => 'nathanweiltcruz1415@gmail.com', 'approved_by' => null,
                 'approved_at' => null, 'cancelled_by' => null, 'cancelled_at' => null,
                 'notes' => 'Pending property office review and receiving-office acknowledgment.',
             ],
@@ -398,7 +398,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'asset' => 'AST-DIR-0001', 'from' => 'DIR-CONFERENCE', 'to' => 'LIB-SERVICE',
                 'from_position' => 'POS-DIR-PC', 'to_position' => 'POS-LIB-PC', 'status' => AssetTransferStatus::Rejected,
                 'reason' => 'Requested reassignment to support library audiovisual activities.',
-                'date' => $timeline->subDays(6), 'initiated_by' => 'library.custodian@local.test', 'approved_by' => 'admin@local.test',
+                'date' => $timeline->subDays(6), 'initiated_by' => 'nathanweiltcruz1415@gmail.com', 'approved_by' => 'neilwayne0514@gmail.com',
                 'approved_at' => $timeline->subDays(5), 'cancelled_by' => null, 'cancelled_at' => null,
                 'notes' => 'Request declined because the projector is assigned to scheduled executive meetings.',
             ],
@@ -406,8 +406,8 @@ class UatAssetOperationsSeeder extends Seeder
                 'asset' => 'AST-STU-0001', 'from' => 'STUDENT-ACTIVITY', 'to' => 'COE-COMPLAB',
                 'from_position' => 'POS-STUDENT-PC', 'to_position' => 'POS-COE-PC', 'status' => AssetTransferStatus::Cancelled,
                 'reason' => 'Temporary relocation for an engineering extension program.',
-                'date' => $timeline->subDays(3), 'initiated_by' => 'eng.custodian@local.test', 'approved_by' => null,
-                'approved_at' => null, 'cancelled_by' => 'eng.custodian@local.test', 'cancelled_at' => $timeline->subDays(2),
+                'date' => $timeline->subDays(3), 'initiated_by' => 'nathanweiltcruz1415@gmail.com', 'approved_by' => null,
+                'approved_at' => null, 'cancelled_by' => 'nathanweiltcruz1415@gmail.com', 'cancelled_at' => $timeline->subDays(2),
                 'notes' => 'Program venue changed before property office approval.',
             ],
         ];
@@ -448,7 +448,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'from_condition' => null, 'to_condition' => AssetConditionStatus::Serviceable,
                 'reason' => 'Equipment accepted after delivery inspection and property tagging.', 'method' => 'Public procurement',
                 'reference' => 'IAR-2026-00418', 'proposed_for' => $timeline->subDays(90), 'occurred_at' => $timeline->subDays(89),
-                'initiated_by' => 'custodian@local.test', 'approved_by' => 'admin@local.test', 'approved_at' => $timeline->subDays(89),
+                'initiated_by' => 'nathanweiltcruz1415@gmail.com', 'approved_by' => 'neilwayne0514@gmail.com', 'approved_at' => $timeline->subDays(89),
                 'notes' => 'Acceptance and inspection report completed with no exceptions.',
             ],
             'air-conditioner-condition' => [
@@ -457,7 +457,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'from_condition' => AssetConditionStatus::Serviceable, 'to_condition' => AssetConditionStatus::Damaged,
                 'reason' => 'Water leakage and inconsistent cooling require corrective maintenance.', 'method' => 'Facilities inspection',
                 'reference' => 'FMO-INS-2026-0037', 'proposed_for' => $timeline->subDay(), 'occurred_at' => $timeline->subDay(),
-                'initiated_by' => 'facilities.custodian@local.test', 'approved_by' => 'admin@local.test', 'approved_at' => $timeline->subHours(18),
+                'initiated_by' => 'nathanweiltcruz1415@gmail.com', 'approved_by' => 'neilwayne0514@gmail.com', 'approved_at' => $timeline->subHours(18),
                 'notes' => 'Asset remains active in the register but unavailable for operational use.',
             ],
             'laptop-retirement' => [
@@ -466,7 +466,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'from_condition' => AssetConditionStatus::Damaged, 'to_condition' => AssetConditionStatus::Unserviceable,
                 'reason' => 'Mainboard failure and discontinued replacement parts make repair uneconomical.', 'method' => 'Beyond economical repair',
                 'reference' => 'PAR-2026-00074', 'proposed_for' => $timeline->subDays(20), 'occurred_at' => $timeline->subDays(15),
-                'initiated_by' => 'custodian@local.test', 'approved_by' => 'admin@local.test', 'approved_at' => $timeline->subDays(15),
+                'initiated_by' => 'nathanweiltcruz1415@gmail.com', 'approved_by' => 'neilwayne0514@gmail.com', 'approved_at' => $timeline->subDays(15),
                 'notes' => 'Asset secured in the property holding area pending authorized disposal.',
             ],
             'network-switch-disposal' => [
@@ -475,7 +475,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'from_condition' => AssetConditionStatus::Unserviceable, 'to_condition' => AssetConditionStatus::Unserviceable,
                 'reason' => 'Obsolete equipment failed electrical and functional inspection after retirement.', 'method' => 'Authorized electronic waste recycler',
                 'reference' => 'DISP-2026-00019', 'proposed_for' => $timeline->subDays(35), 'occurred_at' => $timeline->subDays(28),
-                'initiated_by' => 'it.expert@local.test', 'approved_by' => 'admin@local.test', 'approved_at' => $timeline->subDays(29),
+                'initiated_by' => 'cruzneilwayne@gmail.com', 'approved_by' => 'neilwayne0514@gmail.com', 'approved_at' => $timeline->subDays(29),
                 'notes' => 'Storage media was not present; equipment identification plate was recorded before release.',
             ],
             'cabinet-retirement-pending' => [
@@ -484,7 +484,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'from_condition' => AssetConditionStatus::Serviceable, 'to_condition' => AssetConditionStatus::Unserviceable,
                 'reason' => 'Drawer rails and locking mechanism require evaluation before further use.', 'method' => 'Condition assessment',
                 'reference' => 'PAR-2026-00103', 'proposed_for' => $timeline->addDays(5), 'occurred_at' => null,
-                'initiated_by' => 'business.custodian@local.test', 'approved_by' => null, 'approved_at' => null,
+                'initiated_by' => 'nathanweiltcruz1415@gmail.com', 'approved_by' => null, 'approved_at' => null,
                 'notes' => 'Pending physical inspection by the property office.',
             ],
             'printer-disposal-rejected' => [
@@ -493,7 +493,7 @@ class UatAssetOperationsSeeder extends Seeder
                 'from_condition' => AssetConditionStatus::Damaged, 'to_condition' => AssetConditionStatus::Unserviceable,
                 'reason' => 'Repeated paper-feed errors led to a disposal request.', 'method' => 'Property disposal',
                 'reference' => 'DISP-2026-00022', 'proposed_for' => $timeline->subDays(8), 'occurred_at' => null,
-                'initiated_by' => 'library.custodian@local.test', 'approved_by' => 'admin@local.test', 'approved_at' => $timeline->subDays(6),
+                'initiated_by' => 'nathanweiltcruz1415@gmail.com', 'approved_by' => 'neilwayne0514@gmail.com', 'approved_at' => $timeline->subDays(6),
                 'notes' => 'Request rejected because the inspection found the pickup roller repairable.',
             ],
         ];
@@ -545,7 +545,7 @@ class UatAssetOperationsSeeder extends Seeder
         $sessions = [];
 
         $sessions['completed'] = $this->syncCountSession('PHY-2026-0001', $locations['SPMO-STOCKROOM'], $users, [
-            'assigned_to' => 'inventory.analyst@local.test', 'approved_by' => 'supply@local.test',
+            'assigned_to' => 'norman.cruz0701@gmail.com', 'approved_by' => 'wendzcruz04@gmail.com',
             'counting_date' => $timeline->subDays(14), 'scope' => 'Central stockroom consumables - quarterly cycle count',
             'status' => InventoryCountStatus::Completed, 'snapshot_at' => $timeline->subDays(14)->setTime(8, 0),
             'movement_cutoff_id' => $movementCutoffId, 'submitted_at' => $timeline->subDays(14)->setTime(11, 30),
@@ -563,8 +563,8 @@ class UatAssetOperationsSeeder extends Seeder
             [
                 'reason_code' => StockMovementReasonCode::Shrinkage, 'asset_id' => null, 'requisition_id' => null,
                 'qty_delta' => -2, 'qty_before' => 12, 'qty_after' => 10, 'counted_qty' => 10, 'variance_qty' => -2,
-                'performed_by' => $users['supply@local.test']->id,
-                'accountable_position_id' => $users['supply@local.test']->position_id,
+                'performed_by' => $users['wendzcruz04@gmail.com']->id,
+                'accountable_position_id' => $users['wendzcruz04@gmail.com']->position_id,
                 'ip_address' => '10.250.12.15', 'performed_at' => $timeline->subDays(13)->setTime(9, 15),
             ],
         );
@@ -576,19 +576,19 @@ class UatAssetOperationsSeeder extends Seeder
             [
                 'product_id' => $toner->id, 'asset_id' => null, 'expected_qty_snapshot' => 12,
                 'counted_qty' => 10, 'expected_qty_at_count' => 12, 'variance_qty' => -2,
-                'counted_by' => $users['inventory.analyst@local.test']->id,
+                'counted_by' => $users['norman.cruz0701@gmail.com']->id,
                 'counted_at' => $timeline->subDays(14)->setTime(10, 45),
                 'review_status' => InventoryCountReviewStatus::Approved,
                 'count_notes' => 'Two cartridges were not located after shelf and receiving-area recount.',
                 'review_notes' => 'Variance approved after checking receiving records and issue logs.',
-                'reviewed_by' => $users['supply@local.test']->id,
+                'reviewed_by' => $users['wendzcruz04@gmail.com']->id,
                 'reviewed_at' => $timeline->subDays(13)->setTime(9, 0),
                 'adjustment_movement_id' => $adjustmentMovement->id,
             ],
         );
 
         $sessions['submitted'] = $this->syncCountSession('PHY-2026-0002', $locations['SPMO-STOCKROOM'], $users, [
-            'assigned_to' => 'inventory.analyst@local.test', 'approved_by' => null,
+            'assigned_to' => 'norman.cruz0701@gmail.com', 'approved_by' => null,
             'counting_date' => $timeline->subDay(), 'scope' => 'Protective equipment shelf verification',
             'status' => InventoryCountStatus::Submitted, 'snapshot_at' => $timeline->subDay()->setTime(8, 30),
             'movement_cutoff_id' => (int) (StockMovement::query()->max('id') ?? 0),
@@ -603,7 +603,7 @@ class UatAssetOperationsSeeder extends Seeder
             [
                 'product_id' => $gloves->id, 'asset_id' => null, 'expected_qty_snapshot' => 6,
                 'counted_qty' => 5, 'expected_qty_at_count' => 6, 'variance_qty' => -1,
-                'counted_by' => $users['inventory.analyst@local.test']->id,
+                'counted_by' => $users['norman.cruz0701@gmail.com']->id,
                 'counted_at' => $timeline->subDay()->setTime(10, 30),
                 'review_status' => InventoryCountReviewStatus::Pending,
                 'count_notes' => 'One box is under review against the clinic issue log.',
@@ -619,14 +619,14 @@ class UatAssetOperationsSeeder extends Seeder
             [
                 'reason_code' => StockMovementReasonCode::RoutineCount, 'asset_id' => null, 'requisition_id' => null,
                 'qty_delta' => 0, 'qty_before' => 6, 'qty_after' => 6, 'counted_qty' => 5, 'variance_qty' => -1,
-                'performed_by' => $users['inventory.analyst@local.test']->id,
-                'accountable_position_id' => $users['inventory.analyst@local.test']->position_id,
+                'performed_by' => $users['norman.cruz0701@gmail.com']->id,
+                'accountable_position_id' => $users['norman.cruz0701@gmail.com']->position_id,
                 'ip_address' => '10.250.12.16', 'performed_at' => $timeline->subDay()->setTime(10, 30),
             ],
         );
 
         $sessions['in-progress'] = $this->syncCountSession('PHY-2026-0003', $locations['IT-SERVER'], $users, [
-            'assigned_to' => 'it.expert@local.test', 'approved_by' => null,
+            'assigned_to' => 'cruzneilwayne@gmail.com', 'approved_by' => null,
             'counting_date' => $timeline, 'scope' => 'Information technology network assets',
             'status' => InventoryCountStatus::InProgress, 'snapshot_at' => $timeline->setTime(8, 0),
             'movement_cutoff_id' => (int) (StockMovement::query()->max('id') ?? 0),
@@ -638,7 +638,7 @@ class UatAssetOperationsSeeder extends Seeder
             [
                 'product_id' => $assets['AST-IT-0001']->product_id, 'stock_lot_id' => null,
                 'expected_qty_snapshot' => 1, 'counted_qty' => 1, 'expected_qty_at_count' => 1, 'variance_qty' => 0,
-                'counted_by' => $users['it.expert@local.test']->id, 'counted_at' => $timeline->setTime(10, 0),
+                'counted_by' => $users['cruzneilwayne@gmail.com']->id, 'counted_at' => $timeline->setTime(10, 0),
                 'review_status' => InventoryCountReviewStatus::Pending,
                 'count_notes' => 'Asset tag and rack position verified.', 'review_notes' => null,
                 'reviewed_by' => null, 'reviewed_at' => null, 'adjustment_movement_id' => null,
@@ -646,7 +646,7 @@ class UatAssetOperationsSeeder extends Seeder
         );
 
         $sessions['draft'] = $this->syncCountSession('PHY-2026-0004', $locations['REG-RECORDS'], $users, [
-            'assigned_to' => 'registrar.custodian@local.test', 'approved_by' => null,
+            'assigned_to' => 'nathanweiltcruz1415@gmail.com', 'approved_by' => null,
             'counting_date' => $timeline->addDays(4), 'scope' => 'Registrar office equipment',
             'status' => InventoryCountStatus::Draft, 'snapshot_at' => $timeline,
             'movement_cutoff_id' => (int) (StockMovement::query()->max('id') ?? 0),
@@ -665,7 +665,7 @@ class UatAssetOperationsSeeder extends Seeder
         );
 
         $sessions['cancelled'] = $this->syncCountSession('PHY-2026-0005', $locations['SPMO-OLD-STORAGE'], $users, [
-            'assigned_to' => 'inventory.analyst@local.test', 'approved_by' => null,
+            'assigned_to' => 'norman.cruz0701@gmail.com', 'approved_by' => null,
             'counting_date' => $timeline->subDays(30), 'scope' => 'Former property storage room closure count',
             'status' => InventoryCountStatus::Cancelled, 'snapshot_at' => $timeline->subDays(31),
             'movement_cutoff_id' => $movementCutoffId, 'submitted_at' => null, 'approved_at' => null,
@@ -699,7 +699,7 @@ class UatAssetOperationsSeeder extends Seeder
             ['reference_no' => $referenceNumber],
             [
                 'location_id' => $location->id,
-                'created_by' => $users['inventory.analyst@local.test']->id,
+                'created_by' => $users['wendzcruz04@gmail.com']->id,
                 'assigned_to' => $users[$definition['assigned_to']]->id,
                 'approved_by' => $definition['approved_by'] === null ? null : $users[$definition['approved_by']]->id,
                 'counting_date' => $definition['counting_date'], 'scope' => $definition['scope'],
@@ -720,7 +720,7 @@ class UatAssetOperationsSeeder extends Seeder
         string $originalName,
         string $body,
     ): void {
-        $contents = "%PDF-1.4\n% PUP-PRISM operational document\n{$body}\n%%EOF\n";
+        $contents = "%PDF-1.4\n% PRISM operational document\n{$body}\n%%EOF\n";
         $checksum = hash('sha256', $contents);
         $storedName = $checksum.'.pdf';
         $path = 'attachments/operational-records/'.$storedName;

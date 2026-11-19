@@ -23,6 +23,9 @@ return new class extends Migration
         }
 
         DB::statement('ALTER TABLE requisitions DROP CONSTRAINT IF EXISTS requisitions_status_check');
+        DB::table('requisitions')
+            ->whereIn('status', ['PartiallyIssued', 'Backordered'])
+            ->update(['status' => 'Approved']);
         DB::statement("ALTER TABLE requisitions ADD CONSTRAINT requisitions_status_check CHECK (status IN ('Draft','Submitted','Approved','Issued','Closed','Rejected'))");
     }
 };

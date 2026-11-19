@@ -17,6 +17,7 @@ import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { formatDisplayDate } from '@/lib/dateFormatting';
 import { index, show, store } from '@/routes/inventory/counts';
 
 const QrScannerDialog = defineAsyncComponent(
@@ -537,7 +538,7 @@ function statusClass(value: string): string {
                             <Calendar
                                 class="h-3 w-3 text-muted-foreground/70"
                             />
-                            {{ session.counting_date }}
+                            {{ formatDisplayDate(session.counting_date) }}
                         </p>
 
                         <!-- Progress Bar -->

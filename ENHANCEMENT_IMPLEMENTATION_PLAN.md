@@ -1,4 +1,4 @@
-# PUP PRISM — Enhancement Implementation Plan
+# PRISM — Enhancement Implementation Plan
 
 > **Purpose:** Detailed, actionable implementation plans for 12 high-impact enhancements.
 > **Status:** Proposed for Prioritization
@@ -1035,7 +1035,7 @@ plugins: [
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico'],
         manifest: {
-            name: 'PUP PRISM',
+            name: 'PRISM',
             short_name: 'PRISM',
             description: 'Property & Resource Inventory System',
             theme_color: '#1e293b',

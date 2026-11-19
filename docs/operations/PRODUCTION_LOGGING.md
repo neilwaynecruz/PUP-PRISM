@@ -2,7 +2,7 @@
 
 > **Companion docs:** [PRODUCTION_DEPLOYMENT_RUNBOOK.md](./PRODUCTION_DEPLOYMENT_RUNBOOK.md), [README.md](./README.md)
 
-This document defines how PUP PRISM should log in production and how logs can be centralized for diagnostics and incident response.
+This document defines how PRISM should log in production and how logs can be centralized for diagnostics and incident response.
 
 ---
 
@@ -64,10 +64,10 @@ Example Filebeat input:
 - type: log
   enabled: true
   paths:
-    - /var/www/pup_prism/storage/logs/laravel-*.log
-    - /var/www/pup_prism/storage/logs/queue-worker.log
+    - /var/www/prism/storage/logs/laravel-*.log
+    - /var/www/prism/storage/logs/queue-worker.log
   fields:
-    app: pup_prism
+    app: prism
     env: production
 ```
 

@@ -22,7 +22,7 @@ if (
     });
 }
 
-const appName = import.meta.env.VITE_APP_NAME || 'PUP PRISM';
+const appName = import.meta.env.VITE_APP_NAME || 'PRISM';
 
 if (typeof window !== 'undefined') {
     let lastNetworkToastAt = 0;

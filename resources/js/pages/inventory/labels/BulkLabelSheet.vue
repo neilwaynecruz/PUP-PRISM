@@ -628,7 +628,7 @@ function handleDownloadPdf(): void {
                                               : 'text-[8px]'
                                     "
                                 >
-                                    PUP PRISM
+                                    PRISM
                                 </div>
                             </div>
                         </div>

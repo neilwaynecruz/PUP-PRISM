@@ -1,4 +1,4 @@
-# PUP PRISM — System Improvement Documentation
+# PRISM — System Improvement Documentation
 
 > Generated from a deep codebase analysis on 2026-07-03.
 > Complements existing [`PRODUCTION_READINESS_PLAN.md`](../../PRODUCTION_READINESS_PLAN.md) and [`ENHANCEMENT_IMPLEMENTATION_PLAN.md`](../../ENHANCEMENT_IMPLEMENTATION_PLAN.md).

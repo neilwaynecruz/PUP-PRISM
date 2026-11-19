@@ -3,9 +3,9 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="application-name" content="{{ config('app.name', 'PUP PRISM') }}">
+        <meta name="application-name" content="{{ config('app.name', 'PRISM') }}">
         <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'PUP PRISM') }}">
+        <meta name="apple-mobile-web-app-title" content="{{ config('app.name', 'PRISM') }}">
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="msapplication-TileColor" content="#7a1538">
         <meta name="msapplication-TileImage" content="/Icons/prism-icon-192x192.png">

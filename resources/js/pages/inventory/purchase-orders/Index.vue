@@ -19,6 +19,7 @@ import AdminPagination from '@/components/admin/AdminPagination.vue';
 import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { formatDisplayDate } from '@/lib/dateFormatting';
 import { shouldApplyDebouncedVisit } from '@/lib/inertiaNavigation';
 import { formatPhilippinePeso } from '@/lib/utils';
 import {
@@ -204,11 +205,7 @@ function formatDate(iso: string | null): string {
         return '—';
     }
 
-    return new Date(iso).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    });
+    return formatDisplayDate(iso);
 }
 </script>
 

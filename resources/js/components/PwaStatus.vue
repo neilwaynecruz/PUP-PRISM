@@ -81,7 +81,7 @@ const {
                 aria-hidden="true"
             />
             <div class="min-w-0 flex-1">
-                <p class="font-semibold">Install PUP PRISM</p>
+                <p class="font-semibold">Install PRISM</p>
                 <p class="mt-1 text-sm leading-5 text-muted-foreground">
                     Add PRISM to this device for quicker access. An internet
                     connection is still required for inventory changes.

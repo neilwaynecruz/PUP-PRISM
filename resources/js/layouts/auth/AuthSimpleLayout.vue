@@ -33,7 +33,7 @@ const isLoginPage = computed(() => page.component === 'auth/Login');
                         <span
                             class="text-base leading-none font-semibold tracking-[0.18em] uppercase"
                         >
-                            PUP PRISM
+                            PRISM
                         </span>
                         <span
                             class="mt-1 text-[0.65rem] leading-none font-medium tracking-[0.18em] text-[#f3cf76] uppercase"
@@ -88,7 +88,7 @@ const isLoginPage = computed(() => page.component === 'auth/Login');
                             <span
                                 class="text-base leading-none font-semibold tracking-[0.18em] uppercase"
                             >
-                                PUP PRISM
+                                PRISM
                             </span>
                             <span
                                 class="mt-1 text-[0.65rem] leading-none font-medium tracking-[0.16em] text-slate-500 uppercase dark:text-slate-400"

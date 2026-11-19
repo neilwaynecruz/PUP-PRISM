@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { BadgeAlert, Radar, ShieldCheck, Sparkles } from 'lucide-vue-next';
 import { computed } from 'vue';
+import { formatDisplayDate } from '@/lib/dateFormatting';
 
 type ForecastPoint = {
     date: string;
@@ -120,11 +121,7 @@ function formatDate(value: string | null): string {
         return 'Not projected';
     }
 
-    return new Date(value).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    });
+    return formatDisplayDate(value, 'Not projected');
 }
 
 function formatDateTime(value: string): string {

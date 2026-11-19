@@ -75,10 +75,10 @@ class UatOperationalHistorySeeder extends Seeder
      * @var array<string, array{requester: string, lines: array<string, int>}>
      */
     private const REQUESTING_OFFICES = [
-        'College of Engineering' => ['requester' => 'eng.custodian@local.test', 'lines' => ['OFF-PAPER-A4-80' => 18, 'OFF-MARK-BLA-REF' => 12, 'OFF-MARK-BLU-REF' => 8, 'OFF-PEN-BLU' => 30, 'OFF-INJ-BLA' => 3]],
-        'College of Education' => ['requester' => 'education.custodian@local.test', 'lines' => ['OFF-PAPER-SHORT-80' => 16, 'OFF-MARK-RED-DIS' => 10, 'OFF-PEN-BLA' => 24, 'OFF-TAPE-MASK-24mm' => 8, 'OFF-FOLDER-FILE-BL' => 20]],
-        'College of Business and Accountancy' => ['requester' => 'business.custodian@local.test', 'lines' => ['OFF-PAPER-LONG-80' => 14, 'OFF-PEN-RED' => 12, 'OFF-CLIP-M' => 6, 'OFF-LAS-BLA' => 2, 'OFF-FOLDER-EXPA-MA' => 10]],
-        'Registrar Office' => ['requester' => 'registrar.custodian@local.test', 'lines' => ['OFF-PAPER-LEGAL-80' => 12, 'OFF-FOLDER-LONG-BL' => 25, 'OFF-TAPE-SCOT-12mm' => 10, 'OFF-RUB-M' => 4, 'OFF-LAS-BLA' => 2]],
+        'College of Engineering' => ['requester' => 'nathanweiltcruz1415@gmail.com', 'lines' => ['OFF-PAPER-A4-80' => 18, 'OFF-MARK-BLA-REF' => 12, 'OFF-MARK-BLU-REF' => 8, 'OFF-PEN-BLU' => 30, 'OFF-INJ-BLA' => 3]],
+        'College of Education' => ['requester' => 'wendzcruz04@gmail.com', 'lines' => ['OFF-PAPER-SHORT-80' => 16, 'OFF-MARK-RED-DIS' => 10, 'OFF-PEN-BLA' => 24, 'OFF-TAPE-MASK-24mm' => 8, 'OFF-FOLDER-FILE-BL' => 20]],
+        'College of Business and Accountancy' => ['requester' => 'norman.cruz0701@gmail.com', 'lines' => ['OFF-PAPER-LONG-80' => 14, 'OFF-PEN-RED' => 12, 'OFF-CLIP-M' => 6, 'OFF-LAS-BLA' => 2, 'OFF-FOLDER-EXPA-MA' => 10]],
+        'Registrar Office' => ['requester' => 'cruzneilwayne@gmail.com', 'lines' => ['OFF-PAPER-LEGAL-80' => 12, 'OFF-FOLDER-LONG-BL' => 25, 'OFF-TAPE-SCOT-12mm' => 10, 'OFF-RUB-M' => 4, 'OFF-LAS-BLA' => 2]],
     ];
 
     /**
@@ -139,9 +139,11 @@ class UatOperationalHistorySeeder extends Seeder
         $this->windowStart = $this->today->startOfMonth()->subMonths(self::HISTORY_MONTHS);
         $this->users = User::query()
             ->whereIn('email', [
-                'admin@local.test', 'supply@local.test', 'custodian@local.test', 'inventory.analyst@local.test',
-                'facilities.custodian@local.test', 'it.expert@local.test', 'director@local.test',
-                ...array_column(self::REQUESTING_OFFICES, 'requester'),
+                'neilwayne0514@gmail.com',
+                'cruzneilwayne@gmail.com',
+                'norman.cruz0701@gmail.com',
+                'wendzcruz04@gmail.com',
+                'nathanweiltcruz1415@gmail.com',
             ])
             ->get()
             ->keyBy('email')
@@ -165,12 +167,13 @@ class UatOperationalHistorySeeder extends Seeder
     }
 
     /**
-     * Monthly departmental requisitions issued from quarterly purchase-order deliveries.
+     * Monthly departmental requisitions issued from quarterly purchase-order deliveries,
+     * paired with recurring recent distribution activity across the institutional catalog.
      */
     private function seedConsumableHistory(): void
     {
         $products = Product::query()
-            ->whereIn('sku', collect(self::REQUESTING_OFFICES)->flatMap(fn (array $office): array => array_keys($office['lines']))->unique()->all())
+            ->where('sku', 'like', 'OFF-%')
             ->with('stock')
             ->get()
             ->keyBy('sku');
@@ -180,6 +183,9 @@ class UatOperationalHistorySeeder extends Seeder
         /** @var array<string, array<string, int>> $quarterDemand quarter => sku => qty */
         $quarterDemand = [];
         $requisitionNotes = [];
+
+        $approver = $this->users['wendzcruz04@gmail.com'];
+        $issuer = $this->users['norman.cruz0701@gmail.com'];
 
         foreach ($this->historyMonths() as $month) {
             foreach (self::REQUESTING_OFFICES as $office => $definition) {
@@ -194,11 +200,11 @@ class UatOperationalHistorySeeder extends Seeder
                     ['requester_id' => $requester->id, 'notes' => $notes],
                     [
                         'requester_position_id' => $requester->position_id,
-                        'approver_id' => $this->users['supply@local.test']->id,
-                        'approver_position_id' => $this->users['supply@local.test']->position_id,
+                        'approver_id' => $approver->id,
+                        'approver_position_id' => $approver->position_id,
                         'approved_at' => $approvedAt,
-                        'issued_by' => $this->users['inventory.analyst@local.test']->id,
-                        'issued_position_id' => $this->users['inventory.analyst@local.test']->position_id,
+                        'issued_by' => $issuer->id,
+                        'issued_position_id' => $issuer->position_id,
                         'issued_at' => $issuedAt,
                         'status' => RequisitionStatus::Issued,
                         'requested_ip_address' => self::IP_ADDRESS,
@@ -224,7 +230,7 @@ class UatOperationalHistorySeeder extends Seeder
                         'performed_at' => $issuedAt,
                         'qty_delta' => -$quantity,
                         'movement_type' => 'issue',
-                        'performed_by' => $this->users['inventory.analyst@local.test'],
+                        'performed_by' => $issuer,
                         'accountable_position_id' => $requester->position_id,
                         'notes' => "Issued against {$notes}",
                         'requisition_id' => $requisition->id,
@@ -242,10 +248,161 @@ class UatOperationalHistorySeeder extends Seeder
         }
 
         $deliveryReferences = $this->seedReplenishment($products, $quarterDemand);
+        $this->seedCatalogDistributionHistory($products, $eventsBySku);
         $this->pruneConsumableHistory($products, $requisitionNotes, $deliveryReferences);
 
         foreach ($products as $sku => $product) {
             $this->seedConsumableLedger($product->fresh(['stock']), $eventsBySku[$sku] ?? []);
+        }
+    }
+
+    /**
+     * Seed recurring recent daily/bi-daily distributions for active institutional catalog consumables
+     * (and older-only movements for intentional slow-moving items) backed by matching DIST lots.
+     *
+     * @param  Collection<string, Product>  $products
+     * @param  array<string, array<int, array<string, mixed>>>  $eventsBySku
+     */
+    private function seedCatalogDistributionHistory(Collection $products, array &$eventsBySku): void
+    {
+        $issuer = $this->users['norman.cruz0701@gmail.com'];
+        $positions = [
+            $this->users['nathanweiltcruz1415@gmail.com']->position_id,
+            $this->users['wendzcruz04@gmail.com']->position_id,
+            $this->users['cruzneilwayne@gmail.com']->position_id,
+            $this->users['neilwayne0514@gmail.com']->position_id,
+        ];
+
+        $slowMovingSkus = [
+            'OFF-MAG-CRD',
+            'OFF-RUB-L',
+            'OFF-CLIP-L',
+            'OFF-FOLDER-SHOR-MA',
+            'OFF-TAPE-DOUB-24mm',
+        ];
+
+        $urgentDailyRates = [
+            'OFF-PAPER-A4-80' => 6,
+            'OFF-PAPER-LONG-80' => 4,
+            'OFF-PEN-BLU' => 13,
+            'OFF-PEN-BLA' => 11,
+            'OFF-MARK-BLA-REF' => 4,
+            'OFF-LAS-BLA' => 1,
+            'OFF-TAPE-MASK-24mm' => 3,
+        ];
+
+        $atRiskDailyRates = [
+            'OFF-PAPER-A4-70' => 4,
+            'OFF-PAPER-SHORT-80' => 3,
+            'OFF-FOLDER-DOCU-BL' => 4,
+            'OFF-INJ-BLA' => 2,
+            'OFF-TAPE-SCOT-24mm' => 3,
+            'OFF-CLIP-M' => 4,
+        ];
+
+        $receivedAt = $this->today->startOfMonth()->subDays(160)->setTime(8, 0);
+
+        foreach ($products as $sku => $product) {
+            $skuEvents = [];
+
+            if (in_array($sku, $slowMovingSkus, true)) {
+                foreach ([148, 136, 124, 112] as $slot => $daysAgo) {
+                    $skuEvents[] = [
+                        'performed_at' => $this->today->subDays($daysAgo)->setTime(15, 0),
+                        'qty_delta' => -2,
+                        'movement_type' => 'issue',
+                        'performed_by' => $issuer,
+                        'accountable_position_id' => $positions[$slot % count($positions)],
+                        'notes' => sprintf('Catalog distribution #%02d for %s', $slot + 1, $sku),
+                    ];
+                }
+            } elseif (isset($urgentDailyRates[$sku]) || isset($atRiskDailyRates[$sku])) {
+                $dailyRate = $urgentDailyRates[$sku] ?? $atRiskDailyRates[$sku];
+                $slot = 0;
+
+                for ($daysAgo = 89; $daysAgo >= 23; $daysAgo -= 2) {
+                    $slot++;
+                    $qty = isset($atRiskDailyRates[$sku]) && $sku === 'OFF-INJ-BLA'
+                        ? ($slot % 2 === 0 ? 1 : 2)
+                        : max(1, (int) round($dailyRate * 0.85));
+
+                    $skuEvents[] = [
+                        'performed_at' => $this->today->subDays($daysAgo)->setTime(15, 0),
+                        'qty_delta' => -$qty,
+                        'movement_type' => 'issue',
+                        'performed_by' => $issuer,
+                        'accountable_position_id' => $positions[$slot % count($positions)],
+                        'notes' => sprintf('Catalog distribution #%02d for %s', $slot, $sku),
+                    ];
+                }
+
+                for ($daysAgo = 21; $daysAgo >= 1; $daysAgo--) {
+                    $slot++;
+                    $qty = $sku === 'OFF-INJ-BLA'
+                        ? ($daysAgo % 2 === 0 ? 2 : 1)
+                        : $dailyRate;
+
+                    $skuEvents[] = [
+                        'performed_at' => $this->today->subDays($daysAgo)->setTime(15, 0),
+                        'qty_delta' => -$qty,
+                        'movement_type' => 'issue',
+                        'performed_by' => $issuer,
+                        'accountable_position_id' => $positions[$slot % count($positions)],
+                        'notes' => sprintf('Catalog distribution #%02d for %s', $slot, $sku),
+                    ];
+                }
+            } else {
+                $qtyPerIssue = match (true) {
+                    str_starts_with($sku, 'OFF-LAS-'), str_starts_with($sku, 'OFF-INJ-') => 1,
+                    str_starts_with($sku, 'OFF-PEN-') => 3,
+                    default => 2,
+                };
+                $slot = 0;
+
+                for ($daysAgo = 88; $daysAgo >= 1; $daysAgo -= 3) {
+                    $slot++;
+                    $skuEvents[] = [
+                        'performed_at' => $this->today->subDays($daysAgo)->setTime(15, 0),
+                        'qty_delta' => -$qtyPerIssue,
+                        'movement_type' => 'issue',
+                        'performed_by' => $issuer,
+                        'accountable_position_id' => $positions[$slot % count($positions)],
+                        'notes' => sprintf('Catalog distribution #%02d for %s', $slot, $sku),
+                    ];
+                }
+            }
+
+            $totalIssued = (int) collect($skuEvents)->sum(fn (array $event): int => abs((int) $event['qty_delta']));
+
+            if ($totalIssued > 0) {
+                $reference = "DIST-{$sku}";
+                $lot = StockLot::query()->updateOrCreate(
+                    ['product_id' => $product->id, 'reference_no' => $reference],
+                    ['received_at' => $receivedAt, 'expires_at' => null, 'qty_received' => $totalIssued, 'qty_remaining' => 0],
+                );
+
+                StockMovement::query()->updateOrCreate(
+                    [
+                        'movement_type' => 'receive',
+                        'product_id' => $product->id,
+                        'stock_lot_id' => $lot->id,
+                        'notes' => "Catalog distribution replenishment {$reference}",
+                    ],
+                    [
+                        'asset_id' => null,
+                        'requisition_id' => null,
+                        'qty_delta' => $totalIssued,
+                        'qty_before' => 0,
+                        'qty_after' => $totalIssued,
+                        'performed_by' => $issuer->id,
+                        'accountable_position_id' => $issuer->position_id,
+                        'ip_address' => self::IP_ADDRESS,
+                        'performed_at' => $receivedAt,
+                    ],
+                );
+
+                $eventsBySku[$sku] = [...($eventsBySku[$sku] ?? []), ...$skuEvents];
+            }
         }
     }
 
@@ -284,8 +441,8 @@ class UatOperationalHistorySeeder extends Seeder
                     [
                         'asset_id' => null, 'requisition_id' => null,
                         'qty_delta' => $quantity, 'qty_before' => 0, 'qty_after' => $quantity,
-                        'performed_by' => $this->users['inventory.analyst@local.test']->id,
-                        'accountable_position_id' => $this->users['inventory.analyst@local.test']->position_id,
+                        'performed_by' => $this->users['norman.cruz0701@gmail.com']->id,
+                        'accountable_position_id' => $this->users['norman.cruz0701@gmail.com']->position_id,
                         'ip_address' => self::IP_ADDRESS, 'performed_at' => $receivedAt,
                     ],
                 );
@@ -369,8 +526,8 @@ class UatOperationalHistorySeeder extends Seeder
                 'subtotal' => 0,
                 'tax' => 0,
                 'total_amount' => 0,
-                'requested_by' => $this->users['inventory.analyst@local.test']->id,
-                'approved_by' => $this->users['supply@local.test']->id,
+                'requested_by' => $this->users['wendzcruz04@gmail.com']->id,
+                'approved_by' => $this->users['neilwayne0514@gmail.com']->id,
                 'expected_delivery_at' => $receivedAt,
                 'sent_at' => $createdAt->addDays(2)->setTime(10, 0),
                 'received_at' => $receivedAt,
@@ -399,7 +556,7 @@ class UatOperationalHistorySeeder extends Seeder
         $purchaseOrder->recalculateTotals();
         $purchaseOrder->forceFill(['status' => PurchaseOrderStatus::Received, 'received_at' => $receivedAt])->save();
         $this->stamp($purchaseOrder, $createdAt, $receivedAt);
-        $this->syncAuditLog('receive', $purchaseOrder, "Purchase order {$poNumber} received in full.", $receivedAt->addHour(), 'inventory.analyst@local.test');
+        $this->syncAuditLog('receive', $purchaseOrder, "Purchase order {$poNumber} received in full.", $receivedAt->addHour(), 'norman.cruz0701@gmail.com');
 
         return $purchaseOrder;
     }
@@ -487,8 +644,8 @@ class UatOperationalHistorySeeder extends Seeder
                     'from_condition_status' => null, 'to_condition_status' => AssetConditionStatus::Serviceable,
                     'reason' => 'New acquisition received, inspected, and recorded in the property register.',
                     'method' => 'Purchase', 'proposed_for' => null, 'occurred_at' => $acquiredAt,
-                    'initiated_by' => $this->users['custodian@local.test']->id,
-                    'approved_by' => $this->users['admin@local.test']->id, 'approved_at' => $acquiredAt->addHours(3),
+                    'initiated_by' => $this->users['nathanweiltcruz1415@gmail.com']->id,
+                    'approved_by' => $this->users['neilwayne0514@gmail.com']->id, 'approved_at' => $acquiredAt->addHours(3),
                     'notes' => "Serial {$asset->serial_number}; acquisition cost ".number_format((float) $asset->acquisition_cost, 2).'.',
                 ],
             );
@@ -530,15 +687,15 @@ class UatOperationalHistorySeeder extends Seeder
                 ['asset_id' => $asset->id, 'reason' => $reason],
                 [
                     'from_location_id' => $holdingArea->id, 'to_location_id' => $asset->current_location_id,
-                    'from_position_id' => $this->users['custodian@local.test']->position_id, 'to_position_id' => $asset->position_id,
+                    'from_position_id' => $this->users['norman.cruz0701@gmail.com']->position_id, 'to_position_id' => $asset->position_id,
                     'status' => AssetTransferStatus::Approved, 'transfer_date' => $transferDate->toDateString(),
-                    'initiated_by' => $this->users['custodian@local.test']->id,
-                    'approved_by' => $this->users['admin@local.test']->id, 'approved_at' => $transferDate,
+                    'initiated_by' => $this->users['nathanweiltcruz1415@gmail.com']->id,
+                    'approved_by' => $this->users['neilwayne0514@gmail.com']->id, 'approved_at' => $transferDate,
                     'notes' => 'Installed and acknowledged by the receiving office.',
                 ],
             );
             $this->stamp($transfer, $transferDate->subDay(), $transferDate);
-            $this->syncAuditLog('approve', $transfer, "Asset {$asset->tag_code} transferred to {$asset->currentLocation?->code}.", $transferDate, 'admin@local.test');
+            $this->syncAuditLog('approve', $transfer, "Asset {$asset->tag_code} transferred to {$asset->currentLocation?->code}.", $transferDate, 'neilwayne0514@gmail.com');
         }
     }
 
@@ -617,9 +774,9 @@ class UatOperationalHistorySeeder extends Seeder
             [
                 ...$details,
                 'status' => MaintenanceStatus::Completed,
-                'reported_by' => $this->users['facilities.custodian@local.test']->id,
+                'reported_by' => $this->users['nathanweiltcruz1415@gmail.com']->id,
                 'reported_date' => $scheduled->subDays($type === MaintenanceType::Preventive ? 7 : 1)->toDateString(),
-                'assigned_to' => $this->users['it.expert@local.test']->id,
+                'assigned_to' => $this->users['cruzneilwayne@gmail.com']->id,
                 'completed_at' => $completedAt,
                 'notes' => 'Historical maintenance record',
             ],
@@ -655,8 +812,8 @@ class UatOperationalHistorySeeder extends Seeder
                     'from_condition_status' => AssetConditionStatus::Serviceable, 'to_condition_status' => AssetConditionStatus::Unserviceable,
                     'reason' => 'End of useful life; repeated failures and outdated capacity.', 'method' => 'Beyond economical repair',
                     'proposed_for' => $retiredAt->toDateString(), 'occurred_at' => $retiredAt,
-                    'initiated_by' => $this->users['custodian@local.test']->id,
-                    'approved_by' => $this->users['admin@local.test']->id, 'approved_at' => $retiredAt->addDay(),
+                    'initiated_by' => $this->users['nathanweiltcruz1415@gmail.com']->id,
+                    'approved_by' => $this->users['neilwayne0514@gmail.com']->id, 'approved_at' => $retiredAt->addDay(),
                     'notes' => 'Removed from service and tagged as unserviceable pending disposal.',
                 ],
             );
@@ -667,7 +824,7 @@ class UatOperationalHistorySeeder extends Seeder
                 'lifecycle_status' => AssetLifecycleStatus::Retired,
                 'condition_status' => AssetConditionStatus::Unserviceable,
             ])->save();
-            $this->syncAuditLog('approve', $asset, "Asset {$asset->tag_code} retired after {$acquired->diffInYears($retiredAt, true)} years of service.", $retiredAt->addDay(), 'admin@local.test');
+            $this->syncAuditLog('approve', $asset, "Asset {$asset->tag_code} retired after {$acquired->diffInYears($retiredAt, true)} years of service.", $retiredAt->addDay(), 'neilwayne0514@gmail.com');
         }
     }
 
@@ -680,7 +837,7 @@ class UatOperationalHistorySeeder extends Seeder
     private function seedBookings(Collection $assets): void
     {
         $bookable = $assets->filter(fn (Asset $asset): bool => (bool) $asset->product->is_bookable)->values();
-        $requesters = collect(self::REQUESTING_OFFICES)->pluck('requester')->push('director@local.test')->values();
+        $requesters = collect(self::REQUESTING_OFFICES)->pluck('requester')->values();
         $purposes = ['Departmental orientation', 'Faculty training session', 'Thesis defense', 'Board meeting', 'Student organization event', 'Accreditation visit', 'Seminar and workshop'];
         $keptKeys = [];
 
@@ -708,7 +865,7 @@ class UatOperationalHistorySeeder extends Seeder
                     $outcome === 1 => BookingStatus::Cancelled,
                     default => BookingStatus::Approved,
                 };
-                $approver = $status === BookingStatus::Cancelled ? null : $this->users['custodian@local.test'];
+                $approver = $status === BookingStatus::Cancelled ? null : $this->users['neilwayne0514@gmail.com'];
 
                 $booking = Booking::withTrashed()->updateOrCreate(
                     ['asset_id' => $asset->id, 'start_at' => $startAt],
@@ -761,9 +918,9 @@ class UatOperationalHistorySeeder extends Seeder
                 ['reference_no' => $reference],
                 [
                     'location_id' => $location->id,
-                    'created_by' => $this->users['inventory.analyst@local.test']->id,
-                    'assigned_to' => $this->users['custodian@local.test']->id,
-                    'approved_by' => $this->users['admin@local.test']->id,
+                    'created_by' => $this->users['wendzcruz04@gmail.com']->id,
+                    'assigned_to' => $this->users['norman.cruz0701@gmail.com']->id,
+                    'approved_by' => $this->users['neilwayne0514@gmail.com']->id,
                     'counting_date' => $quarterEnd->toDateString(), 'scope' => "Quarterly property count – {$location->name}",
                     'status' => InventoryCountStatus::Completed, 'snapshot_at' => $quarterEnd,
                     // The last ledger movement recorded before the count snapshot.
@@ -788,9 +945,9 @@ class UatOperationalHistorySeeder extends Seeder
                     [
                         'product_id' => Asset::query()->whereKey($assetId)->value('product_id'), 'stock_lot_id' => null,
                         'expected_qty_snapshot' => 1, 'counted_qty' => 1, 'expected_qty_at_count' => 1, 'variance_qty' => 0,
-                        'counted_by' => $this->users['custodian@local.test']->id, 'counted_at' => $quarterEnd->setTime(11, 0),
+                        'counted_by' => $this->users['norman.cruz0701@gmail.com']->id, 'counted_at' => $quarterEnd->setTime(11, 0),
                         'review_status' => InventoryCountReviewStatus::Approved, 'count_notes' => 'Tag and serial verified.',
-                        'review_notes' => null, 'reviewed_by' => $this->users['admin@local.test']->id,
+                        'review_notes' => null, 'reviewed_by' => $this->users['neilwayne0514@gmail.com']->id,
                         'reviewed_at' => $quarterEnd->addDay()->setTime(10, 0), 'adjustment_movement_id' => null,
                     ],
                 );
@@ -854,7 +1011,7 @@ class UatOperationalHistorySeeder extends Seeder
     {
         $log = AuditLog::query()->updateOrCreate(
             ['action' => $action, 'model_type' => class_basename($model), 'model_id' => $model->getKey(), 'description' => $description],
-            ['user_id' => $this->users[$actorEmail]->id, 'ip_address' => self::IP_ADDRESS, 'user_agent' => 'PRISM UAT history'],
+            ['user_id' => $this->users[$actorEmail]->id, 'ip_address' => self::IP_ADDRESS, 'user_agent' => 'PRISM Operational History Seeder'],
         );
         $this->stamp($log, $at, $at);
     }

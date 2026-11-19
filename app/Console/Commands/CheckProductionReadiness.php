@@ -28,7 +28,7 @@ class CheckProductionReadiness extends Command
             return $hasFailures ? self::FAILURE : self::SUCCESS;
         }
 
-        $this->components->info('PUP PRISM production readiness check');
+        $this->components->info('PRISM production readiness check');
 
         foreach ($checks as $check) {
             $this->components->twoColumnDetail(

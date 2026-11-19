@@ -3,7 +3,7 @@
 > **Stack:** Laravel 13 + PostgreSQL 14+  
 > **Companion docs:** [PRODUCTION_DEPLOYMENT_RUNBOOK.md](./PRODUCTION_DEPLOYMENT_RUNBOOK.md), [README.md](./README.md)
 
-This runbook describes how to back up, restore, and recover PUP PRISM in production. It assumes PostgreSQL is the primary database (`DB_CONNECTION=pgsql`) and application files live on a Linux application server or managed platform.
+This runbook describes how to back up, restore, and recover PRISM in production. It assumes PostgreSQL is the primary database (`DB_CONNECTION=pgsql`) and application files live on a Linux application server or managed platform.
 
 ---
 
@@ -56,7 +56,7 @@ Run on the database host or a backup runner with network access to PostgreSQL.
 pg_dump \
   --format=custom \
   --no-owner \
-  --file="/var/backups/pup_prism/pup_prism_$(date +%Y%m%d_%H%M%S).dump" \
+  --file="/var/backups/prism/prism_$(date +%Y%m%d_%H%M%S).dump" \
   --dbname="postgresql://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}"
 ```
 
@@ -68,7 +68,7 @@ pg_dump \
 
 ```bash
 pg_dump --no-owner --clean --if-exists \
-  --file="/var/backups/pup_prism/pup_prism_$(date +%Y%m%d).sql" \
+  --file="/var/backups/prism/prism_$(date +%Y%m%d).sql" \
   "$DATABASE_URL"
 ```
 
@@ -77,8 +77,8 @@ Larger files; easier to inspect manually.
 ### 3.3 Filesystem backup for `storage/app`
 
 ```bash
-tar -czf "/var/backups/pup_prism/storage_app_$(date +%Y%m%d).tar.gz" \
-  -C /path/to/pup_prism/storage app
+tar -czf "/var/backups/prism/storage_app_$(date +%Y%m%d).tar.gz" \
+  -C /path/to/prism/storage app
 ```
 
 Run after the database dump or during a low-write window.
@@ -96,7 +96,7 @@ If using Laravel Cloud, RDS, or institutional DBA-managed PostgreSQL, enable aut
 **Warning:** This overwrites the target database. Stop queue workers and put the app in maintenance mode first.
 
 ```bash
-cd /path/to/pup_prism
+cd /path/to/prism
 
 php artisan down --retry=60 --refresh=15
 
@@ -104,14 +104,14 @@ php artisan down --retry=60 --refresh=15
 sudo supervisorctl stop pup-prism-worker:*
 
 # Drop and recreate database (staging only unless disaster recovery)
-dropdb --if-exists pup_prism_restore_test
-createdb pup_prism_restore_test
+dropdb --if-exists prism_restore_test
+createdb prism_restore_test
 
 pg_restore \
-  --dbname=pup_prism_restore_test \
+  --dbname=prism_restore_test \
   --no-owner \
   --role=postgres \
-  /var/backups/pup_prism/pup_prism_YYYYMMDD_HHMMSS.dump
+  /var/backups/prism/prism_YYYYMMDD_HHMMSS.dump
 
 # Point .env DB_DATABASE at restore target for validation, then:
 php artisan migrate --force   # only if backup predates newer migrations
@@ -124,8 +124,8 @@ Validate login, inventory counts, and a sample workflow before switching product
 ### 4.2 Restore `storage/app`
 
 ```bash
-tar -xzf /var/backups/pup_prism/storage_app_YYYYMMDD.tar.gz -C /path/to/pup_prism/storage
-chown -R www-data:www-data /path/to/pup_prism/storage
+tar -xzf /var/backups/prism/storage_app_YYYYMMDD.tar.gz -C /path/to/prism/storage
+chown -R www-data:www-data /path/to/prism/storage
 php artisan storage:link
 ```
 

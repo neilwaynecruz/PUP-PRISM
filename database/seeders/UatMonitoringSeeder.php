@@ -3,9 +3,11 @@
 namespace Database\Seeders;
 
 use App\Enums\NotificationEventType;
+use App\Enums\ProductType;
 use App\Models\AuditLog;
 use App\Models\Booking;
 use App\Models\ForecastProfile;
+use App\Models\ForecastSnapshot;
 use App\Models\HandoverLog;
 use App\Models\InventoryAlert;
 use App\Models\NotificationPreference;
@@ -21,11 +23,13 @@ use App\Notifications\LowStockAlertNotification;
 use App\Notifications\ProcurementRecommendationNotification;
 use App\Notifications\RequisitionStatusChangedNotification;
 use App\Notifications\RequisitionSubmittedNotification;
+use App\Services\DashboardStatsCache;
+use App\Services\Forecasting\DemandForecaster;
 use App\Services\NotificationPreferenceSeeder;
+use App\Services\Optimization\InventoryOptimizationCache;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Seeder;
 use Illuminate\Notifications\Notification;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 class UatMonitoringSeeder extends Seeder
@@ -51,7 +55,7 @@ class UatMonitoringSeeder extends Seeder
             ->firstOrFail();
 
         $this->seedTemplate(
-            $users['library.custodian@local.test'],
+            $users['nathanweiltcruz1415@gmail.com'],
             'Library monthly replenishment',
             'Baseline template for paper, ink, and emergency cleaning stocks.',
             [
@@ -62,7 +66,7 @@ class UatMonitoringSeeder extends Seeder
         );
 
         $this->seedTemplate(
-            $users['eng.custodian@local.test'],
+            $users['norman.cruz0701@gmail.com'],
             'Engineering field kit',
             'Quick-issue template for laboratory and field deployment needs.',
             [
@@ -73,7 +77,7 @@ class UatMonitoringSeeder extends Seeder
         );
 
         $this->seedTemplate(
-            $users['director.office.custodian@local.test'],
+            $users['wendzcruz04@gmail.com'],
             'Records archiving supplies',
             'Retained for authorized records work while older catalog items remain in historical requests.',
             [
@@ -82,14 +86,21 @@ class UatMonitoringSeeder extends Seeder
             ],
         );
 
-        /** @var array<string, array{method: string, horizon: int, lead_time: int, safety_stock: int}> $forecastProfiles */
+        /** @var array<string, array{method: string, lookback: int, horizon: int, lead_time: int, safety_stock: int}> $forecastProfiles */
         $forecastProfiles = [
-            'CON-PAPER-A4' => ['method' => 'seasonal', 'horizon' => 90, 'lead_time' => 21, 'safety_stock' => 14],
-            'CON-INK-BLK' => ['method' => 'exponential_smoothing', 'horizon' => 60, 'lead_time' => 30, 'safety_stock' => 14],
-            'CON-ALCOHOL-70' => ['method' => 'seasonal', 'horizon' => 45, 'lead_time' => 14, 'safety_stock' => 7],
-            'CON-BAT-AA' => ['method' => 'moving_average', 'horizon' => 60, 'lead_time' => 30, 'safety_stock' => 14],
-            'CON-DISINF-01' => ['method' => 'exponential_smoothing', 'horizon' => 45, 'lead_time' => 14, 'safety_stock' => 7],
-            'CON-GLOVES-M' => ['method' => 'seasonal', 'horizon' => 60, 'lead_time' => 21, 'safety_stock' => 10],
+            'CON-PAPER-A4' => ['method' => 'exponential_smoothing', 'lookback' => 90, 'horizon' => 60, 'lead_time' => 7, 'safety_stock' => 7],
+            'CON-INK-BLK' => ['method' => 'exponential_smoothing', 'lookback' => 90, 'horizon' => 60, 'lead_time' => 10, 'safety_stock' => 7],
+            'CON-ALCOHOL-70' => ['method' => 'seasonal', 'lookback' => 365, 'horizon' => 45, 'lead_time' => 7, 'safety_stock' => 7],
+            'CON-BAT-AA' => ['method' => 'exponential_smoothing', 'lookback' => 90, 'horizon' => 60, 'lead_time' => 7, 'safety_stock' => 7],
+            'CON-DISINF-01' => ['method' => 'exponential_smoothing', 'lookback' => 90, 'horizon' => 45, 'lead_time' => 10, 'safety_stock' => 7],
+            'CON-GLOVES-M' => ['method' => 'exponential_smoothing', 'lookback' => 90, 'horizon' => 60, 'lead_time' => 10, 'safety_stock' => 7],
+            'CON-HSOAP-500' => ['method' => 'moving_average', 'lookback' => 90, 'horizon' => 45, 'lead_time' => 7, 'safety_stock' => 7],
+            'OFF-PAPER-A4-80' => ['method' => 'exponential_smoothing', 'lookback' => 90, 'horizon' => 60, 'lead_time' => 7, 'safety_stock' => 7],
+            'OFF-PAPER-LONG-80' => ['method' => 'exponential_smoothing', 'lookback' => 90, 'horizon' => 60, 'lead_time' => 7, 'safety_stock' => 7],
+            'OFF-PEN-BLU' => ['method' => 'moving_average', 'lookback' => 90, 'horizon' => 60, 'lead_time' => 7, 'safety_stock' => 7],
+            'OFF-PEN-BLA' => ['method' => 'exponential_smoothing', 'lookback' => 90, 'horizon' => 60, 'lead_time' => 7, 'safety_stock' => 7],
+            'OFF-MARK-BLA-REF' => ['method' => 'moving_average', 'lookback' => 90, 'horizon' => 60, 'lead_time' => 7, 'safety_stock' => 7],
+            'OFF-LAS-BLA' => ['method' => 'exponential_smoothing', 'lookback' => 90, 'horizon' => 60, 'lead_time' => 10, 'safety_stock' => 7],
         ];
 
         foreach ($forecastProfiles as $forecastSku => $profile) {
@@ -97,7 +108,7 @@ class UatMonitoringSeeder extends Seeder
                 ['product_id' => $products[$forecastSku]->id],
                 [
                     'method' => $profile['method'],
-                    'lookback_days' => 365,
+                    'lookback_days' => $profile['lookback'],
                     'forecast_horizon_days' => $profile['horizon'],
                     'lead_time_days' => $profile['lead_time'],
                     'safety_stock_days' => $profile['safety_stock'],
@@ -106,15 +117,28 @@ class UatMonitoringSeeder extends Seeder
                     'is_active' => true,
                 ],
             );
+        }
 
-            $products[$forecastSku]->forecastSnapshots()
-                ->whereDate('forecast_date', $now->toDateString())
-                ->delete();
+        $todayEnd = $now->endOfDay();
+        $forecaster = app(DemandForecaster::class);
+        $activeConsumableIds = Product::query()
+            ->where('type', ProductType::Consumable)
+            ->where('is_active', true)
+            ->pluck('id');
 
-            Artisan::call('app:generate-demand-forecasts', [
-                '--product' => $products[$forecastSku]->id,
-                '--date' => $now->toDateString(),
-            ]);
+        ForecastSnapshot::query()
+            ->whereIn('product_id', $activeConsumableIds)
+            ->whereDate('forecast_date', $now->toDateString())
+            ->delete();
+
+        foreach ($forecaster->forecastAll($todayEnd) as $productId => $result) {
+            ForecastSnapshot::query()->updateOrCreate(
+                [
+                    'product_id' => $productId,
+                    'forecast_date' => $result->generatedAt->startOfDay(),
+                ],
+                $result->toSnapshotPayload(),
+            );
         }
 
         $this->seedNotificationPreferences($users);
@@ -148,8 +172,8 @@ class UatMonitoringSeeder extends Seeder
                 'message' => 'Antibacterial liquid hand soap is out of stock. Replenishment is required before the next facilities issue schedule.',
                 'detected_at' => $now->subHours(3),
                 'acknowledged_at' => $now->subHours(2),
-                'acknowledged_by' => $users['inventory.analyst@local.test']->id,
-                'assigned_to' => $users['supply@local.test']->id,
+                'acknowledged_by' => $users['norman.cruz0701@gmail.com']->id,
+                'assigned_to' => $users['wendzcruz04@gmail.com']->id,
                 'resolved_by' => null,
                 'resolution_notes' => null,
             ],
@@ -167,7 +191,7 @@ class UatMonitoringSeeder extends Seeder
                 'detected_at' => $now->subHours(4),
                 'acknowledged_at' => null,
                 'acknowledged_by' => null,
-                'assigned_to' => $users['inventory.analyst@local.test']->id,
+                'assigned_to' => $users['norman.cruz0701@gmail.com']->id,
                 'resolved_by' => null,
                 'resolution_notes' => null,
             ],
@@ -183,10 +207,10 @@ class UatMonitoringSeeder extends Seeder
             [
                 'detected_at' => $now->subDays(16),
                 'acknowledged_at' => $now->subDays(16)->addHour(),
-                'acknowledged_by' => $users['inventory.analyst@local.test']->id,
-                'assigned_to' => $users['supply@local.test']->id,
+                'acknowledged_by' => $users['norman.cruz0701@gmail.com']->id,
+                'assigned_to' => $users['wendzcruz04@gmail.com']->id,
                 'resolved_at' => $now->subDays(14),
-                'resolved_by' => $users['supply@local.test']->id,
+                'resolved_by' => $users['wendzcruz04@gmail.com']->id,
                 'resolution_notes' => 'Quantity adjusted to zero and retained in the expired-lot history for disposal tracking.',
             ],
         );
@@ -204,16 +228,52 @@ class UatMonitoringSeeder extends Seeder
             ],
         );
 
+        InventoryAlert::query()->updateOrCreate(
+            [
+                'type' => 'forecast_stockout',
+                'product_id' => $paper->id,
+                'stock_lot_id' => null,
+                'resolved_at' => null,
+            ],
+            [
+                'message' => 'A4 multipurpose copy paper is projected to stock out within 7 days at current campus print demand.',
+                'detected_at' => $now->subHours(2),
+                'acknowledged_at' => null,
+                'acknowledged_by' => null,
+                'assigned_to' => $users['wendzcruz04@gmail.com']->id,
+                'resolved_by' => null,
+                'resolution_notes' => null,
+            ],
+        );
+
+        InventoryAlert::query()->updateOrCreate(
+            [
+                'type' => 'forecast_stockout',
+                'product_id' => $products['OFF-PAPER-A4-80']->id,
+                'stock_lot_id' => null,
+                'resolved_at' => null,
+            ],
+            [
+                'message' => 'Bond Paper A4 80 gsm stock is projected to stock out within 5 days; reorder suggested.',
+                'detected_at' => $now->subHour(),
+                'acknowledged_at' => null,
+                'acknowledged_by' => null,
+                'assigned_to' => $users['wendzcruz04@gmail.com']->id,
+                'resolved_by' => null,
+                'resolution_notes' => null,
+            ],
+        );
+
         $this->seedNotification(
             'operations-low-stock-supply-head',
-            $users['supply@local.test'],
+            $users['norman.cruz0701@gmail.com'],
             new LowStockAlertNotification($products['CON-DISINF-01'], 8),
             $now->subMinutes(45),
         );
 
         $this->seedNotification(
             'operations-requisition-submitted-supply-head',
-            $users['supply@local.test'],
+            $users['wendzcruz04@gmail.com'],
             new RequisitionSubmittedNotification($requisitions['Submitted director office sanitation request']),
             $now->subHours(2),
             $now->subHour(),
@@ -221,14 +281,14 @@ class UatMonitoringSeeder extends Seeder
 
         $this->seedNotification(
             'operations-requisition-issued-engineering',
-            $users['eng.custodian@local.test'],
+            $users['nathanweiltcruz1415@gmail.com'],
             new RequisitionStatusChangedNotification($requisitions['Issued engineering field kit replenishment'], 'issued'),
             $now->subHours(6),
         );
 
         $this->seedNotification(
             'operations-booking-rejected-engineering',
-            $users['eng.custodian@local.test'],
+            $users['nathanweiltcruz1415@gmail.com'],
             new BookingStatusChangedNotification($bookings['Engineering accreditation presentation'], 'rejected'),
             $now->subHours(4),
             $now->subHours(3),
@@ -236,29 +296,29 @@ class UatMonitoringSeeder extends Seeder
 
         $this->seedNotification(
             'operations-handover-director-office',
-            $users['director.office.custodian@local.test'],
+            $users['nathanweiltcruz1415@gmail.com'],
             new HandoverVerificationNotification($pendingHandover->id, 'pending-projector-handover-token'),
             $now->subMinutes(25),
         );
 
         $this->seedNotification(
             'operations-booking-submitted-supply-head',
-            $users['supply@local.test'],
+            $users['norman.cruz0701@gmail.com'],
             new BookingSubmittedNotification($bookings['Library digital orientation']),
             $now->subHours(3),
         );
 
         $this->seedNotification(
             'operations-expiring-disinfectant-supply-head',
-            $users['supply@local.test'],
+            $users['norman.cruz0701@gmail.com'],
             new ExpiringStockAlertNotification($disinfectantLot, 4),
             $now->subHours(4),
         );
 
         $this->seedNotification(
             'operations-procurement-recommendation-supply-head',
-            $users['supply@local.test'],
-            new ProcurementRecommendationNotification($products['CON-PAPER-A4'], 9, 120),
+            $users['wendzcruz04@gmail.com'],
+            new ProcurementRecommendationNotification($products['CON-PAPER-A4'], 5, 64),
             $now->subHours(5),
             $now->subHours(4),
         );
@@ -266,21 +326,21 @@ class UatMonitoringSeeder extends Seeder
         // Institutional Admin Notifications
         $this->seedNotification(
             'operations-admin-low-stock-soap',
-            $users['admin@local.test'],
+            $users['neilwayne0514@gmail.com'],
             new LowStockAlertNotification($products['CON-HSOAP-500'], 0),
             $now->subHours(3),
         );
 
         $this->seedNotification(
             'operations-admin-requisition-submitted',
-            $users['admin@local.test'],
+            $users['neilwayne0514@gmail.com'],
             new RequisitionSubmittedNotification($requisitions['Submitted director office sanitation request']),
             $now->subHours(2),
         );
 
         $this->seedNotification(
             'operations-admin-booking-submitted',
-            $users['admin@local.test'],
+            $users['neilwayne0514@gmail.com'],
             new BookingSubmittedNotification($bookings['Library digital orientation']),
             $now->subHours(3),
             $now->subHour(),
@@ -288,61 +348,61 @@ class UatMonitoringSeeder extends Seeder
 
         $this->seedNotification(
             'operations-admin-procurement-recommendation',
-            $users['admin@local.test'],
-            new ProcurementRecommendationNotification($products['CON-PAPER-A4'], 9, 120),
+            $users['neilwayne0514@gmail.com'],
+            new ProcurementRecommendationNotification($products['CON-PAPER-A4'], 5, 64),
             $now->subHours(5),
             $now->subHours(4),
         );
 
-        // Chief Property Custodian Notifications
+        // Logistics Coordinator / Property Custodian Notifications
         $this->seedNotification(
             'operations-custodian-booking-submitted',
-            $users['custodian@local.test'],
+            $users['nathanweiltcruz1415@gmail.com'],
             new BookingSubmittedNotification($bookings['Library digital orientation']),
             $now->subHours(3),
         );
 
         $this->seedNotification(
             'operations-custodian-requisition-submitted',
-            $users['custodian@local.test'],
+            $users['wendzcruz04@gmail.com'],
             new RequisitionSubmittedNotification($requisitions['Submitted director office sanitation request']),
             $now->subHours(2),
         );
 
         $this->seedNotification(
             'operations-custodian-handover-verification',
-            $users['custodian@local.test'],
-            new HandoverVerificationNotification($pendingHandover->id, 'pending-director-office-projector-handover-token'),
+            $users['nathanweiltcruz1415@gmail.com'],
+            new HandoverVerificationNotification($pendingHandover->id, 'pending-projector-handover-token'),
             $now->subMinutes(20),
         );
 
         $this->seedNotification(
             'operations-custodian-booking-approved',
-            $users['custodian@local.test'],
+            $users['cruzneilwayne@gmail.com'],
             new BookingStatusChangedNotification($bookings['Director briefing and equipment walkthrough'], 'approved'),
             $now->subHours(5),
             $now->subHours(4),
         );
 
-        // IT Expert Notifications
+        // IT Director Notifications
         $this->seedNotification(
             'operations-it-low-stock-disinfectant',
-            $users['it.expert@local.test'],
+            $users['cruzneilwayne@gmail.com'],
             new LowStockAlertNotification($products['CON-DISINF-01'], 8),
             $now->subHours(1),
         );
 
         $this->seedAuditLog(
-            userId: $users['admin@local.test']->id,
+            userId: $users['neilwayne0514@gmail.com']->id,
             action: 'seed',
             modelType: 'DatabaseSeeder',
             modelId: null,
-            description: 'Created the non-production university operations dataset.',
+            description: 'Initialized baseline institutional operations dataset.',
             createdAt: $now->subMinutes(10),
         );
 
         $this->seedAuditLog(
-            userId: $users['supply@local.test']->id,
+            userId: $users['wendzcruz04@gmail.com']->id,
             action: 'forecast_generate',
             modelType: 'Product',
             modelId: $products['CON-DISINF-01']->id,
@@ -352,7 +412,7 @@ class UatMonitoringSeeder extends Seeder
         );
 
         $this->seedAuditLog(
-            userId: $users['supply@local.test']->id,
+            userId: $users['norman.cruz0701@gmail.com']->id,
             action: 'alert_detected',
             modelType: 'Product',
             modelId: $products['CON-GLOVES-M']->id,
@@ -362,7 +422,7 @@ class UatMonitoringSeeder extends Seeder
         );
 
         $this->seedAuditLog(
-            userId: $users['custodian@local.test']->id,
+            userId: $users['nathanweiltcruz1415@gmail.com']->id,
             action: 'handover_initiated',
             modelType: 'Asset',
             modelId: $products['AST-LAP-001']->assets()->where('tag_code', 'AST-COE-0001')->value('id'),
@@ -371,13 +431,16 @@ class UatMonitoringSeeder extends Seeder
         );
 
         $this->seedAuditLog(
-            userId: $users['supply@local.test']->id,
+            userId: $users['wendzcruz04@gmail.com']->id,
             action: 'template_curated',
             modelType: 'RequisitionTemplate',
             modelId: RequisitionTemplate::query()->where('name', 'Library monthly replenishment')->value('id'),
             description: 'Updated library replenishment requisition template.',
             createdAt: $now->subMinutes(5),
         );
+
+        app(DashboardStatsCache::class)->invalidate();
+        app(InventoryOptimizationCache::class)->invalidate();
     }
 
     /**
@@ -410,8 +473,21 @@ class UatMonitoringSeeder extends Seeder
 
         NotificationPreference::query()->updateOrCreate(
             [
-                'user_id' => $users['supply@local.test']->id,
+                'user_id' => $users['norman.cruz0701@gmail.com']->id,
                 'event_type' => NotificationEventType::LowStock->value,
+            ],
+            [
+                'mail_enabled' => true,
+                'database_enabled' => true,
+                'broadcast_enabled' => true,
+                'digest_frequency' => 'daily',
+            ],
+        );
+
+        NotificationPreference::query()->updateOrCreate(
+            [
+                'user_id' => $users['wendzcruz04@gmail.com']->id,
+                'event_type' => NotificationEventType::ProcurementRecommendation->value,
             ],
             [
                 'mail_enabled' => true,
@@ -475,7 +551,7 @@ class UatMonitoringSeeder extends Seeder
                 'old_values' => $oldValues,
                 'new_values' => $newValues,
                 'ip_address' => '127.0.0.1',
-                'user_agent' => 'PUP-PRISM Database Seeder',
+                'user_agent' => 'PRISM Database Seeder',
                 'created_at' => $createdAt,
                 'updated_at' => $createdAt,
             ],

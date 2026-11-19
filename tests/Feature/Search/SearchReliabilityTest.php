@@ -117,7 +117,7 @@ test('notification search and category filters work on postgresql', function () 
         Role::findOrCreate('Supply Head');
         $user = reliabilityUser('Supply Head');
         $product = Product::factory()->create(['sku' => 'SKU-LAMINATE-'.strtoupper(bin2hex(random_bytes(3))), 'reorder_threshold' => 10]);
-        $user->notify(new LowStockAlertNotification($product, 1));
+        $user->notifyNow(new LowStockAlertNotification($product, 1));
         $category = $user->notifications()->firstOrFail()->data['category'];
 
         $this->actingAs($user)

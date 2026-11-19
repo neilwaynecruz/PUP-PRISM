@@ -31,6 +31,7 @@ const QrScannerDialog = defineAsyncComponent(
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { formatDisplayDate, manilaCalendarDate } from '@/lib/dateFormatting';
 import {
     index as purchaseOrdersIndex,
     show as purchaseOrdersShow,
@@ -143,7 +144,7 @@ const receiveForm = useForm<{
 
 const receiveSearchQuery = ref('');
 const sharedReferenceNo = ref('');
-const sharedReceivedAt = ref(new Date().toISOString().slice(0, 10));
+const sharedReceivedAt = ref(manilaCalendarDate());
 const receiveFeedback = ref<{
     type: 'info' | 'warning' | 'success';
     text: string;
@@ -803,7 +804,11 @@ const lifecycleSteps = computed(() => {
                     <div class="flex items-center justify-between gap-2">
                         <dt class="text-muted-foreground">Expected delivery</dt>
                         <dd class="font-medium text-foreground">
-                            {{ formatDate(purchaseOrder.expected_delivery_at) }}
+                            {{
+                                formatDisplayDate(
+                                    purchaseOrder.expected_delivery_at,
+                                )
+                            }}
                         </dd>
                     </div>
                     <div class="flex items-center justify-between gap-2">

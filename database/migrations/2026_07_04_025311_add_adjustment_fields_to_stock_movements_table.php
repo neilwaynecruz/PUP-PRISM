@@ -28,6 +28,9 @@ return new class extends Migration
     {
         if (Schema::getConnection()->getDriverName() === 'pgsql') {
             DB::statement('ALTER TABLE stock_movements DROP CONSTRAINT IF EXISTS stock_movements_type_check');
+            DB::table('stock_movements')
+                ->whereIn('movement_type', ['adjustment', 'cycle_count'])
+                ->update(['movement_type' => 'transfer']);
             DB::statement("ALTER TABLE stock_movements ADD CONSTRAINT stock_movements_type_check CHECK (movement_type IN ('receive','issue','transfer','condemn','return'))");
         }
 

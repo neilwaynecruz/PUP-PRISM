@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ $title ?? 'PUP-PRISM Product Labels' }}</title>
+    <title>{{ $title ?? 'PRISM Product Labels' }}</title>
     <style>
         @page {
             margin: {{ $margin_mm ?? 8 }}mm;
@@ -115,7 +115,7 @@
                                         <div class="category-name">{{ $cell['category'] }}</div>
                                     @endif
 
-                                    <div class="brand-footer">PUP PRISM</div>
+                                    <div class="brand-footer">PRISM</div>
                                 </td>
                             @else
                                 <td class="label-cell" style="border: none; background: transparent; width: {{ $col_width_pct }}%;"></td>

@@ -45,7 +45,7 @@ Objective:
 Make account offboarding immediate and enforce stronger authentication controls for privileged roles.
 
 Context:
-PUP PRISM already supports user deactivation, Fortify login security, Sanctum API tokens, and optional 2FA. The remaining gaps are: existing sessions and tokens may survive deactivation, and Admin / Supply Head access is not yet protected by mandatory 2FA.
+PRISM already supports user deactivation, Fortify login security, Sanctum API tokens, and optional 2FA. The remaining gaps are: existing sessions and tokens may survive deactivation, and Admin / Supply Head access is not yet protected by mandatory 2FA.
 
 Implementation Requirements:
 1. Analyze the existing project structure before making changes.
@@ -103,7 +103,7 @@ Objective:
 Strengthen production resilience with backup/recovery guidance, retention rules, queue operations maturity, and safer platform defaults.
 
 Context:
-PUP PRISM already has scheduled commands, queued notifications, and a health endpoint. The next maturity layer is operational resilience: documented recovery, data retention, queue/job visibility, and platform hardening for scale.
+PRISM already has scheduled commands, queued notifications, and a health endpoint. The next maturity layer is operational resilience: documented recovery, data retention, queue/job visibility, and platform hardening for scale.
 
 Implementation Requirements:
 1. Analyze the existing project structure before making changes.
@@ -160,7 +160,7 @@ Objective:
 Unify high-risk audit visibility and create operator-facing workflows for alerts, health, and notification history.
 
 Context:
-PUP PRISM already has `AuditLogService`, `InventoryAlert` generation, an admin health endpoint, and notification dropdown UX. The remaining problem is fragmentation: important actions are not fully audited, alerts are not triaged in a proper module, health is mostly backend-only, and notification history does not scale beyond the dropdown.
+PRISM already has `AuditLogService`, `InventoryAlert` generation, an admin health endpoint, and notification dropdown UX. The remaining problem is fragmentation: important actions are not fully audited, alerts are not triaged in a proper module, health is mostly backend-only, and notification history does not scale beyond the dropdown.
 
 Implementation Requirements:
 1. Analyze the existing project structure before making changes.
@@ -216,7 +216,7 @@ Objective:
 Improve real-world inventory correctness by enforcing stronger asset integrity rules, supporting stock adjustments/cycle counts, and allowing partial requisition fulfillment.
 
 Context:
-PUP PRISM already supports bookings, handovers, stock movements, requisitions, issuance, and forecasting. The remaining gap is operational realism: physical assets can be double-committed, adjustments/counts are incomplete, and requisitions assume all-or-nothing issuance.
+PRISM already supports bookings, handovers, stock movements, requisitions, issuance, and forecasting. The remaining gap is operational realism: physical assets can be double-committed, adjustments/counts are incomplete, and requisitions assume all-or-nothing issuance.
 
 Implementation Requirements:
 1. Analyze the existing project structure before making changes.
@@ -272,7 +272,7 @@ Objective:
 Allow production-safe Admin management of departments, positions, categories, and origins without relying on seeders or direct database edits.
 
 Context:
-PUP PRISM already has Admin user management and uses master/reference data across provisioning and inventory flows. The missing capability is safe, self-service CRUD for organizational and reference entities.
+PRISM already has Admin user management and uses master/reference data across provisioning and inventory flows. The missing capability is safe, self-service CRUD for organizational and reference entities.
 
 Implementation Requirements:
 1. Analyze the existing project structure before making changes.
@@ -326,7 +326,7 @@ Objective:
 Improve operator productivity with real role-based dashboards, stronger workflow filters, cross-entity search, expanded reporting, and safer API behavior.
 
 Context:
-PUP PRISM already has a dashboard, global search entry point, reports, and a Sanctum API. The next maturity step is better operator visibility and discoverability: replace placeholder metrics, tailor dashboards by role, add missing filters, support entity search, expand reports, and harden API contracts.
+PRISM already has a dashboard, global search entry point, reports, and a Sanctum API. The next maturity step is better operator visibility and discoverability: replace placeholder metrics, tailor dashboards by role, add missing filters, support entity search, expand reports, and harden API contracts.
 
 Implementation Requirements:
 1. Analyze the existing project structure before making changes.
@@ -383,7 +383,7 @@ Objective:
 Improve day-to-day field workflows with mobile-first screens, PWA support, and stronger QR-based operational flows.
 
 Context:
-PUP PRISM already includes QR scanning support and core receiving/handover/booking flows. The next step is making those workflows fast and reliable for touch-based, mobile, field-oriented usage.
+PRISM already includes QR scanning support and core receiving/handover/booking flows. The next step is making those workflows fast and reliable for touch-based, mobile, field-oriented usage.
 
 Implementation Requirements:
 1. Analyze the existing project structure before making changes.

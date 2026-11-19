@@ -1,9 +1,9 @@
-# PUP PRISM Logo Generation Prompt
+# PRISM Logo Generation Prompt
 
 ## Purpose
-This file gives you a polished, cross-platform prompt you can paste into ChatGPT, Gemini, Midjourney-style tools, or any AI logo/icon generator to create a logo that fits **PUP PRISM**.
+This file gives you a polished, cross-platform prompt you can paste into ChatGPT, Gemini, Midjourney-style tools, or any AI logo/icon generator to create a logo that fits **PRISM**.
 
-PUP PRISM is a system for:
+PRISM is a system for:
 - property and resource inventory
 - stock receiving and issuance
 - asset booking and handover
@@ -22,10 +22,10 @@ The prompt below is written to align with that identity.
 ## Best Prompt To Copy
 
 ```text
-Design a premium, modern, professional logo for a web-based enterprise system named "PUP PRISM".
+Design a premium, modern, professional logo for a web-based enterprise system named "PRISM".
 
 About the system:
-PUP PRISM is a property, resource, and inventory management platform used for stock receiving, issuance, asset tracking, bookings, handovers, monitoring, and operational decision support. It is a serious institutional product, not a playful consumer app. The logo must communicate structure, trust, inventory control, precision, accountability, and smart operations.
+PRISM is a property, resource, and inventory management platform used for stock receiving, issuance, asset tracking, bookings, handovers, monitoring, and operational decision support. It is a serious institutional product, not a playful consumer app. The logo must communicate structure, trust, inventory control, precision, accountability, and smart operations.
 
 Design objective:
 Create a logo that feels clean, intelligent, credible, and memorable. It should look appropriate for a university or government-adjacent operational platform, while still feeling modern and digitally advanced. The result should be strong enough to serve as the core identity of the entire system.
@@ -34,7 +34,7 @@ Creative direction:
 - Build the concept around the meaning of "PRISM" as clarity, organization, structure, intelligence, and multi-faceted visibility.
 - Subtly reflect inventory, assets, logistics, tracking, boxed items, connected systems, or operational flow.
 - The logo should feel geometric, balanced, and intentional.
-- Prefer a symbol that can stand alone as an app icon or sidebar icon, plus a version that works with the wordmark "PRISM" or "PUP PRISM".
+- Prefer a symbol that can stand alone as an app icon or sidebar icon, plus a version that works with the wordmark "PRISM".
 
 Visual style:
 - sleek, minimal, enterprise-grade
@@ -89,7 +89,7 @@ Output expectations:
 - center the design around clarity, inventory integrity, operational control, and trust
 
 If text is included, use:
-"PUP PRISM" or "PRISM"
+"PRISM"
 
 Design this as if it will become the official identity of a real institutional inventory and asset operations platform.
 ```

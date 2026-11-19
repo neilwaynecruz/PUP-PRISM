@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             UatOrganizationSeeder::class,
+            SupplierSeeder::class,
             UatInventorySeeder::class,
             UatProcurementSeeder::class,
             UatWorkflowSeeder::class,

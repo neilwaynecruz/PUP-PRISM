@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="public/Icons/ms-icon-310x310%20(2).png" width="120" height="120" alt="PUP PRISM logo">
+  <img src="public/Icons/prism-icon-192x192.png" width="120" height="120" alt="PRISM logo">
 </p>
 
-<h1 align="center">PUP PRISM</h1>
+<h1 align="center">PRISM</h1>
 
 <p align="center">
   <strong>Property, Resource, Inventory, and Supply Management</strong><br>
@@ -21,7 +21,7 @@
 
 ## About PRISM
 
-PUP PRISM is a web-based university operations system for managing consumable supplies and accountable property throughout their complete lifecycle. It connects receiving, stock issuance, procurement, physical counting, bookings, handovers, maintenance, transfers, forecasting, reporting, and audit history in one controlled workspace.
+PRISM is a web-based university operations system for managing consumable supplies and accountable property throughout their complete lifecycle. It connects receiving, stock issuance, procurement, physical counting, bookings, handovers, maintenance, transfers, forecasting, reporting, and audit history in one controlled workspace.
 
 The platform is designed for three priorities:
 
@@ -166,7 +166,7 @@ Create an empty local database, then update these values in `.env`:
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
 DB_PORT=5432
-DB_DATABASE=pup_prism
+DB_DATABASE=prism
 DB_USERNAME=postgres
 DB_PASSWORD=your_local_password
 ```
@@ -260,7 +260,7 @@ composer ci:check
 | Composer security audit     | `composer audit`               |
 | npm high-severity audit     | `npm audit --audit-level=high` |
 
-The standard PHPUnit environment uses in-memory SQLite, array-backed cache and mail, and a synchronous queue. PostgreSQL-specific concurrency tests use the isolated `pgsql_testing` connection configured through `DB_TEST_*` environment values.
+The standard PHPUnit environment uses in-memory SQLite, array-backed cache and mail, and a synchronous queue. PostgreSQL-specific tests use a separate, disposable `pgsql_testing` database configured through `DB_TEST_*` environment values. Its database name must end in `_test`; verify the effective connection and migrate that dedicated database before running those tests. CI provisions and migrates this database and runs Pest with `--fail-on-skipped`, so missing test prerequisites fail the check.
 
 ### Browser testing with Playwright
 
@@ -288,7 +288,7 @@ npm run e2e:report
 
 ## Automation and operations
 
-The Laravel scheduler registers the following recurring tasks:
+The Laravel scheduler registers the following recurring tasks. Retention tasks run only when `RETENTION_SCHEDULING_ENABLED=true`:
 
 | Time         | Command                         | Purpose                                           |
 | ------------ | ------------------------------- | ------------------------------------------------- |
@@ -320,7 +320,7 @@ Use the detailed [operations runbooks](docs/operations/) and [implementation tra
 4. Install and build frontend assets with `npm ci` and `npm run build`.
 5. Run `php artisan migrate --force` and `php artisan storage:link`.
 6. Build Laravel caches with `php artisan optimize`.
-7. Run persistent workers for the `default`, `notifications`, and `broadcast` queues.
+7. Run persistent workers for the `security`, `mail`, `default`, `notifications`, and `broadcast` queues.
 8. Invoke `php artisan schedule:run` every minute through cron or the hosting platform.
 9. Force HTTPS, configure trusted proxy headers, and verify writable `storage` and `bootstrap/cache` directories.
 10. Complete backup, restore, queue-failure, and rollback drills before go-live.
@@ -380,6 +380,6 @@ For deeper operational investigation, begin with the [operations documentation](
 ---
 
 <p align="center">
-  <strong>PUP PRISM</strong><br>
+  <strong>PRISM</strong><br>
   Clear inventory. Accountable assets. Better operational decisions.
 </p>

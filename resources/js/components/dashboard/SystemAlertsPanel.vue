@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { AlertOctagon } from 'lucide-vue-next';
+import { formatDisplayDateTime } from '@/lib/dateFormatting';
 
 export type DashboardAlertItem = {
     id: number;
@@ -71,7 +72,7 @@ function alertBadgeClass(type: string): string {
                     >
                         {{ a.type }}
                     </span>
-                    <span>{{ a.detected_at }}</span>
+                    <span>{{ formatDisplayDateTime(a.detected_at) }}</span>
                 </div>
                 <div class="mt-1.5 leading-relaxed">{{ a.message }}</div>
             </li>

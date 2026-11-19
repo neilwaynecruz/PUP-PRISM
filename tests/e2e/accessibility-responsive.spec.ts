@@ -345,7 +345,7 @@ test.describe('Phase 3 accessibility and responsive layout', () => {
         await mobileTrigger.click();
         await expect(mobileTrigger).toHaveAttribute('aria-expanded', 'true');
         await expect(page.locator('[data-mobile="true"]')).toContainText(
-            'PUP PRISM',
+            'PRISM',
         );
 
         await page.keyboard.press('Escape');

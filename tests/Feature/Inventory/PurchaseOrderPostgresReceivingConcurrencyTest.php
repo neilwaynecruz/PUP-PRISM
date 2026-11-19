@@ -17,7 +17,7 @@ test('postgresql row locks serialize concurrent receiving and prevent over-recei
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     ]);
 
-    // Setup isolated test records directly via PDO on pup_prism_test
+    // Setup isolated test records directly via PDO on prism_test
     $now = CarbonImmutable::now()->toDateTimeString();
 
     // Ensure supplier exists
