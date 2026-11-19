@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\NotificationEventType;
 use App\Models\User;
 use App\Notifications\DailyNotificationDigest;
 use App\Support\SchedulerHeartbeat;
@@ -43,7 +44,7 @@ class SendNotificationDigests extends Command
                 $sentCount += $this->sendDigestsForChunk($users, $since);
             });
 
-        $this->components->info(sprintf('Sent %d notification digest email(s).', $sentCount));
+        $this->components->info(sprintf('Queued %d notification digest email(s).', $sentCount));
 
         SchedulerHeartbeat::record(SchedulerHeartbeat::COMMAND_SEND_NOTIFICATION_DIGESTS);
 
@@ -67,7 +68,7 @@ class SendNotificationDigests extends Command
             $userEventTypes = [];
 
             foreach ($user->notificationPreferences as $preference) {
-                if ($preference->event_type !== '') {
+                if ($preference->event_type !== '' && $preference->event_type !== NotificationEventType::HandoverVerification->value) {
                     $userEventTypes[$preference->event_type] = true;
                     $allChunkEventTypes[$preference->event_type] = true;
                 }

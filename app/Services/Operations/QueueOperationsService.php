@@ -25,7 +25,7 @@ class QueueOperationsService
             'failed_jobs_count' => $this->failedJobsCount(),
             'oldest_pending_job_age_seconds' => $this->oldestPendingJobAgeSeconds(),
             'recent_failed_jobs' => $this->recentFailedJobs(),
-            'recommended_worker_command' => 'php artisan queue:work --queue=default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600',
+            'recommended_worker_command' => 'php artisan queue:work --queue=security,mail,default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600',
         ];
     }
 

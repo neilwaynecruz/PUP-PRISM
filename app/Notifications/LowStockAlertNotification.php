@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Enums\NotificationEventType;
 use App\Models\Product;
+use App\Notifications\Concerns\HasReliableMailDelivery;
 use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,16 +14,17 @@ use Illuminate\Notifications\Notification;
 
 class LowStockAlertNotification extends Notification implements ShouldQueue
 {
+    use HasReliableMailDelivery;
     use Queueable;
     use ResolvesViaNotificationPreferences;
 
-    public int $tries = 3;
+    public int $tries = 0;
 
     public function __construct(
         public Product $product,
         public int $currentStock,
     ) {
-        $this->onQueue('notifications');
+        $this->initializeMailDelivery();
     }
 
     public function notificationEventType(): string
@@ -33,7 +35,7 @@ class LowStockAlertNotification extends Notification implements ShouldQueue
     public function toMail(object $_notifiable): MailMessage
     {
         $threshold = $this->product->reorder_threshold ?? 0;
-        $url = route('inventory.products.index', absolute: false);
+        $url = route('inventory.products.index');
 
         return (new MailMessage)
             ->subject(__('Inventory alert: :sku stock is low', ['sku' => $this->product->sku]))

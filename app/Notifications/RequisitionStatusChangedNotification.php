@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Enums\NotificationEventType;
 use App\Models\Requisition;
+use App\Notifications\Concerns\HasReliableMailDelivery;
 use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,16 +14,17 @@ use Illuminate\Notifications\Notification;
 
 class RequisitionStatusChangedNotification extends Notification implements ShouldQueue
 {
+    use HasReliableMailDelivery;
     use Queueable;
     use ResolvesViaNotificationPreferences;
 
-    public int $tries = 3;
+    public int $tries = 0;
 
     public function __construct(
         public Requisition $requisition,
         public string $action,
     ) {
-        $this->onQueue('notifications');
+        $this->initializeMailDelivery();
     }
 
     public function notificationEventType(): string
@@ -46,7 +48,7 @@ class RequisitionStatusChangedNotification extends Notification implements Shoul
             default => __('Your requisition status changed'),
         };
 
-        $url = route('inventory.requisitions.show', $this->requisition, absolute: false);
+        $url = route('inventory.requisitions.show', $this->requisition);
 
         $message = (new MailMessage)
             ->subject($subject)

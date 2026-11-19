@@ -83,7 +83,6 @@ return [
             'transport' => 'failover',
             'mailers' => [
                 'resend',
-                'log',
             ],
             'retry_after' => 60,
         ],

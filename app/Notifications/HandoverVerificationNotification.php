@@ -3,30 +3,67 @@
 namespace App\Notifications;
 
 use App\Enums\NotificationEventType;
+use App\Models\HandoverLog;
+use App\Models\User;
+use App\Notifications\Concerns\HasReliableMailDelivery;
 use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
+use App\Services\Operations\EmailDeliveryService;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class HandoverVerificationNotification extends Notification implements ShouldQueue
+class HandoverVerificationNotification extends Notification implements ShouldBeEncrypted, ShouldQueue
 {
+    use HasReliableMailDelivery;
     use Queueable;
-    use ResolvesViaNotificationPreferences;
+    use ResolvesViaNotificationPreferences { via as preferredChannels; }
 
-    public int $tries = 3;
+    public int $tries = 0;
 
     public function __construct(
         public int $handoverLogId,
         public string $token,
     ) {
-        $this->onQueue('notifications');
+        $this->initializeMailDelivery();
     }
 
     public function notificationEventType(): string
     {
         return NotificationEventType::HandoverVerification->value;
+    }
+
+    /** @return list<string> */
+    public function via(object $notifiable): array
+    {
+        return array_values(array_unique(['mail', ...$this->preferredChannels($notifiable)]));
+    }
+
+    protected function mailQueue(): string
+    {
+        return 'security';
+    }
+
+    public function shouldSend(User $notifiable, string $channel): bool
+    {
+        if ($channel !== 'mail') {
+            return true;
+        }
+
+        if (now()->getTimestamp() >= $this->mailDeadline) {
+            return app(EmailDeliveryService::class)->skip($notifiable, $this, 'expired');
+        }
+
+        $handover = HandoverLog::query()->find($this->handoverLogId);
+        if (! $notifiable->is_active || $handover === null || ! $handover->isPending()
+            || $handover->to_user_id !== $notifiable->id
+            || ! hash_equals((string) $handover->verification_token_hash, hash('sha256', $this->token))) {
+            return app(EmailDeliveryService::class)->skip($notifiable, $this, 'superseded');
+        }
+
+        return true;
     }
 
     /**
@@ -38,7 +75,7 @@ class HandoverVerificationNotification extends Notification implements ShouldQue
         $url = route('inventory.handover.verify', [
             'handoverLog' => $this->handoverLogId,
             'token' => $this->token,
-        ], absolute: false);
+        ]);
 
         return (new MailMessage)
             ->subject(__('Internal asset handover verification required'))
@@ -61,7 +98,7 @@ class HandoverVerificationNotification extends Notification implements ShouldQue
             'category' => 'handover',
             'severity' => 'info',
             'title' => __('Handover verification required'),
-            'message' => __('An internal asset handover is awaiting your verification. Use the secure link sent to your email.'),
+            'message' => __('An internal asset handover is awaiting your verification. A secure email link has been queued; delivery may be delayed.'),
             'url' => null,
             'handover_log_id' => $this->handoverLogId,
         ];

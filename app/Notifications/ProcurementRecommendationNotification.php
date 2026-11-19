@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Enums\NotificationEventType;
 use App\Models\Product;
+use App\Notifications\Concerns\HasReliableMailDelivery;
 use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,17 +14,18 @@ use Illuminate\Notifications\Notification;
 
 class ProcurementRecommendationNotification extends Notification implements ShouldQueue
 {
+    use HasReliableMailDelivery;
     use Queueable;
     use ResolvesViaNotificationPreferences;
 
-    public int $tries = 3;
+    public int $tries = 0;
 
     public function __construct(
         public Product $product,
         public int $predictedDaysUntilStockout,
         public int $recommendedReorderQty,
     ) {
-        $this->onQueue('notifications');
+        $this->initializeMailDelivery();
     }
 
     public function notificationEventType(): string
@@ -33,7 +35,7 @@ class ProcurementRecommendationNotification extends Notification implements Shou
 
     public function toMail(object $_notifiable): MailMessage
     {
-        $url = route('inventory.forecasting.show', $this->product, absolute: false);
+        $url = route('inventory.forecasting.show', $this->product);
 
         return (new MailMessage)
             ->subject(__('Procurement recommendation: :sku forecast stockout', ['sku' => $this->product->sku]))

@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Enums\NotificationEventType;
 use App\Models\Requisition;
+use App\Notifications\Concerns\HasReliableMailDelivery;
 use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,15 +14,16 @@ use Illuminate\Notifications\Notification;
 
 class RequisitionSubmittedNotification extends Notification implements ShouldQueue
 {
+    use HasReliableMailDelivery;
     use Queueable;
     use ResolvesViaNotificationPreferences;
 
-    public int $tries = 3;
+    public int $tries = 0;
 
     public function __construct(
         public Requisition $requisition,
     ) {
-        $this->onQueue('notifications');
+        $this->initializeMailDelivery();
     }
 
     public function notificationEventType(): string
@@ -32,7 +34,7 @@ class RequisitionSubmittedNotification extends Notification implements ShouldQue
     public function toMail(object $_notifiable): MailMessage
     {
         $requesterName = $this->requisition->requester->name ?? 'A user';
-        $url = route('inventory.requisitions.show', $this->requisition, absolute: false);
+        $url = route('inventory.requisitions.show', $this->requisition);
 
         return (new MailMessage)
             ->subject(__('New requisition submitted'))

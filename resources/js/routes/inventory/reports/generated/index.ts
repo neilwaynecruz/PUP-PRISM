@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::download
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
 export const download = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ download.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::download
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
 download.url = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions) => {
@@ -42,7 +42,7 @@ download.url = (args: { user: string | number, file: string | number } | [user: 
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::download
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
 download.get = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -51,7 +51,7 @@ download.get = (args: { user: string | number, file: string | number } | [user: 
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::download
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
 download.head = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -61,7 +61,7 @@ download.head = (args: { user: string | number, file: string | number } | [user:
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::download
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
     const downloadForm = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -71,7 +71,7 @@ download.head = (args: { user: string | number, file: string | number } | [user:
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::download
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
         downloadForm.get = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -80,7 +80,7 @@ download.head = (args: { user: string | number, file: string | number } | [user:
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::download
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
         downloadForm.head = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

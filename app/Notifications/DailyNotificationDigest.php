@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Notifications\Concerns\HasReliableMailDelivery;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\DatabaseNotification;
@@ -11,16 +12,17 @@ use Illuminate\Support\Collection;
 
 class DailyNotificationDigest extends Notification implements ShouldQueue
 {
+    use HasReliableMailDelivery;
     use Queueable;
 
-    public int $tries = 3;
+    public int $tries = 0;
 
     /**
      * @param  Collection<int, DatabaseNotification>  $entries
      */
     public function __construct(public Collection $entries)
     {
-        $this->onQueue('notifications');
+        $this->initializeMailDelivery();
     }
 
     /**
@@ -47,7 +49,7 @@ class DailyNotificationDigest extends Notification implements ShouldQueue
         }
 
         return $message
-            ->action(__('Open notification center'), route('dashboard', absolute: false))
+            ->action(__('Open notification center'), route('dashboard'))
             ->line(__('You can manage delivery channels and digest frequency in Settings.'));
     }
 }

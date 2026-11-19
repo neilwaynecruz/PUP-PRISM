@@ -178,6 +178,7 @@ test('it accepts a custom queue connection backed by a persistent driver', funct
 
 test('it rejects missing or non-delivery mail configurations', function (string $mailer) {
     configureSecureProductionReadiness(['mail.default' => $mailer]);
+    config(['mail.mailers.failover.mailers' => ['resend', 'log']]);
 
     $result = runProductionReadinessCheck();
 

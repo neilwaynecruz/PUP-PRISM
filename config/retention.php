@@ -2,6 +2,8 @@
 
 return [
 
+    'scheduling_enabled' => (bool) env('RETENTION_SCHEDULING_ENABLED', false),
+
     /*
     |--------------------------------------------------------------------------
     | Operational Data Retention

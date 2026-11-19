@@ -121,6 +121,8 @@ Business-critical inventory changes are handled in backend services and database
 
 ## Local installation
 
+For a professor's Windows single-laptop installation, use the [portable startup guide](docs/operations/WINDOWS_LOCAL_INSTALLATION.md). After one-time developer provisioning, **Start PUP-PRISM.cmd** checks and starts the local application. It does not reset data, install dependencies, or replace `.env`. Destructive scheduled retention is disabled unless explicitly opted in; the local launcher requires it to remain disabled.
+
 ### Prerequisites
 
 Install the following before starting:
@@ -221,7 +223,7 @@ Rerunning the UAT organization seeder preserves existing passwords, email-verifi
 | -------------------------------- | -------------------------------------------------------------------------- |
 | Start the full development stack | `composer run dev`                                                         |
 | Start only Vite                  | `npm run dev`                                                              |
-| Run the queue worker manually    | `php artisan queue:work --queue=default,notifications,broadcast --tries=3` |
+| Run the queue worker manually    | `php artisan queue:work --queue=security,mail,default,notifications,broadcast --tries=3` |
 | Run scheduled commands locally   | `php artisan schedule:work`                                                |
 | Clear Laravel caches             | `php artisan optimize:clear`                                               |
 | List application routes          | `php artisan route:list --except-vendor`                                   |

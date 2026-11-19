@@ -10,7 +10,7 @@ use Illuminate\Console\Command;
 
 #[Signature('app:prune-operational-data
     {--dry-run : Report eligible rows without deleting}
-    {--only= : Limit pruning to audit_logs, forecast_snapshots, notifications, or failed_jobs}')]
+    {--only= : Limit pruning to audit_logs, forecast_snapshots, notifications, failed_jobs, or email_deliveries}')]
 #[Description('Prune aged audit logs, forecast snapshots, notifications, and failed jobs')]
 class PruneOperationalData extends Command
 {
@@ -62,13 +62,14 @@ class PruneOperationalData extends Command
             'forecast_snapshots' => ['forecast_snapshots' => $retentionService->pruneForecastSnapshots($dryRun)],
             'notifications' => ['notifications' => $retentionService->pruneNotifications($dryRun)],
             'failed_jobs' => ['failed_jobs' => $retentionService->pruneFailedJobs($dryRun)],
+            'email_deliveries' => ['email_deliveries' => $retentionService->pruneEmailDeliveries($dryRun)],
             default => $this->invalidOnlyOption($only),
         };
     }
 
     private function invalidOnlyOption(string $only): null
     {
-        $this->components->error("Unknown --only value [{$only}]. Use audit_logs, forecast_snapshots, notifications, or failed_jobs.");
+        $this->components->error("Unknown --only value [{$only}]. Use audit_logs, forecast_snapshots, notifications, failed_jobs, or email_deliveries.");
 
         return null;
     }

@@ -17,7 +17,7 @@ PUP PRISM uses Laravel's queue system for notifications, broadcasts, and other a
 **Recommended worker command:**
 
 ```bash
-php artisan queue:work --queue=default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600
+php artisan queue:work --queue=security,mail,default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600
 ```
 
 Local development (`composer run dev`) uses `queue:listen` for faster feedback; production should use `queue:work` under Supervisor, systemd, Forge, or Laravel Cloud.
@@ -141,7 +141,7 @@ All workflow notifications implement `ShouldQueue` and target the `notifications
 ```ini
 [program:pup-prism-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/pup_prism/artisan queue:work --queue=default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600
+command=php /var/www/pup_prism/artisan queue:work --queue=security,mail,default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600
 autostart=true
 autorestart=true
 stopasgroup=true

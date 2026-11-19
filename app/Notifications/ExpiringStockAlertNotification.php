@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Enums\NotificationEventType;
 use App\Models\StockLot;
+use App\Notifications\Concerns\HasReliableMailDelivery;
 use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
 use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
@@ -14,16 +15,17 @@ use Illuminate\Notifications\Notification;
 
 class ExpiringStockAlertNotification extends Notification implements ShouldQueue
 {
+    use HasReliableMailDelivery;
     use Queueable;
     use ResolvesViaNotificationPreferences;
 
-    public int $tries = 3;
+    public int $tries = 0;
 
     public function __construct(
         public StockLot $lot,
         public int $daysUntilExpiration,
     ) {
-        $this->onQueue('notifications');
+        $this->initializeMailDelivery();
     }
 
     public function notificationEventType(): string
@@ -37,7 +39,7 @@ class ExpiringStockAlertNotification extends Notification implements ShouldQueue
         $productName = $product->name ?? 'Unknown product';
         $sku = $product->sku ?? 'N/A';
         $ref = $this->lot->reference_no ?? "Lot #{$this->lot->id}";
-        $url = route('inventory.forecasting.show', $this->lot->product_id, absolute: false);
+        $url = route('inventory.forecasting.show', $this->lot->product_id);
 
         $urgencyText = $this->daysUntilExpiration <= 0
             ? __('has already expired')

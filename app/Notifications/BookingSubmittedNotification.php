@@ -4,6 +4,7 @@ namespace App\Notifications;
 
 use App\Enums\NotificationEventType;
 use App\Models\Booking;
+use App\Notifications\Concerns\HasReliableMailDelivery;
 use App\Notifications\Concerns\ResolvesViaNotificationPreferences;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -13,15 +14,16 @@ use Illuminate\Notifications\Notification;
 
 class BookingSubmittedNotification extends Notification implements ShouldQueue
 {
+    use HasReliableMailDelivery;
     use Queueable;
     use ResolvesViaNotificationPreferences;
 
-    public int $tries = 3;
+    public int $tries = 0;
 
     public function __construct(
         public Booking $booking,
     ) {
-        $this->onQueue('notifications');
+        $this->initializeMailDelivery();
     }
 
     public function notificationEventType(): string
@@ -33,7 +35,7 @@ class BookingSubmittedNotification extends Notification implements ShouldQueue
     {
         $requesterName = $this->booking->requester->name ?? 'A user';
         $assetTag = $this->booking->asset->tag_code ?? 'Unknown asset';
-        $url = route('inventory.bookings.index', absolute: false);
+        $url = route('inventory.bookings.index');
 
         return (new MailMessage)
             ->subject(__('New asset booking request'))

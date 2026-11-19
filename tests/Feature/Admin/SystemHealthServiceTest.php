@@ -123,7 +123,7 @@ test('the operations health page renders computed checks for admins', function (
         ->assertOk()
         ->assertInertia(fn ($page) => $page
             ->component('admin/operations/Health')
-            ->has('health.checks', 7)
+            ->has('health.checks', 8)
             ->has('health.scheduler', count(SchedulerHeartbeat::trackedCommands()))
             ->where('health.status', fn (string $status) => in_array($status, ['ok', 'degraded', 'critical'], true)));
 });

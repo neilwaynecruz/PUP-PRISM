@@ -31,7 +31,9 @@ defineProps<{
         aria-live="polite"
         class="mb-4 text-center text-sm font-medium text-emerald-700 dark:text-emerald-300"
     >
-        {{ status }}
+        If your account is eligible, a password-reset email has been queued.
+        Check your inbox and spam folder. Delivery may be delayed; request a new
+        link if the previous one expires.
     </div>
 
     <div class="space-y-6">

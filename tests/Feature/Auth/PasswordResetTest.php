@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\ResetPassword;
+use App\Notifications\QueuedResetPassword as ResetPassword;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
 

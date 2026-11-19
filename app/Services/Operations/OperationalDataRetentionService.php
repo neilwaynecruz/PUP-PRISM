@@ -3,6 +3,7 @@
 namespace App\Services\Operations;
 
 use App\Models\AuditLog;
+use App\Models\EmailDelivery;
 use App\Models\ForecastSnapshot;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -22,6 +23,7 @@ class OperationalDataRetentionService
             'forecast_snapshots' => $this->pruneForecastSnapshots($dryRun),
             'notifications' => $this->pruneNotifications($dryRun),
             'failed_jobs' => $this->pruneFailedJobs($dryRun),
+            'email_deliveries' => $this->pruneEmailDeliveries($dryRun),
         ];
 
         return $counts;
@@ -41,6 +43,19 @@ class OperationalDataRetentionService
             AuditLog::query()->where('created_at', '<', $cutoff),
             $dryRun,
         );
+    }
+
+    public function pruneEmailDeliveries(bool $dryRun = false): int
+    {
+        if (! $dryRun) {
+            EmailDelivery::query()->where('expires_at', '<=', now())
+                ->whereIn('status', ['queued', 'processing', 'retry_scheduled'])
+                ->update(['status' => 'expired', 'request_payload' => null, 'next_attempt_at' => null]);
+            EmailDelivery::query()->where('expires_at', '<=', now())->whereNotNull('request_payload')
+                ->update(['request_payload' => null]);
+        }
+
+        return $this->deleteInChunks(EmailDelivery::query()->where('expires_at', '<', now()->subDays(30)), $dryRun);
     }
 
     public function pruneForecastSnapshots(bool $dryRun = false): int

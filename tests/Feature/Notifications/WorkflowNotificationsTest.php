@@ -258,8 +258,11 @@ describe('Queued notification delivery', function () {
         $notification = $factory();
 
         expect($notification)->toBeInstanceOf(ShouldQueue::class)
-            ->and($notification->tries)->toBe(3)
-            ->and($notification->queue)->toBe('notifications');
+            ->and($notification->tries)->toBe(0)
+            ->and($notification->queue)->toBe('notifications')
+            ->and($notification->afterCommit)->toBeTrue()
+            ->and($notification->retryUntil()->isFuture())->toBeTrue()
+            ->and($notification->viaQueues()['mail'])->toBeIn(['mail', 'security']);
     })->with([
         'requisition submitted' => [fn () => new RequisitionSubmittedNotification(Requisition::factory()->make())],
         'requisition status changed' => [fn () => new RequisitionStatusChangedNotification(Requisition::factory()->make(), 'approved')],
@@ -356,7 +359,7 @@ describe('Notification delivery channels', function () {
         expect($handover->toArray($user))->toMatchArray([
             'category' => 'handover',
             'severity' => 'info',
-            'message' => 'An internal asset handover is awaiting your verification. Use the secure link sent to your email.',
+            'message' => 'An internal asset handover is awaiting your verification. A secure email link has been queued; delivery may be delayed.',
             'url' => null,
         ]);
         expect($handover->toMail($user)->actionUrl)->toContain('token=verification-token');

@@ -19,7 +19,7 @@ import movements from './movements'
 import auditLogs from './audit-logs'
 /**
 * @see \App\Http\Controllers\Inventory\TrashController::__invoke
- * @see app/Http/Controllers/Inventory/TrashController.php:15
+ * @see app/Http/Controllers/Inventory/TrashController.php:16
  * @route '/inventory/trash'
  */
 export const trash = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -34,7 +34,7 @@ trash.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\TrashController::__invoke
- * @see app/Http/Controllers/Inventory/TrashController.php:15
+ * @see app/Http/Controllers/Inventory/TrashController.php:16
  * @route '/inventory/trash'
  */
 trash.url = (options?: RouteQueryOptions) => {
@@ -43,7 +43,7 @@ trash.url = (options?: RouteQueryOptions) => {
 
 /**
 * @see \App\Http\Controllers\Inventory\TrashController::__invoke
- * @see app/Http/Controllers/Inventory/TrashController.php:15
+ * @see app/Http/Controllers/Inventory/TrashController.php:16
  * @route '/inventory/trash'
  */
 trash.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -52,7 +52,7 @@ trash.get = (options?: RouteQueryOptions): RouteDefinition<'get'> => ({
 })
 /**
 * @see \App\Http\Controllers\Inventory\TrashController::__invoke
- * @see app/Http/Controllers/Inventory/TrashController.php:15
+ * @see app/Http/Controllers/Inventory/TrashController.php:16
  * @route '/inventory/trash'
  */
 trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -62,7 +62,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
     /**
 * @see \App\Http\Controllers\Inventory\TrashController::__invoke
- * @see app/Http/Controllers/Inventory/TrashController.php:15
+ * @see app/Http/Controllers/Inventory/TrashController.php:16
  * @route '/inventory/trash'
  */
     const trashForm = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -72,7 +72,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
 
             /**
 * @see \App\Http\Controllers\Inventory\TrashController::__invoke
- * @see app/Http/Controllers/Inventory/TrashController.php:15
+ * @see app/Http/Controllers/Inventory/TrashController.php:16
  * @route '/inventory/trash'
  */
         trashForm.get = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -81,7 +81,7 @@ trash.head = (options?: RouteQueryOptions): RouteDefinition<'head'> => ({
         })
             /**
 * @see \App\Http\Controllers\Inventory\TrashController::__invoke
- * @see app/Http/Controllers/Inventory/TrashController.php:15
+ * @see app/Http/Controllers/Inventory/TrashController.php:16
  * @route '/inventory/trash'
  */
         trashForm.head = (options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

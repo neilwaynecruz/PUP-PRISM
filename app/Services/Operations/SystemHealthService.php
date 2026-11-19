@@ -2,6 +2,7 @@
 
 namespace App\Services\Operations;
 
+use App\Models\EmailDelivery;
 use App\Support\SchedulerHeartbeat;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\App;
@@ -61,6 +62,7 @@ class SystemHealthService
             $this->schedulerCheck($scheduler),
             $this->realtimeCheck(),
             $this->storageCheck(),
+            $this->emailCheck(),
         ];
 
         $counts = [
@@ -105,6 +107,37 @@ class SystemHealthService
             'degraded' => __('PRISM is running, but some services need attention.').$unverified,
             default => __('All verified services are operating normally.').$unverified,
         };
+    }
+
+    /** @return array<string, mixed> */
+    private function emailCheck(): array
+    {
+        if (config('mail.default') !== 'resend') {
+            return $this->check('email', 'Email delivery', self::WARNING,
+                __('Resend delivery tracking is not enabled. Log and array mailers do not deliver email.'), [],
+                __('Configure Resend server-side and start the security and mail queue workers.'));
+        }
+
+        try {
+            $counts = EmailDelivery::query()->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
+            $details = [];
+            foreach ([
+                'queued' => 'Queued', 'processing' => 'Processing', 'accepted' => 'Accepted by Resend (not proof of delivery)',
+                'retry_scheduled' => 'Retry scheduled', 'failed' => 'Failed', 'expired' => 'Expired', 'superseded' => 'Superseded',
+                'cancelled' => 'Cancelled before transport',
+            ] as $status => $label) {
+                $details[] = ['label' => $label, 'value' => (string) ($counts[$status] ?? 0)];
+            }
+
+            $hasFailures = ($counts['failed'] ?? 0) > 0;
+
+            return $this->check('email', 'Email delivery', $hasFailures ? self::WARNING : self::UNKNOWN,
+                __('Local delivery status only. Inbox delivery and provider connectivity have not been verified.'), $details,
+                __('Use security and mail workers. Review failed jobs; request a fresh link if expired.'));
+        } catch (Throwable) {
+            return $this->check('email', 'Email delivery', self::WARNING,
+                __('Delivery tracking is unavailable.'), [], __('Review pending migrations and database access.'));
+        }
     }
 
     /**
@@ -491,7 +524,7 @@ class SystemHealthService
                 'failed_jobs_count' => 0,
                 'oldest_pending_job_age_seconds' => null,
                 'recent_failed_jobs' => [],
-                'recommended_worker_command' => 'php artisan queue:work --queue=default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600',
+                'recommended_worker_command' => 'php artisan queue:work --queue=security,mail,default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600',
                 'error' => class_basename($exception),
             ];
         }

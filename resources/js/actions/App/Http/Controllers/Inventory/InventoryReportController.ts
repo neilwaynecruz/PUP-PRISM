@@ -1,7 +1,7 @@
 import { queryParams, type RouteQueryOptions, type RouteDefinition, type RouteFormDefinition, applyUrlDefaults } from './../../../../../wayfinder'
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::products
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:76
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:78
  * @route '/inventory/reports/products/{format}'
  */
 export const products = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -16,7 +16,7 @@ products.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::products
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:76
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:78
  * @route '/inventory/reports/products/{format}'
  */
 products.url = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -44,7 +44,7 @@ products.url = (args: { format: string | number } | [format: string | number ] |
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::products
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:76
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:78
  * @route '/inventory/reports/products/{format}'
  */
 products.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -53,7 +53,7 @@ products.get = (args: { format: string | number } | [format: string | number ] |
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::products
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:76
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:78
  * @route '/inventory/reports/products/{format}'
  */
 products.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -63,7 +63,7 @@ products.head = (args: { format: string | number } | [format: string | number ] 
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::products
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:76
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:78
  * @route '/inventory/reports/products/{format}'
  */
     const productsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -73,7 +73,7 @@ products.head = (args: { format: string | number } | [format: string | number ] 
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::products
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:76
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:78
  * @route '/inventory/reports/products/{format}'
  */
         productsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -82,7 +82,7 @@ products.head = (args: { format: string | number } | [format: string | number ] 
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::products
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:76
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:78
  * @route '/inventory/reports/products/{format}'
  */
         productsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -98,7 +98,7 @@ products.head = (args: { format: string | number } | [format: string | number ] 
     products.form = productsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:97
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:99
  * @route '/inventory/reports/bookings/{format}'
  */
 export const bookings = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -113,7 +113,7 @@ bookings.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:97
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:99
  * @route '/inventory/reports/bookings/{format}'
  */
 bookings.url = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -141,7 +141,7 @@ bookings.url = (args: { format: string | number } | [format: string | number ] |
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:97
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:99
  * @route '/inventory/reports/bookings/{format}'
  */
 bookings.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -150,7 +150,7 @@ bookings.get = (args: { format: string | number } | [format: string | number ] |
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:97
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:99
  * @route '/inventory/reports/bookings/{format}'
  */
 bookings.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -160,7 +160,7 @@ bookings.head = (args: { format: string | number } | [format: string | number ] 
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:97
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:99
  * @route '/inventory/reports/bookings/{format}'
  */
     const bookingsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -170,7 +170,7 @@ bookings.head = (args: { format: string | number } | [format: string | number ] 
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:97
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:99
  * @route '/inventory/reports/bookings/{format}'
  */
         bookingsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -179,7 +179,7 @@ bookings.head = (args: { format: string | number } | [format: string | number ] 
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::bookings
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:97
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:99
  * @route '/inventory/reports/bookings/{format}'
  */
         bookingsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -195,7 +195,7 @@ bookings.head = (args: { format: string | number } | [format: string | number ] 
     bookings.form = bookingsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:104
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:106
  * @route '/inventory/reports/requisitions/{format}'
  */
 export const requisitions = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -210,7 +210,7 @@ requisitions.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:104
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:106
  * @route '/inventory/reports/requisitions/{format}'
  */
 requisitions.url = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -238,7 +238,7 @@ requisitions.url = (args: { format: string | number } | [format: string | number
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:104
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:106
  * @route '/inventory/reports/requisitions/{format}'
  */
 requisitions.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -247,7 +247,7 @@ requisitions.get = (args: { format: string | number } | [format: string | number
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:104
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:106
  * @route '/inventory/reports/requisitions/{format}'
  */
 requisitions.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -257,7 +257,7 @@ requisitions.head = (args: { format: string | number } | [format: string | numbe
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:104
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:106
  * @route '/inventory/reports/requisitions/{format}'
  */
     const requisitionsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -267,7 +267,7 @@ requisitions.head = (args: { format: string | number } | [format: string | numbe
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:104
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:106
  * @route '/inventory/reports/requisitions/{format}'
  */
         requisitionsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -276,7 +276,7 @@ requisitions.head = (args: { format: string | number } | [format: string | numbe
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::requisitions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:104
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:106
  * @route '/inventory/reports/requisitions/{format}'
  */
         requisitionsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -292,7 +292,7 @@ requisitions.head = (args: { format: string | number } | [format: string | numbe
     requisitions.form = requisitionsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::procurement
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:111
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:113
  * @route '/inventory/reports/procurement/{format}'
  */
 export const procurement = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -307,7 +307,7 @@ procurement.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::procurement
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:111
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:113
  * @route '/inventory/reports/procurement/{format}'
  */
 procurement.url = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -335,7 +335,7 @@ procurement.url = (args: { format: string | number } | [format: string | number 
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::procurement
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:111
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:113
  * @route '/inventory/reports/procurement/{format}'
  */
 procurement.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -344,7 +344,7 @@ procurement.get = (args: { format: string | number } | [format: string | number 
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::procurement
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:111
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:113
  * @route '/inventory/reports/procurement/{format}'
  */
 procurement.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -354,7 +354,7 @@ procurement.head = (args: { format: string | number } | [format: string | number
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::procurement
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:111
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:113
  * @route '/inventory/reports/procurement/{format}'
  */
     const procurementForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -364,7 +364,7 @@ procurement.head = (args: { format: string | number } | [format: string | number
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::procurement
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:111
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:113
  * @route '/inventory/reports/procurement/{format}'
  */
         procurementForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -373,7 +373,7 @@ procurement.head = (args: { format: string | number } | [format: string | number
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::procurement
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:111
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:113
  * @route '/inventory/reports/procurement/{format}'
  */
         procurementForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -389,7 +389,7 @@ procurement.head = (args: { format: string | number } | [format: string | number
     procurement.form = procurementForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::forecasting
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:118
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:120
  * @route '/inventory/reports/forecasting/{format}'
  */
 export const forecasting = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -404,7 +404,7 @@ forecasting.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::forecasting
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:118
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:120
  * @route '/inventory/reports/forecasting/{format}'
  */
 forecasting.url = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -432,7 +432,7 @@ forecasting.url = (args: { format: string | number } | [format: string | number 
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::forecasting
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:118
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:120
  * @route '/inventory/reports/forecasting/{format}'
  */
 forecasting.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -441,7 +441,7 @@ forecasting.get = (args: { format: string | number } | [format: string | number 
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::forecasting
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:118
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:120
  * @route '/inventory/reports/forecasting/{format}'
  */
 forecasting.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -451,7 +451,7 @@ forecasting.head = (args: { format: string | number } | [format: string | number
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::forecasting
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:118
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:120
  * @route '/inventory/reports/forecasting/{format}'
  */
     const forecastingForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -461,7 +461,7 @@ forecasting.head = (args: { format: string | number } | [format: string | number
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::forecasting
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:118
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:120
  * @route '/inventory/reports/forecasting/{format}'
  */
         forecastingForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -470,7 +470,7 @@ forecasting.head = (args: { format: string | number } | [format: string | number
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::forecasting
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:118
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:120
  * @route '/inventory/reports/forecasting/{format}'
  */
         forecastingForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -486,7 +486,7 @@ forecasting.head = (args: { format: string | number } | [format: string | number
     forecasting.form = forecastingForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::slowMovingStock
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:125
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:127
  * @route '/inventory/reports/slow-moving/{format}'
  */
 export const slowMovingStock = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -501,7 +501,7 @@ slowMovingStock.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::slowMovingStock
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:125
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:127
  * @route '/inventory/reports/slow-moving/{format}'
  */
 slowMovingStock.url = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -529,7 +529,7 @@ slowMovingStock.url = (args: { format: string | number } | [format: string | num
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::slowMovingStock
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:125
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:127
  * @route '/inventory/reports/slow-moving/{format}'
  */
 slowMovingStock.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -538,7 +538,7 @@ slowMovingStock.get = (args: { format: string | number } | [format: string | num
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::slowMovingStock
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:125
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:127
  * @route '/inventory/reports/slow-moving/{format}'
  */
 slowMovingStock.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -548,7 +548,7 @@ slowMovingStock.head = (args: { format: string | number } | [format: string | nu
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::slowMovingStock
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:125
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:127
  * @route '/inventory/reports/slow-moving/{format}'
  */
     const slowMovingStockForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -558,7 +558,7 @@ slowMovingStock.head = (args: { format: string | number } | [format: string | nu
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::slowMovingStock
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:125
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:127
  * @route '/inventory/reports/slow-moving/{format}'
  */
         slowMovingStockForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -567,7 +567,7 @@ slowMovingStock.head = (args: { format: string | number } | [format: string | nu
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::slowMovingStock
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:125
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:127
  * @route '/inventory/reports/slow-moving/{format}'
  */
         slowMovingStockForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -583,7 +583,7 @@ slowMovingStock.head = (args: { format: string | number } | [format: string | nu
     slowMovingStock.form = slowMovingStockForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::expirations
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:132
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:134
  * @route '/inventory/reports/expirations/{format}'
  */
 export const expirations = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -598,7 +598,7 @@ expirations.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::expirations
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:132
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:134
  * @route '/inventory/reports/expirations/{format}'
  */
 expirations.url = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -626,7 +626,7 @@ expirations.url = (args: { format: string | number } | [format: string | number 
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::expirations
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:132
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:134
  * @route '/inventory/reports/expirations/{format}'
  */
 expirations.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -635,7 +635,7 @@ expirations.get = (args: { format: string | number } | [format: string | number 
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::expirations
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:132
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:134
  * @route '/inventory/reports/expirations/{format}'
  */
 expirations.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -645,7 +645,7 @@ expirations.head = (args: { format: string | number } | [format: string | number
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::expirations
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:132
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:134
  * @route '/inventory/reports/expirations/{format}'
  */
     const expirationsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -655,7 +655,7 @@ expirations.head = (args: { format: string | number } | [format: string | number
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::expirations
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:132
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:134
  * @route '/inventory/reports/expirations/{format}'
  */
         expirationsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -664,7 +664,7 @@ expirations.head = (args: { format: string | number } | [format: string | number
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::expirations
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:132
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:134
  * @route '/inventory/reports/expirations/{format}'
  */
         expirationsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -680,7 +680,7 @@ expirations.head = (args: { format: string | number } | [format: string | number
     expirations.form = expirationsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::optimization
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:139
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:141
  * @route '/inventory/reports/optimization/{format}'
  */
 export const optimization = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -695,7 +695,7 @@ optimization.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::optimization
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:139
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:141
  * @route '/inventory/reports/optimization/{format}'
  */
 optimization.url = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -723,7 +723,7 @@ optimization.url = (args: { format: string | number } | [format: string | number
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::optimization
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:139
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:141
  * @route '/inventory/reports/optimization/{format}'
  */
 optimization.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -732,7 +732,7 @@ optimization.get = (args: { format: string | number } | [format: string | number
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::optimization
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:139
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:141
  * @route '/inventory/reports/optimization/{format}'
  */
 optimization.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -742,7 +742,7 @@ optimization.head = (args: { format: string | number } | [format: string | numbe
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::optimization
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:139
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:141
  * @route '/inventory/reports/optimization/{format}'
  */
     const optimizationForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -752,7 +752,7 @@ optimization.head = (args: { format: string | number } | [format: string | numbe
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::optimization
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:139
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:141
  * @route '/inventory/reports/optimization/{format}'
  */
         optimizationForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -761,7 +761,7 @@ optimization.head = (args: { format: string | number } | [format: string | numbe
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::optimization
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:139
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:141
  * @route '/inventory/reports/optimization/{format}'
  */
         optimizationForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -777,7 +777,7 @@ optimization.head = (args: { format: string | number } | [format: string | numbe
     optimization.form = optimizationForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::downloadGenerated
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
 export const downloadGenerated = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -792,7 +792,7 @@ downloadGenerated.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::downloadGenerated
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
 downloadGenerated.url = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions) => {
@@ -818,7 +818,7 @@ downloadGenerated.url = (args: { user: string | number, file: string | number } 
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::downloadGenerated
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
 downloadGenerated.get = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -827,7 +827,7 @@ downloadGenerated.get = (args: { user: string | number, file: string | number } 
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::downloadGenerated
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
 downloadGenerated.head = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -837,7 +837,7 @@ downloadGenerated.head = (args: { user: string | number, file: string | number }
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::downloadGenerated
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
     const downloadGeneratedForm = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -847,7 +847,7 @@ downloadGenerated.head = (args: { user: string | number, file: string | number }
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::downloadGenerated
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
         downloadGeneratedForm.get = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -856,7 +856,7 @@ downloadGenerated.head = (args: { user: string | number, file: string | number }
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::downloadGenerated
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:146
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:148
  * @route '/inventory/reports/generated/{user}/{file}'
  */
         downloadGeneratedForm.head = (args: { user: string | number, file: string | number } | [user: string | number, file: string | number ], options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -872,7 +872,7 @@ downloadGenerated.head = (args: { user: string | number, file: string | number }
     downloadGenerated.form = downloadGeneratedForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::stockMovements
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:83
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:85
  * @route '/inventory/reports/movements/{format}'
  */
 export const stockMovements = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -887,7 +887,7 @@ stockMovements.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::stockMovements
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:83
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:85
  * @route '/inventory/reports/movements/{format}'
  */
 stockMovements.url = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -915,7 +915,7 @@ stockMovements.url = (args: { format: string | number } | [format: string | numb
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::stockMovements
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:83
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:85
  * @route '/inventory/reports/movements/{format}'
  */
 stockMovements.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -924,7 +924,7 @@ stockMovements.get = (args: { format: string | number } | [format: string | numb
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::stockMovements
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:83
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:85
  * @route '/inventory/reports/movements/{format}'
  */
 stockMovements.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -934,7 +934,7 @@ stockMovements.head = (args: { format: string | number } | [format: string | num
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::stockMovements
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:83
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:85
  * @route '/inventory/reports/movements/{format}'
  */
     const stockMovementsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -944,7 +944,7 @@ stockMovements.head = (args: { format: string | number } | [format: string | num
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::stockMovements
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:83
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:85
  * @route '/inventory/reports/movements/{format}'
  */
         stockMovementsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -953,7 +953,7 @@ stockMovements.head = (args: { format: string | number } | [format: string | num
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::stockMovements
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:83
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:85
  * @route '/inventory/reports/movements/{format}'
  */
         stockMovementsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -969,7 +969,7 @@ stockMovements.head = (args: { format: string | number } | [format: string | num
     stockMovements.form = stockMovementsForm
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:90
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:92
  * @route '/inventory/reports/assets/condition/{format}'
  */
 export const assetConditions = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -984,7 +984,7 @@ assetConditions.definition = {
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:90
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:92
  * @route '/inventory/reports/assets/condition/{format}'
  */
 assetConditions.url = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions) => {
@@ -1012,7 +1012,7 @@ assetConditions.url = (args: { format: string | number } | [format: string | num
 
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:90
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:92
  * @route '/inventory/reports/assets/condition/{format}'
  */
 assetConditions.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'get'> => ({
@@ -1021,7 +1021,7 @@ assetConditions.get = (args: { format: string | number } | [format: string | num
 })
 /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:90
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:92
  * @route '/inventory/reports/assets/condition/{format}'
  */
 assetConditions.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteDefinition<'head'> => ({
@@ -1031,7 +1031,7 @@ assetConditions.head = (args: { format: string | number } | [format: string | nu
 
     /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:90
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:92
  * @route '/inventory/reports/assets/condition/{format}'
  */
     const assetConditionsForm = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1041,7 +1041,7 @@ assetConditions.head = (args: { format: string | number } | [format: string | nu
 
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:90
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:92
  * @route '/inventory/reports/assets/condition/{format}'
  */
         assetConditionsForm.get = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({
@@ -1050,7 +1050,7 @@ assetConditions.head = (args: { format: string | number } | [format: string | nu
         })
             /**
 * @see \App\Http\Controllers\Inventory\InventoryReportController::assetConditions
- * @see app/Http/Controllers/Inventory/InventoryReportController.php:90
+ * @see app/Http/Controllers/Inventory/InventoryReportController.php:92
  * @route '/inventory/reports/assets/condition/{format}'
  */
         assetConditionsForm.head = (args: { format: string | number } | [format: string | number ] | string | number, options?: RouteQueryOptions): RouteFormDefinition<'get'> => ({

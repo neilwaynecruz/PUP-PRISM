@@ -158,7 +158,7 @@ class HandoverController extends Controller
             ],
         );
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('Verification link sent to :recipient. Accountability changes only after they verify.', ['recipient' => $toUser->name])]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Verification email queued for :recipient. Accountability changes only after they verify.', ['recipient' => $toUser->name])]);
 
         return to_route('inventory.handover.index');
     }
@@ -254,7 +254,7 @@ class HandoverController extends Controller
 
         AuditLogService::logCustom(
             'handover_resend',
-            __('Verification link for handover #:id sent again.', ['id' => $handoverLog->id]),
+            __('New verification email for handover #:id queued.', ['id' => $handoverLog->id]),
             $handoverLog,
         );
 

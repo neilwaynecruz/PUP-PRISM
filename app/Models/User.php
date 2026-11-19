@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Notifications\QueuedResetPassword;
+use App\Notifications\QueuedVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -22,6 +24,16 @@ class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new QueuedVerifyEmail($this->getEmailForVerification(), $this));
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new QueuedResetPassword($token, $this->getEmailForPasswordReset(), $this));
+    }
 
     /**
      * Session-authenticated users may have no token; SPA credentials can be transient.

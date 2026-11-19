@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\PurchaseOrder;
+use App\Notifications\Concerns\HasReliableMailDelivery;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\BroadcastMessage;
@@ -11,13 +12,14 @@ use Illuminate\Notifications\Notification;
 
 class PurchaseOrderSentNotification extends Notification implements ShouldQueue
 {
+    use HasReliableMailDelivery;
     use Queueable;
 
-    public int $tries = 3;
+    public int $tries = 0;
 
     public function __construct(public PurchaseOrder $purchaseOrder)
     {
-        $this->onQueue('notifications');
+        $this->initializeMailDelivery();
     }
 
     /**

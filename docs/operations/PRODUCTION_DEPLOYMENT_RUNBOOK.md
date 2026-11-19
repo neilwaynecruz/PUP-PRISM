@@ -92,7 +92,7 @@ The service worker uses an explicit public-shell allowlist. Deploy `sw.js`, `off
 Run under Supervisor, systemd, Laravel Cloud, or an equivalent process manager:
 
 ```bash
-php artisan queue:work --queue=default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600
+php artisan queue:work --queue=security,mail,default,notifications,broadcast --sleep=3 --tries=3 --max-time=3600
 ```
 
 See [QUEUE_OPERATIONS.md](./QUEUE_OPERATIONS.md) for retry and failed-job procedures.
@@ -159,4 +159,3 @@ Code readiness and deployment readiness are separate decisions. A release is rea
 - backup and restore evidence is current;
 - monitoring, queue, scheduler, mail, storage, TLS, and Reverb are verified; and
 - the institution approves the deployment window and recovery objectives.
-

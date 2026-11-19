@@ -72,11 +72,11 @@ Use TLS and managed Redis (ElastiCache, Redis Cloud, institutional cluster) in p
 
    ```bash
    # Run worker until jobs table is empty
-   php artisan queue:work database --queue=default,notifications,broadcast --stop-when-empty
+   php artisan queue:work database --queue=security,mail,default,notifications,broadcast --stop-when-empty
    ```
 
 2. Set `QUEUE_CONNECTION=redis`.
-3. Restart workers with the same `--queue=default,notifications,broadcast` flags.
+3. Restart workers with the same `--queue=security,mail,default,notifications,broadcast` flags.
 4. Confirm new jobs land in Redis (`redis-cli KEYS *queues*` or Horizon if adopted later).
 
 **Rollback:** Drain Redis queue if possible; revert `QUEUE_CONNECTION=database`; restart workers.

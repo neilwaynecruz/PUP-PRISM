@@ -11,7 +11,7 @@ defineOptions({
     layout: {
         title: 'Verify email',
         description:
-            'Open the verification link we sent to your email address to continue.',
+            'Request a verification email, then open its link to continue. Delivery may be delayed.',
     },
 });
 
@@ -33,8 +33,8 @@ function handleLogout(): void {
         aria-live="polite"
         class="mb-4 text-center text-sm font-medium text-emerald-700 dark:text-emerald-300"
     >
-        We sent a new verification link to your email address. Check your inbox
-        and spam folder.
+        Your verification email is queued. Check your inbox and spam folder;
+        delivery may be delayed while the server reconnects.
     </div>
 
     <Form
@@ -47,7 +47,7 @@ function handleLogout(): void {
             <Spinner v-if="processing" />
             {{
                 processing
-                    ? 'Sending Verification Email…'
+                    ? 'Requesting Verification Email…'
                     : 'Resend Verification Email'
             }}
         </Button>

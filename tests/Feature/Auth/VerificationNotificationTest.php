@@ -1,7 +1,7 @@
 <?php
 
 use App\Models\User;
-use Illuminate\Auth\Notifications\VerifyEmail;
+use App\Notifications\QueuedVerifyEmail as VerifyEmail;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Features;
 
