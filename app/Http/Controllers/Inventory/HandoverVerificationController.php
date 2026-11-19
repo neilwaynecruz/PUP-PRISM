@@ -21,7 +21,7 @@ class HandoverVerificationController extends Controller
         }
 
         if ($user->id !== $handoverLog->to_user_id) {
-            abort(403);
+            abort(403, __('This handover is assigned to a different account. Sign out and reopen the latest handover email while signed in as its intended recipient. Administrators and senders cannot accept it for the recipient.'));
         }
 
         $sessionKey = $this->sessionKey($handoverLog->id);
@@ -38,7 +38,9 @@ class HandoverVerificationController extends Controller
         if ($queryToken !== '') {
             if ($handoverLog->verified_at === null) {
                 if (! $this->tokenMatches($handoverLog, $queryToken)) {
-                    abort(403);
+                    $request->session()->forget($sessionKey);
+
+                    abort(403, __('This verification link is invalid or has been replaced. Open the latest handover email, or ask the property custodian for a new link.'));
                 }
 
                 $request->session()->put($sessionKey, $queryToken);
@@ -53,7 +55,7 @@ class HandoverVerificationController extends Controller
             if (! $this->tokenMatches($handoverLog, $sessionToken)) {
                 $request->session()->forget($sessionKey);
 
-                abort(403);
+                abort(403, __('The verification session is missing or no longer valid. Reopen the latest handover email in the same browser and allow session cookies. If it still fails, ask the property custodian for a new link.'));
             }
         }
 

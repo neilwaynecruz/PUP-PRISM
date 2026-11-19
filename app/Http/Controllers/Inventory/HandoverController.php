@@ -301,7 +301,7 @@ class HandoverController extends Controller
         ) {
             $request->session()->forget($sessionKey);
 
-            abort(403);
+            abort(403, __('The verification session is missing or has been replaced. Reopen the latest handover email before signing. If the handover was resent, earlier links no longer work.'));
         }
 
         $request->validate([

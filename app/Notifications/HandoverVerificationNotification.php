@@ -81,6 +81,7 @@ class HandoverVerificationNotification extends Notification implements ShouldBeE
             ->subject(__('Internal asset handover verification required'))
             ->line(__('A property custodian initiated an internal asset handover to you.'))
             ->line(__('To finalize institutional accountability, please verify this handover while logged in with a verified email address.'))
+            ->line(__('Use the account selected as the recipient, not the administrator or custodian account that sent the handover. If a new link is sent, use the latest email; cancelled handovers cannot be accepted.'))
             ->line(__('This acknowledgement is for internal accountability only and does not replace external legal contracts or notarized documents.'))
             ->action(__('Verify internal handover'), $url);
     }
