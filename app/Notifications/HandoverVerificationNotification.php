@@ -81,6 +81,8 @@ class HandoverVerificationNotification extends Notification implements ShouldBeE
             ->subject(__('Internal asset handover verification required'))
             ->line(__('A property custodian initiated an internal asset handover to you.'))
             ->line(__('To finalize institutional accountability, please verify this handover while logged in with a verified email address.'))
+            ->line(__('You can also sign in to PUP-PRISM and open My Pending Handovers. Email is not required to access your assigned handovers.'))
+            ->line(__('If the button uses localhost, open it on the laptop running PUP-PRISM. On a shared laptop, use Switch user before the recipient signs in.'))
             ->line(__('Use the account selected as the recipient, not the administrator or custodian account that sent the handover. If a new link is sent, use the latest email; cancelled handovers cannot be accepted.'))
             ->line(__('This acknowledgement is for internal accountability only and does not replace external legal contracts or notarized documents.'))
             ->action(__('Verify internal handover'), $url);
@@ -99,8 +101,8 @@ class HandoverVerificationNotification extends Notification implements ShouldBeE
             'category' => 'handover',
             'severity' => 'info',
             'title' => __('Handover verification required'),
-            'message' => __('An internal asset handover is awaiting your verification. A secure email link has been queued; delivery may be delayed.'),
-            'url' => null,
+            'message' => __('An internal asset handover is awaiting your review. Sign in and open My Pending Handovers; email delivery may be delayed.'),
+            'url' => route('inventory.handover.mine'),
             'handover_log_id' => $this->handoverLogId,
         ];
     }

@@ -21,6 +21,7 @@ use App\Models\User;
 use App\Notifications\HandoverVerificationNotification;
 use App\Services\AuditLogService;
 use App\Services\Inventory\AssetIntegrityService;
+use App\Services\Inventory\HandoverReviewSession;
 use App\Services\Inventory\HandoverSignatureValidator;
 use App\Services\InventoryRealtimeService;
 use Carbon\CarbonImmutable;
@@ -44,6 +45,7 @@ class HandoverController extends Controller
         private readonly InventoryRealtimeService $realtime,
         private readonly HandoverSignatureValidator $signatureValidator,
         private readonly AssetIntegrityService $assetIntegrity,
+        private readonly HandoverReviewSession $review,
     ) {}
 
     public function index(Request $request): Response
@@ -258,7 +260,7 @@ class HandoverController extends Controller
             $handoverLog,
         );
 
-        Inertia::flash('toast', ['type' => 'success', 'message' => __('A new verification link was sent. Earlier links no longer work.')]);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('A new verification email was queued. Earlier links no longer work. Queueing is not confirmation of delivery.')]);
 
         return back();
     }
@@ -278,28 +280,21 @@ class HandoverController extends Controller
         $this->authorize('verify', $handoverLog);
 
         if ($handoverLog->verified_at !== null) {
-            $request->session()->forget("handover_verify_token.{$handoverLog->id}");
+            $this->review->clear($request, $handoverLog);
             Inertia::flash('toast', ['type' => 'info', 'message' => __('Already verified.')]);
 
             return $this->postVerifyRedirect($user);
         }
 
         if ($handoverLog->cancelled_at !== null) {
-            $request->session()->forget("handover_verify_token.{$handoverLog->id}");
+            $this->review->clear($request, $handoverLog);
             Inertia::flash('toast', ['type' => 'error', 'message' => __('This handover was cancelled and can no longer be verified.')]);
 
             return redirect()->route('dashboard');
         }
 
-        $sessionKey = "handover_verify_token.{$handoverLog->id}";
-        $token = (string) $request->session()->get($sessionKey, '');
-
-        if (
-            $token === ''
-            || $handoverLog->verification_token_hash === null
-            || ! hash_equals($handoverLog->verification_token_hash, hash('sha256', $token))
-        ) {
-            $request->session()->forget($sessionKey);
+        if (! $this->review->authorized($request, $handoverLog)) {
+            $this->review->clear($request, $handoverLog);
 
             abort(403, __('The verification session is missing or has been replaced. Reopen the latest handover email before signing. If the handover was resent, earlier links no longer work.'));
         }
@@ -312,7 +307,7 @@ class HandoverController extends Controller
             $request->string('signature_png')->toString(),
         );
 
-        $wasVerified = DB::transaction(function () use ($request, $handoverLog, $user, $signaturePng, $token): bool {
+        $wasVerified = DB::transaction(function () use ($request, $handoverLog, $user, $signaturePng): bool {
             $handoverLog = HandoverLog::query()->whereKey($handoverLog->id)->lockForUpdate()->firstOrFail();
 
             if ($handoverLog->to_user_id !== $user->id) {
@@ -324,9 +319,7 @@ class HandoverController extends Controller
             }
 
             if (
-                $handoverLog->cancelled_at !== null
-                || $handoverLog->verification_token_hash === null
-                || ! hash_equals($handoverLog->verification_token_hash, hash('sha256', $token))
+                ! $this->review->authorized($request, $handoverLog)
             ) {
                 abort(403);
             }
@@ -370,7 +363,7 @@ class HandoverController extends Controller
             return true;
         });
 
-        $request->session()->forget($sessionKey);
+        $this->review->clear($request, $handoverLog);
 
         if (! $wasVerified) {
             Inertia::flash('toast', ['type' => 'info', 'message' => __('Already verified.')]);

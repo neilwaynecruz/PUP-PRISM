@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { Link } from '@inertiajs/vue3';
-import { Bell, LogOut, Palette, Settings } from 'lucide-vue-next';
+import {
+    ArrowLeftRight,
+    Bell,
+    LogOut,
+    Palette,
+    Settings,
+} from 'lucide-vue-next';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -8,8 +14,9 @@ import {
     DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import UserInfo from '@/components/UserInfo.vue';
-import { performLogout } from '@/lib/logout';
+import { performAccountSwitch, performLogout } from '@/lib/logout';
 import { edit as editAppearance } from '@/routes/appearance';
+import { mine as myHandovers } from '@/routes/inventory/handover';
 import { index as notificationsIndex } from '@/routes/notifications';
 import { edit } from '@/routes/profile';
 import type { User } from '@/types';
@@ -29,6 +36,12 @@ defineProps<Props>();
     </DropdownMenuLabel>
     <DropdownMenuSeparator />
     <DropdownMenuGroup>
+        <DropdownMenuItem :as-child="true">
+            <Link class="block w-full cursor-pointer" :href="myHandovers()">
+                <ArrowLeftRight class="mr-2 h-4 w-4" />
+                My Pending Handovers
+            </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem :as-child="true">
             <Link class="block w-full cursor-pointer" :href="edit()" prefetch>
                 <Settings class="mr-2 h-4 w-4" />
@@ -57,6 +70,16 @@ defineProps<Props>();
         </DropdownMenuItem>
     </DropdownMenuGroup>
     <DropdownMenuSeparator />
+    <DropdownMenuItem as-child>
+        <button
+            type="button"
+            class="flex min-h-11 w-full items-center px-2 py-1.5 text-sm"
+            @click="performAccountSwitch()"
+        >
+            <ArrowLeftRight class="mr-2 h-4 w-4" />
+            Switch user
+        </button>
+    </DropdownMenuItem>
     <DropdownMenuItem as-child>
         <button
             type="button"

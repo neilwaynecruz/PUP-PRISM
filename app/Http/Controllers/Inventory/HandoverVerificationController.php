@@ -5,14 +5,19 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\HandoverLogResource;
 use App\Models\HandoverLog;
+use App\Services\Inventory\HandoverReviewSession;
+use App\Support\PreventClientCaching;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class HandoverVerificationController extends Controller
 {
-    public function __invoke(Request $request, HandoverLog $handoverLog): Response|RedirectResponse
+    public function __construct(private readonly HandoverReviewSession $review) {}
+
+    public function __invoke(Request $request, HandoverLog $handoverLog): Response|RedirectResponse|HttpResponse
     {
         $user = $request->user();
 
@@ -21,13 +26,20 @@ class HandoverVerificationController extends Controller
         }
 
         if ($user->id !== $handoverLog->to_user_id) {
-            abort(403, __('This handover is assigned to a different account. Sign out and reopen the latest handover email while signed in as its intended recipient. Administrators and senders cannot accept it for the recipient.'));
+            $token = $request->string('token')->trim()->toString();
+            $request->session()->put('handover_switch_destination', [
+                'handover_id' => $handoverLog->id, 'token' => strlen($token) <= 128 ? $token : '',
+                'expires_at' => now()->addMinutes(10)->getTimestamp(),
+            ]);
+
+            return $this->recovery($request, __('This handover belongs to another account'),
+                __('Sign out and reopen the latest handover email as its intended recipient, or use Switch account below. Administrators and senders cannot accept it for the recipient.'), true);
         }
 
         $sessionKey = $this->sessionKey($handoverLog->id);
 
         if ($handoverLog->cancelled_at !== null) {
-            $request->session()->forget($sessionKey);
+            $this->review->clear($request, $handoverLog);
             Inertia::flash('toast', ['type' => 'error', 'message' => __('This handover was cancelled by the property office and no longer needs your verification.')]);
 
             return redirect()->route('dashboard');
@@ -38,9 +50,10 @@ class HandoverVerificationController extends Controller
         if ($queryToken !== '') {
             if ($handoverLog->verified_at === null) {
                 if (! $this->tokenMatches($handoverLog, $queryToken)) {
-                    $request->session()->forget($sessionKey);
+                    $this->review->clear($request, $handoverLog);
 
-                    abort(403, __('This verification link is invalid or has been replaced. Open the latest handover email, or ask the property custodian for a new link.'));
+                    return $this->recovery($request, __('This link is no longer valid'),
+                        __('Open the latest handover email, or sign in and open My Pending Handovers to start a fresh review.'));
                 }
 
                 $request->session()->put($sessionKey, $queryToken);
@@ -50,12 +63,11 @@ class HandoverVerificationController extends Controller
         }
 
         if ($handoverLog->verified_at === null) {
-            $sessionToken = (string) $request->session()->get($sessionKey, '');
+            if (! $this->review->authorized($request, $handoverLog)) {
+                $this->review->clear($request, $handoverLog);
 
-            if (! $this->tokenMatches($handoverLog, $sessionToken)) {
-                $request->session()->forget($sessionKey);
-
-                abort(403, __('The verification session is missing or no longer valid. Reopen the latest handover email in the same browser and allow session cookies. If it still fails, ask the property custodian for a new link.'));
+                return $this->recovery($request, __('Review session expired or unavailable'),
+                    __('Reopen the latest handover email, or open My Pending Handovers and choose Review and Accept. Reviews started there expire after 15 minutes; the handover itself remains pending.'));
             }
         }
 
@@ -74,6 +86,20 @@ class HandoverVerificationController extends Controller
             'handover' => (new HandoverLogResource($handoverLog))->resolve($request),
             'email_verified' => $user->hasVerifiedEmail(),
         ]);
+    }
+
+    private function recovery(Request $request, string $title, string $message, bool $canSwitch = false): HttpResponse
+    {
+        Inertia::resolveUrlUsing(fn (Request $request): string => $request->getPathInfo());
+        $page = Inertia::render('inventory/handover/Recovery', [
+            'title' => $title, 'message' => $message, 'can_switch' => $canSwitch,
+        ]);
+        Inertia::resolveUrlUsing();
+        $response = $page->toResponse($request);
+        $response->setStatusCode(403);
+        PreventClientCaching::apply($response);
+
+        return $response;
     }
 
     private function tokenMatches(HandoverLog $handoverLog, string $token): bool

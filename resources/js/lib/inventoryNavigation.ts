@@ -38,7 +38,10 @@ import { index as auditLogsIndex } from '@/routes/inventory/audit-logs';
 import { index as bookingsIndex } from '@/routes/inventory/bookings';
 import { index as countsIndex } from '@/routes/inventory/counts';
 import { index as forecastingIndex } from '@/routes/inventory/forecasting';
-import { index as handoverIndex } from '@/routes/inventory/handover';
+import {
+    index as handoverIndex,
+    mine as myHandovers,
+} from '@/routes/inventory/handover';
 import { index as movementsIndex } from '@/routes/inventory/movements';
 import {
     create as productsCreate,
@@ -91,6 +94,11 @@ const defaultPermissions: AuthPermissions = {
 };
 
 const mainNavigationItems: InventoryNavItem[] = [
+    {
+        title: 'My Pending Handovers',
+        href: myHandovers(),
+        icon: ArrowLeftRight,
+    },
     {
         title: 'Dashboard',
         href: dashboard(),
@@ -426,6 +434,11 @@ export function useInventoryNavigation() {
                 group: 'Overview',
                 items: filterByPermission<InventoryNavItem>(
                     [
+                        {
+                            title: 'My Pending Handovers',
+                            href: myHandovers(),
+                            icon: ArrowLeftRight,
+                        },
                         {
                             title: 'Dashboard',
                             href: dashboard(),

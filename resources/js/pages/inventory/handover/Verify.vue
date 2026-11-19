@@ -9,7 +9,7 @@ import HandoverController from '@/actions/App/Http/Controllers/Inventory/Handove
 import Heading from '@/components/Heading.vue';
 import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
-import { index as handoverIndex } from '@/routes/inventory/handover';
+import { mine as handoverIndex } from '@/routes/inventory/handover';
 import { receipt as handoverReceipt } from '@/routes/inventory/handover';
 
 defineProps<{

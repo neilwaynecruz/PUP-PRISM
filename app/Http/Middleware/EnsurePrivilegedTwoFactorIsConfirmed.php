@@ -49,6 +49,7 @@ class EnsurePrivilegedTwoFactorIsConfirmed
     {
         return $request->is(
             'logout',
+            'account/switch',
             'session/keep-alive',
             'email/verify',
             'email/verify/*',

@@ -359,9 +359,10 @@ describe('Notification delivery channels', function () {
         expect($handover->toArray($user))->toMatchArray([
             'category' => 'handover',
             'severity' => 'info',
-            'message' => 'An internal asset handover is awaiting your verification. A secure email link has been queued; delivery may be delayed.',
-            'url' => null,
+            'message' => 'An internal asset handover is awaiting your review. Sign in and open My Pending Handovers; email delivery may be delayed.',
+            'url' => route('inventory.handover.mine'),
         ]);
+        expect(json_encode($handover->toArray($user), JSON_THROW_ON_ERROR))->not->toContain('verification-token');
         expect($handover->toMail($user)->actionUrl)->toContain('token=verification-token');
     });
 });

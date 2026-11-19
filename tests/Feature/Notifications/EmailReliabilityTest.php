@@ -159,7 +159,7 @@ test('Operations Health does not equate accepted mail with inbox delivery and ne
     config(['mail.default' => 'resend']);
     EmailDelivery::factory()->create(['status' => 'accepted', 'provider_id' => 'provider-id', 'request_payload' => 'secret message']);
     $check = collect(app(SystemHealthService::class)->report()['checks'])->firstWhere('key', 'email');
-    expect(json_encode($check))->toContain('Accepted by Resend (not proof of delivery)')->not->toContain('secret message');
+    expect(json_encode($check))->toContain('Accepted by transport (not proof of delivery)')->not->toContain('secret message');
 });
 
 test('mail retries stop after five transport attempts without sending again', function () {

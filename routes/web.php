@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\OperationsHealthController;
 use App\Http\Controllers\Admin\OriginController;
 use App\Http\Controllers\Admin\PositionController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Auth\AccountSwitchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\Inventory\AssetController;
@@ -24,6 +25,7 @@ use App\Http\Controllers\Inventory\HandoverReceiptController;
 use App\Http\Controllers\Inventory\HandoverVerificationController;
 use App\Http\Controllers\Inventory\InventoryCountController;
 use App\Http\Controllers\Inventory\InventoryReportController;
+use App\Http\Controllers\Inventory\PersonalHandoverController;
 use App\Http\Controllers\Inventory\ProductController;
 use App\Http\Controllers\Inventory\ProductLabelController;
 use App\Http\Controllers\Inventory\PurchaseOrderController;
@@ -48,6 +50,9 @@ Route::get('/', function (Request $request) {
 })->name('home');
 
 Route::get('session/status', SessionStatusController::class)->name('session.status');
+
+Route::post('account/switch', AccountSwitchController::class)
+    ->middleware('auth')->name('account.switch');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', DashboardController::class)->name('dashboard');
@@ -537,6 +542,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('inventory/handover/verify/{handoverLog}', HandoverVerificationController::class)
         ->whereNumber('handoverLog')
         ->name('inventory.handover.verify');
+
+    Route::get('inventory/handover/mine', [PersonalHandoverController::class, 'index'])
+        ->name('inventory.handover.mine');
+    Route::post('inventory/handover/{handoverLog}/review', [PersonalHandoverController::class, 'review'])
+        ->whereNumber('handoverLog')->middleware('throttle:30,1')->name('inventory.handover.review');
 
     Route::post('inventory/handover/verify/{handoverLog}', [HandoverController::class, 'verify'])
         ->whereNumber('handoverLog')

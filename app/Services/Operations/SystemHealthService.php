@@ -112,17 +112,17 @@ class SystemHealthService
     /** @return array<string, mixed> */
     private function emailCheck(): array
     {
-        if (config('mail.default') !== 'resend') {
+        if (! in_array(config('mail.default'), ['resend', 'smtp'], true)) {
             return $this->check('email', 'Email delivery', self::WARNING,
-                __('Resend delivery tracking is not enabled. Log and array mailers do not deliver email.'), [],
-                __('Configure Resend server-side and start the security and mail queue workers.'));
+                __('Delivery tracking requires Resend or SMTP. Log and array mailers do not deliver email.'), [],
+                __('Configure Resend or SMTP server-side and start the security and mail queue workers.'));
         }
 
         try {
             $counts = EmailDelivery::query()->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
             $details = [];
             foreach ([
-                'queued' => 'Queued', 'processing' => 'Processing', 'accepted' => 'Accepted by Resend (not proof of delivery)',
+                'queued' => 'Queued', 'processing' => 'Processing', 'accepted' => 'Accepted by transport (not proof of delivery)',
                 'retry_scheduled' => 'Retry scheduled', 'failed' => 'Failed', 'expired' => 'Expired', 'superseded' => 'Superseded',
                 'cancelled' => 'Cancelled before transport',
             ] as $status => $label) {
@@ -133,7 +133,7 @@ class SystemHealthService
 
             return $this->check('email', 'Email delivery', $hasFailures ? self::WARNING : self::UNKNOWN,
                 __('Local delivery status only. Inbox delivery and provider connectivity have not been verified.'), $details,
-                __('Use security and mail workers. Review failed jobs; request a fresh link if expired.'));
+                __('Use security and mail workers. Review failed jobs; request a fresh link if expired. SMTP connection loss may leave acceptance unknown: check the inbox before requesting another email.'));
         } catch (Throwable) {
             return $this->check('email', 'Email delivery', self::WARNING,
                 __('Delivery tracking is unavailable.'), [], __('Review pending migrations and database access.'));
@@ -440,10 +440,11 @@ class SystemHealthService
 
         $details[] = ['label' => 'Server', 'value' => "{$host}:{$port}"];
 
-        $socket = @fsockopen($host, $port, $errorCode, $errorMessage, 1.0);
+        $connectionTimeout = 1.0;
+        $socket = @\fsockopen(hostname: $host, port: $port, timeout: $connectionTimeout);
 
         if ($socket === false && in_array(strtolower($host), ['localhost', '::1'], true)) {
-            $socket = @fsockopen('127.0.0.1', $port, $errorCode, $errorMessage, 1.0);
+            $socket = @\fsockopen(hostname: '127.0.0.1', port: $port, timeout: $connectionTimeout);
         }
 
         if ($socket === false) {

@@ -113,6 +113,36 @@ test('a broken database connection is reported as critical', function () {
         ->and($report['status'])->toBe('critical');
 });
 
+test('reverb connectivity supports direct ipv4 and the localhost fallback', function (string $host) {
+    $server = stream_socket_server('tcp://127.0.0.1:0');
+
+    if ($server === false) {
+        throw new RuntimeException('Unable to open the local health-check test listener.');
+    }
+
+    try {
+        $address = stream_socket_get_name($server, false);
+
+        if ($address === false) {
+            throw new RuntimeException('Unable to determine the health-check test listener port.');
+        }
+
+        $port = (int) substr($address, strrpos($address, ':') + 1);
+        config([
+            'broadcasting.default' => 'reverb',
+            'broadcasting.connections.reverb.options.host' => $host,
+            'broadcasting.connections.reverb.options.port' => $port,
+        ]);
+
+        $checks = healthChecksByKey(app(SystemHealthService::class)->report());
+
+        expect($checks['realtime']['status'])->toBe('healthy')
+            ->and($checks['realtime']['summary'])->toBe('The Reverb server is accepting connections.');
+    } finally {
+        fclose($server);
+    }
+})->with(['direct ipv4' => '127.0.0.1', 'ipv6 loopback fallback' => '::1']);
+
 test('the operations health page renders computed checks for admins', function () {
     Role::findOrCreate('Admin');
     $admin = User::factory()->withTwoFactor()->create(['email_verified_at' => now()]);

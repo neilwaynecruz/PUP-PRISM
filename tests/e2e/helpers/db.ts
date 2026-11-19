@@ -3,6 +3,7 @@ import { copyFileSync, existsSync, readFileSync, rmSync } from 'fs';
 import { DatabaseSync } from 'node:sqlite';
 import { dirname, resolve } from 'path';
 import { fileURLToPath } from 'url';
+import { e2eEnvironment } from '../server-environment';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -68,6 +69,7 @@ function runArtisan(args: string[]): string {
         [ARTISAN, ...args, '--no-interaction', '--env=e2e'],
         {
             cwd: PROJECT_ROOT,
+            env: e2eEnvironment(),
             encoding: 'utf8',
             timeout: 120000,
         },

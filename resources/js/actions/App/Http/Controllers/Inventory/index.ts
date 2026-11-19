@@ -19,6 +19,7 @@ import StockMovementController from './StockMovementController'
 import ProductController from './ProductController'
 import AuditLogController from './AuditLogController'
 import HandoverVerificationController from './HandoverVerificationController'
+import PersonalHandoverController from './PersonalHandoverController'
 import HandoverReceiptController from './HandoverReceiptController'
 const Inventory = {
     AssetController: Object.assign(AssetController, AssetController),
@@ -42,6 +43,7 @@ StockMovementController: Object.assign(StockMovementController, StockMovementCon
 ProductController: Object.assign(ProductController, ProductController),
 AuditLogController: Object.assign(AuditLogController, AuditLogController),
 HandoverVerificationController: Object.assign(HandoverVerificationController, HandoverVerificationController),
+PersonalHandoverController: Object.assign(PersonalHandoverController, PersonalHandoverController),
 HandoverReceiptController: Object.assign(HandoverReceiptController, HandoverReceiptController),
 }
 

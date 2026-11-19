@@ -19,7 +19,7 @@ class EmailDeliveryService
 {
     public function enabled(): bool
     {
-        return config('mail.default') === 'resend';
+        return in_array(config('mail.default'), ['resend', 'smtp'], true);
     }
 
     public ?EmailDelivery $current = null;
@@ -84,6 +84,15 @@ class EmailDeliveryService
                 return null;
             }
 
+            if (config('mail.default') === 'smtp' && $record->status === 'processing') {
+                $this->permanentFailure = true;
+                $this->failureCategory = 'smtp_acceptance_unconfirmed';
+                $record->update(['status' => 'failed', 'failure_category' => $this->failureCategory,
+                    'request_payload' => null, 'next_attempt_at' => null]);
+
+                throw new EmailDeliveryException('The earlier SMTP attempt was interrupted. Check the inbox before requesting a new email.');
+            }
+
             if ($record->expires_at->isPast()) {
                 $record->update(['status' => 'expired', 'request_payload' => null, 'next_attempt_at' => null]);
 
@@ -94,6 +103,13 @@ class EmailDeliveryService
             $this->current = $record;
 
             try {
+                if (config('mail.default') === 'smtp' && config('mail.mailers.smtp.host') === 'smtp.gmail.com'
+                    && (blank(config('mail.mailers.smtp.username')) || blank(config('mail.mailers.smtp.password'))
+                        || config('mail.from.address') !== config('mail.mailers.smtp.username'))) {
+                    $this->permanentFailure = true;
+                    $this->failureCategory = 'provider_configuration';
+                    throw new EmailDeliveryException('Gmail SMTP credentials and matching sender are required.');
+                }
                 $message = $send();
                 if ($message === null) {
                     $record->update(['status' => 'cancelled', 'request_payload' => null]);
@@ -101,7 +117,9 @@ class EmailDeliveryService
                     return null;
                 }
 
-                $providerId = $message->getOriginalMessage()->getHeaders()->get('X-Resend-Email-ID')?->getBodyAsString();
+                $providerId = config('mail.default') === 'smtp'
+                    ? 'smtp:'.$message->getMessageId()
+                    : $message->getOriginalMessage()->getHeaders()->get('X-Resend-Email-ID')?->getBodyAsString();
                 if (! $providerId) {
                     $this->permanentFailure = true;
                     $this->failureCategory = 'missing_provider_evidence';
@@ -116,6 +134,16 @@ class EmailDeliveryService
 
                 return $message;
             } catch (Throwable $exception) {
+                if (config('mail.default') === 'smtp' && $exception instanceof TransportExceptionInterface) {
+                    $code = (int) $exception->getCode();
+                    $this->permanentFailure = $code < 400 || $code >= 500;
+                    $this->failureCategory = match (true) {
+                        in_array($code, [530, 534, 535, 538], true) => 'smtp_authentication',
+                        $code >= 500 => 'smtp_rejected_request',
+                        $code >= 400 => 'smtp_temporary_rejection',
+                        default => 'smtp_acceptance_unconfirmed',
+                    };
+                }
                 if (! $exception instanceof TransportExceptionInterface && ! $exception instanceof EmailDeliveryException) {
                     EmailDelivery::query()->whereKey($record->id)->where('status', '!=', 'accepted')
                         ->update(['status' => 'failed', 'failure_category' => 'application_error', 'request_payload' => null]);

@@ -1,5 +1,6 @@
 import Api from './Api'
 import SessionStatusController from './SessionStatusController'
+import Auth from './Auth'
 import DashboardController from './DashboardController'
 import GlobalSearchController from './GlobalSearchController'
 import NotificationController from './NotificationController'
@@ -9,6 +10,7 @@ import Settings from './Settings'
 const Controllers = {
     Api: Object.assign(Api, Api),
 SessionStatusController: Object.assign(SessionStatusController, SessionStatusController),
+Auth: Object.assign(Auth, Auth),
 DashboardController: Object.assign(DashboardController, DashboardController),
 GlobalSearchController: Object.assign(GlobalSearchController, GlobalSearchController),
 NotificationController: Object.assign(NotificationController, NotificationController),

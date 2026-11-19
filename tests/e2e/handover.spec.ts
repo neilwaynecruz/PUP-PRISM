@@ -14,7 +14,11 @@ test.describe('Asset Handover Flow', () => {
         recipientUserId = getUserIdByEmail('recipient@e2e.test');
     });
 
-    test('Initiate, verify, and download receipt', async ({ page }) => {
+    test('Initiate, verify, and download receipt', async ({
+        page,
+    }, testInfo) => {
+        const clientErrors: string[] = [];
+        page.on('pageerror', (error) => clientErrors.push(error.message));
         // Login as custodian to initiate handover
         await loginAs(page, 'custodian@e2e.test');
 
@@ -60,8 +64,57 @@ test.describe('Asset Handover Flow', () => {
 
         expect(handoverId).toBeGreaterThan(0);
 
-        // Login as recipient and verify
-        await loginAs(page, 'recipient@e2e.test');
+        // A sender cannot accept; switching accounts preserves the private link.
+        await page.goto(
+            `/inventory/handover/verify/${handoverId}?token=${handoverToken}`,
+        );
+        await expect(page.getByTestId('handover-recovery-page')).toBeVisible();
+        await page.getByRole('button', { name: 'Switch account' }).click();
+        await expect(page.getByTestId('login-page')).toBeVisible();
+        await page.getByTestId('login-email-input').fill('recipient@e2e.test');
+        await page.getByTestId('login-password-input').fill('password');
+        await page.getByTestId('login-button').click();
+        await expect(page.getByTestId('handover-verify-page')).toBeVisible();
+
+        // The recipient can also start a fresh review without finding an email.
+        await page.goto('/inventory/handover/mine');
+        await expect(page.getByTestId('my-handovers-page')).toBeVisible();
+        await expect(page.getByTestId('my-handovers-page')).toContainText(
+            'AST-E2E-0001',
+        );
+
+        for (const width of [390, 834, 1280]) {
+            await page.setViewportSize({ width, height: 900 });
+
+            for (const theme of ['light', 'dark']) {
+                await page.evaluate((appearance) => {
+                    document.documentElement.classList.toggle(
+                        'dark',
+                        appearance === 'dark',
+                    );
+                }, theme);
+                await expect(
+                    page.getByRole('button', { name: 'Review and Accept' }),
+                ).toBeVisible();
+                expect(
+                    await page.evaluate(
+                        () =>
+                            document.documentElement.scrollWidth <=
+                            window.innerWidth,
+                    ),
+                ).toBe(true);
+                await page.screenshot({
+                    animations: 'disabled',
+                    path: testInfo.outputPath(
+                        `my-handovers-${width}-${theme}.png`,
+                    ),
+                    fullPage: true,
+                });
+            }
+        }
+
+        await page.getByRole('button', { name: 'Review and Accept' }).click();
+        await expect(page.getByTestId('handover-verify-page')).toBeVisible();
 
         page.on('console', (msg) => {
             if (msg.type() === 'error') {
@@ -126,17 +179,29 @@ test.describe('Asset Handover Flow', () => {
         await expect(page.getByTestId('download-receipt-button')).toBeVisible();
 
         // Download receipt
-        const receiptResponse = page.waitForResponse(
-            (response) =>
-                response
-                    .url()
-                    .includes(`/inventory/handover/receipt/${handoverId}`) &&
-                response.status() === 200,
-        );
+        const receiptDownload = page.waitForEvent('download');
 
         await page.getByTestId('download-receipt-button').click();
 
-        const response = await receiptResponse;
+        const download = await receiptDownload;
+        expect(download.suggestedFilename()).toBe(
+            `internal-property-accountability-receipt-${handoverId}.pdf`,
+        );
+        expect(await download.failure()).toBeNull();
+        const stream = await download.createReadStream();
+        const chunks: Buffer[] = [];
+
+        for await (const chunk of stream) {
+            chunks.push(Buffer.from(chunk));
+        }
+
+        expect(Buffer.concat(chunks).subarray(0, 5).toString()).toBe('%PDF-');
+
+        const response = await page.request.head(
+            `/inventory/handover/receipt/${handoverId}`,
+        );
+        expect(response.status()).toBe(200);
         expect(response.headers()['content-type']).toContain('application/pdf');
+        expect(clientErrors).toEqual([]);
     });
 });

@@ -15,6 +15,7 @@ import {
     e2eEnvironment,
     e2eProjectRoot,
     e2eServerStatePath,
+    e2eSessionDirectory,
     e2eSsrBundlePath,
     e2eTemplateDatabasePath,
     e2eTwoFactorFixturesPath,
@@ -41,14 +42,11 @@ async function isServerAvailable(): Promise<boolean> {
 }
 
 function clearStaleSessionFiles(): void {
-    const sessionsDirectory = resolve(
-        e2eProjectRoot,
-        'storage',
-        'framework',
-        'sessions',
-    );
+    const sessionsDirectory = e2eSessionDirectory;
 
     if (!existsSync(sessionsDirectory)) {
+        mkdirSync(sessionsDirectory, { recursive: true });
+
         return;
     }
 

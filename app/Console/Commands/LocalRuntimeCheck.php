@@ -36,9 +36,14 @@ class LocalRuntimeCheck extends Command
             'ssr_disabled' => ! config('inertia.ssr.enabled'),
             'built_assets' => is_file(public_path('build/manifest.json')) && ! is_file(public_path('hot')),
             'configuration_uncached' => ! app()->configurationIsCached(),
-            'mail_transport' => config('mail.default') === 'resend'
+            'mail_transport' => in_array(config('mail.default'), ['resend', 'smtp'], true)
                 || (app()->environment('testing') && config('mail.default') === 'array'),
             'resend_key_present' => config('mail.default') !== 'resend' || filled(config('services.resend.key')),
+            'smtp_credentials' => config('mail.default') !== 'smtp'
+                || (filled(config('mail.mailers.smtp.username')) && filled(config('mail.mailers.smtp.password'))),
+            'gmail_sender_matches' => config('mail.default') !== 'smtp'
+                || config('mail.mailers.smtp.host') !== 'smtp.gmail.com'
+                || config('mail.from.address') === config('mail.mailers.smtp.username'),
         ];
 
         try {
