@@ -201,17 +201,30 @@ function visit(
 }
 
 const timers: Record<string, number | undefined> = {};
+let isResettingSearches = false;
 
 function debounce(key: string, callback: () => void): void {
     window.clearTimeout(timers[key]);
     timers[key] = window.setTimeout(callback, 250);
 }
 
-watch(assetSearch, () =>
-    debounce('asset', () => visit(baseQuery(), ['assetOptions'])),
+watch(
+    assetSearch,
+    () => {
+        if (!isResettingSearches) {
+            debounce('asset', () => visit(baseQuery(), ['assetOptions']));
+        }
+    },
+    { flush: 'sync' },
 );
-watch(recipientSearch, () =>
-    debounce('recipient', () => visit(baseQuery(), ['users'])),
+watch(
+    recipientSearch,
+    () => {
+        if (!isResettingSearches) {
+            debounce('recipient', () => visit(baseQuery(), ['users']));
+        }
+    },
+    { flush: 'sync' },
 );
 watch(historySearch, () =>
     debounce('history', () =>
@@ -312,10 +325,18 @@ watch(
 );
 
 function onHandoverSent(): void {
-    clearRecipient();
-    assetSearch.value = '';
-    recipientSearch.value = '';
-    scanFeedback.value = '';
+    isResettingSearches = true;
+
+    try {
+        window.clearTimeout(timers.asset);
+        window.clearTimeout(timers.recipient);
+        clearRecipient();
+        assetSearch.value = '';
+        recipientSearch.value = '';
+        scanFeedback.value = '';
+    } finally {
+        isResettingSearches = false;
+    }
 }
 
 // ── Pending handover actions ──

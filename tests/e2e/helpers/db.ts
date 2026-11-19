@@ -265,6 +265,24 @@ export function getLatestRequisitionId(requesterEmail: string): number {
     });
 }
 
+export function createPendingHandover(
+    assetTagCode: string,
+    fromUserId: number,
+    toUserId: number,
+    token: string,
+): number {
+    return parseInt(
+        runArtisan([
+            'e2e:create-handover',
+            assetTagCode,
+            String(fromUserId),
+            String(toUserId),
+            token,
+        ]),
+        10,
+    );
+}
+
 export function preparePendingHandoverVerification(
     assetTagCode: string,
     recipientEmail: string,

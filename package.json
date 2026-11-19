@@ -14,6 +14,7 @@
         "lint:check": "eslint .",
         "type-check": "vue-tsc --noEmit",
         "types:check": "vue-tsc --noEmit",
+        "test:secrets": "node --test tests/secret-hygiene.test.mjs",
         "e2e:setup": "npm run build:e2e && php artisan e2e:setup --fresh --env=e2e",
         "e2e:test": "playwright test",
         "e2e:check:drawer": "playwright test tests/e2e/accessibility-responsive.spec.ts --project=webkit --grep \"mobile navigation drawer has an explicit close control|navigation toggle exposes state\" --retries=0",

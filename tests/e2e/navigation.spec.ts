@@ -96,12 +96,19 @@ function moduleLink(page: Page, module: ModuleLink) {
             ? page.locator('[data-slot="sidebar-content"]')
             : page.locator('[data-slot="sidebar-footer"]');
 
-    return region.getByRole('link', { name: module.name });
+    return region.getByRole('link', { name: module.name, exact: true });
 }
 
 test.describe('Inventory Navigation', () => {
     test('admin sees every allowed module link', async ({ page }) => {
         await loginAs(page, 'admin@e2e.test');
+
+        await expect(
+            page.getByRole('link', {
+                name: 'My Pending Handovers',
+                exact: true,
+            }),
+        ).toHaveAttribute('href', '/inventory/handover/mine');
 
         for (const module of adminModules) {
             await expect(moduleLink(page, module)).toHaveCount(1);
@@ -112,6 +119,13 @@ test.describe('Inventory Navigation', () => {
         page,
     }) => {
         await loginAs(page, 'supply@e2e.test');
+
+        await expect(
+            page.getByRole('link', {
+                name: 'My Pending Handovers',
+                exact: true,
+            }),
+        ).toHaveAttribute('href', '/inventory/handover/mine');
 
         await expect(moduleLink(page, adminModules[9])).toHaveCount(0);
         await expect(moduleLink(page, adminModules[8])).toHaveCount(0);
@@ -138,6 +152,13 @@ test.describe('Inventory Navigation', () => {
         page,
     }) => {
         await loginAs(page, 'custodian@e2e.test');
+
+        await expect(
+            page.getByRole('link', {
+                name: 'My Pending Handovers',
+                exact: true,
+            }),
+        ).toHaveAttribute('href', '/inventory/handover/mine');
 
         await expect(moduleLink(page, adminModules[2])).toHaveCount(0);
         await expect(moduleLink(page, adminModules[3])).toHaveCount(0);
