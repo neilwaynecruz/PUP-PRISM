@@ -101,11 +101,11 @@ test('verification link is absolute fixed signed and rejected after verification
 test('reset messages become obsolete when a fresh token replaces them', function () {
     config(['mail.default' => 'resend']);
     $user = User::factory()->create();
-    $token = Password::broker()->createToken($user);
+    $token = Password::createToken($user);
     $notification = new QueuedResetPassword($token, $user->email, $user);
     expect($notification->shouldSend($user, 'mail'))->toBeTrue()
         ->and($notification->toMail($user)->actionUrl)->toContain('/reset-password/'.$token);
-    Password::broker()->createToken($user);
+    Password::createToken($user);
     expect($notification->shouldSend($user, 'mail'))->toBeFalse()
         ->and(EmailDelivery::query()->sole()->status)->toBe('superseded');
 });

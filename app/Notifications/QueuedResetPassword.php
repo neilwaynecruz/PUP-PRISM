@@ -45,7 +45,7 @@ class QueuedResetPassword extends ResetPassword implements ShouldBeEncrypted, Sh
             return app(EmailDeliveryService::class)->skip($notifiable, $this, 'expired');
         }
 
-        if (! $notifiable->is_active || $notifiable->getEmailForPasswordReset() !== $this->email || ! Password::broker()->tokenExists($notifiable, $this->token)) {
+        if (! $notifiable->is_active || $notifiable->getEmailForPasswordReset() !== $this->email || ! Password::tokenExists($notifiable, $this->token)) {
             return app(EmailDeliveryService::class)->skip($notifiable, $this, 'superseded');
         }
 

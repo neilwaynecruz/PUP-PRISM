@@ -12,6 +12,8 @@ beforeEach(function () {
 });
 
 test('admin health endpoint returns queue and scheduler metadata', function () {
+    config(['retention.scheduling_enabled' => true]);
+
     Cache::put(
         SchedulerHeartbeat::cacheKey(SchedulerHeartbeat::COMMAND_TRASH_CLEANUP),
         now()->toIso8601String(),
@@ -58,6 +60,20 @@ test('admin health endpoint returns queue and scheduler metadata', function () {
             'scheduler_last_runs.'.SchedulerHeartbeat::COMMAND_TRASH_CLEANUP,
             fn ($value) => is_string($value),
         );
+});
+
+test('admin health excludes disabled retention schedules', function () {
+    config(['retention.scheduling_enabled' => false]);
+
+    $admin = User::factory()->withTwoFactor()->create(['email_verified_at' => now()]);
+    $admin->assignRole('Admin');
+
+    $this->actingAs($admin)
+        ->getJson(route('admin.health', absolute: false))
+        ->assertOk()
+        ->assertJsonMissingPath('scheduler_last_runs.'.SchedulerHeartbeat::COMMAND_TRASH_CLEANUP)
+        ->assertJsonMissingPath('scheduler_last_runs.'.SchedulerHeartbeat::COMMAND_PRUNE_OPERATIONAL_DATA)
+        ->assertJsonStructure(['scheduler_last_runs' => [SchedulerHeartbeat::COMMAND_GENERATE_DEMAND_FORECASTS]]);
 });
 
 test('admin health endpoint includes recent failed jobs', function () {
