@@ -61,6 +61,8 @@ function monitorUnexpectedBrowserErrors(page: Page): string[] {
     return errors;
 }
 
+test.use({ serviceWorkers: 'block' });
+
 test('Phase 5 forecasting views remain accessible and balanced across supported viewports', async ({
     page,
 }, testInfo) => {
@@ -68,13 +70,18 @@ test('Phase 5 forecasting views remain accessible and balanced across supported 
     const browserErrors = monitorUnexpectedBrowserErrors(page);
 
     await loginAs(page, 'supply@e2e.test', 'password', { redirectTo: false });
+    await page.goto('/inventory/forecasting', {
+        waitUntil: 'domcontentloaded',
+    });
 
     for (const appearance of ['light', 'dark'] as const) {
-        await page.goto('/inventory/forecasting');
         await page.evaluate((value) => {
             localStorage.setItem('appearance', value);
         }, appearance);
-        await page.reload();
+        // Explicit goto forces a clean document reload without Firefox Juggler's page.reload() race.
+        await page.goto('/inventory/forecasting', {
+            waitUntil: 'domcontentloaded',
+        });
 
         await expect(
             page.getByRole('heading', {

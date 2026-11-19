@@ -40,6 +40,7 @@ export function e2eEnvironment(): NodeJS.ProcessEnv {
         ...process.env,
         APP_ENV: 'e2e',
         APP_URL: e2eBaseUrl,
+        BOOST_BROWSER_LOGS_WATCHER: 'false',
         BCRYPT_ROUNDS: '4',
         INERTIA_SSR_ENABLED: 'false',
         DB_CONNECTION: 'sqlite',
